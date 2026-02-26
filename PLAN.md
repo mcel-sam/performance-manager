@@ -102,7 +102,7 @@ npm run dev
 
 ## Milestone 1 — Reviews MVP (Cycle + Tasks + Write + Autosave + Submit + Evidence attach)
 
-**Status:** Phase 1 and Phase 2 complete (local workspace, PR number pending).  
+**Status:** Phase 1, Phase 2, and Phase 3 complete (local workspace, PR number pending).  
 **Objective:** Run a review cycle end-to-end for a small org with basic evidence support.
 
 ### Scope
@@ -151,13 +151,14 @@ npm run dev
 
 5. **Evidence panel**
    - [x] Evidence counts by type
-   - [ ] Drill-in list (by type)
-   - [ ] Attach/detach evidence to answer
-   - [ ] Audit events for attach/detach
+   - [x] Drill-in list (by type)
+   - [x] Attach/detach evidence to answer
+   - [x] Audit events for attach/detach
 
 6. **Quality**
    - [x] Tests for required validation
    - [x] Tests for permission denial on cross-submission access
+   - [x] Tests for evidence attach/detach + no-leak visibility counts
    - [ ] Tests for cycle state transitions
    - [x] Ensure empty/loading/error states
 
@@ -166,13 +167,14 @@ npm run dev
 
 Phase 1 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
 Phase 2 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
+Phase 3 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
 
 ### Acceptance criteria
 - [x] HR can create cycle + generate submissions
 - [x] User sees tasks list
 - [x] User can write answers, refresh page, and see work preserved
 - [x] Submit blocks until required questions answered
-- [ ] Evidence can be attached/detached and is audited
+- [x] Evidence can be attached/detached and is audited
 - [x] Permissions prevent cross-employee access
 
 ### How to test

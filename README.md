@@ -15,15 +15,28 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - ADR stack decision: `docs/adr/0001-stack.md`
 - Repo coding rules: `AGENTS.md`
+- Milestone execution tracking: `PLAN.md`
 
-## Milestone 0 features
+## Implemented scope (through Milestone 1 Phase 3)
 
-- Local PostgreSQL dev database via `docker-compose.yml`
-- Prisma schema + migration baseline (`Org`, `User`, `Employee`)
-- Health route: `GET /api/health`
-- Reviews foundation page: `GET /performance/reviews`
-- Root Dockerfile for local image build/run
-- PR CI workflow (`.github/workflows/ci.yml`)
+- Milestone 0 foundation:
+  - Local PostgreSQL dev database via `docker-compose.yml`
+  - Prisma schema + migrations baseline
+  - Health route: `GET /api/health`
+  - Reviews entry page: `GET /performance/reviews`
+  - Root Dockerfile and CI checks
+- Milestone 1 Phase 1:
+  - Core reviews data model and migration
+  - Admin API for cycle create + packet/submission generation
+  - Seed/demo data
+- Milestone 1 Phase 2:
+  - Participant tasks list (`/performance/reviews`)
+  - Write review route with autosave + submit validation
+- Milestone 1 Phase 3:
+  - Evidence retrieval API with visibility enforcement (`GET /api/evidence`)
+  - Evidence drill-in in write review UI
+  - Attach/detach evidence to answers
+  - Audit events for evidence attach/detach
 
 ## Local setup
 
@@ -33,13 +46,14 @@ Performance Management System monorepo for reviews, calibration, and improvement
 docker compose up -d
 ```
 
-2. Install app dependencies and migrate DB:
+2. Install app dependencies and prepare the DB:
 
 ```bash
 cd apps/web
 cp .env.example .env.local
 npm install
 npx prisma migrate dev
+npm run db:seed
 ```
 
 3. Run the app:
@@ -48,10 +62,45 @@ npx prisma migrate dev
 npm run dev
 ```
 
-4. Open the milestone routes:
+4. Open key routes:
 
 - `http://localhost:3000/api/health`
 - `http://localhost:3000/performance/reviews`
+
+## Development identity defaults
+
+The web UI uses a local dev request context by default:
+
+- `DEV_USER_ID=user_employee_1`
+- `DEV_ORG_ID=org_demo_1`
+
+Set these in `apps/web/.env.local` to switch local user context.
+
+## API endpoints used in Milestone 1
+
+- `GET /api/performance/reviews/tasks`
+- `GET /api/performance/reviews/:cycleId/submissions/:submissionId`
+- `PATCH /api/performance/reviews/:cycleId/submissions/:submissionId/answers`
+- `POST /api/performance/reviews/:cycleId/submissions/:submissionId/submit`
+- `GET /api/evidence?subjectEmployeeId=...&types=...`
+- `POST /api/review-answers/:answerId/evidence-links`
+- `DELETE /api/review-answers/:answerId/evidence-links/:evidenceItemId`
+
+Note: API routes expect `x-user-id` and `x-org-id` headers.
+
+## Quick manual checks
+
+```bash
+# health
+curl -s http://localhost:3000/api/health
+```
+
+```bash
+# evidence list example
+curl -s 'http://localhost:3000/api/evidence?subjectEmployeeId=emp_employee_1' \
+  -H 'x-user-id: user_employee_1' \
+  -H 'x-org-id: org_demo_1'
+```
 
 ## Quality gates
 
