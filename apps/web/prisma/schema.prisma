@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  EMPLOYEE
+  MANAGER
+  HR_ADMIN
+  CALIBRATOR
+}
+
+model Org {
+  id        String     @id @default(cuid())
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  users     User[]
+  employees Employee[]
+}
+
+model User {
+  id        String    @id @default(cuid())
+  orgId     String
+  email     String
+  role      UserRole  @default(EMPLOYEE)
+  employee  Employee?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Restrict)
+
+  @@index([orgId])
+  @@unique([orgId, email])
+}
+
+model Employee {
+  id            String     @id @default(cuid())
+  orgId         String
+  userId        String     @unique
+  firstName     String
+  lastName      String
+  managerId     String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  org           Org        @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manager       Employee?  @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports Employee[] @relation("EmployeeManager")
+
+  @@index([orgId])
+  @@index([managerId])
+  @@unique([orgId, userId])
+}
