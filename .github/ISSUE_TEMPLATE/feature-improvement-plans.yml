@@ -1,0 +1,82 @@
+name: "Feature: Improvement Plans"
+description: "Implement improvement plan create/view, timeline check-ins, audit log, export placeholder."
+title: "[Plans] Improvement plans MVP"
+labels: ["feature", "improvement-plans"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Follow /AGENTS.md and PRD Module E. Permissions are strict (subject/manager/HR). Audit required.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      value: |
+        Managers/HR can create an improvement plan, track check-ins, and view audit log.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: Plan create (API + UI)
+          required: true
+        - label: Plan detail page with timeline of check-ins
+          required: true
+        - label: Status transitions (draft/active/completed/extended/cancelled)
+          required: true
+        - label: Audit log view (append-only events)
+          required: true
+        - label: Export placeholder endpoint/button
+          required: true
+        - label: Strict permissions enforced server-side
+          required: true
+  - type: textarea
+    id: routes
+    attributes:
+      label: Routes / Pages
+      value: |
+        - /performance/improvement-plans
+        - /performance/improvement-plans/:planId
+  - type: textarea
+    id: api
+    attributes:
+      label: API endpoints
+      value: |
+        - POST /api/performance/improvement-plans
+        - GET /api/performance/improvement-plans
+        - GET /api/performance/improvement-plans/:planId
+        - POST /api/performance/improvement-plans/:planId/checkins
+        - PATCH /api/performance/improvement-plans/:planId/status
+        - GET /api/performance/improvement-plans/:planId/audit
+        - GET /api/performance/improvement-plans/:planId/export (placeholder OK)
+  - type: input
+    id: migration
+    attributes:
+      label: Prisma migration name
+      placeholder: "add_improvement_plans"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - Plan can be created and viewed by authorized roles only.
+        - Check-ins append to timeline and are audited.
+        - Status transitions emit audit events.
+        - Export endpoint returns a clear placeholder response.
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: How to test (exact commands)
+      value: |
+        cd apps/web
+        npm run dev
+        npx prisma migrate dev
+        # steps
+    validations:
+      required: true

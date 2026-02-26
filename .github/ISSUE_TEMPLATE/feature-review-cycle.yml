@@ -1,0 +1,79 @@
+name: "Feature: Review Cycles (Admin + Tasks)"
+description: "Implement review cycle creation, generation, lifecycle states, and participant task list."
+title: "[Reviews] Review cycle setup + tasks"
+labels: ["feature", "reviews"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Follow /AGENTS.md and /docs/product/PRD.md (Module A). Include migration name and test steps.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What outcome should this deliver?
+      value: |
+        HR can create a cycle and participants can see tasks.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: Admin cycle list + create cycle UI
+          required: true
+        - label: Generate packets/submissions for employees
+          required: true
+        - label: Cycle lifecycle transitions (Draft→Active→Locked→Released)
+          required: true
+        - label: Participant task list (My tasks)
+          required: true
+        - label: Audit events for mutations
+          required: true
+  - type: textarea
+    id: routes
+    attributes:
+      label: Routes / Pages
+      value: |
+        - /admin/performance/review-cycles
+        - /admin/performance/review-cycles/new
+        - /performance/reviews (tasks list)
+  - type: textarea
+    id: api
+    attributes:
+      label: API endpoints
+      value: |
+        - POST /api/admin/review-cycles
+        - POST /api/admin/review-cycles/:cycleId/generate-packets
+        - PATCH /api/admin/review-cycles/:cycleId/status
+        - GET /api/performance/reviews/tasks
+  - type: input
+    id: migration
+    attributes:
+      label: Prisma migration name
+      placeholder: "add_review_cycles_core"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - Creating a cycle in the UI persists to DB.
+        - Generating packets creates packets + submissions deterministically.
+        - Participants see their assigned submissions in tasks list.
+        - Status transitions are permission-gated and audited.
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: How to test (exact commands)
+      value: |
+        cd apps/web
+        npm run dev
+        npx prisma migrate dev
+        # then steps
+    validations:
+      required: true
