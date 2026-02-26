@@ -1,4 +1,3 @@
-import { EvidenceType } from "@prisma/client";
 import Link from "next/link";
 
 import WriteReviewForm from "@/components/reviews/write-review-form";
@@ -14,22 +13,6 @@ const relationshipLabel = {
   UPWARD: "Upward Review",
 } as const;
 
-const evidenceOrder: EvidenceType[] = [
-  EvidenceType.FEEDBACK,
-  EvidenceType.UPDATE,
-  EvidenceType.ONE_ON_ONE,
-  EvidenceType.GOAL,
-  EvidenceType.VALUE_RECOGNITION,
-];
-
-const evidenceLabel: Record<EvidenceType, string> = {
-  FEEDBACK: "Feedback",
-  UPDATE: "Updates",
-  ONE_ON_ONE: "1:1s",
-  GOAL: "Goals",
-  VALUE_RECOGNITION: "Values",
-};
-
 interface WriteReviewPageProps {
   params: Promise<{
     cycleId: string;
@@ -44,7 +27,7 @@ export default async function WriteReviewPage({ params }: WriteReviewPageProps) 
 
   return (
     <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
-      <div className="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+      <div className="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Phase Nav</h2>
           <nav className="mt-4 space-y-2">
@@ -84,32 +67,12 @@ export default async function WriteReviewPage({ params }: WriteReviewPageProps) 
           <WriteReviewForm
             cycleId={cycleId}
             submissionId={submissionId}
+            subjectEmployeeId={data.submission.subjectEmployeeId}
             auth={{ userId: context.userId, orgId: context.orgId }}
             initialStatus={data.submission.status}
             questions={data.questions}
           />
         </section>
-
-        <aside className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Evidence Context
-          </h2>
-          <p className="mt-1 text-xs text-slate-500">Counts for this subject in the current org.</p>
-
-          <dl className="mt-4 space-y-3">
-            {evidenceOrder.map((type) => (
-              <div
-                key={type}
-                className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2"
-              >
-                <dt className="text-sm text-slate-700">{evidenceLabel[type]}</dt>
-                <dd className="text-sm font-semibold text-slate-900">
-                  {data.evidenceCounts[type] ?? 0}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </aside>
       </div>
     </main>
   );
