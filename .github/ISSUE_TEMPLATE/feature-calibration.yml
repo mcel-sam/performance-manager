@@ -1,0 +1,78 @@
+name: "Feature: Calibration (9-box)"
+description: "Implement calibration session creation, grid, placements, finalize snapshot."
+title: "[Calibration] 9-box session + finalize snapshot"
+labels: ["feature", "calibration"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Follow /AGENTS.md and PRD Module D. Ensure accessibility (non-drag move control) and audit logging.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      value: |
+        Participants can calibrate a cohort in a 9-box grid and finalize a snapshot.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: Calibration session model + API
+          required: true
+        - label: 9-box grid UI with placements
+          required: true
+        - label: Right drawer with packet summary + This/Previous cycle tabs
+          required: true
+        - label: Move placement control that works without drag-and-drop
+          required: true
+        - label: Finalize action creates immutable snapshot + locks session
+          required: true
+        - label: Audit events for move + finalize
+          required: true
+  - type: textarea
+    id: routes
+    attributes:
+      label: Routes / Pages
+      value: |
+        - /performance/calibration/:sessionId
+        - (optional admin) /admin/performance/calibration + /new
+  - type: textarea
+    id: api
+    attributes:
+      label: API endpoints
+      value: |
+        - GET /api/performance/calibration/:sessionId
+        - PATCH /api/performance/calibration/:sessionId/placements/:packetId
+        - POST /api/performance/calibration/:sessionId/finalize
+  - type: input
+    id: migration
+    attributes:
+      label: Prisma migration name
+      placeholder: "add_calibration_sessions"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      value: |
+        - Grid loads and shows all cohort members.
+        - Selecting a person opens drawer with packet summary.
+        - Moving a placement updates DB and emits audit event.
+        - Finalize locks session and stores snapshot JSON.
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: How to test (exact commands)
+      value: |
+        cd apps/web
+        npm run dev
+        npx prisma migrate dev
+        # steps to create session + verify finalize
+    validations:
+      required: true
