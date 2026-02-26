@@ -242,6 +242,34 @@ Every meaningful mutation must create an `audit_event`, including:
   - frequent filters (cycle status, subject_employee_id, reviewer_employee_id)
 - Avoid N+1 queries; prefer joins/includes.
 
+## Testing policy (required)
+
+### Test tooling (LOCKED)
+- Use **Vitest** for unit tests (preferred) OR **Jest** if already installed. Pick one and keep consistent.
+- Use **@testing-library/react** for component tests (when needed).
+- Use **Playwright** only for a small number of critical E2E flows (later), not for everything.
+
+### Minimum test expectations
+For any PR that adds or changes behavior:
+- Add/adjust **unit tests** for business logic and state transitions.
+- Add tests for permission checks where feasible (at least one positive + one negative case).
+- Add tests for validation rules (e.g., required questions on submit).
+- If a UI flow is complex, add at least one integration-style test for the server action/route handler.
+
+### Must-test areas (MVP)
+- Review cycle status transitions (Draft→Active→Locked→Released)
+- Review submission submit validation (required questions)
+- Evidence attach/detach (creates link + audit event)
+- Calibration finalize (snapshot created + locked)
+- Improvement plan status transitions + audit events
+
+### Test placement
+- Server/domain tests: `apps/web/src/server/**/__tests__/*`
+- Route handler tests: `apps/web/src/app/api/**/__tests__/*` (or test server functions directly)
+- UI component tests: `apps/web/src/components/**/__tests__/*`
+
+### Running tests
+- `npm test` must run all tests and fail on errors.
 ---
 
 ## 8) UX / Design guardrails (minimal but strict)
