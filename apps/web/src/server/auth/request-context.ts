@@ -54,3 +54,29 @@ export function requireRole(context: RequestContext, role: UserRole): void {
     throw new AppError("FORBIDDEN", "Insufficient permissions", 403);
   }
 }
+
+export async function getDevRequestContext(
+  db: AuthDb = prisma,
+): Promise<RequestContext> {
+  const userId = process.env.DEV_USER_ID ?? "user_employee_1";
+  const orgId = process.env.DEV_ORG_ID ?? "org_demo_1";
+
+  const user = await db.user.findFirst({
+    where: { id: userId, orgId },
+    select: { id: true, orgId: true, role: true },
+  });
+
+  if (!user) {
+    throw new AppError(
+      "UNAUTHORIZED",
+      "Development user context is not configured. Run db seed and set DEV_USER_ID/DEV_ORG_ID if needed.",
+      401,
+    );
+  }
+
+  return {
+    userId: user.id,
+    orgId: user.orgId,
+    role: user.role,
+  };
+}
