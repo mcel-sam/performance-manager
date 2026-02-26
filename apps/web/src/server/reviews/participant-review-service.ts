@@ -71,6 +71,21 @@ interface ReviewTaskRecord {
   };
 }
 
+interface ReviewAnswerRecord {
+  id: string;
+  questionId: string;
+  responseText: string;
+  evidenceLinks: {
+    evidenceItemId: string;
+    evidenceItem: {
+      id: string;
+      type: EvidenceType;
+      content: string;
+      occurredAt: Date;
+    };
+  }[];
+}
+
 interface ParticipantReviewDb {
   reviewSubmission: {
     findMany: (args: {
@@ -118,8 +133,8 @@ interface ParticipantReviewDb {
   reviewAnswer: {
     findMany: (args: {
       where: { orgId: string; submissionId: string };
-      select: { id: true; questionId: true; responseText: true };
-    }) => Promise<{ id: string; questionId: string; responseText: string }[]>;
+      select: Record<string, unknown>;
+    }) => Promise<ReviewAnswerRecord[]>;
     upsert: (args: {
       where: {
         submissionId_questionId: {
@@ -141,13 +156,6 @@ interface ParticipantReviewDb {
         updatedAt: true;
       };
     }) => Promise<{ id: string; updatedAt: Date }>;
-  };
-  evidenceItem: {
-    groupBy: (args: {
-      by: ["type"];
-      where: { orgId: string; subjectEmployeeId: string };
-      _count: { _all: true };
-    }) => Promise<{ type: EvidenceType; _count: { _all: number } }[]>;
   };
   auditEvent: {
     create: (args: {
@@ -187,6 +195,14 @@ export interface ReviewTaskListItem {
   submittedAt: string | null;
 }
 
+export interface AttachedEvidenceSummary {
+  evidenceItemId: string;
+  type: EvidenceType;
+  title: string;
+  summary: string;
+  occurredAt: string;
+}
+
 export interface WriteReviewData {
   submission: {
     id: string;
@@ -208,7 +224,9 @@ export interface WriteReviewData {
     id: string;
     prompt: string;
     isRequired: boolean;
+    answerId: string | null;
     responseText: string;
+    attachedEvidence: AttachedEvidenceSummary[];
   }[];
   evidenceCounts: Record<EvidenceType, number>;
 }
@@ -301,23 +319,23 @@ export async function getWriteReviewData(
       id: true,
       questionId: true,
       responseText: true,
+      evidenceLinks: {
+        select: {
+          evidenceItemId: true,
+          evidenceItem: {
+            select: {
+              id: true,
+              type: true,
+              content: true,
+              occurredAt: true,
+            },
+          },
+        },
+      },
     },
   });
 
-  const answerByQuestionId = new Map(answers.map((answer) => [answer.questionId, answer.responseText]));
-
-  const evidenceRows = await db.evidenceItem.groupBy({
-    by: ["type"],
-    where: {
-      orgId: context.orgId,
-      subjectEmployeeId: submission.subjectEmployeeId,
-    },
-    _count: {
-      _all: true,
-    },
-  });
-
-  const evidenceCounts = buildEvidenceCountMap(evidenceRows);
+  const answerByQuestionId = new Map(answers.map((answer) => [answer.questionId, answer]));
 
   return {
     submission: {
@@ -336,13 +354,26 @@ export async function getWriteReviewData(
       id: template.id,
       name: template.name,
     },
-    questions: template.questions.map((question) => ({
-      id: question.id,
-      prompt: question.prompt,
-      isRequired: question.isRequired,
-      responseText: answerByQuestionId.get(question.id) ?? "",
-    })),
-    evidenceCounts,
+    questions: template.questions.map((question) => {
+      const answer = answerByQuestionId.get(question.id);
+
+      return {
+        id: question.id,
+        prompt: question.prompt,
+        isRequired: question.isRequired,
+        answerId: answer?.id ?? null,
+        responseText: answer?.responseText ?? "",
+        attachedEvidence:
+          answer?.evidenceLinks.map((link) => ({
+            evidenceItemId: link.evidenceItemId,
+            type: link.evidenceItem.type,
+            title: buildEvidenceTitle(link.evidenceItem.content, link.evidenceItem.type),
+            summary: buildEvidenceSummary(link.evidenceItem.content),
+            occurredAt: link.evidenceItem.occurredAt.toISOString(),
+          })) ?? [],
+      };
+    }),
+    evidenceCounts: buildEmptyEvidenceCountMap(),
   };
 }
 
@@ -452,6 +483,19 @@ export async function submitReviewSubmission(
       id: true,
       questionId: true,
       responseText: true,
+      evidenceLinks: {
+        select: {
+          evidenceItemId: true,
+          evidenceItem: {
+            select: {
+              id: true,
+              type: true,
+              content: true,
+              occurredAt: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -627,20 +671,33 @@ async function resolveTemplateForSubmission(
   return defaultTemplate;
 }
 
-function buildEvidenceCountMap(
-  rows: { type: EvidenceType; _count: { _all: number } }[],
-): Record<EvidenceType, number> {
-  const counts: Record<EvidenceType, number> = {
+function buildEvidenceTitle(content: string, type: EvidenceType): string {
+  const firstLine = content.trim().split(/[.!?]/)[0]?.trim() ?? "";
+  if (firstLine.length > 0) {
+    return truncate(firstLine, 72);
+  }
+
+  return `${type.replaceAll("_", " ")} evidence`;
+}
+
+function buildEvidenceSummary(content: string): string {
+  return truncate(content.trim(), 160);
+}
+
+function truncate(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 3).trimEnd()}...`;
+}
+
+function buildEmptyEvidenceCountMap(): Record<EvidenceType, number> {
+  return {
     [EvidenceType.FEEDBACK]: 0,
     [EvidenceType.UPDATE]: 0,
     [EvidenceType.ONE_ON_ONE]: 0,
     [EvidenceType.GOAL]: 0,
     [EvidenceType.VALUE_RECOGNITION]: 0,
   };
-
-  for (const row of rows) {
-    counts[row.type] = row._count._all;
-  }
-
-  return counts;
 }
