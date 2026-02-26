@@ -102,7 +102,7 @@ npm run dev
 
 ## Milestone 1 — Reviews MVP (Cycle + Tasks + Write + Autosave + Submit + Evidence attach)
 
-**Status:** Not started  
+**Status:** Phase 1 complete (DB schema + migration + minimal admin create/generate APIs + seed/dev data).  
 **Objective:** Run a review cycle end-to-end for a small org with basic evidence support.
 
 ### Scope
@@ -123,7 +123,7 @@ npm run dev
 
 ### Work breakdown (ordered)
 
-1. **Data model + migration**
+1. [x] **Data model + migration**
    - Add models: `ReviewCycle`, `ReviewTemplate`, `ReviewTemplateQuestion`
    - Add models: `ReviewPacket`, `ReviewSubmission`, `ReviewAnswer`
    - Add evidence models: `EvidenceItem`, `AnswerEvidenceLink`
@@ -131,12 +131,12 @@ npm run dev
    - Migration name: `add_reviews_mvp_core`
 
 2. **Admin cycle setup**
-   - UI: `/admin/performance/review-cycles` list
-   - UI: `/admin/performance/review-cycles/new`
-   - API: create cycle
-   - API: generate packets/submissions
-   - API: status transitions `Draft → Active → Locked → Released`
-   - Audit events for each mutation
+   - [ ] UI: `/admin/performance/review-cycles` list
+   - [ ] UI: `/admin/performance/review-cycles/new`
+   - [x] API: create cycle
+   - [x] API: generate packets/submissions
+   - [ ] API: status transitions `Draft → Active → Locked → Released`
+   - [x] Audit events for each mutation
 
 3. **Tasks list**
    - UI: `/performance/reviews` shows submissions assigned to current user
@@ -158,8 +158,10 @@ npm run dev
    - Tests for: state transitions + required validation
    - Ensure empty/loading/error states
 
-7. **Seed/demo**
+7. [x] **Seed/demo**
    - Seed script to create minimal org and sample data
+
+Phase 1 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
 
 ### Acceptance criteria
 - [ ] HR can create cycle + generate submissions
