@@ -102,7 +102,7 @@ npm run dev
 
 ## Milestone 1 — Reviews MVP (Cycle + Tasks + Write + Autosave + Submit + Evidence attach)
 
-**Status:** Phase 1 complete (DB schema + migration + minimal admin create/generate APIs + seed/dev data).  
+**Status:** Phase 1 and Phase 2 complete (local workspace, PR number pending).  
 **Objective:** Run a review cycle end-to-end for a small org with basic evidence support.
 
 ### Scope
@@ -138,38 +138,42 @@ npm run dev
    - [ ] API: status transitions `Draft → Active → Locked → Released`
    - [x] Audit events for each mutation
 
-3. **Tasks list**
-   - UI: `/performance/reviews` shows submissions assigned to current user
-   - API: tasks endpoint
+3. [x] **Tasks list**
+   - [x] UI: `/performance/reviews` shows submissions assigned to current user
+   - [x] API: tasks endpoint
 
-4. **Write review screen**
-   - Route: `/performance/reviews/:cycleId/write/:submissionId`
-   - Center: questions + rich text editor
-   - Autosave endpoint per answer
-   - Submit endpoint with validation
+4. [x] **Write review screen**
+   - [x] Route: `/performance/reviews/:cycleId/write/:submissionId`
+   - [x] Center: questions + rich text editor
+   - [x] Autosave endpoint per answer
+   - [x] Submit endpoint with validation
+   - [x] Submitted review is read-only
 
 5. **Evidence panel**
-   - Evidence counts by type
-   - Drill-in list (by type)
-   - Attach/detach evidence to answer
-   - Audit events for attach/detach
+   - [x] Evidence counts by type
+   - [ ] Drill-in list (by type)
+   - [ ] Attach/detach evidence to answer
+   - [ ] Audit events for attach/detach
 
 6. **Quality**
-   - Tests for: state transitions + required validation
-   - Ensure empty/loading/error states
+   - [x] Tests for required validation
+   - [x] Tests for permission denial on cross-submission access
+   - [ ] Tests for cycle state transitions
+   - [x] Ensure empty/loading/error states
 
 7. [x] **Seed/demo**
    - Seed script to create minimal org and sample data
 
 Phase 1 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
+Phase 2 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
 
 ### Acceptance criteria
-- [ ] HR can create cycle + generate submissions
-- [ ] User sees tasks list
-- [ ] User can write answers, refresh page, and see work preserved
-- [ ] Submit blocks until required questions answered
+- [x] HR can create cycle + generate submissions
+- [x] User sees tasks list
+- [x] User can write answers, refresh page, and see work preserved
+- [x] Submit blocks until required questions answered
 - [ ] Evidence can be attached/detached and is audited
-- [ ] Permissions prevent cross-employee access
+- [x] Permissions prevent cross-employee access
 
 ### How to test
 ```bash
