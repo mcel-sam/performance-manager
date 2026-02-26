@@ -463,6 +463,98 @@ async function main() {
     },
   });
 
+  await prisma.evidenceItem.upsert({
+    where: { id: "evidence_seed_4" },
+    update: {
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.manager,
+      type: EvidenceType.ONE_ON_ONE,
+      visibility: EvidenceVisibility.SHARED_WITH_SUBJECT,
+      content: "Monthly 1:1 captured clear ownership and communication improvements.",
+      occurredAt: new Date("2026-02-06T10:00:00.000Z"),
+    },
+    create: {
+      id: "evidence_seed_4",
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.manager,
+      type: EvidenceType.ONE_ON_ONE,
+      visibility: EvidenceVisibility.SHARED_WITH_SUBJECT,
+      content: "Monthly 1:1 captured clear ownership and communication improvements.",
+      occurredAt: new Date("2026-02-06T10:00:00.000Z"),
+    },
+  });
+
+  await prisma.evidenceItem.upsert({
+    where: { id: "evidence_seed_5" },
+    update: {
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.peer,
+      type: EvidenceType.VALUE_RECOGNITION,
+      visibility: EvidenceVisibility.ORG_VISIBLE,
+      content: "Recognized for demonstrating customer-first behavior during incident response.",
+      occurredAt: new Date("2026-02-03T08:45:00.000Z"),
+    },
+    create: {
+      id: "evidence_seed_5",
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.peer,
+      type: EvidenceType.VALUE_RECOGNITION,
+      visibility: EvidenceVisibility.ORG_VISIBLE,
+      content: "Recognized for demonstrating customer-first behavior during incident response.",
+      occurredAt: new Date("2026-02-03T08:45:00.000Z"),
+    },
+  });
+
+  await prisma.evidenceItem.upsert({
+    where: { id: "evidence_seed_6" },
+    update: {
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.manager,
+      type: EvidenceType.FEEDBACK,
+      visibility: EvidenceVisibility.PRIVATE,
+      content: "Private manager draft note for calibration preparation.",
+      occurredAt: new Date("2026-02-01T09:15:00.000Z"),
+    },
+    create: {
+      id: "evidence_seed_6",
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.manager,
+      type: EvidenceType.FEEDBACK,
+      visibility: EvidenceVisibility.PRIVATE,
+      content: "Private manager draft note for calibration preparation.",
+      occurredAt: new Date("2026-02-01T09:15:00.000Z"),
+    },
+  });
+
+  await prisma.evidenceItem.upsert({
+    where: { id: "evidence_seed_7" },
+    update: {
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.employee,
+      type: EvidenceType.GOAL,
+      visibility: EvidenceVisibility.PRIVATE,
+      content: "Drafted a private self-reflection note on stretch-goal execution.",
+      occurredAt: new Date("2026-01-20T13:00:00.000Z"),
+    },
+    create: {
+      id: "evidence_seed_7",
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.employee,
+      type: EvidenceType.GOAL,
+      visibility: EvidenceVisibility.PRIVATE,
+      content: "Drafted a private self-reflection note on stretch-goal execution.",
+      occurredAt: new Date("2026-01-20T13:00:00.000Z"),
+    },
+  });
+
   console.log("Seed completed", {
     orgId,
     adminUserId: users.hrAdmin,
