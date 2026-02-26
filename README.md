@@ -74,7 +74,7 @@ Build and run from repo root:
 docker build -t performance-manager .
 docker run --rm -p 3000:3000 \
   --add-host=host.docker.internal:host-gateway \
-  -e DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:5432/perf?schema=public \
+  -e 'DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:5432/perf?schema=public' \
   performance-manager
 ```
 
