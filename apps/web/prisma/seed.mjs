@@ -1,4 +1,13 @@
-import { PrismaClient, CycleVisibilityPolicy, CycleStatus, EvidenceType, EvidenceVisibility, UserRole } from "@prisma/client";
+import {
+  PrismaClient,
+  CycleVisibilityPolicy,
+  CycleStatus,
+  EvidenceType,
+  EvidenceVisibility,
+  ReviewRelationship,
+  ReviewSubmissionStatus,
+  UserRole,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -234,6 +243,157 @@ async function main() {
     },
   });
 
+  const packetIds = {
+    hrAdmin: "packet_seed_hr_admin_1",
+    manager: "packet_seed_manager_1",
+    employee: "packet_seed_employee_1",
+    peer: "packet_seed_peer_1",
+  };
+
+  await prisma.reviewPacket.upsert({
+    where: { id: packetIds.hrAdmin },
+    update: {
+      orgId,
+      cycleId: "cycle_seed_draft_1",
+      subjectEmployeeId: employees.hrAdmin,
+    },
+    create: {
+      id: packetIds.hrAdmin,
+      orgId,
+      cycleId: "cycle_seed_draft_1",
+      subjectEmployeeId: employees.hrAdmin,
+    },
+  });
+
+  await prisma.reviewPacket.upsert({
+    where: { id: packetIds.manager },
+    update: {
+      orgId,
+      cycleId: "cycle_seed_draft_1",
+      subjectEmployeeId: employees.manager,
+    },
+    create: {
+      id: packetIds.manager,
+      orgId,
+      cycleId: "cycle_seed_draft_1",
+      subjectEmployeeId: employees.manager,
+    },
+  });
+
+  await prisma.reviewPacket.upsert({
+    where: { id: packetIds.employee },
+    update: {
+      orgId,
+      cycleId: "cycle_seed_draft_1",
+      subjectEmployeeId: employees.employee,
+    },
+    create: {
+      id: packetIds.employee,
+      orgId,
+      cycleId: "cycle_seed_draft_1",
+      subjectEmployeeId: employees.employee,
+    },
+  });
+
+  await prisma.reviewPacket.upsert({
+    where: { id: packetIds.peer },
+    update: {
+      orgId,
+      cycleId: "cycle_seed_draft_1",
+      subjectEmployeeId: employees.peer,
+    },
+    create: {
+      id: packetIds.peer,
+      orgId,
+      cycleId: "cycle_seed_draft_1",
+      subjectEmployeeId: employees.peer,
+    },
+  });
+
+  const submissionSeed = [
+    {
+      id: "submission_seed_employee_self_1",
+      packetId: packetIds.employee,
+      subjectEmployeeId: employees.employee,
+      reviewerEmployeeId: employees.employee,
+      relationship: ReviewRelationship.SELF,
+    },
+    {
+      id: "submission_seed_employee_manager_1",
+      packetId: packetIds.employee,
+      subjectEmployeeId: employees.employee,
+      reviewerEmployeeId: employees.manager,
+      relationship: ReviewRelationship.MANAGER,
+    },
+    {
+      id: "submission_seed_employee_peer_1",
+      packetId: packetIds.employee,
+      subjectEmployeeId: employees.employee,
+      reviewerEmployeeId: employees.peer,
+      relationship: ReviewRelationship.PEER,
+    },
+    {
+      id: "submission_seed_manager_self_1",
+      packetId: packetIds.manager,
+      subjectEmployeeId: employees.manager,
+      reviewerEmployeeId: employees.manager,
+      relationship: ReviewRelationship.SELF,
+    },
+    {
+      id: "submission_seed_manager_upward_1",
+      packetId: packetIds.manager,
+      subjectEmployeeId: employees.manager,
+      reviewerEmployeeId: employees.employee,
+      relationship: ReviewRelationship.UPWARD,
+    },
+    {
+      id: "submission_seed_manager_upward_2",
+      packetId: packetIds.manager,
+      subjectEmployeeId: employees.manager,
+      reviewerEmployeeId: employees.peer,
+      relationship: ReviewRelationship.UPWARD,
+    },
+    {
+      id: "submission_seed_peer_self_1",
+      packetId: packetIds.peer,
+      subjectEmployeeId: employees.peer,
+      reviewerEmployeeId: employees.peer,
+      relationship: ReviewRelationship.SELF,
+    },
+    {
+      id: "submission_seed_peer_manager_1",
+      packetId: packetIds.peer,
+      subjectEmployeeId: employees.peer,
+      reviewerEmployeeId: employees.manager,
+      relationship: ReviewRelationship.MANAGER,
+    },
+  ];
+
+  for (const submission of submissionSeed) {
+    await prisma.reviewSubmission.upsert({
+      where: { id: submission.id },
+      update: {
+        orgId,
+        cycleId: "cycle_seed_draft_1",
+        packetId: submission.packetId,
+        subjectEmployeeId: submission.subjectEmployeeId,
+        reviewerEmployeeId: submission.reviewerEmployeeId,
+        relationship: submission.relationship,
+        status: ReviewSubmissionStatus.NOT_STARTED,
+      },
+      create: {
+        id: submission.id,
+        orgId,
+        cycleId: "cycle_seed_draft_1",
+        packetId: submission.packetId,
+        subjectEmployeeId: submission.subjectEmployeeId,
+        reviewerEmployeeId: submission.reviewerEmployeeId,
+        relationship: submission.relationship,
+        status: ReviewSubmissionStatus.NOT_STARTED,
+      },
+    });
+  }
+
   await prisma.evidenceItem.upsert({
     where: { id: "evidence_seed_1" },
     update: {
@@ -254,6 +414,52 @@ async function main() {
       visibility: EvidenceVisibility.MANAGER_ONLY,
       content: "Great cross-team collaboration and ownership this month.",
       occurredAt: new Date("2026-02-20T12:00:00.000Z"),
+    },
+  });
+
+  await prisma.evidenceItem.upsert({
+    where: { id: "evidence_seed_2" },
+    update: {
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.employee,
+      type: EvidenceType.UPDATE,
+      visibility: EvidenceVisibility.SHARED_WITH_SUBJECT,
+      content: "Completed migration rollout for the reporting service.",
+      occurredAt: new Date("2026-02-12T15:30:00.000Z"),
+    },
+    create: {
+      id: "evidence_seed_2",
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.employee,
+      type: EvidenceType.UPDATE,
+      visibility: EvidenceVisibility.SHARED_WITH_SUBJECT,
+      content: "Completed migration rollout for the reporting service.",
+      occurredAt: new Date("2026-02-12T15:30:00.000Z"),
+    },
+  });
+
+  await prisma.evidenceItem.upsert({
+    where: { id: "evidence_seed_3" },
+    update: {
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.manager,
+      type: EvidenceType.GOAL,
+      visibility: EvidenceVisibility.MANAGER_ONLY,
+      content: "Quarterly objective delivered ahead of schedule.",
+      occurredAt: new Date("2026-01-29T09:00:00.000Z"),
+    },
+    create: {
+      id: "evidence_seed_3",
+      orgId,
+      subjectEmployeeId: employees.employee,
+      authorEmployeeId: employees.manager,
+      type: EvidenceType.GOAL,
+      visibility: EvidenceVisibility.MANAGER_ONLY,
+      content: "Quarterly objective delivered ahead of schedule.",
+      occurredAt: new Date("2026-01-29T09:00:00.000Z"),
     },
   });
 
