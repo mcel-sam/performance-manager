@@ -620,6 +620,74 @@ async function main() {
     },
   });
 
+  const improvementPlanId = "improvement_plan_seed_1";
+  await prisma.improvementPlan.upsert({
+    where: { id: improvementPlanId },
+    update: {
+      orgId,
+      subjectEmployeeId: employees.employee,
+      managerEmployeeId: employees.manager,
+      hrOwnerEmployeeId: employees.hrAdmin,
+      createdByUserId: users.hrAdmin,
+      title: "Q2 Performance Support Plan",
+      expectations:
+        "Improve delivery predictability and communication with stakeholders over the next quarter.",
+      startDate: new Date("2026-04-01T00:00:00.000Z"),
+      endDate: new Date("2026-06-30T00:00:00.000Z"),
+    },
+    create: {
+      id: improvementPlanId,
+      orgId,
+      subjectEmployeeId: employees.employee,
+      managerEmployeeId: employees.manager,
+      hrOwnerEmployeeId: employees.hrAdmin,
+      createdByUserId: users.hrAdmin,
+      title: "Q2 Performance Support Plan",
+      expectations:
+        "Improve delivery predictability and communication with stakeholders over the next quarter.",
+      startDate: new Date("2026-04-01T00:00:00.000Z"),
+      endDate: new Date("2026-06-30T00:00:00.000Z"),
+    },
+  });
+
+  await prisma.improvementPlanGoal.upsert({
+    where: { id: "improvement_plan_goal_seed_1" },
+    update: {
+      orgId,
+      planId: improvementPlanId,
+      title: "Improve sprint commitment reliability",
+      description: "Maintain at least 90% sprint commitment accuracy for two consecutive cycles.",
+      sortOrder: 1,
+    },
+    create: {
+      id: "improvement_plan_goal_seed_1",
+      orgId,
+      planId: improvementPlanId,
+      title: "Improve sprint commitment reliability",
+      description: "Maintain at least 90% sprint commitment accuracy for two consecutive cycles.",
+      sortOrder: 1,
+    },
+  });
+
+  await prisma.improvementPlanGoal.upsert({
+    where: { id: "improvement_plan_goal_seed_2" },
+    update: {
+      orgId,
+      planId: improvementPlanId,
+      title: "Raise stakeholder communication consistency",
+      description: "Send weekly progress updates and risks to stakeholders with clear owners.",
+      sortOrder: 2,
+    },
+    create: {
+      id: "improvement_plan_goal_seed_2",
+      orgId,
+      planId: improvementPlanId,
+      title: "Raise stakeholder communication consistency",
+      description: "Send weekly progress updates and risks to stakeholders with clear owners.",
+      sortOrder: 2,
+    },
+  });
+
   console.log("Seed completed", {
     orgId,
     adminUserId: users.hrAdmin,

@@ -61,6 +61,19 @@ enum CalibrationBucket {
   HIGH
 }
 
+enum ImprovementPlanStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  EXTENDED
+  CANCELED
+}
+
+enum ImprovementPlanOutcome {
+  SUCCESSFUL
+  UNSUCCESSFUL
+}
+
 model Org {
   id                      String                   @id @default(cuid())
   name                    String
@@ -79,19 +92,24 @@ model Org {
   calibrationSessions     CalibrationSession[]
   calibrationPlacements   CalibrationPlacement[]
   calibrationSnapshots    CalibrationSnapshot[]
+  improvementPlans        ImprovementPlan[]
+  improvementPlanGoals    ImprovementPlanGoal[]
+  improvementPlanCheckIns ImprovementPlanCheckIn[]
   auditEvents             AuditEvent[]
 }
 
 model User {
-  id          String       @id @default(cuid())
-  orgId       String
-  email       String
-  role        UserRole     @default(EMPLOYEE)
-  employee    Employee?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  org         Org          @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  auditEvents AuditEvent[]
+  id                      String                   @id @default(cuid())
+  orgId                   String
+  email                   String
+  role                    UserRole                 @default(EMPLOYEE)
+  employee                Employee?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  org                     Org                      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  auditEvents             AuditEvent[]
+  improvementPlansCreated ImprovementPlan[]
+  improvementPlanCheckIns ImprovementPlanCheckIn[]
 
   @@unique([orgId, email])
   @@index([orgId])
@@ -116,6 +134,9 @@ model Employee {
   evidenceAsSubject           EvidenceItem[]         @relation("EvidenceSubjectEmployee")
   evidenceAuthored            EvidenceItem[]         @relation("EvidenceAuthorEmployee")
   calibrationPlacements       CalibrationPlacement[]
+  improvementPlansAsSubject   ImprovementPlan[]      @relation("ImprovementPlanSubjectEmployee")
+  improvementPlansAsManager   ImprovementPlan[]      @relation("ImprovementPlanManagerEmployee")
+  improvementPlansAsHrOwner   ImprovementPlan[]      @relation("ImprovementPlanHrOwnerEmployee")
 
   @@unique([orgId, userId])
   @@index([orgId])
@@ -328,6 +349,70 @@ model CalibrationSnapshot {
   session   CalibrationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([orgId])
+}
+
+model ImprovementPlan {
+  id                String                   @id @default(cuid())
+  orgId             String
+  subjectEmployeeId String
+  managerEmployeeId String
+  hrOwnerEmployeeId String?
+  createdByUserId   String
+  title             String
+  expectations      String
+  startDate         DateTime
+  endDate           DateTime
+  status            ImprovementPlanStatus    @default(DRAFT)
+  outcome           ImprovementPlanOutcome?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  org               Org                      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  subjectEmployee   Employee                 @relation("ImprovementPlanSubjectEmployee", fields: [subjectEmployeeId], references: [id], onDelete: Restrict)
+  managerEmployee   Employee                 @relation("ImprovementPlanManagerEmployee", fields: [managerEmployeeId], references: [id], onDelete: Restrict)
+  hrOwnerEmployee   Employee?                @relation("ImprovementPlanHrOwnerEmployee", fields: [hrOwnerEmployeeId], references: [id], onDelete: SetNull)
+  createdByUser     User                     @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  goals             ImprovementPlanGoal[]
+  checkIns          ImprovementPlanCheckIn[]
+
+  @@index([orgId])
+  @@index([orgId, status])
+  @@index([subjectEmployeeId])
+  @@index([managerEmployeeId])
+  @@index([hrOwnerEmployeeId])
+}
+
+model ImprovementPlanGoal {
+  id          String          @id @default(cuid())
+  orgId       String
+  planId      String
+  title       String
+  description String?
+  sortOrder   Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  org         Org             @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  plan        ImprovementPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([planId, sortOrder])
+}
+
+model ImprovementPlanCheckIn {
+  id           String          @id @default(cuid())
+  orgId        String
+  planId       String
+  authorUserId String
+  content      String
+  checkInAt    DateTime        @default(now())
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  org          Org             @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  plan         ImprovementPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  authorUser   User            @relation(fields: [authorUserId], references: [id], onDelete: Restrict)
+
+  @@index([orgId])
+  @@index([planId, checkInAt])
+  @@index([authorUserId])
 }
 
 model AuditEvent {
