@@ -287,8 +287,11 @@ npm run dev
    - Completed in local workspace commit set for Milestone 2 Phase 1 on 2026-02-27
 
 3. **Calibration session creation**
-   - [ ] Admin route (optional for MVP): `/admin/performance/calibration/new`
-   - [ ] API: create session with cohort
+   - [x] Admin route: `/admin/performance/calibration/new`
+   - [x] Admin list route: `/admin/performance/calibration`
+   - [x] API: create session with cohort (`POST /api/performance/calibration`)
+   - [x] API: list sessions (`GET /api/performance/calibration`)
+   - Completed in local workspace commit set for Milestone 2 D1 follow-on on 2026-02-27
 
 4. **Calibration workspace**
    - [x] UI: `/performance/calibration/:sessionId`

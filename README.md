@@ -57,6 +57,14 @@ Performance Management System monorepo for reviews, calibration, and improvement
     - `PATCH /api/performance/calibration/:sessionId/placements/:employeeId`
   - Server-side move permission rules for HR admins, calibrators, and allowed managers
   - Audit events for placement moves
+- Milestone 2 D1 follow-on:
+  - Admin calibration list page (`/admin/performance/calibration`)
+  - Admin calibration create page (`/admin/performance/calibration/new`)
+  - Calibration session create/list APIs:
+    - `POST /api/performance/calibration`
+    - `GET /api/performance/calibration`
+  - Session creation supports cycle selection, cohort selection, axis config, and participants
+  - Audit event for session creation (`CALIBRATION_SESSION_CREATED`)
 - Milestone 2 Phase 3:
   - Finalize endpoint (`POST /api/performance/calibration/:sessionId/finalize`)
   - Immutable calibration snapshot persisted at finalize time (`CalibrationSnapshot`)
@@ -121,6 +129,7 @@ npm run dev
 
 - `http://localhost:3000/`
 - `http://localhost:3000/admin/performance/review-cycles`
+- `http://localhost:3000/admin/performance/calibration`
 - `http://localhost:3000/api/health`
 - `http://localhost:3000/performance/reviews`
 - `http://localhost:3000/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1` (as manager or HR dev user)
@@ -159,6 +168,8 @@ For calibration session testing, use:
 - `DELETE /api/review-answers/:answerId/evidence-links/:evidenceItemId`
 - `GET /api/performance/reviews/:cycleId/packet/:employeeId`
 - `GET /api/performance/calibration/:sessionId`
+- `GET /api/performance/calibration`
+- `POST /api/performance/calibration`
 - `PATCH /api/performance/calibration/:sessionId/placements/:employeeId`
 - `POST /api/performance/calibration/:sessionId/finalize`
 - `POST /api/performance/improvement-plans`
