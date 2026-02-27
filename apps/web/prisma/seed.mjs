@@ -396,13 +396,51 @@ async function main() {
   }
 
   const calibrationSessionId = "calibration_session_seed_1";
+  const defaultPerformanceAxis = [
+    {
+      bucket: CalibrationBucket.LOW,
+      label: "Needs support",
+      description: "Consistently below this cycle's expectations.",
+    },
+    {
+      bucket: CalibrationBucket.MEDIUM,
+      label: "Meets expectations",
+      description: "Delivers solid results at the expected level.",
+    },
+    {
+      bucket: CalibrationBucket.HIGH,
+      label: "Exceeds expectations",
+      description: "Delivers standout results beyond expected scope.",
+    },
+  ];
+  const defaultPotentialAxis = [
+    {
+      bucket: CalibrationBucket.LOW,
+      label: "Current scope",
+      description: "Effective in the current scope with limited near-term expansion.",
+    },
+    {
+      bucket: CalibrationBucket.MEDIUM,
+      label: "Growth ready",
+      description: "Can take broader scope with coaching and support.",
+    },
+    {
+      bucket: CalibrationBucket.HIGH,
+      label: "Accelerated growth",
+      description: "Shows strong readiness for larger and more complex scope.",
+    },
+  ];
+
   await prisma.calibrationSession.upsert({
     where: { id: calibrationSessionId },
     update: {
       orgId,
       cycleId: "cycle_seed_draft_1",
       name: "Core Engineering Calibration",
+      roleGroup: "Core Engineering",
       description: "Seeded calibration session for Milestone 2 development.",
+      performanceAxisConfig: defaultPerformanceAxis,
+      potentialAxisConfig: defaultPotentialAxis,
       isFinalized: false,
       finalizedAt: null,
     },
@@ -411,9 +449,46 @@ async function main() {
       orgId,
       cycleId: "cycle_seed_draft_1",
       name: "Core Engineering Calibration",
+      roleGroup: "Core Engineering",
       description: "Seeded calibration session for Milestone 2 development.",
+      performanceAxisConfig: defaultPerformanceAxis,
+      potentialAxisConfig: defaultPotentialAxis,
       isFinalized: false,
       finalizedAt: null,
+    },
+  });
+
+  await prisma.calibrationSessionParticipant.upsert({
+    where: {
+      sessionId_userId: {
+        sessionId: calibrationSessionId,
+        userId: users.hrAdmin,
+      },
+    },
+    update: {
+      orgId,
+    },
+    create: {
+      orgId,
+      sessionId: calibrationSessionId,
+      userId: users.hrAdmin,
+    },
+  });
+
+  await prisma.calibrationSessionParticipant.upsert({
+    where: {
+      sessionId_userId: {
+        sessionId: calibrationSessionId,
+        userId: users.manager,
+      },
+    },
+    update: {
+      orgId,
+    },
+    create: {
+      orgId,
+      sessionId: calibrationSessionId,
+      userId: users.manager,
     },
   });
 
