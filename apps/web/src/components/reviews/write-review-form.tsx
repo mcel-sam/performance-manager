@@ -3,6 +3,16 @@
 import { EvidenceType, ReviewSubmissionStatus } from "@prisma/client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { SectionHeader } from "@/components/layout/section-header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Toast } from "@/components/ui/toast";
+
 interface EvidenceSummary {
   evidenceItemId: string;
   type: EvidenceType;
@@ -417,237 +427,243 @@ export default function WriteReviewForm({
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">Write Review</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Required progress: {requiredProgress.answered}/{requiredProgress.total} answered
-            </p>
-          </div>
-          <div className="text-sm font-medium text-slate-600">{saveLabel}</div>
-        </div>
+      <Card>
+        <CardHeader className="space-y-3">
+          <SectionHeader
+            title="Write Review"
+            description={`Required progress: ${requiredProgress.answered}/${requiredProgress.total} answered`}
+            action={<span className="text-sm font-medium text-slate-600">{saveLabel}</span>}
+          />
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {questionState.length === 0 ? (
+            <EmptyState
+              title="No questions assigned"
+              description="This submission has no template questions yet."
+            />
+          ) : (
+            <ol className="space-y-5">
+              {questionState.map((question, index) => {
+                const isMissing = missingQuestionIds.includes(question.id);
+                const isActive = activeQuestionId === question.id;
 
-        <div className="space-y-5">
-          {questionState.map((question, index) => {
-            const isMissing = missingQuestionIds.includes(question.id);
-            const isActive = activeQuestionId === question.id;
-
-            return (
-              <div
-                key={question.id}
-                className={`space-y-2 rounded-lg border p-4 ${
-                  isActive ? "border-slate-400 bg-slate-50" : "border-slate-200 bg-white"
-                }`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label className="block text-sm font-semibold text-slate-800" htmlFor={question.id}>
-                    {index + 1}. {question.prompt}
-                    {question.isRequired ? <span className="ml-1 text-rose-700">*</span> : null}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setActiveQuestionId(question.id)}
-                    className={`rounded-md px-2.5 py-1 text-xs font-medium ${
-                      isActive
-                        ? "bg-slate-900 text-white"
-                        : "border border-slate-300 bg-white text-slate-700"
+                return (
+                  <li
+                    key={question.id}
+                    className={`space-y-3 rounded-[var(--radius-md)] border p-4 ${
+                      isActive ? "border-slate-400 bg-slate-50" : "border-slate-200 bg-white"
                     }`}
                   >
-                    {isActive ? "Selected for Evidence" : "Attach Evidence Here"}
-                  </button>
-                </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="block text-sm font-semibold text-slate-800" htmlFor={question.id}>
+                        {index + 1}. {question.prompt}
+                        {question.isRequired ? <span className="ml-1 text-rose-700">*</span> : null}
+                      </label>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={isActive ? "primary" : "outline"}
+                        onClick={() => setActiveQuestionId(question.id)}
+                      >
+                        {isActive ? "Selected for evidence" : "Attach evidence here"}
+                      </Button>
+                    </div>
 
-                <textarea
-                  id={question.id}
-                  ref={(element) => {
-                    questionInputRefs.current[question.id] = element;
-                  }}
-                  value={question.responseText}
-                  onFocus={() => setActiveQuestionId(question.id)}
-                  onChange={(event) => {
-                    const nextValue = event.target.value;
+                    <Textarea
+                      id={question.id}
+                      ref={(element) => {
+                        questionInputRefs.current[question.id] = element;
+                      }}
+                      value={question.responseText}
+                      onFocus={() => setActiveQuestionId(question.id)}
+                      onChange={(event) => {
+                        const nextValue = event.target.value;
 
-                    setQuestionState((previous) =>
-                      previous.map((entry) =>
-                        entry.id === question.id
-                          ? {
-                              ...entry,
-                              responseText: nextValue,
-                            }
-                          : entry,
-                      ),
-                    );
-                    setDirtyQuestionId(question.id);
-                    setMissingQuestionIds((previous) =>
-                      previous.filter((missingId) => missingId !== question.id),
-                    );
-                  }}
-                  rows={5}
-                  readOnly={isReadOnly}
-                  aria-invalid={isMissing}
-                  aria-describedby={isMissing ? `${question.id}-error` : undefined}
-                  className={`w-full rounded-md border px-3 py-2 text-sm text-slate-900 outline-none transition focus:ring-2 focus:ring-slate-300 ${
-                    isMissing ? "border-rose-400 bg-rose-50" : "border-slate-300"
-                  } ${isReadOnly ? "bg-slate-100 text-slate-500" : "bg-white"}`}
-                  placeholder="Write your answer"
-                />
+                        setQuestionState((previous) =>
+                          previous.map((entry) =>
+                            entry.id === question.id
+                              ? {
+                                  ...entry,
+                                  responseText: nextValue,
+                                }
+                              : entry,
+                          ),
+                        );
+                        setDirtyQuestionId(question.id);
+                        setMissingQuestionIds((previous) =>
+                          previous.filter((missingId) => missingId !== question.id),
+                        );
+                      }}
+                      rows={5}
+                      readOnly={isReadOnly}
+                      aria-invalid={isMissing}
+                      aria-describedby={isMissing ? `${question.id}-error` : undefined}
+                      className={`${isMissing ? "border-rose-400 bg-rose-50" : ""} ${
+                        isReadOnly ? "bg-slate-100 text-slate-500" : ""
+                      }`}
+                      placeholder="Write your answer"
+                    />
 
-                {isMissing ? (
-                  <p id={`${question.id}-error`} className="text-xs font-medium text-rose-700">
-                    This required question is missing an answer.
-                  </p>
-                ) : null}
+                    {isMissing ? (
+                      <p id={`${question.id}-error`} className="text-xs font-medium text-rose-700">
+                        This required question is missing an answer.
+                      </p>
+                    ) : null}
 
-                {question.attachedEvidence.length > 0 ? (
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    {question.attachedEvidence.map((evidence) => {
-                      const removeKey = `${question.id}:${evidence.evidenceItemId}`;
+                    {question.attachedEvidence.length > 0 ? (
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {question.attachedEvidence.map((evidence) => {
+                          const removeKey = `${question.id}:${evidence.evidenceItemId}`;
 
-                      return (
-                        <span
-                          key={evidence.evidenceItemId}
-                          className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs"
-                        >
-                          <span>{evidence.title}</span>
-                          {!isReadOnly ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                void handleDetachEvidence(question.id, evidence.evidenceItemId)
-                              }
-                              disabled={detachingEvidenceKey === removeKey}
-                              className="font-semibold text-slate-700 hover:text-rose-700 disabled:opacity-50"
+                          return (
+                            <span
+                              key={evidence.evidenceItemId}
+                              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs"
                             >
-                              {detachingEvidenceKey === removeKey ? "Removing..." : "Remove"}
-                            </button>
-                          ) : null}
-                        </span>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
+                              <span>{evidence.title}</span>
+                              {!isReadOnly ? (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-auto border-0 bg-transparent px-1 py-0 text-xs text-slate-700 shadow-none hover:bg-transparent hover:text-rose-700"
+                                  onClick={() =>
+                                    void handleDetachEvidence(question.id, evidence.evidenceItemId)
+                                  }
+                                  disabled={detachingEvidenceKey === removeKey}
+                                >
+                                  {detachingEvidenceKey === removeKey ? "Removing..." : "Remove"}
+                                </Button>
+                              ) : null}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isReadOnly || isSubmitting}
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-          >
-            {isReadOnly ? "Submitted" : isSubmitting ? "Submitting..." : "Submit Review"}
-          </button>
-          {submitMessage ? <p className="text-sm text-slate-700">{submitMessage}</p> : null}
-        </div>
-      </section>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isReadOnly || isSubmitting}
+            >
+              {isReadOnly ? "Submitted" : isSubmitting ? "Submitting..." : "Submit Review"}
+            </Button>
+            {submitMessage ? (
+              <Toast variant={submitMessage.includes("success") ? "success" : "info"}>
+                {submitMessage}
+              </Toast>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
 
-      <aside className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Evidence Context</h2>
-        <p className="mt-1 text-xs text-slate-500">
-          Select an answer and attach evidence items to support your review.
-        </p>
-
-        <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Selected Answer</p>
-          <p className="mt-1 text-sm text-slate-700">
-            {activeQuestion ? activeQuestion.prompt : "Select an answer to attach evidence."}
-          </p>
-          {!activeQuestion?.answerId ? (
-            <p className="mt-1 text-xs text-amber-700">
-              Type in this answer and wait for autosave before attaching evidence.
+      <Drawer
+        title="Evidence Context"
+        description="Select an answer and attach supporting evidence."
+      >
+        <Card className="border-slate-200 shadow-none">
+          <CardContent className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Selected answer</p>
+            <p className="text-sm text-slate-700">
+              {activeQuestion ? activeQuestion.prompt : "Select an answer to attach evidence."}
             </p>
-          ) : null}
-        </div>
+            {!activeQuestion?.answerId ? (
+              <Toast variant="warning">
+                Type in this answer and wait for autosave before attaching evidence.
+              </Toast>
+            ) : null}
+          </CardContent>
+        </Card>
 
         {evidenceLoadState === "loading" ? (
-          <div className="mt-4 space-y-3" aria-busy="true">
-            <div className="h-8 w-full animate-pulse rounded bg-slate-200" />
-            <div className="h-8 w-full animate-pulse rounded bg-slate-200" />
-            <div className="h-28 w-full animate-pulse rounded bg-slate-200" />
+          <div className="space-y-3" aria-busy="true">
+            <Skeleton className="h-9 rounded-[var(--radius-md)]" />
+            <Skeleton className="h-9 rounded-[var(--radius-md)]" />
+            <Skeleton className="h-32 rounded-[var(--radius-md)]" />
           </div>
         ) : null}
 
         {evidenceLoadState === "error" ? (
-          <div className="mt-4 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-            <p>{evidenceError ?? "Unable to load evidence."}</p>
-            <button
-              type="button"
-              onClick={() => void loadEvidence()}
-              className="mt-2 rounded bg-rose-700 px-3 py-1 text-xs font-semibold text-white"
-            >
-              Retry
-            </button>
-          </div>
+          <Toast variant="error">
+            <div className="space-y-3">
+              <p>{evidenceError ?? "Unable to load evidence."}</p>
+              <Button type="button" size="sm" variant="danger" onClick={() => void loadEvidence()}>
+                Retry
+              </Button>
+            </div>
+          </Toast>
         ) : null}
 
         {evidenceLoadState === "loaded" ? (
-          <div className="mt-4 space-y-4">
-            <dl className="space-y-2">
-              {evidenceTypeOrder.map((type) => (
-                <button
-                  type="button"
-                  key={type}
-                  onClick={() => setSelectedEvidenceType(type)}
-                  className={`flex w-full items-center justify-between rounded-md border px-3 py-2 text-left ${
-                    selectedEvidenceType === type
-                      ? "border-slate-800 bg-slate-100"
-                      : "border-slate-200 bg-white"
-                  }`}
-                >
-                  <dt className="text-sm text-slate-700">{evidenceTypeLabel[type]}</dt>
-                  <dd className="text-sm font-semibold text-slate-900">{evidenceCounts[type] ?? 0}</dd>
-                </button>
-              ))}
-            </dl>
+          <div className="space-y-4">
+            <Tabs
+              ariaLabel="Evidence type tabs"
+              value={selectedEvidenceType}
+              onValueChange={(nextValue) => setSelectedEvidenceType(nextValue as EvidenceType)}
+              tabs={evidenceTypeOrder.map((type) => ({
+                value: type,
+                label: `${evidenceTypeLabel[type]} (${evidenceCounts[type] ?? 0})`,
+              }))}
+            />
 
-            <section>
-              <div className="mb-2 flex items-center justify-between">
+            <section className="space-y-2">
+              <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-900">
-                  {evidenceTypeLabel[selectedEvidenceType]} Details
+                  {evidenceTypeLabel[selectedEvidenceType]} details
                 </h3>
                 <span className="text-xs text-slate-500">Max {evidenceLimitPerType}</span>
               </div>
 
               {selectedEvidenceItems.length === 0 ? (
-                <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-3 text-sm text-slate-600">
-                  No evidence items available for this type.
-                </div>
+                <EmptyState
+                  title="No evidence items"
+                  description="No evidence items are available for this type."
+                  className="p-4"
+                />
               ) : (
                 <div className="space-y-2">
                   {selectedEvidenceItems.map((item) => {
                     const isAttaching = attachingEvidenceId === item.evidenceItemId;
 
                     return (
-                      <article key={item.evidenceItemId} className="rounded-md border border-slate-200 p-3">
-                        <h4 className="text-sm font-semibold text-slate-900">{item.title}</h4>
-                        <p className="mt-1 text-xs text-slate-600">{item.summary}</p>
-                        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-                          <span>{new Date(item.occurredAt).toLocaleDateString()}</span>
-                          <span>Source: {evidenceTypeLabel[item.type]}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => void handleAttachEvidence(item)}
-                          disabled={isReadOnly || !activeQuestion?.answerId || isAttaching}
-                          className="mt-2 rounded bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400"
-                        >
-                          {isAttaching ? "Attaching..." : "Attach to This Answer"}
-                        </button>
-                      </article>
+                      <Card key={item.evidenceItemId}>
+                        <CardContent className="space-y-2">
+                          <h4 className="text-sm font-semibold text-slate-900">{item.title}</h4>
+                          <p className="text-xs text-slate-600">{item.summary}</p>
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                            <span>{new Date(item.occurredAt).toLocaleDateString()}</span>
+                            <span>Source: {evidenceTypeLabel[item.type]}</span>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => void handleAttachEvidence(item)}
+                            disabled={isReadOnly || !activeQuestion?.answerId || isAttaching}
+                          >
+                            {isAttaching ? "Attaching..." : "Attach to this answer"}
+                          </Button>
+                        </CardContent>
+                      </Card>
                     );
                   })}
                 </div>
               )}
 
-              {evidenceMessage ? <p className="mt-2 text-xs text-slate-700">{evidenceMessage}</p> : null}
+              {evidenceMessage ? (
+                <Toast variant={evidenceMessage.includes("Unable") ? "error" : "info"}>
+                  {evidenceMessage}
+                </Toast>
+              ) : null}
             </section>
           </div>
         ) : null}
-      </aside>
+      </Drawer>
     </div>
   );
 }

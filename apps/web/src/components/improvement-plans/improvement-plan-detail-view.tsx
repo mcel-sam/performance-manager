@@ -7,10 +7,18 @@ import {
 } from "@prisma/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { PageHeader } from "@/components/layout/page-header";
+import { SectionHeader } from "@/components/layout/section-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Toast } from "@/components/ui/toast";
 import type {
   ImprovementPlanAuditEvent,
   ImprovementPlanDetail,
@@ -264,58 +272,60 @@ export default function ImprovementPlanDetailView({
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 text-slate-900">
-      <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-          Improvement Plan
-        </p>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+      <PageHeader
+        eyebrow="Improvement Plan"
+        title={plan.title}
+        description={`${new Date(plan.startDate).toLocaleDateString()} - ${new Date(plan.endDate).toLocaleDateString()}`}
+        action={
+          <Button onClick={() => void handleExportRequest()} disabled={isExporting}>
+            {isExporting ? "Requesting..." : "Export"}
+          </Button>
+        }
+        metadata={
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold">{plan.title}</h1>
             <Badge variant={plan.status === ImprovementPlanStatus.ACTIVE ? "success" : "info"}>
               {statusLabel[plan.status]}
             </Badge>
             {plan.outcome ? (
               <Badge
                 variant={
-                  plan.outcome === ImprovementPlanOutcome.SUCCESSFUL
-                    ? "success"
-                    : "warning"
+                  plan.outcome === ImprovementPlanOutcome.SUCCESSFUL ? "success" : "warning"
                 }
               >
                 {outcomeLabel[plan.outcome]}
               </Badge>
             ) : null}
+            <span>
+              Subject: {plan.subjectName} | Manager: {plan.managerName}
+              {plan.hrOwnerName ? ` | HR Owner: ${plan.hrOwnerName}` : ""}
+            </span>
           </div>
-          <Button onClick={() => void handleExportRequest()} disabled={isExporting}>
-            {isExporting ? "Requesting..." : "Export"}
-          </Button>
-        </div>
-        <p className="mt-2 text-sm text-slate-600">
-          {new Date(plan.startDate).toLocaleDateString()} - {new Date(plan.endDate).toLocaleDateString()}
-        </p>
-        <p className="mt-1 text-xs text-slate-500">
-          Subject: {plan.subjectName} | Manager: {plan.managerName}
-          {plan.hrOwnerName ? ` | HR Owner: ${plan.hrOwnerName}` : ""}
-        </p>
-        {exportMessage ? <p className="mt-3 text-xs text-slate-600">{exportMessage}</p> : null}
-      </header>
+        }
+      />
+
+      {exportMessage ? (
+        <Toast variant={exportMessage.includes("Unable") ? "error" : "info"}>{exportMessage}</Toast>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Expectations</CardTitle>
-              <CardDescription>
-                Shared outcomes and coaching focus for this plan period.
-              </CardDescription>
+              <SectionHeader
+                title="Expectations"
+                description="Shared outcomes and coaching focus for this plan period."
+              />
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-0">
               <p className="whitespace-pre-wrap text-sm text-slate-700">{plan.expectations}</p>
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">Goals</h3>
                 <ul className="mt-2 space-y-2">
                   {plan.goals.map((goal) => (
-                    <li key={goal.id} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <li
+                      key={goal.id}
+                      className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3"
+                    >
                       <p className="text-sm font-medium text-slate-900">{goal.title}</p>
                       <p className="mt-1 text-xs text-slate-600">
                         {goal.description ?? "No goal description provided."}
@@ -328,50 +338,40 @@ export default function ImprovementPlanDetailView({
           </Card>
 
           <Card>
-            <CardHeader>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <CardTitle>{activityView === "timeline" ? "Timeline" : "Audit Log"}</CardTitle>
-                <div className="inline-flex rounded-md border border-slate-300 bg-slate-50 p-1">
-                  <button
-                    type="button"
-                    className={`rounded px-3 py-1 text-xs font-medium ${
-                      activityView === "timeline"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600"
-                    }`}
-                    onClick={() => setActivityView("timeline")}
-                  >
-                    Timeline
-                  </button>
-                  <button
-                    type="button"
-                    className={`rounded px-3 py-1 text-xs font-medium ${
-                      activityView === "audit"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600"
-                    }`}
-                    onClick={() => setActivityView("audit")}
-                  >
-                    Audit Log
-                  </button>
-                </div>
-              </div>
-              <CardDescription>
-                {activityView === "timeline"
-                  ? `${plan.checkInCount} check-in${plan.checkInCount === 1 ? "" : "s"} recorded for this plan.`
-                  : "Immutable event history for this plan."}
-              </CardDescription>
+            <CardHeader className="space-y-3">
+              <SectionHeader
+                title={activityView === "timeline" ? "Timeline" : "Audit Log"}
+                description={
+                  activityView === "timeline"
+                    ? `${plan.checkInCount} check-in${plan.checkInCount === 1 ? "" : "s"} recorded for this plan.`
+                    : "Immutable event history for this plan."
+                }
+              />
+              <Tabs
+                ariaLabel="Improvement plan activity tabs"
+                value={activityView}
+                onValueChange={(nextValue) => setActivityView(nextValue as ActivityView)}
+                tabs={[
+                  { value: "timeline", label: "Timeline" },
+                  { value: "audit", label: "Audit Log" },
+                ]}
+              />
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {activityView === "timeline" ? (
                 timeline.length === 0 ? (
-                  <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                    No check-ins yet. Add the first update to start the timeline.
-                  </div>
+                  <EmptyState
+                    title="No check-ins yet"
+                    description="Add the first update to start the timeline."
+                    className="p-4"
+                  />
                 ) : (
                   <ol className="space-y-3">
                     {timeline.map((entry) => (
-                      <li key={entry.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                      <li
+                        key={entry.id}
+                        className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4"
+                      >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="text-sm font-semibold text-slate-900">{entry.authorName}</p>
                           <p className="text-xs text-slate-500">
@@ -402,28 +402,31 @@ export default function ImprovementPlanDetailView({
                 )
               ) : auditLoadState === "loading" ? (
                 <div className="space-y-3" aria-busy="true">
-                  <div className="h-20 animate-pulse rounded-md border border-slate-200 bg-slate-100" />
-                  <div className="h-20 animate-pulse rounded-md border border-slate-200 bg-slate-100" />
+                  <Skeleton className="h-20 rounded-[var(--radius-md)] border border-slate-200 bg-slate-100" />
+                  <Skeleton className="h-20 rounded-[var(--radius-md)] border border-slate-200 bg-slate-100" />
                 </div>
               ) : auditLoadState === "error" ? (
-                <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-                  <p>{auditError ?? "Unable to load audit log."}</p>
-                  <Button
-                    variant="outline"
-                    className="mt-3"
-                    onClick={() => void loadAuditEvents()}
-                  >
-                    Retry
-                  </Button>
-                </div>
+                <Toast variant="error">
+                  <div className="space-y-3">
+                    <p>{auditError ?? "Unable to load audit log."}</p>
+                    <Button variant="outline" size="sm" onClick={() => void loadAuditEvents()}>
+                      Retry
+                    </Button>
+                  </div>
+                </Toast>
               ) : auditEvents.length === 0 ? (
-                <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                  No audit events yet for this plan.
-                </div>
+                <EmptyState
+                  title="No audit events yet"
+                  description="Audit history entries will appear here as this plan changes."
+                  className="p-4"
+                />
               ) : (
                 <ol className="space-y-3">
                   {auditEvents.map((event) => (
-                    <li key={event.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                    <li
+                      key={event.id}
+                      className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4"
+                    >
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-sm font-semibold text-slate-900">{event.actorName}</p>
                         <p className="text-xs text-slate-500">
@@ -442,89 +445,99 @@ export default function ImprovementPlanDetailView({
           </Card>
         </div>
 
-        <aside className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Add Check-in</CardTitle>
-              <CardDescription>
-                Share progress updates, blockers, and next steps.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <textarea
-                value={checkInNote}
-                onChange={(event) => setCheckInNote(event.target.value)}
-                className="min-h-28 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-                placeholder="Add a timeline update..."
-              />
-              <Button onClick={() => void handleCreateCheckIn()} disabled={isSavingCheckIn}>
-                {isSavingCheckIn ? "Saving..." : "Add Check-in"}
-              </Button>
-              {checkInMessage ? <p className="text-xs text-slate-600">{checkInMessage}</p> : null}
-            </CardContent>
-          </Card>
+        <Drawer title="Plan Actions" description="Capture check-ins and progress status transitions.">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Add Check-in</CardTitle>
+                <CardDescription>
+                  Share progress updates, blockers, and next steps.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-0">
+                <Textarea
+                  value={checkInNote}
+                  onChange={(event) => setCheckInNote(event.target.value)}
+                  className="min-h-28"
+                  placeholder="Add a timeline update..."
+                />
+                <Button onClick={() => void handleCreateCheckIn()} disabled={isSavingCheckIn}>
+                  {isSavingCheckIn ? "Saving..." : "Add Check-in"}
+                </Button>
+                {checkInMessage ? (
+                  <Toast variant={checkInMessage.includes("Unable") ? "error" : "info"}>
+                    {checkInMessage}
+                  </Toast>
+                ) : null}
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Change Status</CardTitle>
-              <CardDescription>
-                Move the plan through the defined status workflow.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {!canChangeStatus ? (
-                <p className="text-sm text-slate-600">Only managers and HR admins can change status.</p>
-              ) : availableTransitions.length === 0 ? (
-                <p className="text-sm text-slate-600">No status transitions are available.</p>
-              ) : (
-                <>
-                  <Select
-                    value={targetStatus}
-                    onChange={(event) => {
-                      const next = event.target.value as ImprovementPlanStatus | "";
-                      setTargetStatus(next);
-                      if (next !== ImprovementPlanStatus.COMPLETED) {
-                        setTransitionOutcome("");
-                      }
-                    }}
-                  >
-                    <option value="">Select target status</option>
-                    {availableTransitions.map((status) => (
-                      <option key={status} value={status}>
-                        {statusLabel[status]}
-                      </option>
-                    ))}
-                  </Select>
-
-                  {targetStatus === ImprovementPlanStatus.COMPLETED ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Change Status</CardTitle>
+                <CardDescription>
+                  Move the plan through the defined status workflow.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-0">
+                {!canChangeStatus ? (
+                  <Toast variant="warning">Only managers and HR admins can change status.</Toast>
+                ) : availableTransitions.length === 0 ? (
+                  <Toast variant="info">No status transitions are available.</Toast>
+                ) : (
+                  <>
                     <Select
-                      value={transitionOutcome}
-                      onChange={(event) =>
-                        setTransitionOutcome(event.target.value as ImprovementPlanOutcome | "")
-                      }
+                      value={targetStatus}
+                      onChange={(event) => {
+                        const next = event.target.value as ImprovementPlanStatus | "";
+                        setTargetStatus(next);
+                        if (next !== ImprovementPlanStatus.COMPLETED) {
+                          setTransitionOutcome("");
+                        }
+                      }}
                     >
-                      <option value="">Select completion outcome</option>
-                      <option value={ImprovementPlanOutcome.SUCCESSFUL}>Successful</option>
-                      <option value={ImprovementPlanOutcome.UNSUCCESSFUL}>Unsuccessful</option>
+                      <option value="">Select target status</option>
+                      {availableTransitions.map((status) => (
+                        <option key={status} value={status}>
+                          {statusLabel[status]}
+                        </option>
+                      ))}
                     </Select>
-                  ) : null}
 
-                  <textarea
-                    value={statusNote}
-                    onChange={(event) => setStatusNote(event.target.value)}
-                    className="min-h-20 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-                    placeholder="Optional transition note..."
-                  />
+                    {targetStatus === ImprovementPlanStatus.COMPLETED ? (
+                      <Select
+                        value={transitionOutcome}
+                        onChange={(event) =>
+                          setTransitionOutcome(event.target.value as ImprovementPlanOutcome | "")
+                        }
+                      >
+                        <option value="">Select completion outcome</option>
+                        <option value={ImprovementPlanOutcome.SUCCESSFUL}>Successful</option>
+                        <option value={ImprovementPlanOutcome.UNSUCCESSFUL}>Unsuccessful</option>
+                      </Select>
+                    ) : null}
 
-                  <Button onClick={() => void handleStatusTransition()} disabled={isUpdatingStatus}>
-                    {isUpdatingStatus ? "Updating..." : "Update Status"}
-                  </Button>
-                </>
-              )}
-              {statusMessage ? <p className="text-xs text-slate-600">{statusMessage}</p> : null}
-            </CardContent>
-          </Card>
-        </aside>
+                    <Textarea
+                      value={statusNote}
+                      onChange={(event) => setStatusNote(event.target.value)}
+                      className="min-h-20"
+                      placeholder="Optional transition note..."
+                    />
+
+                    <Button onClick={() => void handleStatusTransition()} disabled={isUpdatingStatus}>
+                      {isUpdatingStatus ? "Updating..." : "Update Status"}
+                    </Button>
+                  </>
+                )}
+                {statusMessage ? (
+                  <Toast variant={statusMessage.includes("Unable") ? "error" : "info"}>
+                    {statusMessage}
+                  </Toast>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
+        </Drawer>
       </div>
     </div>
   );
