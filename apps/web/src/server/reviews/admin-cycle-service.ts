@@ -24,6 +24,21 @@ interface ReviewCycleRecord {
   upwardReviewCount: number;
 }
 
+interface ReviewCycleListRecord {
+  id: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  status: CycleStatus;
+  visibilityPolicy: CycleVisibilityPolicy;
+  selfReviewRequired: boolean;
+  managerReviewRequired: boolean;
+  peerReviewCount: number;
+  upwardReviewCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 interface EmployeeSummary {
   id: string;
   managerId: string | null;
@@ -77,6 +92,36 @@ interface AdminCycleDb {
         }
       | null
     >;
+    findMany: (args: {
+      where: { orgId: string };
+      select: {
+        id: true;
+        name: true;
+        startDate: true;
+        endDate: true;
+        status: true;
+        visibilityPolicy: true;
+        selfReviewRequired: true;
+        managerReviewRequired: true;
+        peerReviewCount: true;
+        upwardReviewCount: true;
+        createdAt: true;
+        updatedAt: true;
+      };
+      orderBy: {
+        startDate: "desc";
+      };
+    }) => Promise<ReviewCycleListRecord[]>;
+    update: (args: {
+      where: { id: string };
+      data: {
+        status: CycleStatus;
+      };
+      select: {
+        id: true;
+        status: true;
+      };
+    }) => Promise<{ id: string; status: CycleStatus }>;
   };
   employee: {
     findMany: (args: {
@@ -159,10 +204,79 @@ const createReviewCycleSchema = z
     }
   });
 
+const transitionCycleStatusSchema = z.object({
+  targetStatus: z.nativeEnum(CycleStatus),
+});
+
+const nextCycleStatusMap: Record<CycleStatus, CycleStatus | null> = {
+  [CycleStatus.DRAFT]: CycleStatus.ACTIVE,
+  [CycleStatus.ACTIVE]: CycleStatus.LOCKED,
+  [CycleStatus.LOCKED]: CycleStatus.RELEASED,
+  [CycleStatus.RELEASED]: null,
+};
+
 function requireHrAdmin(context: AdminContext): void {
   if (context.role !== UserRole.HR_ADMIN) {
     throw new AppError("FORBIDDEN", "Only HR admins can perform this action", 403);
   }
+}
+
+export interface ReviewCycleListItem {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: CycleStatus;
+  visibilityPolicy: CycleVisibilityPolicy;
+  selfReviewRequired: boolean;
+  managerReviewRequired: boolean;
+  peerReviewCount: number;
+  upwardReviewCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function listReviewCycles(
+  context: AdminContext,
+  db: AdminCycleDb = prisma as unknown as AdminCycleDb,
+): Promise<ReviewCycleListItem[]> {
+  requireHrAdmin(context);
+
+  const cycles = await db.reviewCycle.findMany({
+    where: { orgId: context.orgId },
+    select: {
+      id: true,
+      name: true,
+      startDate: true,
+      endDate: true,
+      status: true,
+      visibilityPolicy: true,
+      selfReviewRequired: true,
+      managerReviewRequired: true,
+      peerReviewCount: true,
+      upwardReviewCount: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: {
+      startDate: "desc",
+    },
+  });
+
+  return cycles.map((cycle) => ({
+    id: cycle.id,
+    name: cycle.name,
+    startDate: cycle.startDate.toISOString(),
+    endDate: cycle.endDate.toISOString(),
+    status: cycle.status,
+    visibilityPolicy: cycle.visibilityPolicy,
+    selfReviewRequired: cycle.selfReviewRequired,
+    managerReviewRequired: cycle.managerReviewRequired,
+    peerReviewCount: cycle.peerReviewCount,
+    upwardReviewCount: cycle.upwardReviewCount,
+    createdAt: cycle.createdAt.toISOString(),
+    updatedAt: cycle.updatedAt.toISOString(),
+  }));
 }
 
 export async function createReviewCycle(
@@ -362,6 +476,101 @@ export async function generateCycleArtifacts(
   return {
     packetCount: packetInsertResult.count,
     submissionCount: submissionInsertResult.count,
+  };
+}
+
+export interface TransitionCycleStatusResult {
+  cycleId: string;
+  previousStatus: CycleStatus;
+  status: CycleStatus;
+}
+
+export async function transitionReviewCycleStatus(
+  cycleId: string,
+  input: unknown,
+  context: AdminContext,
+  db: AdminCycleDb = prisma as unknown as AdminCycleDb,
+): Promise<TransitionCycleStatusResult> {
+  requireHrAdmin(context);
+  if (!cycleId) {
+    throw new AppError("VALIDATION_ERROR", "cycleId is required", 400);
+  }
+
+  const parsed = transitionCycleStatusSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Invalid cycle status transition payload",
+      400,
+      parsed.error.flatten(),
+    );
+  }
+
+  const cycle = await db.reviewCycle.findFirst({
+    where: {
+      id: cycleId,
+      orgId: context.orgId,
+    },
+    select: {
+      id: true,
+      orgId: true,
+      status: true,
+      selfReviewRequired: true,
+      managerReviewRequired: true,
+      peerReviewCount: true,
+      upwardReviewCount: true,
+    },
+  });
+
+  if (!cycle) {
+    throw new AppError("NOT_FOUND", "Review cycle not found", 404);
+  }
+
+  const nextAllowedStatus = nextCycleStatusMap[cycle.status];
+  if (!nextAllowedStatus || parsed.data.targetStatus !== nextAllowedStatus) {
+    throw new AppError(
+      "INVALID_CYCLE_TRANSITION",
+      "Invalid review cycle status transition",
+      409,
+      {
+        currentStatus: cycle.status,
+        targetStatus: parsed.data.targetStatus,
+        nextAllowedStatus,
+      },
+    );
+  }
+
+  const updatedCycle = await db.reviewCycle.update({
+    where: {
+      id: cycle.id,
+    },
+    data: {
+      status: parsed.data.targetStatus,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  });
+
+  await db.auditEvent.create({
+    data: {
+      orgId: context.orgId,
+      actorUserId: context.userId,
+      action: "REVIEW_CYCLE_STATUS_CHANGED",
+      entityType: "ReviewCycle",
+      entityId: cycle.id,
+      metadata: {
+        previousStatus: cycle.status,
+        status: updatedCycle.status,
+      },
+    },
+  });
+
+  return {
+    cycleId: cycle.id,
+    previousStatus: cycle.status,
+    status: updatedCycle.status,
   };
 }
 
