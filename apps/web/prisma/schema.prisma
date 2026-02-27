@@ -78,6 +78,7 @@ model Org {
   answerEvidenceLinks     AnswerEvidenceLink[]
   calibrationSessions     CalibrationSession[]
   calibrationPlacements   CalibrationPlacement[]
+  calibrationSnapshots    CalibrationSnapshot[]
   auditEvents             AuditEvent[]
 }
 
@@ -290,6 +291,7 @@ model CalibrationSession {
   org         Org                    @relation(fields: [orgId], references: [id], onDelete: Restrict)
   cycle       ReviewCycle            @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   placements  CalibrationPlacement[]
+  snapshot    CalibrationSnapshot?
 
   @@index([orgId])
   @@index([cycleId])
@@ -314,6 +316,18 @@ model CalibrationPlacement {
   @@index([sessionId])
   @@index([employeeId])
   @@index([sessionId, performanceBucket, potentialBucket])
+}
+
+model CalibrationSnapshot {
+  id        String             @id @default(cuid())
+  orgId     String
+  sessionId String             @unique
+  snapshot  Json
+  createdAt DateTime           @default(now())
+  org       Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  session   CalibrationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
 }
 
 model AuditEvent {
