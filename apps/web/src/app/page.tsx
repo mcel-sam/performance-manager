@@ -30,23 +30,29 @@ const modules = [
     href: "/performance/calibration/calibration_session_seed_1",
     status: "Active",
   },
+  {
+    title: "Improvement Plans",
+    description: "Track coaching check-ins, timeline updates, and status transitions.",
+    href: "/performance/improvement-plans/improvement_plan_seed_1",
+    status: "Active",
+  },
 ];
 
 export default function HomePage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Milestone 2</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Milestone 3</p>
         <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
-          Packet and calibration workflows
+          Reviews, calibration, and improvement plans
         </h2>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          Use this workspace to review tasks, inspect packets, and calibrate a cohort with a
-          shared 9-box view.
+          Use this workspace to run review workflows, calibrate cohorts, and document structured
+          improvement plans.
         </p>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {modules.map((module) => (
           <Card key={module.title}>
             <CardHeader className="space-y-2">
