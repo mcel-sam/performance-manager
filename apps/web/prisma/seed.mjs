@@ -688,6 +688,31 @@ async function main() {
     },
   });
 
+  await prisma.improvementPlanCheckIn.upsert({
+    where: { id: "improvement_plan_checkin_seed_1" },
+    update: {
+      orgId,
+      planId: improvementPlanId,
+      authorUserId: users.manager,
+      content:
+        "Initial coaching sync completed. Weekly planning and stakeholder updates will be tracked from this week.",
+      status: "DRAFT",
+      outcome: null,
+      checkInAt: new Date("2026-04-08T16:00:00.000Z"),
+    },
+    create: {
+      id: "improvement_plan_checkin_seed_1",
+      orgId,
+      planId: improvementPlanId,
+      authorUserId: users.manager,
+      content:
+        "Initial coaching sync completed. Weekly planning and stakeholder updates will be tracked from this week.",
+      status: "DRAFT",
+      outcome: null,
+      checkInAt: new Date("2026-04-08T16:00:00.000Z"),
+    },
+  });
+
   console.log("Seed completed", {
     orgId,
     adminUserId: users.hrAdmin,

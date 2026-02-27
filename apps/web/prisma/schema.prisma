@@ -403,6 +403,8 @@ model ImprovementPlanCheckIn {
   planId       String
   authorUserId String
   content      String
+  status       ImprovementPlanStatus?
+  outcome      ImprovementPlanOutcome?
   checkInAt    DateTime        @default(now())
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
