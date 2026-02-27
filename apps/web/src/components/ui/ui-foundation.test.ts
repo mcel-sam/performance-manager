@@ -28,7 +28,7 @@ describe("ui foundation primitives", () => {
           { value: "second", label: "Second" },
         ],
         value: "second",
-        onChange: () => {},
+        onValueChange: () => {},
       }),
     );
 
