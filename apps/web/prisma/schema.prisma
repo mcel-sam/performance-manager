@@ -14,45 +14,444 @@ enum UserRole {
   CALIBRATOR
 }
 
+enum CycleStatus {
+  DRAFT
+  ACTIVE
+  LOCKED
+  RELEASED
+}
+
+enum CycleVisibilityPolicy {
+  MANAGER_ONLY
+  EMPLOYEE_AFTER_RELEASE
+}
+
+enum ReviewRelationship {
+  SELF
+  MANAGER
+  PEER
+  UPWARD
+}
+
+enum ReviewSubmissionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  RETURNED
+}
+
+enum EvidenceType {
+  FEEDBACK
+  UPDATE
+  ONE_ON_ONE
+  GOAL
+  VALUE_RECOGNITION
+}
+
+enum EvidenceVisibility {
+  PRIVATE
+  MANAGER_ONLY
+  SHARED_WITH_SUBJECT
+  ORG_VISIBLE
+}
+
+enum CalibrationBucket {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ImprovementPlanStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  EXTENDED
+  CANCELED
+}
+
+enum ImprovementPlanOutcome {
+  SUCCESSFUL
+  UNSUCCESSFUL
+}
+
 model Org {
-  id        String     @id @default(cuid())
-  name      String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  users     User[]
-  employees Employee[]
+  id                      String                          @id @default(cuid())
+  name                    String
+  createdAt               DateTime                        @default(now())
+  updatedAt               DateTime                        @updatedAt
+  users                   User[]
+  employees               Employee[]
+  reviewTemplates         ReviewTemplate[]
+  reviewTemplateQuestions ReviewTemplateQuestion[]
+  reviewCycles            ReviewCycle[]
+  reviewPackets           ReviewPacket[]
+  reviewSubmissions       ReviewSubmission[]
+  reviewAnswers           ReviewAnswer[]
+  evidenceItems           EvidenceItem[]
+  answerEvidenceLinks     AnswerEvidenceLink[]
+  calibrationSessions     CalibrationSession[]
+  calibrationPlacements   CalibrationPlacement[]
+  calibrationParticipants CalibrationSessionParticipant[]
+  calibrationSnapshots    CalibrationSnapshot[]
+  improvementPlans        ImprovementPlan[]
+  improvementPlanGoals    ImprovementPlanGoal[]
+  improvementPlanCheckIns ImprovementPlanCheckIn[]
+  auditEvents             AuditEvent[]
 }
 
 model User {
-  id        String    @id @default(cuid())
-  orgId     String
-  email     String
-  role      UserRole  @default(EMPLOYEE)
-  employee  Employee?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                        String                          @id @default(cuid())
+  orgId                     String
+  email                     String
+  role                      UserRole                        @default(EMPLOYEE)
+  employee                  Employee?
+  createdAt                 DateTime                        @default(now())
+  updatedAt                 DateTime                        @updatedAt
+  org                       Org                             @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  auditEvents               AuditEvent[]
+  calibrationParticipations CalibrationSessionParticipant[]
+  improvementPlansCreated   ImprovementPlan[]
+  improvementPlanCheckIns   ImprovementPlanCheckIn[]
 
-  org Org @relation(fields: [orgId], references: [id], onDelete: Restrict)
-
-  @@index([orgId])
   @@unique([orgId, email])
+  @@index([orgId])
 }
 
 model Employee {
-  id            String     @id @default(cuid())
-  orgId         String
-  userId        String     @unique
-  firstName     String
-  lastName      String
-  managerId     String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  org           Org        @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  manager       Employee?  @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
-  directReports Employee[] @relation("EmployeeManager")
+  id                          String                 @id @default(cuid())
+  orgId                       String
+  userId                      String                 @unique
+  firstName                   String
+  lastName                    String
+  managerId                   String?
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  org                         Org                    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  user                        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manager                     Employee?              @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports               Employee[]             @relation("EmployeeManager")
+  reviewPacketsAsSubject      ReviewPacket[]         @relation("ReviewPacketSubjectEmployee")
+  reviewSubmissionsAsSubject  ReviewSubmission[]     @relation("ReviewSubmissionSubjectEmployee")
+  reviewSubmissionsAsReviewer ReviewSubmission[]     @relation("ReviewSubmissionReviewerEmployee")
+  evidenceAsSubject           EvidenceItem[]         @relation("EvidenceSubjectEmployee")
+  evidenceAuthored            EvidenceItem[]         @relation("EvidenceAuthorEmployee")
+  calibrationPlacements       CalibrationPlacement[]
+  improvementPlansAsSubject   ImprovementPlan[]      @relation("ImprovementPlanSubjectEmployee")
+  improvementPlansAsManager   ImprovementPlan[]      @relation("ImprovementPlanManagerEmployee")
+  improvementPlansAsHrOwner   ImprovementPlan[]      @relation("ImprovementPlanHrOwnerEmployee")
 
+  @@unique([orgId, userId])
   @@index([orgId])
   @@index([managerId])
-  @@unique([orgId, userId])
+}
+
+model ReviewTemplate {
+  id          String                   @id @default(cuid())
+  orgId       String
+  name        String
+  description String?
+  isDefault   Boolean                  @default(false)
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  org         Org                      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  questions   ReviewTemplateQuestion[]
+  cycles      ReviewCycle[]
+
+  @@unique([orgId, name])
+  @@index([orgId])
+}
+
+model ReviewTemplateQuestion {
+  id         String         @id @default(cuid())
+  orgId      String
+  templateId String
+  prompt     String
+  isRequired Boolean        @default(true)
+  sortOrder  Int            @default(0)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  org        Org            @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  template   ReviewTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  answers    ReviewAnswer[]
+
+  @@index([orgId])
+  @@index([templateId, sortOrder])
+}
+
+model ReviewCycle {
+  id                    String                @id @default(cuid())
+  orgId                 String
+  name                  String
+  startDate             DateTime
+  endDate               DateTime
+  status                CycleStatus           @default(DRAFT)
+  visibilityPolicy      CycleVisibilityPolicy @default(EMPLOYEE_AFTER_RELEASE)
+  selfReviewRequired    Boolean               @default(true)
+  managerReviewRequired Boolean               @default(true)
+  peerReviewCount       Int                   @default(0)
+  upwardReviewCount     Int                   @default(0)
+  templateId            String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  org                   Org                   @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  template              ReviewTemplate?       @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  packets               ReviewPacket[]
+  submissions           ReviewSubmission[]
+  calibrationSessions   CalibrationSession[]
+
+  @@index([orgId])
+  @@index([orgId, status])
+}
+
+model ReviewPacket {
+  id                String             @id @default(cuid())
+  orgId             String
+  cycleId           String
+  subjectEmployeeId String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  org               Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  cycle             ReviewCycle        @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  subjectEmployee   Employee           @relation("ReviewPacketSubjectEmployee", fields: [subjectEmployeeId], references: [id], onDelete: Cascade)
+  submissions       ReviewSubmission[]
+
+  @@unique([cycleId, subjectEmployeeId])
+  @@index([orgId])
+  @@index([cycleId])
+  @@index([subjectEmployeeId])
+}
+
+model ReviewSubmission {
+  id                 String                 @id @default(cuid())
+  orgId              String
+  cycleId            String
+  packetId           String
+  subjectEmployeeId  String
+  reviewerEmployeeId String
+  relationship       ReviewRelationship
+  status             ReviewSubmissionStatus @default(NOT_STARTED)
+  submittedAt        DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  org                Org                    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  cycle              ReviewCycle            @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  packet             ReviewPacket           @relation(fields: [packetId], references: [id], onDelete: Cascade)
+  subjectEmployee    Employee               @relation("ReviewSubmissionSubjectEmployee", fields: [subjectEmployeeId], references: [id], onDelete: Cascade)
+  reviewerEmployee   Employee               @relation("ReviewSubmissionReviewerEmployee", fields: [reviewerEmployeeId], references: [id], onDelete: Cascade)
+  answers            ReviewAnswer[]
+
+  @@unique([cycleId, subjectEmployeeId, reviewerEmployeeId, relationship])
+  @@index([orgId])
+  @@index([cycleId, status])
+  @@index([packetId])
+  @@index([subjectEmployeeId])
+  @@index([reviewerEmployeeId])
+}
+
+model ReviewAnswer {
+  id            String                 @id @default(cuid())
+  orgId         String
+  submissionId  String
+  questionId    String
+  responseText  String
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  org           Org                    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  submission    ReviewSubmission       @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question      ReviewTemplateQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  evidenceLinks AnswerEvidenceLink[]
+
+  @@unique([submissionId, questionId])
+  @@index([orgId])
+  @@index([submissionId])
+}
+
+model EvidenceItem {
+  id                String               @id @default(cuid())
+  orgId             String
+  subjectEmployeeId String
+  authorEmployeeId  String?
+  type              EvidenceType
+  visibility        EvidenceVisibility   @default(PRIVATE)
+  content           String
+  occurredAt        DateTime
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  org               Org                  @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  subjectEmployee   Employee             @relation("EvidenceSubjectEmployee", fields: [subjectEmployeeId], references: [id], onDelete: Cascade)
+  authorEmployee    Employee?            @relation("EvidenceAuthorEmployee", fields: [authorEmployeeId], references: [id], onDelete: SetNull)
+  answerLinks       AnswerEvidenceLink[]
+
+  @@index([orgId])
+  @@index([subjectEmployeeId, type])
+}
+
+model AnswerEvidenceLink {
+  id             String       @id @default(cuid())
+  orgId          String
+  answerId       String
+  evidenceItemId String
+  createdAt      DateTime     @default(now())
+  org            Org          @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  answer         ReviewAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  evidenceItem   EvidenceItem @relation(fields: [evidenceItemId], references: [id], onDelete: Cascade)
+
+  @@unique([answerId, evidenceItemId])
+  @@index([orgId])
+  @@index([evidenceItemId])
+}
+
+model CalibrationSession {
+  id                    String                          @id @default(cuid())
+  orgId                 String
+  cycleId               String
+  name                  String
+  roleGroup             String?
+  description           String?
+  performanceAxisConfig Json?
+  potentialAxisConfig   Json?
+  isFinalized           Boolean                         @default(false)
+  finalizedAt           DateTime?
+  createdAt             DateTime                        @default(now())
+  updatedAt             DateTime                        @updatedAt
+  org                   Org                             @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  cycle                 ReviewCycle                     @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  placements            CalibrationPlacement[]
+  participants          CalibrationSessionParticipant[]
+  snapshot              CalibrationSnapshot?
+
+  @@index([orgId])
+  @@index([cycleId])
+  @@index([orgId, isFinalized])
+}
+
+model CalibrationSessionParticipant {
+  id        String             @id @default(cuid())
+  orgId     String
+  sessionId String
+  userId    String
+  createdAt DateTime           @default(now())
+  org       Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  session   CalibrationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([orgId])
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model CalibrationPlacement {
+  id                String             @id @default(cuid())
+  orgId             String
+  sessionId         String
+  employeeId        String
+  performanceBucket CalibrationBucket  @default(MEDIUM)
+  potentialBucket   CalibrationBucket  @default(MEDIUM)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  org               Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  session           CalibrationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  employee          Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, employeeId])
+  @@index([orgId])
+  @@index([sessionId])
+  @@index([employeeId])
+  @@index([sessionId, performanceBucket, potentialBucket])
+}
+
+model CalibrationSnapshot {
+  id        String             @id @default(cuid())
+  orgId     String
+  sessionId String             @unique
+  snapshot  Json
+  createdAt DateTime           @default(now())
+  org       Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  session   CalibrationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+}
+
+model ImprovementPlan {
+  id                String                   @id @default(cuid())
+  orgId             String
+  subjectEmployeeId String
+  managerEmployeeId String
+  hrOwnerEmployeeId String?
+  createdByUserId   String
+  title             String
+  expectations      String
+  startDate         DateTime
+  endDate           DateTime
+  status            ImprovementPlanStatus    @default(DRAFT)
+  outcome           ImprovementPlanOutcome?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  org               Org                      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  subjectEmployee   Employee                 @relation("ImprovementPlanSubjectEmployee", fields: [subjectEmployeeId], references: [id], onDelete: Restrict)
+  managerEmployee   Employee                 @relation("ImprovementPlanManagerEmployee", fields: [managerEmployeeId], references: [id], onDelete: Restrict)
+  hrOwnerEmployee   Employee?                @relation("ImprovementPlanHrOwnerEmployee", fields: [hrOwnerEmployeeId], references: [id], onDelete: SetNull)
+  createdByUser     User                     @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  goals             ImprovementPlanGoal[]
+  checkIns          ImprovementPlanCheckIn[]
+
+  @@index([orgId])
+  @@index([orgId, status])
+  @@index([subjectEmployeeId])
+  @@index([managerEmployeeId])
+  @@index([hrOwnerEmployeeId])
+}
+
+model ImprovementPlanGoal {
+  id          String          @id @default(cuid())
+  orgId       String
+  planId      String
+  title       String
+  description String?
+  sortOrder   Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  org         Org             @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  plan        ImprovementPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([planId, sortOrder])
+}
+
+model ImprovementPlanCheckIn {
+  id           String                  @id @default(cuid())
+  orgId        String
+  planId       String
+  authorUserId String
+  content      String
+  status       ImprovementPlanStatus?
+  outcome      ImprovementPlanOutcome?
+  checkInAt    DateTime                @default(now())
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  org          Org                     @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  plan         ImprovementPlan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  authorUser   User                    @relation(fields: [authorUserId], references: [id], onDelete: Restrict)
+
+  @@index([orgId])
+  @@index([planId, checkInAt])
+  @@index([authorUserId])
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  orgId       String
+  actorUserId String
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  org         Org      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  actorUser   User     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([orgId, createdAt])
+  @@index([entityType, entityId])
+  @@index([actorUserId])
 }

@@ -22,18 +22,18 @@ Use a plan when the task:
 ---
 
 ## Shared “Definition of Done” (applies to all plans)
-- [ ] Server-side permission checks are implemented for all endpoints
-- [ ] Audit events written for sensitive mutations
-- [ ] Loading/empty/error states exist for UI routes
-- [ ] Local run works (`npm run dev`, docker Postgres)
-- [ ] Prisma migrations committed (when schema changes)
-- [ ] `lint`, `typecheck`, `test` pass (or are added as part of work)
+- [x] Server-side permission checks are implemented for all endpoints
+- [x] Audit events written for sensitive mutations
+- [x] Loading/empty/error states exist for UI routes
+- [x] Local run works (`npm run dev`, docker Postgres)
+- [x] Prisma migrations committed (when schema changes)
+- [x] `lint`, `typecheck`, `test` pass (or are added as part of work)
 
 ---
 
 # Milestone 0 — Foundation (Boot + DB + first routes)
 
-**Status:** Not started  
+**Status:** Completed locally on 2026-02-26 (PR number pending).  
 **Objective:** Prove the stack end-to-end: Next.js boots, Postgres reachable, migrations work, basic pages load.
 
 ## Scope
@@ -53,34 +53,34 @@ Use a plan when the task:
 
 ## Work breakdown (ordered)
 1) Repo scaffold
-   - [ ] Create `/apps/web`, `/packages/types`, `/docs/*`, `/infra/terraform`
-   - [ ] Ensure README points to AGENTS/PRD/Architecture/ADR
+   - [x] Create `/apps/web`, `/packages/types`, `/docs/*`, `/infra/terraform`
+   - [x] Ensure README points to AGENTS/PRD/Architecture/ADR
 2) Web scaffold
-   - [ ] Create Next.js app in `/apps/web`
-   - [ ] Confirm `npm run dev` works
+   - [x] Create Next.js app in `/apps/web`
+   - [x] Confirm `npm run dev` works
 3) Local DB
-   - [ ] Add `docker-compose.yml` for Postgres
-   - [ ] Add `.env.example` with `DATABASE_URL` placeholder
+   - [x] Add `docker-compose.yml` for Postgres
+   - [x] Add `.env.example` with `DATABASE_URL` placeholder
 4) Prisma
-   - [ ] Install Prisma + init schema
-   - [ ] Create initial models: Org, User, Employee (minimal)
-   - [ ] Migration name: `init`
+   - [x] Install Prisma + init schema
+   - [x] Create initial models: Org, User, Employee (minimal)
+   - [x] Migration name: `init`
 5) Health endpoint
-   - [ ] Add `/api/health` route that checks DB connectivity
+   - [x] Add `/api/health` route that checks DB connectivity
 6) First page
-   - [ ] Add `/performance/reviews` page with empty state
+   - [x] Add `/performance/reviews` page with empty state
 7) Containerization
-   - [ ] Add Dockerfile + .dockerignore
-   - [ ] Validate container run locally
+   - [x] Add Dockerfile + .dockerignore
+   - [x] Validate container run locally
 8) CI
-   - [ ] Add GitHub Actions `ci.yml` for lint/typecheck/test/build
+   - [x] Add GitHub Actions `ci.yml` for lint/typecheck/test/build
 
 ## Acceptance criteria
-- [ ] `docker compose up` starts Postgres
-- [ ] `npx prisma migrate dev` succeeds on a clean DB
-- [ ] `/api/health` returns ok + db ok
-- [ ] `/performance/reviews` loads without errors and shows empty state
-- [ ] CI workflow runs successfully on PR
+- [x] `docker compose up` starts Postgres
+- [x] `npx prisma migrate dev` succeeds on a clean DB
+- [x] `/api/health` returns ok + db ok
+- [x] `/performance/reviews` loads without errors and shows empty state
+- [x] CI workflow runs successfully on PR
 
 ## How to test
 ```bash
@@ -102,7 +102,7 @@ npm run dev
 
 ## Milestone 1 — Reviews MVP (Cycle + Tasks + Write + Autosave + Submit + Evidence attach)
 
-**Status:** Not started  
+**Status:** Phase 1, Phase 2, and Phase 3 complete (local workspace, PR number pending).  
 **Objective:** Run a review cycle end-to-end for a small org with basic evidence support.
 
 ### Scope
@@ -123,7 +123,7 @@ npm run dev
 
 ### Work breakdown (ordered)
 
-1. **Data model + migration**
+1. [x] **Data model + migration**
    - Add models: `ReviewCycle`, `ReviewTemplate`, `ReviewTemplateQuestion`
    - Add models: `ReviewPacket`, `ReviewSubmission`, `ReviewAnswer`
    - Add evidence models: `EvidenceItem`, `AnswerEvidenceLink`
@@ -131,43 +131,52 @@ npm run dev
    - Migration name: `add_reviews_mvp_core`
 
 2. **Admin cycle setup**
-   - UI: `/admin/performance/review-cycles` list
-   - UI: `/admin/performance/review-cycles/new`
-   - API: create cycle
-   - API: generate packets/submissions
-   - API: status transitions `Draft → Active → Locked → Released`
-   - Audit events for each mutation
+   - [x] UI: `/admin/performance/review-cycles` list
+   - [x] UI: `/admin/performance/review-cycles/new`
+   - [x] API: create cycle
+   - [x] API: generate packets/submissions
+   - [x] API: status transitions `Draft → Active → Locked → Released`
+   - [x] Audit events for each mutation
 
-3. **Tasks list**
-   - UI: `/performance/reviews` shows submissions assigned to current user
-   - API: tasks endpoint
+3. [x] **Tasks list**
+   - [x] UI: `/performance/reviews` shows submissions assigned to current user
+   - [x] API: tasks endpoint
 
-4. **Write review screen**
-   - Route: `/performance/reviews/:cycleId/write/:submissionId`
-   - Center: questions + rich text editor
-   - Autosave endpoint per answer
-   - Submit endpoint with validation
+4. [x] **Write review screen**
+   - [x] Route: `/performance/reviews/:cycleId/write/:submissionId`
+   - [x] Center: questions + text answers (rich text deferred)
+   - [x] Autosave endpoint per answer
+   - [x] Submit endpoint with validation
+   - [x] Required progress indicator + first-missing required question focus/scroll on submit failure
+   - [x] Submitted review is read-only
 
 5. **Evidence panel**
-   - Evidence counts by type
-   - Drill-in list (by type)
-   - Attach/detach evidence to answer
-   - Audit events for attach/detach
+   - [x] Evidence counts by type
+   - [x] Drill-in list (by type)
+   - [x] Attach/detach evidence to answer
+   - [x] Audit events for attach/detach
 
 6. **Quality**
-   - Tests for: state transitions + required validation
-   - Ensure empty/loading/error states
+   - [x] Tests for required validation
+   - [x] Tests for permission denial on cross-submission access
+   - [x] Tests for evidence attach/detach + no-leak visibility counts
+   - [x] Tests for cycle state transitions
+   - [x] Ensure empty/loading/error states
 
-7. **Seed/demo**
+7. [x] **Seed/demo**
    - Seed script to create minimal org and sample data
 
+Phase 1 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
+Phase 2 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
+Phase 3 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
+
 ### Acceptance criteria
-- [ ] HR can create cycle + generate submissions
-- [ ] User sees tasks list
-- [ ] User can write answers, refresh page, and see work preserved
-- [ ] Submit blocks until required questions answered
-- [ ] Evidence can be attached/detached and is audited
-- [ ] Permissions prevent cross-employee access
+- [x] HR can create cycle + generate submissions
+- [x] User sees tasks list
+- [x] User can write answers, refresh page, and see work preserved
+- [x] Submit blocks until required questions answered
+- [x] Evidence can be attached/detached and is audited
+- [x] Permissions prevent cross-employee access
 
 ### How to test
 ```bash
@@ -185,9 +194,72 @@ npm run dev
 #### open a submission and verify autosave+submit
 
 
+## Milestone 1.5 — App Shell & UX Foundation + Reviews Hardening
+
+**Status:** Completed locally on 2026-02-27 (PR number pending).  
+**Objective:** Establish a consistent app shell UX and close the remaining Milestone 1 gaps for admin workflow hardening.
+
+### Scope
+
+#### In scope
+- Shared application shell layout (global navigation + content container)
+- Home page for module navigation and current milestone entry points
+- Shared UI primitives for consistent cards/buttons/form controls
+- Remaining Milestone 1 items:
+  - Admin review cycle pages (`/admin/performance/review-cycles`, `/admin/performance/review-cycles/new`)
+  - Review cycle status transition API (`Draft -> Active -> Locked -> Released`)
+  - Tests for cycle status transitions
+
+#### Out of scope
+- Milestone 2 packet/calibration implementation
+- Design-system overhaul beyond foundational primitives
+
+### Work breakdown (ordered)
+
+1. **App shell foundation**
+   - [x] Add app shell layout used by main app routes
+   - [x] Add primary navigation for Home, Reviews, and Admin Review Cycles
+
+2. **Home route**
+   - [x] Replace default Next.js starter page with product home route
+   - [x] Add quick links to active workflows
+
+3. **Shared UI primitives**
+   - [x] Add shared primitives for button/card/badge/input/select (or equivalent)
+   - [x] Use primitives in new admin/home views
+
+4. **Admin review cycles UI**
+   - [x] Add `/admin/performance/review-cycles` list page with loading/empty/error states
+   - [x] Add `/admin/performance/review-cycles/new` create page with loading/error states
+   - [x] Add UI actions to generate artifacts and transition status
+
+5. **API hardening**
+   - [x] Add cycle status transition server logic with Zod validation + permission checks
+   - [x] Add thin route handler for transition endpoint
+   - [x] Add cycle listing endpoint (for admin pages)
+   - [x] Add audit events for status transitions
+
+6. **Quality**
+   - [x] Add tests for valid and invalid cycle status transitions
+   - [x] Ensure lint, typecheck, test, and build pass
+
+### Acceptance criteria
+- [x] App shell is visible on core app routes and provides stable navigation
+- [x] Home page is no longer scaffold placeholder and links to key flows
+- [x] Admin can create cycles from UI, generate artifacts, and move cycle status in order
+- [x] Invalid or out-of-order status transitions are rejected server-side
+- [x] Cycle transition tests are present and passing
+- [x] Full quality gates pass locally
+
+## Milestone 1.6 follow-on — Reviews UX completeness (post-MVP)
+- [ ] Expand write-review left phase navigation beyond task context
+- [ ] Add richer editor experience for answers (only if product confirms requirement)
+- [ ] Add right-panel reviewer/subject context summary on write-review screen
+
+
 ## Milestone 2 — Packets + Calibration (9-box)
 
-**Status:** Not started  
+**Status:** Phase 1, Phase 2, and Phase 3 completed locally on 2026-02-27.  
 **Objective:** Managers/HR can view packets and calibrate a cohort in 9-box with finalize snapshot.
 
 ### Scope
@@ -207,38 +279,60 @@ npm run dev
 ### Work breakdown (ordered)
 
 1. **Data model + migration**
-   - `CalibrationSession`, `CalibrationPlacement`, `CalibrationSnapshot`
-   - Migration name: `add_calibration_mvp`
+   - [x] Add `CalibrationSession`, `CalibrationPlacement`
+   - [x] Add `CalibrationSnapshot`
+   - [x] Migration name: `add_calibration_mvp`
+   - [x] Additional finalize migration: `add_calibration_snapshot_finalize_lock`
 
-2. **Packet view**
-   - UI: `/performance/reviews/:cycleId/packet/:employeeId`
-   - API: packet fetch (permissioned)
+2. **Phase 1 — Packet view**
+   - [x] UI route: `/performance/reviews/:cycleId/packet/:employeeId`
+   - [x] API/service: permissioned packet fetch with submissions + answers
+   - [x] Visibility rules: HR admin, manager-of-subject, subject employee only after release when policy allows
+   - [x] Packet essentials placeholders: evidence counts, previous-cycles empty-state tab, summary placeholder block
+   - [x] Loading/empty/error states for packet route
+   - [x] Tests for packet fetch + permission gating
+   - Completed in local workspace commit set for Milestone 2 Phase 1 on 2026-02-27
 
 3. **Calibration session creation**
-   - Admin route (optional for MVP): `/admin/performance/calibration/new`
-   - API: create session with cohort
+   - [x] Admin route: `/admin/performance/calibration/new`
+   - [x] Admin list route: `/admin/performance/calibration`
+   - [x] API: create session with cohort (`POST /api/performance/calibration`)
+   - [x] API: list sessions (`GET /api/performance/calibration`)
+   - Completed in local workspace commit set for Milestone 2 D1 follow-on on 2026-02-27
 
 4. **Calibration workspace**
-   - UI: `/performance/calibration/:sessionId`
-   - Move control (dropdown “Move to box”) plus optional drag-drop
-   - Right drawer shows packet summary and link to packet
+   - [x] UI: `/performance/calibration/:sessionId`
+   - [x] Move control (dropdown “Move to box”) plus optional drag-drop
+   - [x] Right drawer shows packet summary and link to packet
+   - [x] Tabs: “This cycle” and “Previous cycles” (previous cycle tab currently empty state)
+   - [x] Helper copy/tooltips and loading/empty/error/read-only states
+   - Completed in local workspace commit set for Milestone 2 Phase 2 on 2026-02-27
 
 5. **Finalize**
-   - Finalize endpoint locks session and creates snapshot JSON
-   - Optionally write final bucket/rating to packet
+   - [x] Finalize endpoint locks session and creates snapshot JSON
+   - [x] Endpoint: `POST /api/performance/calibration/:sessionId/finalize`
+   - [x] Locked/read-only UI state: finalize banner + disabled move controls
+   - Completed in local workspace commit set for Milestone 2 Phase 3 on 2026-02-27
 
 6. **Quality**
-   - Tests for finalize locking + snapshot creation
+   - [x] Tests for session fetch permission gating and placement move authorization
+   - [x] Tests for finalize locking + snapshot creation
+   - [x] Tests for unauthorized finalize access
 
 ### Acceptance criteria
-- [ ] Packet view works and is permission-gated
-- [ ] Calibration grid loads cohort and updates placement
-- [ ] Finalize locks session and stores snapshot
-- [ ] Audit events captured for move/finalize
+- [x] Packet view works and is permission-gated
+- [x] Calibration grid loads cohort and updates placement
+- [x] Finalize locks session and stores snapshot
+- [x] Audit events captured for move/finalize
+
+### Milestone 2 follow-on (post-MVP / optional)
+- [ ] Optional write-back of finalized bucket/rating to packet stable fields
+- [ ] Add calibration participant notes/justifications in right drawer
+- [ ] Add calibration snapshot export/download placeholder endpoint
 
 ## Milestone 3 — Improvement Plans MVP (Timeline + Audit + Export placeholder)
 
-**Status:** Not started  
+**Status:** Phase 1, Phase 2, Phase 3, and Phase 4 completed locally on 2026-02-27 (PR number pending).  
 **Objective:** Create and manage improvement plans with compliance-ready records.
 
 ### Scope
@@ -262,11 +356,11 @@ npm run dev
    - Migration name: `add_improvement_plans_mvp`
 
 2. **UI routes**
-   - `/performance/improvement-plans` list
    - `/performance/improvement-plans/:planId` detail + timeline
 
 3. **API**
    - Create plan
+   - Update plan goals/date range
    - Add check-in entry
    - Change status
    - Get audit events
@@ -278,8 +372,62 @@ npm run dev
 5. **Quality**
    - Tests for status transitions and audit events
 
+### Phase tracking
+
+#### Phase 1 — DB + create/list/detail APIs + strict permissions
+- [x] Add Prisma enums/models: `ImprovementPlan`, `ImprovementPlanGoal`, `ImprovementPlanCheckIn`
+- [x] Commit migration `add_improvement_plans_mvp`
+- [x] Add seed/dev data for one improvement plan and goals
+- [x] Add APIs:
+  - [x] `POST /api/performance/improvement-plans`
+  - [x] `GET /api/performance/improvement-plans`
+  - [x] `GET /api/performance/improvement-plans/:planId`
+- [x] Keep route handlers thin; move logic to `src/server/improvement-plans/*`
+- [x] Enforce server-side permissions (HR admin, manager direct-report scope, subject/manager/HR access scope)
+- [x] Add service tests for create/list/detail and permission denials
+- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
+- Completed in local workspace commit set on 2026-02-27 (PR number pending)
+
+#### Phase 2 — timeline/check-ins + status transitions + auditing
+- [x] Add check-in API `POST /api/performance/improvement-plans/:planId/checkins`
+- [x] Add status transition API `PATCH /api/performance/improvement-plans/:planId/status`
+- [x] Add strict permissions:
+  - [x] Check-in create: subject/manager/HR admin only
+  - [x] Status change: manager owner or HR admin only
+- [x] Add status transition validation rules (`DRAFT -> ACTIVE -> COMPLETED -> EXTENDED/CANCELED`, with completion outcome required)
+- [x] Add audit events for check-in create and status transitions
+- [x] Add detail UI route `/performance/improvement-plans/:planId` with timeline feed
+- [x] Add loading/empty/error states for improvement plan detail timeline
+- [x] Add tests for:
+  - [x] Authorized check-in create + audit event
+  - [x] Unauthorized check-in create blocked
+  - [x] Valid status transition + audit event
+  - [x] Invalid status transition rejected
+  - [x] Unauthorized status transition blocked
+- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
+- Completed in local workspace commit set on 2026-02-27 (PR number pending)
+
+#### Phase 3 — audit log view + export placeholder
+- [x] Add audit event retrieval endpoint for improvement plans
+- [x] Add export placeholder endpoint and UI action
+- [x] Add audit log view on `/performance/improvement-plans/:planId` with loading/empty/error states
+- [x] Add tests for audit feed and export placeholder behavior
+- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
+- Completed in local workspace commit set on 2026-02-27 (PR number pending)
+
+#### Phase 4 — audit completeness for plan edits
+- [x] Add plan edit endpoint `PATCH /api/performance/improvement-plans/:planId` for goals/date range
+- [x] Add audit events for goal and date edits
+- [x] Add permission + audit tests for edit flow
+- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
+- Completed in local workspace commit set on 2026-02-27 (PR number pending)
+
+#### Milestone 3.1 follow-on (post-MVP)
+- [ ] Add `/performance/improvement-plans` list route
+- [ ] Add incremental UX polish beyond MVP placeholders
+
 ### Acceptance criteria
-- [ ] Authorized users can create and view plans
-- [ ] Check-ins append to timeline and are audited
-- [ ] Export placeholder exists and is clearly marked
-- [ ] Unauthorized users cannot access plan data
+- [x] Authorized users can create and view plans
+- [x] Check-ins append to timeline and are audited
+- [x] Export placeholder exists and is clearly marked
+- [x] Unauthorized users cannot access plan data

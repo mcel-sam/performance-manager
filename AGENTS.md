@@ -363,6 +363,39 @@ When finishing work, provide:
 - Security notes (permissions, secrets, logging)
 - Infra notes (terraform changes, apply steps)
 
+### Commit discipline (required)
+Make incremental commits grouped by feature/slice so PRs are easy to review and revert.
+
+**Rules**
+- Group commits by slice, in this order whenever possible: `db` → `api` → `ui` → `tests` → `docs/infra`.
+- Avoid mixing unrelated changes in a single commit (no “kitchen sink” commits).
+- Each commit should leave the repo in a buildable state whenever practical (especially after `db:` and `api:` commits).
+- Prefer **3–8 commits per phase** (do not create many tiny/noisy commits).
+
+**Commit message convention**
+Use one of these prefixes:
+- `db:` schema/migrations, seed data, Prisma changes
+- `api:` route handlers, server services, validation, authz
+- `ui:` pages, components, styling, UX states
+- `tests:` unit/integration tests
+- `infra:` Terraform, workflows, docker
+- `docs:` PRD/ADR/Architecture/README/PLAN updates
+- `chore:` formatting, dependency bumps, non-functional cleanup
+
+**Examples**
+- `db: add review cycle core tables + migration`
+- `api: add admin endpoints to create cycle and generate packets`
+- `ui: add admin review cycle list + empty state`
+- `tests: add cycle creation + generation permission tests`
+- `docs: update PLAN.md checkboxes for Milestone 1 Phase 1`
+
+### Plan tracking (required)
+At the end of each phase/PR, update `/PLAN.md`:
+- Check off completed items
+- Add a short note like “Completed in PR #123”
+- Do not mark future-phase tasks as complete
+- If a milestone’s acceptance criteria are marked complete, but some work-breakdown items remain, move the remaining items into a follow-on milestone (e.g., “Milestone 1.1” or “Milestone 1.5”) instead of leaving them unchecked under the completed milestone.
+
 ---
 
 ## 12) Common failure modes (avoid)

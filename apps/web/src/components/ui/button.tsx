@@ -1,0 +1,44 @@
+import type { ButtonHTMLAttributes } from "react";
+
+import { cn } from "@/components/ui/cn";
+
+type ButtonVariant = "primary" | "secondary" | "outline" | "danger";
+type ButtonSize = "sm" | "md";
+
+const variantClasses: Record<ButtonVariant, string> = {
+  primary: "bg-slate-900 text-white hover:bg-slate-700",
+  secondary: "bg-slate-600 text-white hover:bg-slate-500",
+  outline: "border border-slate-300 bg-white text-slate-800 hover:bg-slate-100",
+  danger: "bg-rose-700 text-white hover:bg-rose-600",
+};
+
+const sizeClasses: Record<ButtonSize, string> = {
+  sm: "px-3 py-1.5 text-xs",
+  md: "px-4 py-2 text-sm",
+};
+
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+}
+
+export function Button({
+  className,
+  variant = "primary",
+  size = "md",
+  type = "button",
+  ...props
+}: ButtonProps) {
+  return (
+    <button
+      {...props}
+      type={type}
+      className={cn(
+        "rounded-md font-medium transition disabled:cursor-not-allowed disabled:opacity-60",
+        variantClasses[variant],
+        sizeClasses[size],
+        className,
+      )}
+    />
+  );
+}
