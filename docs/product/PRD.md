@@ -92,6 +92,12 @@ This pattern appears explicitly in the review writing experience and calibration
 **Auditability for sensitive flows**
 - Improvement plans and final decisions require audit logs and export capability (placeholder acceptable in MVP).
 
+## User guidance (in scope for launch)
+To reduce training/support burden, the product must include:
+- A Help entry point in the app shell and a `/help` page with role-based guidance.
+- Contextual helper text/tooltips on core screens (Reviews, Packets, Calibration, Improvement Plans) explaining key concepts and visibility.
+- Strong empty-state coaching that tells users what to do next.
+
 ## 7) Core concepts and definitions
 
 - **Review Cycle:** Time-bound period during which reviews are written and compiled.
