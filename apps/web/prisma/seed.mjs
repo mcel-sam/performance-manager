@@ -1,5 +1,6 @@
 import {
   PrismaClient,
+  CalibrationBucket,
   CycleVisibilityPolicy,
   CycleStatus,
   EvidenceType,
@@ -390,6 +391,70 @@ async function main() {
         reviewerEmployeeId: submission.reviewerEmployeeId,
         relationship: submission.relationship,
         status: ReviewSubmissionStatus.NOT_STARTED,
+      },
+    });
+  }
+
+  const calibrationSessionId = "calibration_session_seed_1";
+  await prisma.calibrationSession.upsert({
+    where: { id: calibrationSessionId },
+    update: {
+      orgId,
+      cycleId: "cycle_seed_draft_1",
+      name: "Core Engineering Calibration",
+      description: "Seeded calibration session for Milestone 2 development.",
+      isFinalized: false,
+      finalizedAt: null,
+    },
+    create: {
+      id: calibrationSessionId,
+      orgId,
+      cycleId: "cycle_seed_draft_1",
+      name: "Core Engineering Calibration",
+      description: "Seeded calibration session for Milestone 2 development.",
+      isFinalized: false,
+      finalizedAt: null,
+    },
+  });
+
+  const calibrationPlacements = [
+    {
+      id: "calibration_placement_employee_1",
+      employeeId: employees.employee,
+      performanceBucket: CalibrationBucket.HIGH,
+      potentialBucket: CalibrationBucket.MEDIUM,
+    },
+    {
+      id: "calibration_placement_peer_1",
+      employeeId: employees.peer,
+      performanceBucket: CalibrationBucket.MEDIUM,
+      potentialBucket: CalibrationBucket.HIGH,
+    },
+    {
+      id: "calibration_placement_manager_1",
+      employeeId: employees.manager,
+      performanceBucket: CalibrationBucket.HIGH,
+      potentialBucket: CalibrationBucket.HIGH,
+    },
+  ];
+
+  for (const placement of calibrationPlacements) {
+    await prisma.calibrationPlacement.upsert({
+      where: { id: placement.id },
+      update: {
+        orgId,
+        sessionId: calibrationSessionId,
+        employeeId: placement.employeeId,
+        performanceBucket: placement.performanceBucket,
+        potentialBucket: placement.potentialBucket,
+      },
+      create: {
+        id: placement.id,
+        orgId,
+        sessionId: calibrationSessionId,
+        employeeId: placement.employeeId,
+        performanceBucket: placement.performanceBucket,
+        potentialBucket: placement.potentialBucket,
       },
     });
   }

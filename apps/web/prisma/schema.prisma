@@ -55,6 +55,12 @@ enum EvidenceVisibility {
   ORG_VISIBLE
 }
 
+enum CalibrationBucket {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model Org {
   id                      String                   @id @default(cuid())
   name                    String
@@ -70,6 +76,8 @@ model Org {
   reviewAnswers           ReviewAnswer[]
   evidenceItems           EvidenceItem[]
   answerEvidenceLinks     AnswerEvidenceLink[]
+  calibrationSessions     CalibrationSession[]
+  calibrationPlacements   CalibrationPlacement[]
   auditEvents             AuditEvent[]
 }
 
@@ -89,23 +97,24 @@ model User {
 }
 
 model Employee {
-  id                          String             @id @default(cuid())
+  id                          String                 @id @default(cuid())
   orgId                       String
-  userId                      String             @unique
+  userId                      String                 @unique
   firstName                   String
   lastName                    String
   managerId                   String?
-  createdAt                   DateTime           @default(now())
-  updatedAt                   DateTime           @updatedAt
-  org                         Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  user                        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  manager                     Employee?          @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
-  directReports               Employee[]         @relation("EmployeeManager")
-  reviewPacketsAsSubject      ReviewPacket[]     @relation("ReviewPacketSubjectEmployee")
-  reviewSubmissionsAsSubject  ReviewSubmission[] @relation("ReviewSubmissionSubjectEmployee")
-  reviewSubmissionsAsReviewer ReviewSubmission[] @relation("ReviewSubmissionReviewerEmployee")
-  evidenceAsSubject           EvidenceItem[]     @relation("EvidenceSubjectEmployee")
-  evidenceAuthored            EvidenceItem[]     @relation("EvidenceAuthorEmployee")
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+  org                         Org                    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  user                        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manager                     Employee?              @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports               Employee[]             @relation("EmployeeManager")
+  reviewPacketsAsSubject      ReviewPacket[]         @relation("ReviewPacketSubjectEmployee")
+  reviewSubmissionsAsSubject  ReviewSubmission[]     @relation("ReviewSubmissionSubjectEmployee")
+  reviewSubmissionsAsReviewer ReviewSubmission[]     @relation("ReviewSubmissionReviewerEmployee")
+  evidenceAsSubject           EvidenceItem[]         @relation("EvidenceSubjectEmployee")
+  evidenceAuthored            EvidenceItem[]         @relation("EvidenceAuthorEmployee")
+  calibrationPlacements       CalibrationPlacement[]
 
   @@unique([orgId, userId])
   @@index([orgId])
@@ -164,6 +173,7 @@ model ReviewCycle {
   template              ReviewTemplate?       @relation(fields: [templateId], references: [id], onDelete: SetNull)
   packets               ReviewPacket[]
   submissions           ReviewSubmission[]
+  calibrationSessions   CalibrationSession[]
 
   @@index([orgId])
   @@index([orgId, status])
@@ -265,6 +275,45 @@ model AnswerEvidenceLink {
   @@unique([answerId, evidenceItemId])
   @@index([orgId])
   @@index([evidenceItemId])
+}
+
+model CalibrationSession {
+  id          String                 @id @default(cuid())
+  orgId       String
+  cycleId     String
+  name        String
+  description String?
+  isFinalized Boolean                @default(false)
+  finalizedAt DateTime?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  org         Org                    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  cycle       ReviewCycle            @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  placements  CalibrationPlacement[]
+
+  @@index([orgId])
+  @@index([cycleId])
+  @@index([orgId, isFinalized])
+}
+
+model CalibrationPlacement {
+  id                String             @id @default(cuid())
+  orgId             String
+  sessionId         String
+  employeeId        String
+  performanceBucket CalibrationBucket  @default(MEDIUM)
+  potentialBucket   CalibrationBucket  @default(MEDIUM)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  org               Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  session           CalibrationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  employee          Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, employeeId])
+  @@index([orgId])
+  @@index([sessionId])
+  @@index([employeeId])
+  @@index([sessionId, performanceBucket, potentialBucket])
 }
 
 model AuditEvent {
