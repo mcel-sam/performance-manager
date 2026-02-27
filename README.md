@@ -17,7 +17,7 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Repo coding rules: `AGENTS.md`
 - Milestone execution tracking: `PLAN.md`
 
-## Implemented scope (through Milestone 3 Phase 1)
+## Implemented scope (through Milestone 3 Phase 2)
 
 - Milestone 0 foundation:
   - Local PostgreSQL dev database via `docker-compose.yml`
@@ -72,6 +72,16 @@ Performance Management System monorepo for reviews, calibration, and improvement
     - `GET /api/performance/improvement-plans/:planId`
   - Strict server-side permission gating for create/list/detail access
   - Seed data for one improvement plan with goals
+- Milestone 3 Phase 2:
+  - Improvement plan detail timeline route:
+    - `GET /performance/improvement-plans/:planId`
+  - Timeline check-in API:
+    - `POST /api/performance/improvement-plans/:planId/checkins`
+  - Status transition API:
+    - `PATCH /api/performance/improvement-plans/:planId/status`
+  - Status transition rules enforced server-side with required completion outcome
+  - Audit events for check-in create and status transitions
+  - Loading/empty/error states on the improvement plan detail timeline page
 
 ## Local setup
 
@@ -105,6 +115,7 @@ npm run dev
 - `http://localhost:3000/performance/reviews`
 - `http://localhost:3000/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1` (as manager or HR dev user)
 - `http://localhost:3000/performance/calibration/calibration_session_seed_1`
+- `http://localhost:3000/performance/improvement-plans/improvement_plan_seed_1`
 
 ## Development identity defaults
 
@@ -143,6 +154,8 @@ For calibration session testing, use:
 - `POST /api/performance/improvement-plans`
 - `GET /api/performance/improvement-plans`
 - `GET /api/performance/improvement-plans/:planId`
+- `POST /api/performance/improvement-plans/:planId/checkins`
+- `PATCH /api/performance/improvement-plans/:planId/status`
 
 Note: API routes expect `x-user-id` and `x-org-id` headers.
 
@@ -218,6 +231,24 @@ curl -s 'http://localhost:3000/api/performance/improvement-plans' \
 curl -s 'http://localhost:3000/api/performance/improvement-plans/improvement_plan_seed_1' \
   -H 'x-user-id: user_manager_1' \
   -H 'x-org-id: org_demo_1'
+```
+
+```bash
+# create a timeline check-in (subject/manager/HR scope)
+curl -s -X POST 'http://localhost:3000/api/performance/improvement-plans/improvement_plan_seed_1/checkins' \
+  -H 'content-type: application/json' \
+  -H 'x-user-id: user_manager_1' \
+  -H 'x-org-id: org_demo_1' \
+  -d '{"note":"Weekly coaching update: communication cadence improved."}'
+```
+
+```bash
+# transition plan status (manager owner or HR admin)
+curl -s -X PATCH 'http://localhost:3000/api/performance/improvement-plans/improvement_plan_seed_1/status' \
+  -H 'content-type: application/json' \
+  -H 'x-user-id: user_manager_1' \
+  -H 'x-org-id: org_demo_1' \
+  -d '{"targetStatus":"ACTIVE"}'
 ```
 
 ## Quality gates

@@ -318,7 +318,7 @@ npm run dev
 
 ## Milestone 3 — Improvement Plans MVP (Timeline + Audit + Export placeholder)
 
-**Status:** Phase 1 completed locally on 2026-02-27 (PR number pending).  
+**Status:** Phase 1 and Phase 2 completed locally on 2026-02-27 (PR number pending).  
 **Objective:** Create and manage improvement plans with compliance-ready records.
 
 ### Scope
@@ -374,15 +374,33 @@ npm run dev
 - [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
 - Completed in local workspace commit set on 2026-02-27 (PR number pending)
 
-#### Phase 2 — timeline/check-ins + status transitions + audit feed + export placeholder
-- [ ] Add plan timeline/check-in APIs and detail workflow
-- [ ] Add status transition API and audit events for state changes
-- [ ] Add audit event retrieval and export placeholder endpoint
-- [ ] Add UI routes `/performance/improvement-plans` and `/performance/improvement-plans/:planId`
-- [ ] Add loading/empty/error states and tests for status transitions/audit behavior
+#### Phase 2 — timeline/check-ins + status transitions + auditing
+- [x] Add check-in API `POST /api/performance/improvement-plans/:planId/checkins`
+- [x] Add status transition API `PATCH /api/performance/improvement-plans/:planId/status`
+- [x] Add strict permissions:
+  - [x] Check-in create: subject/manager/HR admin only
+  - [x] Status change: manager owner or HR admin only
+- [x] Add status transition validation rules (`DRAFT -> ACTIVE -> COMPLETED -> EXTENDED/CANCELED`, with completion outcome required)
+- [x] Add audit events for check-in create and status transitions
+- [x] Add detail UI route `/performance/improvement-plans/:planId` with timeline feed
+- [x] Add loading/empty/error states for improvement plan detail timeline
+- [x] Add tests for:
+  - [x] Authorized check-in create + audit event
+  - [x] Unauthorized check-in create blocked
+  - [x] Valid status transition + audit event
+  - [x] Invalid status transition rejected
+  - [x] Unauthorized status transition blocked
+- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
+- Completed in local workspace commit set on 2026-02-27 (PR number pending)
+
+#### Phase 3 — audit log UI/export placeholder (pending)
+- [ ] Add audit event retrieval endpoint for improvement plans
+- [ ] Add export placeholder endpoint and UI action
+- [ ] Add `/performance/improvement-plans` list route
+- [ ] Add tests for audit feed and export placeholder behavior
 
 ### Acceptance criteria
 - [x] Authorized users can create and view plans
-- [ ] Check-ins append to timeline and are audited
+- [x] Check-ins append to timeline and are audited
 - [ ] Export placeholder exists and is clearly marked
 - [x] Unauthorized users cannot access plan data
