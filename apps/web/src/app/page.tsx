@@ -31,6 +31,12 @@ const modules = [
     status: "Active",
   },
   {
+    title: "Admin Calibration",
+    description: "Create calibration sessions with cycle, cohort, axis, and participant setup.",
+    href: "/admin/performance/calibration",
+    status: "Active",
+  },
+  {
     title: "Improvement Plans",
     description: "Track coaching check-ins, timeline updates, and status transitions.",
     href: "/performance/improvement-plans/improvement_plan_seed_1",
