@@ -193,6 +193,64 @@ npm run dev
 #### open a submission and verify autosave+submit
 
 
+## Milestone 1.5 — App Shell & UX Foundation + Reviews Hardening
+
+**Status:** Not started  
+**Objective:** Establish a consistent app shell UX and close the remaining Milestone 1 gaps for admin workflow hardening.
+
+### Scope
+
+#### In scope
+- Shared application shell layout (global navigation + content container)
+- Home page for module navigation and current milestone entry points
+- Shared UI primitives for consistent cards/buttons/form controls
+- Remaining Milestone 1 items:
+  - Admin review cycle pages (`/admin/performance/review-cycles`, `/admin/performance/review-cycles/new`)
+  - Review cycle status transition API (`Draft -> Active -> Locked -> Released`)
+  - Tests for cycle status transitions
+
+#### Out of scope
+- Milestone 2 packet/calibration implementation
+- Design-system overhaul beyond foundational primitives
+
+### Work breakdown (ordered)
+
+1. **App shell foundation**
+   - [ ] Add app shell layout used by main app routes
+   - [ ] Add primary navigation for Home, Reviews, and Admin Review Cycles
+
+2. **Home route**
+   - [ ] Replace default Next.js starter page with product home route
+   - [ ] Add quick links to active workflows
+
+3. **Shared UI primitives**
+   - [ ] Add shared primitives for button/card/badge/input/select (or equivalent)
+   - [ ] Use primitives in new admin/home views
+
+4. **Admin review cycles UI**
+   - [ ] Add `/admin/performance/review-cycles` list page with loading/empty/error states
+   - [ ] Add `/admin/performance/review-cycles/new` create page with loading/error states
+   - [ ] Add UI actions to generate artifacts and transition status
+
+5. **API hardening**
+   - [ ] Add cycle status transition server logic with Zod validation + permission checks
+   - [ ] Add thin route handler for transition endpoint
+   - [ ] Add cycle listing endpoint (for admin pages)
+   - [ ] Add audit events for status transitions
+
+6. **Quality**
+   - [ ] Add tests for valid and invalid cycle status transitions
+   - [ ] Ensure lint, typecheck, test, and build pass
+
+### Acceptance criteria
+- [ ] App shell is visible on core app routes and provides stable navigation
+- [ ] Home page is no longer scaffold placeholder and links to key flows
+- [ ] Admin can create cycles from UI, generate artifacts, and move cycle status in order
+- [ ] Invalid or out-of-order status transitions are rejected server-side
+- [ ] Cycle transition tests are present and passing
+- [ ] Full quality gates pass locally
+
+
 ## Milestone 2 — Packets + Calibration (9-box)
 
 **Status:** Not started  
