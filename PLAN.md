@@ -506,7 +506,7 @@ npm run dev
 - [x] Core flows look consistent and use shared components
 - [x] No mixed styling patterns remain on core routes
 - [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
-- Completed in PR #TBD (dev -> main Milestone 4 Phase 2)
+- Completed in PR #4 (dev -> main Milestone 4 Phase 2)
 
 ---
 
