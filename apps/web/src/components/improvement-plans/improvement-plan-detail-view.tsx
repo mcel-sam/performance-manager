@@ -5,13 +5,14 @@ import {
   ImprovementPlanStatus,
   UserRole,
 } from "@prisma/client";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import type {
+  ImprovementPlanAuditEvent,
   ImprovementPlanDetail,
   ImprovementPlanTimelineEntry,
 } from "@/server/improvement-plans/improvement-plan-service";
@@ -25,6 +26,9 @@ interface ImprovementPlanDetailViewProps {
   };
   initialPlan: ImprovementPlanDetail;
 }
+
+type ActivityView = "timeline" | "audit";
+type AuditLoadState = "idle" | "loading" | "loaded" | "error";
 
 const statusLabel: Record<ImprovementPlanStatus, string> = {
   DRAFT: "Draft",
@@ -57,6 +61,8 @@ export default function ImprovementPlanDetailView({
 }: ImprovementPlanDetailViewProps) {
   const [plan, setPlan] = useState(initialPlan);
   const [timeline, setTimeline] = useState<ImprovementPlanTimelineEntry[]>(initialPlan.timeline);
+  const [activityView, setActivityView] = useState<ActivityView>("timeline");
+
   const [checkInNote, setCheckInNote] = useState("");
   const [checkInMessage, setCheckInMessage] = useState<string | null>(null);
   const [isSavingCheckIn, setIsSavingCheckIn] = useState(false);
@@ -67,13 +73,55 @@ export default function ImprovementPlanDetailView({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
+  const [auditEvents, setAuditEvents] = useState<ImprovementPlanAuditEvent[]>([]);
+  const [auditLoadState, setAuditLoadState] = useState<AuditLoadState>("idle");
+  const [auditError, setAuditError] = useState<string | null>(null);
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
+
   const availableTransitions = useMemo(
     () => transitionOptionsByStatus[plan.status],
     [plan.status],
   );
 
-  const canChangeStatus =
-    auth.role === UserRole.HR_ADMIN || auth.role === UserRole.MANAGER;
+  const canChangeStatus = auth.role === UserRole.HR_ADMIN || auth.role === UserRole.MANAGER;
+
+  const loadAuditEvents = useCallback(async () => {
+    setAuditLoadState("loading");
+    setAuditError(null);
+
+    try {
+      const response = await fetch(`/api/performance/improvement-plans/${planId}/audit`, {
+        method: "GET",
+        headers: {
+          "x-user-id": auth.userId,
+          "x-org-id": auth.orgId,
+        },
+      });
+
+      const payload = (await response.json()) as {
+        message?: string;
+        events?: ImprovementPlanAuditEvent[];
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.message ?? "Unable to load audit log");
+      }
+
+      setAuditEvents(Array.isArray(payload.events) ? payload.events : []);
+      setAuditLoadState("loaded");
+    } catch (error) {
+      setAuditError(error instanceof Error ? error.message : "Unable to load audit log");
+      setAuditLoadState("error");
+    }
+  }, [auth.orgId, auth.userId, planId]);
+
+  useEffect(() => {
+    if (activityView === "audit" && auditLoadState === "idle") {
+      void loadAuditEvents();
+    }
+  }, [activityView, auditLoadState, loadAuditEvents]);
 
   async function handleCreateCheckIn() {
     if (!checkInNote.trim()) {
@@ -85,20 +133,17 @@ export default function ImprovementPlanDetailView({
     setCheckInMessage(null);
 
     try {
-      const response = await fetch(
-        `/api/performance/improvement-plans/${planId}/checkins`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            "x-user-id": auth.userId,
-            "x-org-id": auth.orgId,
-          },
-          body: JSON.stringify({
-            note: checkInNote.trim(),
-          }),
+      const response = await fetch(`/api/performance/improvement-plans/${planId}/checkins`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-user-id": auth.userId,
+          "x-org-id": auth.orgId,
         },
-      );
+        body: JSON.stringify({
+          note: checkInNote.trim(),
+        }),
+      });
 
       const payload = (await response.json()) as {
         message?: string;
@@ -114,6 +159,7 @@ export default function ImprovementPlanDetailView({
         ...previous,
         checkInCount: previous.checkInCount + 1,
       }));
+      setAuditLoadState("idle");
       setCheckInNote("");
       setCheckInMessage("Check-in added.");
     } catch (error) {
@@ -138,22 +184,19 @@ export default function ImprovementPlanDetailView({
     setStatusMessage(null);
 
     try {
-      const response = await fetch(
-        `/api/performance/improvement-plans/${planId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "content-type": "application/json",
-            "x-user-id": auth.userId,
-            "x-org-id": auth.orgId,
-          },
-          body: JSON.stringify({
-            targetStatus,
-            outcome: targetStatus === ImprovementPlanStatus.COMPLETED ? transitionOutcome : null,
-            note: statusNote.trim() || undefined,
-          }),
+      const response = await fetch(`/api/performance/improvement-plans/${planId}/status`, {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+          "x-user-id": auth.userId,
+          "x-org-id": auth.orgId,
         },
-      );
+        body: JSON.stringify({
+          targetStatus,
+          outcome: targetStatus === ImprovementPlanStatus.COMPLETED ? transitionOutcome : null,
+          note: statusNote.trim() || undefined,
+        }),
+      });
 
       const payload = (await response.json()) as {
         message?: string;
@@ -169,13 +212,11 @@ export default function ImprovementPlanDetailView({
       setPlan((previous) => ({
         ...previous,
         status: payload.status as ImprovementPlanStatus,
-        outcome:
-          payload.outcome === null || payload.outcome === undefined
-            ? null
-            : payload.outcome,
+        outcome: payload.outcome ?? null,
         checkInCount: previous.checkInCount + 1,
       }));
       setTimeline((previous) => [payload.timelineEntry as ImprovementPlanTimelineEntry, ...previous]);
+      setAuditLoadState("idle");
       setTargetStatus("");
       setTransitionOutcome("");
       setStatusNote("");
@@ -187,22 +228,67 @@ export default function ImprovementPlanDetailView({
     }
   }
 
+  async function handleExportRequest() {
+    setIsExporting(true);
+    setExportMessage(null);
+
+    try {
+      const response = await fetch(`/api/performance/improvement-plans/${planId}/export`, {
+        method: "GET",
+        headers: {
+          "x-user-id": auth.userId,
+          "x-org-id": auth.orgId,
+        },
+      });
+
+      const payload = (await response.json()) as {
+        message?: string;
+      };
+
+      if (response.status === 501) {
+        setExportMessage(payload.message ?? "Export is not implemented yet.");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(payload.message ?? "Unable to process export request");
+      }
+
+      setExportMessage(payload.message ?? "Export request accepted.");
+    } catch (error) {
+      setExportMessage(error instanceof Error ? error.message : "Unable to process export request");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 text-slate-900">
       <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
           Improvement Plan
         </p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-semibold">{plan.title}</h1>
-          <Badge variant={plan.status === ImprovementPlanStatus.ACTIVE ? "success" : "info"}>
-            {statusLabel[plan.status]}
-          </Badge>
-          {plan.outcome ? (
-            <Badge variant={plan.outcome === ImprovementPlanOutcome.SUCCESSFUL ? "success" : "warning"}>
-              {outcomeLabel[plan.outcome]}
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold">{plan.title}</h1>
+            <Badge variant={plan.status === ImprovementPlanStatus.ACTIVE ? "success" : "info"}>
+              {statusLabel[plan.status]}
             </Badge>
-          ) : null}
+            {plan.outcome ? (
+              <Badge
+                variant={
+                  plan.outcome === ImprovementPlanOutcome.SUCCESSFUL
+                    ? "success"
+                    : "warning"
+                }
+              >
+                {outcomeLabel[plan.outcome]}
+              </Badge>
+            ) : null}
+          </div>
+          <Button onClick={() => void handleExportRequest()} disabled={isExporting}>
+            {isExporting ? "Requesting..." : "Export"}
+          </Button>
         </div>
         <p className="mt-2 text-sm text-slate-600">
           {new Date(plan.startDate).toLocaleDateString()} - {new Date(plan.endDate).toLocaleDateString()}
@@ -211,6 +297,7 @@ export default function ImprovementPlanDetailView({
           Subject: {plan.subjectName} | Manager: {plan.managerName}
           {plan.hrOwnerName ? ` | HR Owner: ${plan.hrOwnerName}` : ""}
         </p>
+        {exportMessage ? <p className="mt-3 text-xs text-slate-600">{exportMessage}</p> : null}
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -242,44 +329,111 @@ export default function ImprovementPlanDetailView({
 
           <Card>
             <CardHeader>
-              <CardTitle>Timeline</CardTitle>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <CardTitle>{activityView === "timeline" ? "Timeline" : "Audit Log"}</CardTitle>
+                <div className="inline-flex rounded-md border border-slate-300 bg-slate-50 p-1">
+                  <button
+                    type="button"
+                    className={`rounded px-3 py-1 text-xs font-medium ${
+                      activityView === "timeline"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600"
+                    }`}
+                    onClick={() => setActivityView("timeline")}
+                  >
+                    Timeline
+                  </button>
+                  <button
+                    type="button"
+                    className={`rounded px-3 py-1 text-xs font-medium ${
+                      activityView === "audit"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600"
+                    }`}
+                    onClick={() => setActivityView("audit")}
+                  >
+                    Audit Log
+                  </button>
+                </div>
+              </div>
               <CardDescription>
-                {plan.checkInCount} check-in{plan.checkInCount === 1 ? "" : "s"} recorded for this plan.
+                {activityView === "timeline"
+                  ? `${plan.checkInCount} check-in${plan.checkInCount === 1 ? "" : "s"} recorded for this plan.`
+                  : "Immutable event history for this plan."}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {timeline.length === 0 ? (
+              {activityView === "timeline" ? (
+                timeline.length === 0 ? (
+                  <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                    No check-ins yet. Add the first update to start the timeline.
+                  </div>
+                ) : (
+                  <ol className="space-y-3">
+                    {timeline.map((entry) => (
+                      <li key={entry.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-900">{entry.authorName}</p>
+                          <p className="text-xs text-slate-500">
+                            {new Date(entry.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {entry.status ? (
+                            <Badge variant="neutral">Status: {statusLabel[entry.status]}</Badge>
+                          ) : null}
+                          {entry.outcome ? (
+                            <Badge
+                              variant={
+                                entry.outcome === ImprovementPlanOutcome.SUCCESSFUL
+                                  ? "success"
+                                  : "warning"
+                              }
+                            >
+                              Outcome: {outcomeLabel[entry.outcome]}
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <p className="mt-3 whitespace-pre-wrap text-sm text-slate-700">{entry.note}</p>
+                        <p className="mt-3 text-xs text-slate-500">Attachments: coming soon.</p>
+                      </li>
+                    ))}
+                  </ol>
+                )
+              ) : auditLoadState === "loading" ? (
+                <div className="space-y-3" aria-busy="true">
+                  <div className="h-20 animate-pulse rounded-md border border-slate-200 bg-slate-100" />
+                  <div className="h-20 animate-pulse rounded-md border border-slate-200 bg-slate-100" />
+                </div>
+              ) : auditLoadState === "error" ? (
+                <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                  <p>{auditError ?? "Unable to load audit log."}</p>
+                  <Button
+                    variant="outline"
+                    className="mt-3"
+                    onClick={() => void loadAuditEvents()}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : auditEvents.length === 0 ? (
                 <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                  No check-ins yet. Add the first update to start the timeline.
+                  No audit events yet for this plan.
                 </div>
               ) : (
                 <ol className="space-y-3">
-                  {timeline.map((entry) => (
-                    <li key={entry.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                  {auditEvents.map((event) => (
+                    <li key={event.id} className="rounded-md border border-slate-200 bg-slate-50 p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-slate-900">{entry.authorName}</p>
+                        <p className="text-sm font-semibold text-slate-900">{event.actorName}</p>
                         <p className="text-xs text-slate-500">
-                          {new Date(entry.timestamp).toLocaleString()}
+                          {new Date(event.timestamp).toLocaleString()}
                         </p>
                       </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        {entry.status ? (
-                          <Badge variant="neutral">Status: {statusLabel[entry.status]}</Badge>
-                        ) : null}
-                        {entry.outcome ? (
-                          <Badge
-                            variant={
-                              entry.outcome === ImprovementPlanOutcome.SUCCESSFUL
-                                ? "success"
-                                : "warning"
-                            }
-                          >
-                            Outcome: {outcomeLabel[entry.outcome]}
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <p className="mt-3 whitespace-pre-wrap text-sm text-slate-700">{entry.note}</p>
-                      <p className="mt-3 text-xs text-slate-500">Attachments: coming soon.</p>
+                      <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+                        {event.action}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-700">{event.description}</p>
                     </li>
                   ))}
                 </ol>
@@ -362,10 +516,7 @@ export default function ImprovementPlanDetailView({
                     placeholder="Optional transition note..."
                   />
 
-                  <Button
-                    onClick={() => void handleStatusTransition()}
-                    disabled={isUpdatingStatus}
-                  >
+                  <Button onClick={() => void handleStatusTransition()} disabled={isUpdatingStatus}>
                     {isUpdatingStatus ? "Updating..." : "Update Status"}
                   </Button>
                 </>
