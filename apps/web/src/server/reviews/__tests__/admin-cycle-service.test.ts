@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createReviewCycle,
   generateCycleArtifacts,
+  transitionReviewCycleStatus,
 } from "@/server/reviews/admin-cycle-service";
 
 const adminContext = {
@@ -17,6 +18,8 @@ function buildDbMock() {
     reviewCycle: {
       create: vi.fn(),
       findFirst: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
     },
     employee: {
       findMany: vi.fn(),
@@ -178,5 +181,86 @@ describe("generateCycleArtifacts", () => {
         status: 409,
       },
     );
+  });
+});
+
+describe("transitionReviewCycleStatus", () => {
+  it("moves cycle from draft to active and writes an audit event", async () => {
+    const db = buildDbMock();
+    db.reviewCycle.findFirst.mockResolvedValue({
+      id: "cycle_1",
+      orgId: adminContext.orgId,
+      status: CycleStatus.DRAFT,
+      selfReviewRequired: true,
+      managerReviewRequired: true,
+      peerReviewCount: 1,
+      upwardReviewCount: 0,
+    });
+    db.reviewCycle.update.mockResolvedValue({
+      id: "cycle_1",
+      status: CycleStatus.ACTIVE,
+    });
+    db.auditEvent.create.mockResolvedValue({ id: "audit_3" });
+
+    const result = await transitionReviewCycleStatus(
+      "cycle_1",
+      { targetStatus: CycleStatus.ACTIVE },
+      adminContext,
+      db as never,
+    );
+
+    expect(result).toEqual({
+      cycleId: "cycle_1",
+      previousStatus: CycleStatus.DRAFT,
+      status: CycleStatus.ACTIVE,
+    });
+    expect(db.reviewCycle.update).toHaveBeenCalledTimes(1);
+    expect(db.auditEvent.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects out-of-order status transitions", async () => {
+    const db = buildDbMock();
+    db.reviewCycle.findFirst.mockResolvedValue({
+      id: "cycle_1",
+      orgId: adminContext.orgId,
+      status: CycleStatus.DRAFT,
+      selfReviewRequired: true,
+      managerReviewRequired: true,
+      peerReviewCount: 1,
+      upwardReviewCount: 0,
+    });
+
+    await expect(
+      transitionReviewCycleStatus(
+        "cycle_1",
+        { targetStatus: CycleStatus.LOCKED },
+        adminContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "INVALID_CYCLE_TRANSITION",
+      status: 409,
+    });
+
+    expect(db.reviewCycle.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects non-admin users for status transition", async () => {
+    const db = buildDbMock();
+
+    await expect(
+      transitionReviewCycleStatus(
+        "cycle_1",
+        { targetStatus: CycleStatus.ACTIVE },
+        {
+          ...adminContext,
+          role: UserRole.EMPLOYEE,
+        },
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
   });
 });
