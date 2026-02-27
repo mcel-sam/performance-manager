@@ -85,6 +85,15 @@ interface ImprovementPlanAccessRecord {
   outcome: ImprovementPlanOutcome | null;
 }
 
+interface ImprovementPlanEditRecord extends ImprovementPlanAccessRecord {
+  startDate: Date;
+  endDate: Date;
+  goals: {
+    id: string;
+    sortOrder: number;
+  }[];
+}
+
 interface ImprovementPlanAuditRecord {
   id: string;
   action: string;
@@ -117,6 +126,19 @@ interface UpdatedImprovementPlanRecord {
   status: ImprovementPlanStatus;
   outcome: ImprovementPlanOutcome | null;
   updatedAt: Date;
+}
+
+interface UpdatedImprovementPlanContentRecord {
+  id: string;
+  startDate: Date;
+  endDate: Date;
+  updatedAt: Date;
+  goals: {
+    id: string;
+    title: string;
+    description: string | null;
+    sortOrder: number;
+  }[];
 }
 
 interface ImprovementPlanDb {
@@ -178,17 +200,9 @@ interface ImprovementPlanDb {
       where: {
         id: string;
       };
-      data: {
-        status: ImprovementPlanStatus;
-        outcome: ImprovementPlanOutcome | null;
-      };
-      select: {
-        id: true;
-        status: true;
-        outcome: true;
-        updatedAt: true;
-      };
-    }) => Promise<UpdatedImprovementPlanRecord>;
+      data: Record<string, unknown>;
+      select: Record<string, unknown>;
+    }) => Promise<UpdatedImprovementPlanRecord | UpdatedImprovementPlanContentRecord>;
   };
   improvementPlanCheckIn: {
     create: (args: {
@@ -272,6 +286,12 @@ const transitionImprovementPlanStatusSchema = z.object({
   targetStatus: z.nativeEnum(ImprovementPlanStatus),
   outcome: z.nativeEnum(ImprovementPlanOutcome).optional().nullable(),
   note: z.string().trim().max(4000).optional(),
+});
+
+const updateImprovementPlanSchema = z.object({
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  goals: z.array(planGoalSchema).min(1).max(20).optional(),
 });
 
 const allowedStatusTransitions: Record<ImprovementPlanStatus, ImprovementPlanStatus[]> = {
@@ -365,6 +385,19 @@ export interface ImprovementPlanStatusTransitionResult {
   outcome: ImprovementPlanOutcome | null;
   updatedAt: string;
   timelineEntry: ImprovementPlanTimelineEntry;
+}
+
+export interface ImprovementPlanUpdateResult {
+  id: string;
+  startDate: string;
+  endDate: string;
+  updatedAt: string;
+  goals: {
+    id: string;
+    title: string;
+    description: string | null;
+    sortOrder: number;
+  }[];
 }
 
 export interface ImprovementPlanExportPlaceholder {
@@ -825,7 +858,7 @@ export async function transitionImprovementPlanStatus(
   const nextStatus = parsed.data.targetStatus;
   const nextOutcome = normalizeTransitionOutcome(plan, nextStatus, parsed.data.outcome ?? null);
 
-  const updatedPlan = await db.improvementPlan.update({
+  const updatedPlanRecord = await db.improvementPlan.update({
     where: {
       id: plan.id,
     },
@@ -840,6 +873,7 @@ export async function transitionImprovementPlanStatus(
       updatedAt: true,
     },
   });
+  const updatedPlan = updatedPlanRecord as UpdatedImprovementPlanRecord;
 
   const transitionNote =
     parsed.data.note && parsed.data.note.length > 0
@@ -882,6 +916,164 @@ export async function transitionImprovementPlanStatus(
     outcome: updatedPlan.outcome,
     updatedAt: updatedPlan.updatedAt.toISOString(),
     timelineEntry: mapCheckInRecord(timelineEntryRecord),
+  };
+}
+
+export async function updateImprovementPlanGoalsAndDates(
+  planId: string,
+  input: unknown,
+  context: RequestContext,
+  db: ImprovementPlanDb = prisma as unknown as ImprovementPlanDb,
+): Promise<ImprovementPlanUpdateResult> {
+  const parsedPlanId = parsePlanId(planId);
+  const parsed = updateImprovementPlanSchema.safeParse(input);
+
+  if (!parsed.success) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Invalid improvement plan update payload",
+      400,
+      parsed.error.flatten(),
+    );
+  }
+
+  if (!parsed.data.startDate && !parsed.data.endDate && !parsed.data.goals) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Provide at least one field to update (startDate, endDate, goals)",
+      400,
+    );
+  }
+
+  const plan = await loadPlanEditRecord(parsedPlanId, context.orgId, db);
+  const viewerEmployeeId = await resolveViewerEmployeeId(context, db);
+
+  if (!canAccessPlan(plan, context, viewerEmployeeId)) {
+    throw new AppError("FORBIDDEN", "You are not allowed to edit this improvement plan", 403);
+  }
+
+  if (context.role !== UserRole.HR_ADMIN && context.role !== UserRole.MANAGER) {
+    throw new AppError("FORBIDDEN", "Only managers and HR admins can edit plans", 403);
+  }
+
+  if (context.role === UserRole.MANAGER && viewerEmployeeId !== plan.managerEmployeeId) {
+    throw new AppError("FORBIDDEN", "Only the plan manager can edit this plan", 403);
+  }
+
+  if (
+    plan.status === ImprovementPlanStatus.COMPLETED ||
+    plan.status === ImprovementPlanStatus.CANCELED
+  ) {
+    throw new AppError("FORBIDDEN", "Completed or canceled plans are read-only", 403);
+  }
+
+  const nextStartDate = parsed.data.startDate ? new Date(parsed.data.startDate) : plan.startDate;
+  const nextEndDate = parsed.data.endDate ? new Date(parsed.data.endDate) : plan.endDate;
+
+  if (nextEndDate <= nextStartDate) {
+    throw new AppError("VALIDATION_ERROR", "endDate must be later than startDate", 400, {
+      startDate: nextStartDate.toISOString(),
+      endDate: nextEndDate.toISOString(),
+    });
+  }
+
+  const datesUpdated =
+    nextStartDate.getTime() !== plan.startDate.getTime() ||
+    nextEndDate.getTime() !== plan.endDate.getTime();
+  const goalsUpdated = Array.isArray(parsed.data.goals);
+
+  if (!datesUpdated && !goalsUpdated) {
+    throw new AppError("VALIDATION_ERROR", "No plan changes detected", 400);
+  }
+
+  const updateData: Record<string, unknown> = {};
+  if (datesUpdated) {
+    updateData.startDate = nextStartDate;
+    updateData.endDate = nextEndDate;
+  }
+
+  if (goalsUpdated) {
+    updateData.goals = {
+      deleteMany: {},
+      create: parsed.data.goals!.map((goal, index) => ({
+        orgId: context.orgId,
+        title: goal.title,
+        description: goal.description ?? null,
+        sortOrder: index + 1,
+      })),
+    };
+  }
+
+  const updatedPlanRecord = await db.improvementPlan.update({
+    where: {
+      id: plan.id,
+    },
+    data: updateData,
+    select: {
+      id: true,
+      startDate: true,
+      endDate: true,
+      updatedAt: true,
+      goals: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          sortOrder: true,
+        },
+        orderBy: {
+          sortOrder: "asc",
+        },
+      },
+    },
+  });
+  const updatedPlan = updatedPlanRecord as UpdatedImprovementPlanContentRecord;
+
+  if (datesUpdated) {
+    await db.auditEvent.create({
+      data: {
+        orgId: context.orgId,
+        actorUserId: context.userId,
+        action: "IMPROVEMENT_PLAN_DATES_UPDATED",
+        entityType: "ImprovementPlan",
+        entityId: plan.id,
+        metadata: {
+          previousStartDate: plan.startDate.toISOString(),
+          nextStartDate: updatedPlan.startDate.toISOString(),
+          previousEndDate: plan.endDate.toISOString(),
+          nextEndDate: updatedPlan.endDate.toISOString(),
+        },
+      },
+    });
+  }
+
+  if (goalsUpdated) {
+    await db.auditEvent.create({
+      data: {
+        orgId: context.orgId,
+        actorUserId: context.userId,
+        action: "IMPROVEMENT_PLAN_GOALS_UPDATED",
+        entityType: "ImprovementPlan",
+        entityId: plan.id,
+        metadata: {
+          previousGoalCount: plan.goals.length,
+          nextGoalCount: updatedPlan.goals.length,
+        },
+      },
+    });
+  }
+
+  return {
+    id: updatedPlan.id,
+    startDate: updatedPlan.startDate.toISOString(),
+    endDate: updatedPlan.endDate.toISOString(),
+    updatedAt: updatedPlan.updatedAt.toISOString(),
+    goals: updatedPlan.goals.map((goal) => ({
+      id: goal.id,
+      title: goal.title,
+      description: goal.description,
+      sortOrder: goal.sortOrder,
+    })),
   };
 }
 
@@ -1096,6 +1288,46 @@ async function loadPlanAccessRecord(
   return plan;
 }
 
+async function loadPlanEditRecord(
+  planId: string,
+  orgId: string,
+  db: ImprovementPlanDb,
+): Promise<ImprovementPlanEditRecord> {
+  const planRecord = await db.improvementPlan.findFirst({
+    where: {
+      id: planId,
+      orgId,
+    },
+    select: {
+      id: true,
+      orgId: true,
+      subjectEmployeeId: true,
+      managerEmployeeId: true,
+      hrOwnerEmployeeId: true,
+      status: true,
+      outcome: true,
+      startDate: true,
+      endDate: true,
+      goals: {
+        select: {
+          id: true,
+          sortOrder: true,
+        },
+        orderBy: {
+          sortOrder: "asc",
+        },
+      },
+    },
+  });
+
+  const plan = planRecord as ImprovementPlanEditRecord | null;
+  if (!plan) {
+    throw new AppError("NOT_FOUND", "Improvement plan not found", 404);
+  }
+
+  return plan;
+}
+
 function normalizeTransitionOutcome(
   plan: ImprovementPlanAccessRecord,
   targetStatus: ImprovementPlanStatus,
@@ -1192,6 +1424,14 @@ function buildAuditDescription(
     const nextOutcome =
       typeof metadata?.nextOutcome === "string" ? ` (${metadata.nextOutcome})` : "";
     return `Changed plan status to ${nextStatus}${nextOutcome}.`;
+  }
+
+  if (action === "IMPROVEMENT_PLAN_DATES_UPDATED") {
+    return "Updated plan date range.";
+  }
+
+  if (action === "IMPROVEMENT_PLAN_GOALS_UPDATED") {
+    return "Updated plan goals.";
   }
 
   if (action === "IMPROVEMENT_PLAN_EXPORT_REQUESTED") {
