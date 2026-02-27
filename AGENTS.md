@@ -394,6 +394,7 @@ At the end of each phase/PR, update `/PLAN.md`:
 - Check off completed items
 - Add a short note like “Completed in PR #123”
 - Do not mark future-phase tasks as complete
+- If a milestone’s acceptance criteria are marked complete, but some work-breakdown items remain, move the remaining items into a follow-on milestone (e.g., “Milestone 1.1” or “Milestone 1.5”) instead of leaving them unchecked under the completed milestone.
 
 ---
 
