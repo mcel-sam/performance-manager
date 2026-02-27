@@ -13,6 +13,7 @@ import {
   listImprovementPlanAuditEvents,
   requestImprovementPlanExport,
   transitionImprovementPlanStatus,
+  updateImprovementPlanGoalsAndDates,
 } from "@/server/improvement-plans/improvement-plan-service";
 
 function buildDbMock() {
@@ -733,6 +734,148 @@ describe("requestImprovementPlanExport", () => {
       status: 403,
     });
 
+    expect(db.auditEvent.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateImprovementPlanGoalsAndDates", () => {
+  it("updates goals and dates for an authorized manager and writes audit events", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+      startDate: new Date("2026-04-01T00:00:00.000Z"),
+      endDate: new Date("2026-06-30T00:00:00.000Z"),
+      goals: [
+        {
+          id: "goal_old_1",
+          sortOrder: 1,
+        },
+      ],
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_manager_1",
+      userId: "user_manager_1",
+      managerId: "emp_hr_admin_1",
+      firstName: "Morgan",
+      lastName: "Manager",
+    });
+
+    db.improvementPlan.update.mockResolvedValue({
+      id: "plan_1",
+      startDate: new Date("2026-04-05T00:00:00.000Z"),
+      endDate: new Date("2026-07-05T00:00:00.000Z"),
+      updatedAt: new Date("2026-04-05T10:00:00.000Z"),
+      goals: [
+        {
+          id: "goal_new_1",
+          title: "Increase delivery predictability",
+          description: "Track weekly commitments and outcomes.",
+          sortOrder: 1,
+        },
+        {
+          id: "goal_new_2",
+          title: "Improve communication quality",
+          description: null,
+          sortOrder: 2,
+        },
+      ],
+    });
+
+    db.auditEvent.create.mockResolvedValue({ id: "audit_update_1" });
+
+    const result = await updateImprovementPlanGoalsAndDates(
+      "plan_1",
+      {
+        startDate: "2026-04-05T00:00:00.000Z",
+        endDate: "2026-07-05T00:00:00.000Z",
+        goals: [
+          {
+            title: "Increase delivery predictability",
+            description: "Track weekly commitments and outcomes.",
+          },
+          {
+            title: "Improve communication quality",
+          },
+        ],
+      },
+      managerContext,
+      db as never,
+    );
+
+    expect(result.id).toBe("plan_1");
+    expect(result.goals).toHaveLength(2);
+    expect(db.improvementPlan.update).toHaveBeenCalledTimes(1);
+    expect(db.auditEvent.create).toHaveBeenCalledTimes(2);
+    expect(db.auditEvent.create).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "IMPROVEMENT_PLAN_DATES_UPDATED",
+        }),
+      }),
+    );
+    expect(db.auditEvent.create).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "IMPROVEMENT_PLAN_GOALS_UPDATED",
+        }),
+      }),
+    );
+  });
+
+  it("denies updates for non-manager non-hr participants", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+      startDate: new Date("2026-04-01T00:00:00.000Z"),
+      endDate: new Date("2026-06-30T00:00:00.000Z"),
+      goals: [
+        {
+          id: "goal_old_1",
+          sortOrder: 1,
+        },
+      ],
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_employee_1",
+      userId: "user_employee_1",
+      managerId: "emp_manager_1",
+      firstName: "Elliot",
+      lastName: "Employee",
+    });
+
+    await expect(
+      updateImprovementPlanGoalsAndDates(
+        "plan_1",
+        {
+          endDate: "2026-07-10T00:00:00.000Z",
+        },
+        employeeContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+
+    expect(db.improvementPlan.update).not.toHaveBeenCalled();
     expect(db.auditEvent.create).not.toHaveBeenCalled();
   });
 });
