@@ -4,10 +4,24 @@ import { CalibrationBucket } from "@prisma/client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { PageHeader } from "@/components/layout/page-header";
+import { SectionHeader } from "@/components/layout/section-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Drawer } from "@/components/ui/drawer";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Select } from "@/components/ui/select";
+import { Tabs } from "@/components/ui/tabs";
+import { Toast } from "@/components/ui/toast";
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableWrapper,
+} from "@/components/ui/table";
 import type {
   CalibrationAxisDefinition,
   CalibrationSessionData,
@@ -198,152 +212,167 @@ export default function CalibrationSessionView({
 
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{session.name}</h1>
-          <Badge variant="info">{session.cycleName}</Badge>
-          {session.isFinalized ? <Badge variant="warning">Finalized</Badge> : <Badge variant="neutral">In progress</Badge>}
-        </div>
-        <p className="max-w-4xl text-sm text-slate-600">{initialData.guidance.summary}</p>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {!session.isFinalized && initialData.viewer.canFinalize ? (
+      <PageHeader
+        eyebrow="Calibration Session"
+        title={session.name}
+        description={initialData.guidance.summary}
+        action={
+          !session.isFinalized && initialData.viewer.canFinalize ? (
             <Button onClick={() => void handleFinalizeSession()} disabled={isFinalizing}>
               {isFinalizing ? "Finalizing..." : "Finalize Session"}
             </Button>
-          ) : null}
-          {session.finalizedAt ? (
-            <p className="text-xs text-slate-500">
-              Finalized on {new Date(session.finalizedAt).toLocaleString()}
-            </p>
-          ) : null}
-        </div>
+          ) : null
+        }
+        metadata={
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="info">{session.cycleName}</Badge>
+            {session.isFinalized ? (
+              <Badge variant="warning">Finalized</Badge>
+            ) : (
+              <Badge variant="neutral">In progress</Badge>
+            )}
+            {session.finalizedAt ? (
+              <span className="text-xs text-slate-500">
+                Finalized on {new Date(session.finalizedAt).toLocaleString()}
+              </span>
+            ) : null}
+          </div>
+        }
+      />
 
-        {finalizeMessage ? (
-          <p className="text-sm text-slate-700">{finalizeMessage}</p>
-        ) : null}
+      {finalizeMessage ? (
+        <Toast variant={finalizeMessage.includes("Unable") ? "error" : "success"}>
+          {finalizeMessage}
+        </Toast>
+      ) : null}
 
-        <div className="grid gap-3 text-sm text-slate-700 md:grid-cols-2">
-          <details className="rounded-md border border-slate-200 bg-white p-3">
-            <summary className="cursor-pointer font-medium text-slate-900">Performance definitions</summary>
-            <ul className="mt-2 space-y-1 text-xs text-slate-600">
-              {initialData.guidance.performance.map((definition) => (
-                <li key={definition.bucket}>
-                  <span className="font-semibold text-slate-800">{definition.label}:</span>{" "}
-                  {definition.description}
-                </li>
-              ))}
-            </ul>
-          </details>
-          <details className="rounded-md border border-slate-200 bg-white p-3">
-            <summary className="cursor-pointer font-medium text-slate-900">Potential definitions</summary>
-            <ul className="mt-2 space-y-1 text-xs text-slate-600">
-              {initialData.guidance.potential.map((definition) => (
-                <li key={definition.bucket}>
-                  <span className="font-semibold text-slate-800">{definition.label}:</span>{" "}
-                  {definition.description}
-                </li>
-              ))}
-            </ul>
-          </details>
-        </div>
-      </header>
+      <div className="grid gap-3 text-sm text-slate-700 md:grid-cols-2">
+        <details className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
+          <summary className="cursor-pointer font-medium text-slate-900">Performance definitions</summary>
+          <ul className="mt-2 space-y-1 text-xs text-slate-600">
+            {initialData.guidance.performance.map((definition) => (
+              <li key={definition.bucket}>
+                <span className="font-semibold text-slate-800">{definition.label}:</span>{" "}
+                {definition.description}
+              </li>
+            ))}
+          </ul>
+        </details>
+        <details className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
+          <summary className="cursor-pointer font-medium text-slate-900">Potential definitions</summary>
+          <ul className="mt-2 space-y-1 text-xs text-slate-600">
+            {initialData.guidance.potential.map((definition) => (
+              <li key={definition.bucket}>
+                <span className="font-semibold text-slate-800">{definition.label}:</span>{" "}
+                {definition.description}
+              </li>
+            ))}
+          </ul>
+        </details>
+      </div>
 
       {session.isFinalized ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          This session is finalized. Placements are read-only.
-        </div>
+        <Toast variant="warning">This session is finalized. Placements are read-only.</Toast>
       ) : null}
 
       {placements.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>No cohort members yet</CardTitle>
-            <CardDescription>
-              Populate this session with employees and initial placements to start calibration.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+        <EmptyState
+          title="No cohort members yet"
+          description="Populate this session with employees and initial placements to start calibration."
+        />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
           <section>
-            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-              <table className="min-w-full border-collapse text-left">
-                <thead>
-                  <tr>
-                    <th className="w-40 border-b border-r border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Potential \ Performance
-                    </th>
-                    {performanceOrder.map((performanceBucket) => (
-                      <th
-                        key={performanceBucket}
-                        className="w-72 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500"
-                      >
-                        {performanceLabels[performanceBucket]}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {potentialOrder.map((potentialBucket) => (
-                    <tr key={potentialBucket}>
-                      <th className="border-r border-t border-slate-200 bg-slate-50 px-4 py-4 align-top text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        {potentialLabels[potentialBucket]}
-                      </th>
-                      {performanceOrder.map((performanceBucket) => {
-                        const key = makeCellKey(performanceBucket, potentialBucket);
-                        const cellPlacements = placementsByCell.get(key) ?? [];
+            <Card>
+              <CardHeader>
+                <SectionHeader
+                  title="9-box matrix"
+                  description="Select a cohort member to view packet context and adjust placement."
+                />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <TableWrapper className="rounded-[var(--radius-lg)] border border-slate-200">
+                  <Table className="min-w-[920px] border-collapse">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-40 border-b border-r border-slate-200 bg-slate-50">
+                          Potential \ Performance
+                        </TableHead>
+                        {performanceOrder.map((performanceBucket) => (
+                          <TableHead
+                            key={performanceBucket}
+                            className="w-72 border-b border-slate-200 bg-slate-50"
+                          >
+                            {performanceLabels[performanceBucket]}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {potentialOrder.map((potentialBucket) => (
+                        <TableRow key={potentialBucket}>
+                          <th className="border-r border-t border-slate-200 bg-slate-50 px-4 py-4 align-top text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {potentialLabels[potentialBucket]}
+                          </th>
+                          {performanceOrder.map((performanceBucket) => {
+                            const key = makeCellKey(performanceBucket, potentialBucket);
+                            const cellPlacements = placementsByCell.get(key) ?? [];
 
-                        return (
-                          <td key={key} className="border-t border-slate-200 p-4 align-top">
-                            {cellPlacements.length === 0 ? (
-                              <p className="text-xs text-slate-400">No members</p>
-                            ) : (
-                              <div className="space-y-2">
-                                {cellPlacements.map((placement) => {
-                                  const isSelected = placement.employeeId === selectedEmployeeId;
+                            return (
+                              <td key={key} className="border-t border-slate-200 p-4 align-top">
+                                {cellPlacements.length === 0 ? (
+                                  <p className="text-xs text-slate-400">No members</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {cellPlacements.map((placement) => {
+                                      const isSelected = placement.employeeId === selectedEmployeeId;
 
-                                  return (
-                                    <button
-                                      key={placement.placementId}
-                                      type="button"
-                                      onClick={() => setSelectedEmployeeId(placement.employeeId)}
-                                      className={`w-full rounded-md border px-3 py-2 text-left text-sm transition ${
-                                        isSelected
-                                          ? "border-slate-900 bg-slate-900 text-white"
-                                          : "border-slate-200 bg-white text-slate-800 hover:border-slate-400"
-                                      }`}
-                                    >
-                                      <p className="font-medium">{placement.employeeName}</p>
-                                      <p
-                                        className={`text-xs ${
-                                          isSelected ? "text-slate-200" : "text-slate-500"
-                                        }`}
-                                      >
-                                        {placement.managerName
-                                          ? `Manager: ${placement.managerName}`
-                                          : "No manager assigned"}
-                                      </p>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                                      return (
+                                        <button
+                                          key={placement.placementId}
+                                          type="button"
+                                          aria-label={`Select ${placement.employeeName} placement`}
+                                          onClick={() => setSelectedEmployeeId(placement.employeeId)}
+                                          className={`w-full rounded-[var(--radius-md)] border px-3 py-2 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
+                                            isSelected
+                                              ? "border-slate-900 bg-slate-900 text-white"
+                                              : "border-slate-200 bg-white text-slate-800 hover:border-slate-400"
+                                          }`}
+                                        >
+                                          <p className="font-medium">{placement.employeeName}</p>
+                                          <p
+                                            className={`text-xs ${
+                                              isSelected ? "text-slate-200" : "text-slate-500"
+                                            }`}
+                                          >
+                                            {placement.managerName
+                                              ? `Manager: ${placement.managerName}`
+                                              : "No manager assigned"}
+                                          </p>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableWrapper>
+              </CardContent>
+            </Card>
           </section>
 
-          <aside className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <Drawer title="Participant Context" description="Open packet context and adjust placement.">
             {!selectedPlacement ? (
-              <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                Select a cohort member to view packet context and move placement.
-              </div>
+              <EmptyState
+                title="No participant selected"
+                description="Select a cohort member from the matrix to view details."
+                className="p-4"
+              />
             ) : (
               <div className="space-y-4">
                 <div>
@@ -355,30 +384,15 @@ export default function CalibrationSessionView({
                   </p>
                 </div>
 
-                <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTab("thisCycle")}
-                    className={`rounded px-3 py-1.5 text-xs font-medium ${
-                      selectedTab === "thisCycle"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600"
-                    }`}
-                  >
-                    This cycle
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTab("previousCycles")}
-                    className={`rounded px-3 py-1.5 text-xs font-medium ${
-                      selectedTab === "previousCycles"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600"
-                    }`}
-                  >
-                    Previous cycles
-                  </button>
-                </div>
+                <Tabs
+                  ariaLabel="Calibration drawer tabs"
+                  value={selectedTab}
+                  onValueChange={(nextValue) => setSelectedTab(nextValue as DrawerTab)}
+                  tabs={[
+                    { value: "thisCycle", label: "This cycle" },
+                    { value: "previousCycles", label: "Previous cycles" },
+                  ]}
+                />
 
                 {selectedTab === "thisCycle" ? (
                   <div className="space-y-4">
@@ -391,11 +405,10 @@ export default function CalibrationSessionView({
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <Link
-                          href={`/performance/reviews/${session.cycleId}/packet/${selectedPlacement.employeeId}`}
-                          className="text-sm font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-700"
-                        >
-                          Open review packet
+                        <Link href={`/performance/reviews/${session.cycleId}/packet/${selectedPlacement.employeeId}`}>
+                          <Button variant="outline" size="sm">
+                            Open review packet
+                          </Button>
                         </Link>
                       </CardContent>
                     </Card>
@@ -404,7 +417,7 @@ export default function CalibrationSessionView({
                       <CardHeader className="space-y-1">
                         <CardTitle className="text-base">Move to box</CardTitle>
                         <CardDescription>
-                          Use the controls below to set performance and potential buckets.
+                          Set performance and potential buckets for this participant.
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3 pt-0">
@@ -451,23 +464,29 @@ export default function CalibrationSessionView({
                         </Button>
 
                         {!selectedPlacement.canMove && !session.isFinalized ? (
-                          <p className="text-xs text-amber-700">
+                          <Toast variant="warning">
                             You can only move placements for employees you manage.
-                          </p>
+                          </Toast>
                         ) : null}
 
-                        {moveMessage ? <p className="text-xs text-slate-700">{moveMessage}</p> : null}
+                        {moveMessage ? (
+                          <Toast variant={moveMessage.includes("Unable") ? "error" : "success"}>
+                            {moveMessage}
+                          </Toast>
+                        ) : null}
                       </CardContent>
                     </Card>
                   </div>
                 ) : (
-                  <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                    No previous-cycle calibration data is available yet.
-                  </div>
+                  <EmptyState
+                    title="No previous-cycle calibration data"
+                    description="Previous cycle comparisons will appear here when historical sessions are available."
+                    className="p-4"
+                  />
                 )}
               </div>
             )}
-          </aside>
+          </Drawer>
         </div>
       )}
     </div>

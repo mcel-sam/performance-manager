@@ -3,6 +3,7 @@ import Link from "next/link";
 import { UserRole } from "@prisma/client";
 
 import ReviewCycleCreateForm from "@/components/admin/review-cycle-create-form";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDevRequestContext } from "@/server/auth/request-context";
@@ -29,16 +30,16 @@ export default async function NewAdminReviewCyclePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">New Review Cycle</h2>
-          <p className="text-sm text-slate-600">Define timeline and participant review mix.</p>
-        </div>
-        <Link href="/admin/performance/review-cycles">
-          <Button variant="outline">Back to cycles</Button>
-        </Link>
-      </header>
+    <div className="mx-auto w-full max-w-3xl space-y-6">
+      <PageHeader
+        title="New Review Cycle"
+        description="Define timeline and participant review mix."
+        action={
+          <Link href="/admin/performance/review-cycles">
+            <Button variant="outline">Back to cycles</Button>
+          </Link>
+        }
+      />
 
       <ReviewCycleCreateForm auth={{ userId: context.userId, orgId: context.orgId }} />
     </div>

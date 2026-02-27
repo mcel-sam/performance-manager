@@ -43,7 +43,7 @@ export function Modal({
               type="button"
               aria-label="Close dialog"
               onClick={onClose}
-              className="rounded-[var(--radius-sm)] px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+              className="rounded-[var(--radius-sm)] px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
             >
               Close
             </button>

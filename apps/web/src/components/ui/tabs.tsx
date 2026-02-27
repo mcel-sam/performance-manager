@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, KeyboardEvent } from "react";
 
 import { cn } from "@/components/ui/cn";
 
@@ -23,6 +23,35 @@ export function Tabs({
   className,
   ...props
 }: TabsProps) {
+  function handleTabKeyDown(
+    event: KeyboardEvent<HTMLButtonElement>,
+    currentIndex: number,
+  ) {
+    if (tabs.length === 0) {
+      return;
+    }
+
+    let nextIndex = currentIndex;
+
+    if (event.key === "ArrowRight") {
+      nextIndex = (currentIndex + 1) % tabs.length;
+    } else if (event.key === "ArrowLeft") {
+      nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = tabs.length - 1;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    const nextTab = tabs[nextIndex];
+    if (nextTab && !nextTab.disabled) {
+      onValueChange(nextTab.value);
+    }
+  }
+
   return (
     <div
       {...props}
@@ -33,7 +62,7 @@ export function Tabs({
         className,
       )}
     >
-      {tabs.map((tab) => {
+      {tabs.map((tab, index) => {
         const isActive = tab.value === value;
 
         return (
@@ -42,10 +71,12 @@ export function Tabs({
             type="button"
             role="tab"
             aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
             disabled={tab.disabled}
             onClick={() => onValueChange(tab.value)}
+            onKeyDown={(event) => handleTabKeyDown(event, index)}
             className={cn(
-              "rounded-[var(--radius-sm)] px-3 py-1.5 text-xs font-medium transition",
+              "rounded-[var(--radius-sm)] px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300",
               isActive ? "bg-white text-slate-900 shadow-[var(--shadow-xs)]" : "text-slate-600",
               "disabled:cursor-not-allowed disabled:opacity-60",
             )}

@@ -1,6 +1,9 @@
 import Link from "next/link";
 
 import WriteReviewForm from "@/components/reviews/write-review-form";
+import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getWriteReviewData } from "@/server/reviews/participant-review-service";
 
@@ -26,54 +29,62 @@ export default async function WriteReviewPage({ params }: WriteReviewPageProps) 
   const data = await getWriteReviewData(cycleId, submissionId, context);
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6 text-slate-900">
-      <div className="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Phase Nav</h2>
-          <nav className="mt-4 space-y-2">
-            <Link
-              className="block rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-              href="/performance/reviews"
-            >
-              Review Tasks
-            </Link>
-            <div className="rounded-md border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-900">
-              {relationshipLabel[data.submission.relationship]}
-            </div>
-          </nav>
+    <div className="mx-auto w-full max-w-7xl space-y-6 text-slate-900">
+      <PageHeader
+        eyebrow="Write Review"
+        title={data.template.name}
+        description="Complete all required prompts. Autosave keeps your draft current and submit locks the review."
+        metadata={
+          <>
+            {data.submission.cycleName} | Subject: {data.submission.subjectName} | Relationship:{" "}
+            {relationshipLabel[data.submission.relationship]}
+          </>
+        }
+      />
 
-          <div className="mt-6 space-y-2 text-sm text-slate-700">
-            <p>
-              <span className="font-semibold">Cycle:</span> {data.submission.cycleName}
-            </p>
-            <p>
-              <span className="font-semibold">Subject:</span> {data.submission.subjectName}
-            </p>
-            <p>
-              <span className="font-semibold">Reviewer:</span> {data.submission.reviewerName}
-            </p>
-          </div>
-        </aside>
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Task Context</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <nav className="space-y-2">
+              <Link href="/performance/reviews">
+                <Button variant="outline" className="w-full justify-start">
+                  Review Tasks
+                </Button>
+              </Link>
+              <p className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                {relationshipLabel[data.submission.relationship]}
+              </p>
+            </nav>
 
-        <section className="space-y-4">
-          <header className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h1 className="text-2xl font-semibold">{data.template.name}</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Complete all required prompts, autosave keeps drafts current, and submit locks the
-              review.
-            </p>
-          </header>
+            <dl className="space-y-2 text-sm text-slate-700">
+              <div>
+                <dt className="font-semibold text-slate-900">Cycle</dt>
+                <dd>{data.submission.cycleName}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-900">Subject</dt>
+                <dd>{data.submission.subjectName}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-900">Reviewer</dt>
+                <dd>{data.submission.reviewerName}</dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
 
-          <WriteReviewForm
-            cycleId={cycleId}
-            submissionId={submissionId}
-            subjectEmployeeId={data.submission.subjectEmployeeId}
-            auth={{ userId: context.userId, orgId: context.orgId }}
-            initialStatus={data.submission.status}
-            questions={data.questions}
-          />
-        </section>
+        <WriteReviewForm
+          cycleId={cycleId}
+          submissionId={submissionId}
+          subjectEmployeeId={data.submission.subjectEmployeeId}
+          auth={{ userId: context.userId, orgId: context.orgId }}
+          initialStatus={data.submission.status}
+          questions={data.questions}
+        />
       </div>
-    </main>
+    </div>
   );
 }
