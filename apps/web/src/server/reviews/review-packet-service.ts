@@ -1,6 +1,8 @@
 import {
   CycleStatus,
   CycleVisibilityPolicy,
+  EvidenceType,
+  EvidenceVisibility,
   ReviewRelationship,
   ReviewSubmissionStatus,
   UserRole,
@@ -82,6 +84,15 @@ interface ReviewPacketDb {
       };
     }) => Promise<PacketViewerRecord | null>;
   };
+  evidenceItem: {
+    groupBy: (args: {
+      by: ["type"];
+      where: Record<string, unknown>;
+      _count: {
+        _all: true;
+      };
+    }) => Promise<{ type: EvidenceType; _count: { _all: number } }[]>;
+  };
 }
 
 const packetIdentifierSchema = z.object({
@@ -107,6 +118,7 @@ export interface ReviewPacketData {
     subjectName: string;
     totalSubmissions: number;
     submittedCount: number;
+    evidenceCounts: Record<EvidenceType, number>;
   };
   submissions: {
     submissionId: string;
@@ -202,7 +214,8 @@ export async function getReviewPacket(
     throw new AppError("NOT_FOUND", "Review packet not found", 404);
   }
 
-  await assertPacketAccess(packet, context, db);
+  const access = await assertPacketAccess(packet, context, db);
+  const evidenceCounts = await loadEvidenceCounts(packet.subjectEmployeeId, context.orgId, access, db);
 
   const submissions = [...packet.submissions]
     .sort((left, right) => submissionOrder[left.relationship] - submissionOrder[right.relationship])
@@ -238,18 +251,29 @@ export async function getReviewPacket(
       subjectName: `${packet.subjectEmployee.firstName} ${packet.subjectEmployee.lastName}`,
       totalSubmissions: submissions.length,
       submittedCount,
+      evidenceCounts,
     },
     submissions,
   };
+}
+
+interface PacketAccessState {
+  allowAllEvidence: boolean;
+  viewerEmployeeId: string | null;
+  allowedEvidenceVisibilities: EvidenceVisibility[];
 }
 
 async function assertPacketAccess(
   packet: ReviewPacketRecord,
   context: RequestContext,
   db: ReviewPacketDb,
-): Promise<void> {
+): Promise<PacketAccessState> {
   if (context.role === UserRole.HR_ADMIN) {
-    return;
+    return {
+      allowAllEvidence: true,
+      viewerEmployeeId: null,
+      allowedEvidenceVisibilities: [],
+    };
   }
 
   const viewer = await db.employee.findFirst({
@@ -267,7 +291,15 @@ async function assertPacketAccess(
   }
 
   if (packet.subjectEmployee.managerId === viewer.id) {
-    return;
+    return {
+      allowAllEvidence: false,
+      viewerEmployeeId: viewer.id,
+      allowedEvidenceVisibilities: [
+        EvidenceVisibility.ORG_VISIBLE,
+        EvidenceVisibility.SHARED_WITH_SUBJECT,
+        EvidenceVisibility.MANAGER_ONLY,
+      ],
+    };
   }
 
   const isSubject = packet.subjectEmployee.userId === context.userId;
@@ -277,7 +309,14 @@ async function assertPacketAccess(
       packet.cycle.status === CycleStatus.RELEASED;
 
     if (canViewAfterRelease) {
-      return;
+      return {
+        allowAllEvidence: false,
+        viewerEmployeeId: viewer.id,
+        allowedEvidenceVisibilities: [
+          EvidenceVisibility.ORG_VISIBLE,
+          EvidenceVisibility.SHARED_WITH_SUBJECT,
+        ],
+      };
     }
 
     throw new AppError(
@@ -292,4 +331,54 @@ async function assertPacketAccess(
   }
 
   throw new AppError("FORBIDDEN", "You are not allowed to access this review packet", 403);
+}
+
+async function loadEvidenceCounts(
+  subjectEmployeeId: string,
+  orgId: string,
+  access: PacketAccessState,
+  db: ReviewPacketDb,
+): Promise<Record<EvidenceType, number>> {
+  const where: Record<string, unknown> = {
+    orgId,
+    subjectEmployeeId,
+  };
+
+  if (!access.allowAllEvidence) {
+    where.OR = [
+      {
+        authorEmployeeId: access.viewerEmployeeId,
+      },
+      {
+        visibility: {
+          in: access.allowedEvidenceVisibilities,
+        },
+      },
+    ];
+  }
+
+  const rows = await db.evidenceItem.groupBy({
+    by: ["type"],
+    where,
+    _count: {
+      _all: true,
+    },
+  });
+
+  const counts = buildEmptyEvidenceCountMap();
+  for (const row of rows) {
+    counts[row.type] = row._count._all;
+  }
+
+  return counts;
+}
+
+function buildEmptyEvidenceCountMap(): Record<EvidenceType, number> {
+  return {
+    [EvidenceType.FEEDBACK]: 0,
+    [EvidenceType.UPDATE]: 0,
+    [EvidenceType.ONE_ON_ONE]: 0,
+    [EvidenceType.GOAL]: 0,
+    [EvidenceType.VALUE_RECOGNITION]: 0,
+  };
 }
