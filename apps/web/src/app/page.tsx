@@ -26,9 +26,9 @@ const modules = [
   },
   {
     title: "Calibration",
-    description: "Planned for Milestone 2. Session creation and 9-box workflows are next.",
-    href: "/admin/performance/review-cycles",
-    status: "Planned",
+    description: "Run a 9-box calibration session and move placements with packet context.",
+    href: "/performance/calibration/calibration_session_seed_1",
+    status: "Active",
   },
 ];
 
@@ -36,13 +36,13 @@ export default function HomePage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Milestone 1.5</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Milestone 2</p>
         <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
-          App shell and reviews hardening
+          Packet and calibration workflows
         </h2>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          Use this workspace to navigate active review workflows. Admin review-cycle hardening is
-          in progress alongside shared UI foundations.
+          Use this workspace to review tasks, inspect packets, and calibrate a cohort with a
+          shared 9-box view.
         </p>
       </section>
 

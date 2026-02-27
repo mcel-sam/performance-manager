@@ -20,6 +20,10 @@ const navItems = [
     label: "Reviews",
   },
   {
+    href: "/performance/calibration/calibration_session_seed_1",
+    label: "Calibration",
+  },
+  {
     href: "/admin/performance/review-cycles",
     label: "Admin Cycles",
   },
