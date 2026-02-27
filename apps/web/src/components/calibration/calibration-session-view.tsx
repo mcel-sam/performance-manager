@@ -13,6 +13,7 @@ import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Select } from "@/components/ui/select";
 import { Tabs } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Toast } from "@/components/ui/toast";
 import {
   Table,
@@ -67,10 +68,15 @@ export default function CalibrationSessionView({
   const [movePotentialBucket, setMovePotentialBucket] = useState<CalibrationBucket>(
     initialData.placements[0]?.potentialBucket ?? CalibrationBucket.MEDIUM,
   );
+  const [placementNote, setPlacementNote] = useState(
+    initialData.placements[0]?.justificationNote ?? "",
+  );
   const [moveMessage, setMoveMessage] = useState<string | null>(null);
   const [isMoving, setIsMoving] = useState(false);
   const [finalizeMessage, setFinalizeMessage] = useState<string | null>(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   const performanceLabels = useMemo(
     () => buildAxisLabelMap(initialData.guidance.performance),
@@ -107,6 +113,7 @@ export default function CalibrationSessionView({
 
     setMovePerformanceBucket(selectedPlacement.performanceBucket);
     setMovePotentialBucket(selectedPlacement.potentialBucket);
+    setPlacementNote(selectedPlacement.justificationNote ?? "");
     setMoveMessage(null);
   }, [selectedPlacement]);
 
@@ -131,6 +138,7 @@ export default function CalibrationSessionView({
           body: JSON.stringify({
             performanceBucket: movePerformanceBucket,
             potentialBucket: movePotentialBucket,
+            justificationNote: placementNote.trim().length > 0 ? placementNote.trim() : null,
           }),
         },
       );
@@ -139,6 +147,7 @@ export default function CalibrationSessionView({
         message?: string;
         performanceBucket?: CalibrationBucket;
         potentialBucket?: CalibrationBucket;
+        justificationNote?: string | null;
       };
 
       if (!response.ok) {
@@ -152,6 +161,10 @@ export default function CalibrationSessionView({
                 ...placement,
                 performanceBucket: payload.performanceBucket ?? placement.performanceBucket,
                 potentialBucket: payload.potentialBucket ?? placement.potentialBucket,
+                justificationNote:
+                  payload.justificationNote === undefined
+                    ? placement.justificationNote
+                    : payload.justificationNote,
               }
             : placement,
         ),
@@ -210,6 +223,37 @@ export default function CalibrationSessionView({
     }
   }
 
+  async function handleExportSession() {
+    setIsExporting(true);
+    setExportMessage(null);
+
+    try {
+      const response = await fetch(`/api/performance/calibration/${sessionId}/export`, {
+        method: "GET",
+        headers: {
+          "x-user-id": auth.userId,
+          "x-org-id": auth.orgId,
+        },
+      });
+
+      const payload = (await response.json()) as { message?: string };
+      if (response.status === 501) {
+        setExportMessage(payload.message ?? "Export is not implemented yet.");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(payload.message ?? "Unable to export calibration snapshot");
+      }
+
+      setExportMessage(payload.message ?? "Export ready.");
+    } catch (error) {
+      setExportMessage(error instanceof Error ? error.message : "Unable to export calibration snapshot");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -217,11 +261,16 @@ export default function CalibrationSessionView({
         title={session.name}
         description={initialData.guidance.summary}
         action={
-          !session.isFinalized && initialData.viewer.canFinalize ? (
-            <Button onClick={() => void handleFinalizeSession()} disabled={isFinalizing}>
-              {isFinalizing ? "Finalizing..." : "Finalize Session"}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={() => void handleExportSession()} disabled={isExporting}>
+              {isExporting ? "Exporting..." : "Export Snapshot"}
             </Button>
-          ) : null
+            {!session.isFinalized && initialData.viewer.canFinalize ? (
+              <Button onClick={() => void handleFinalizeSession()} disabled={isFinalizing}>
+                {isFinalizing ? "Finalizing..." : "Finalize Session"}
+              </Button>
+            ) : null}
+          </div>
         }
         metadata={
           <div className="flex flex-wrap items-center gap-2">
@@ -249,6 +298,9 @@ export default function CalibrationSessionView({
         <Toast variant={finalizeMessage.includes("Unable") ? "error" : "success"}>
           {finalizeMessage}
         </Toast>
+      ) : null}
+      {exportMessage ? (
+        <Toast variant={exportMessage.includes("Unable") ? "error" : "info"}>{exportMessage}</Toast>
       ) : null}
 
       <details className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
@@ -477,12 +529,23 @@ export default function CalibrationSessionView({
                           </Select>
                         </label>
 
+                        <label className="block space-y-1 text-sm font-medium text-slate-700">
+                          <span>Justification notes</span>
+                          <Textarea
+                            value={placementNote}
+                            onChange={(event) => setPlacementNote(event.target.value)}
+                            placeholder="Capture rationale for this placement..."
+                            className="min-h-24"
+                            disabled={!selectedPlacement.canMove || session.isFinalized}
+                          />
+                        </label>
+
                         <Button
                           onClick={() => void handleMovePlacement()}
                           disabled={isMoving || !selectedPlacement.canMove || session.isFinalized}
                           className="w-full"
                         >
-                          {isMoving ? "Updating..." : "Update placement"}
+                          {isMoving ? "Updating..." : "Save placement"}
                         </Button>
 
                         {!selectedPlacement.canMove && !session.isFinalized ? (

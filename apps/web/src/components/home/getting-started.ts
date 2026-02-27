@@ -32,7 +32,7 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
         links: [
           { label: "Open review tasks", href: "/performance/reviews" },
           { label: "Open calibration", href: "/performance/calibration/calibration_session_seed_1" },
-          { label: "Open improvement plan", href: "/performance/improvement-plans/improvement_plan_seed_1" },
+          { label: "Open improvement plans", href: "/performance/improvement-plans" },
         ],
       };
     default:
