@@ -253,7 +253,7 @@ npm run dev
 
 ## Milestone 2 — Packets + Calibration (9-box)
 
-**Status:** Phase 1 (Review Packet view) completed locally on 2026-02-27; calibration work pending.  
+**Status:** Phase 1 and Phase 2 completed locally on 2026-02-27; finalize workflow pending.  
 **Objective:** Managers/HR can view packets and calibrate a cohort in 9-box with finalize snapshot.
 
 ### Scope
@@ -273,8 +273,9 @@ npm run dev
 ### Work breakdown (ordered)
 
 1. **Data model + migration**
-   - [ ] Add `CalibrationSession`, `CalibrationPlacement`, `CalibrationSnapshot`
-   - [ ] Migration name: `add_calibration_mvp`
+   - [x] Add `CalibrationSession`, `CalibrationPlacement`
+   - [ ] Add `CalibrationSnapshot`
+   - [x] Migration name: `add_calibration_mvp`
 
 2. **Phase 1 — Packet view**
    - [x] UI route: `/performance/reviews/:cycleId/packet/:employeeId`
@@ -289,20 +290,24 @@ npm run dev
    - [ ] API: create session with cohort
 
 4. **Calibration workspace**
-   - [ ] UI: `/performance/calibration/:sessionId`
-   - [ ] Move control (dropdown “Move to box”) plus optional drag-drop
-   - [ ] Right drawer shows packet summary and link to packet
+   - [x] UI: `/performance/calibration/:sessionId`
+   - [x] Move control (dropdown “Move to box”) plus optional drag-drop
+   - [x] Right drawer shows packet summary and link to packet
+   - [x] Tabs: “This cycle” and “Previous cycles” (previous cycle tab currently empty state)
+   - [x] Helper copy/tooltips and loading/empty/error/read-only states
+   - Completed in local workspace commit set for Milestone 2 Phase 2 on 2026-02-27
 
 5. **Finalize**
    - [ ] Finalize endpoint locks session and creates snapshot JSON
    - [ ] Optionally write final bucket/rating to packet
 
 6. **Quality**
+   - [x] Tests for session fetch permission gating and placement move authorization
    - [ ] Tests for finalize locking + snapshot creation
 
 ### Acceptance criteria
 - [x] Packet view works and is permission-gated
-- [ ] Calibration grid loads cohort and updates placement
+- [x] Calibration grid loads cohort and updates placement
 - [ ] Finalize locks session and stores snapshot
 - [ ] Audit events captured for move/finalize
 

@@ -17,7 +17,7 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Repo coding rules: `AGENTS.md`
 - Milestone execution tracking: `PLAN.md`
 
-## Implemented scope (through Milestone 2 Phase 1)
+## Implemented scope (through Milestone 2 Phase 2)
 
 - Milestone 0 foundation:
   - Local PostgreSQL dev database via `docker-compose.yml`
@@ -48,6 +48,15 @@ Performance Management System monorepo for reviews, calibration, and improvement
   - Packet fetch API (`GET /api/performance/reviews/:cycleId/packet/:employeeId`)
   - Server-side packet visibility gating for HR admins, manager-of-subject, and employee-after-release policy
   - Packet loading/empty/error states and packet permission tests
+- Milestone 2 Phase 2:
+  - Calibration workspace page (`/performance/calibration/:sessionId`) with 9-box layout
+  - Right-side drawer with packet summary, packet link, and This Cycle/Previous Cycles tabs
+  - Accessible placement move controls (performance + potential dropdowns)
+  - Calibration APIs:
+    - `GET /api/performance/calibration/:sessionId`
+    - `PATCH /api/performance/calibration/:sessionId/placements/:employeeId`
+  - Server-side move permission rules for HR admins, calibrators, and allowed managers
+  - Audit events for placement moves
 
 ## Local setup
 
@@ -80,6 +89,7 @@ npm run dev
 - `http://localhost:3000/api/health`
 - `http://localhost:3000/performance/reviews`
 - `http://localhost:3000/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1` (as manager or HR dev user)
+- `http://localhost:3000/performance/calibration/calibration_session_seed_1`
 
 ## Development identity defaults
 
@@ -95,7 +105,12 @@ For packet viewing against seeded data, use:
 - `DEV_USER_ID=user_manager_1` (manager can view direct-report packet in Draft/Locked/Released)
 - `DEV_USER_ID=user_employee_1` can view only after the cycle is `RELEASED` with `EMPLOYEE_AFTER_RELEASE` policy
 
-## API endpoints used in Milestone 1
+For calibration session testing, use:
+
+- `DEV_USER_ID=user_hr_admin_1` (full calibration access)
+- `DEV_USER_ID=user_manager_1` (can access session and move direct reports only)
+
+## API endpoints used in Milestone 1/2
 
 - `GET /api/admin/performance/review-cycles`
 - `GET /api/performance/reviews/tasks`
@@ -107,6 +122,8 @@ For packet viewing against seeded data, use:
 - `POST /api/review-answers/:answerId/evidence-links`
 - `DELETE /api/review-answers/:answerId/evidence-links/:evidenceItemId`
 - `GET /api/performance/reviews/:cycleId/packet/:employeeId`
+- `GET /api/performance/calibration/:sessionId`
+- `PATCH /api/performance/calibration/:sessionId/placements/:employeeId`
 
 Note: API routes expect `x-user-id` and `x-org-id` headers.
 
@@ -129,6 +146,22 @@ curl -s 'http://localhost:3000/api/evidence?subjectEmployeeId=emp_employee_1' \
 curl -s 'http://localhost:3000/api/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1' \
   -H 'x-user-id: user_manager_1' \
   -H 'x-org-id: org_demo_1'
+```
+
+```bash
+# calibration session fetch (manager access)
+curl -s 'http://localhost:3000/api/performance/calibration/calibration_session_seed_1' \
+  -H 'x-user-id: user_manager_1' \
+  -H 'x-org-id: org_demo_1'
+```
+
+```bash
+# calibration placement update (manager can move direct reports)
+curl -s -X PATCH 'http://localhost:3000/api/performance/calibration/calibration_session_seed_1/placements/emp_employee_1' \
+  -H 'content-type: application/json' \
+  -H 'x-user-id: user_manager_1' \
+  -H 'x-org-id: org_demo_1' \
+  -d '{\"performanceBucket\":\"HIGH\",\"potentialBucket\":\"HIGH\"}'
 ```
 
 ## Quality gates
