@@ -17,7 +17,7 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Repo coding rules: `AGENTS.md`
 - Milestone execution tracking: `PLAN.md`
 
-## Implemented scope (through Milestone 1.5)
+## Implemented scope (through Milestone 2 Phase 1)
 
 - Milestone 0 foundation:
   - Local PostgreSQL dev database via `docker-compose.yml`
@@ -43,6 +43,11 @@ Performance Management System monorepo for reviews, calibration, and improvement
   - Shared UI primitives for admin/review surfaces
   - Admin review cycle pages (`/admin/performance/review-cycles`, `/admin/performance/review-cycles/new`)
   - Admin cycle status transition API (`PATCH /api/admin/performance/review-cycles/:cycleId/status`)
+- Milestone 2 Phase 1:
+  - Review packet page (`/performance/reviews/:cycleId/packet/:employeeId`)
+  - Packet fetch API (`GET /api/performance/reviews/:cycleId/packet/:employeeId`)
+  - Server-side packet visibility gating for HR admins, manager-of-subject, and employee-after-release policy
+  - Packet loading/empty/error states and packet permission tests
 
 ## Local setup
 
@@ -74,6 +79,7 @@ npm run dev
 - `http://localhost:3000/admin/performance/review-cycles`
 - `http://localhost:3000/api/health`
 - `http://localhost:3000/performance/reviews`
+- `http://localhost:3000/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1` (as manager or HR dev user)
 
 ## Development identity defaults
 
@@ -83,6 +89,11 @@ The web UI uses a local dev request context by default:
 - `DEV_ORG_ID=org_demo_1`
 
 Set these in `apps/web/.env.local` to switch local user context.
+
+For packet viewing against seeded data, use:
+
+- `DEV_USER_ID=user_manager_1` (manager can view direct-report packet in Draft/Locked/Released)
+- `DEV_USER_ID=user_employee_1` can view only after the cycle is `RELEASED` with `EMPLOYEE_AFTER_RELEASE` policy
 
 ## API endpoints used in Milestone 1
 
@@ -95,6 +106,7 @@ Set these in `apps/web/.env.local` to switch local user context.
 - `GET /api/evidence?subjectEmployeeId=...&types=...`
 - `POST /api/review-answers/:answerId/evidence-links`
 - `DELETE /api/review-answers/:answerId/evidence-links/:evidenceItemId`
+- `GET /api/performance/reviews/:cycleId/packet/:employeeId`
 
 Note: API routes expect `x-user-id` and `x-org-id` headers.
 
@@ -109,6 +121,13 @@ curl -s http://localhost:3000/api/health
 # evidence list example
 curl -s 'http://localhost:3000/api/evidence?subjectEmployeeId=emp_employee_1' \
   -H 'x-user-id: user_employee_1' \
+  -H 'x-org-id: org_demo_1'
+```
+
+```bash
+# review packet example (manager access)
+curl -s 'http://localhost:3000/api/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1' \
+  -H 'x-user-id: user_manager_1' \
   -H 'x-org-id: org_demo_1'
 ```
 

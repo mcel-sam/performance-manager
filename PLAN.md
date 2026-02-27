@@ -253,7 +253,7 @@ npm run dev
 
 ## Milestone 2 — Packets + Calibration (9-box)
 
-**Status:** Not started  
+**Status:** Phase 1 (Review Packet view) completed locally on 2026-02-27; calibration work pending.  
 **Objective:** Managers/HR can view packets and calibrate a cohort in 9-box with finalize snapshot.
 
 ### Scope
@@ -273,31 +273,35 @@ npm run dev
 ### Work breakdown (ordered)
 
 1. **Data model + migration**
-   - `CalibrationSession`, `CalibrationPlacement`, `CalibrationSnapshot`
-   - Migration name: `add_calibration_mvp`
+   - [ ] Add `CalibrationSession`, `CalibrationPlacement`, `CalibrationSnapshot`
+   - [ ] Migration name: `add_calibration_mvp`
 
-2. **Packet view**
-   - UI: `/performance/reviews/:cycleId/packet/:employeeId`
-   - API: packet fetch (permissioned)
+2. **Phase 1 — Packet view**
+   - [x] UI route: `/performance/reviews/:cycleId/packet/:employeeId`
+   - [x] API/service: permissioned packet fetch with submissions + answers
+   - [x] Visibility rules: HR admin, manager-of-subject, subject employee only after release when policy allows
+   - [x] Loading/empty/error states for packet route
+   - [x] Tests for packet fetch + permission gating
+   - Completed in local workspace commit set for Milestone 2 Phase 1 on 2026-02-27
 
 3. **Calibration session creation**
-   - Admin route (optional for MVP): `/admin/performance/calibration/new`
-   - API: create session with cohort
+   - [ ] Admin route (optional for MVP): `/admin/performance/calibration/new`
+   - [ ] API: create session with cohort
 
 4. **Calibration workspace**
-   - UI: `/performance/calibration/:sessionId`
-   - Move control (dropdown “Move to box”) plus optional drag-drop
-   - Right drawer shows packet summary and link to packet
+   - [ ] UI: `/performance/calibration/:sessionId`
+   - [ ] Move control (dropdown “Move to box”) plus optional drag-drop
+   - [ ] Right drawer shows packet summary and link to packet
 
 5. **Finalize**
-   - Finalize endpoint locks session and creates snapshot JSON
-   - Optionally write final bucket/rating to packet
+   - [ ] Finalize endpoint locks session and creates snapshot JSON
+   - [ ] Optionally write final bucket/rating to packet
 
 6. **Quality**
-   - Tests for finalize locking + snapshot creation
+   - [ ] Tests for finalize locking + snapshot creation
 
 ### Acceptance criteria
-- [ ] Packet view works and is permission-gated
+- [x] Packet view works and is permission-gated
 - [ ] Calibration grid loads cohort and updates placement
 - [ ] Finalize locks session and stores snapshot
 - [ ] Audit events captured for move/finalize
