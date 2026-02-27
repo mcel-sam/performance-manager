@@ -11,14 +11,14 @@ export interface TabItem {
 interface TabsProps extends HTMLAttributes<HTMLDivElement> {
   tabs: TabItem[];
   value: string;
-  onChange: (nextValue: string) => void;
+  onValueChange: (nextValue: string) => void;
   ariaLabel?: string;
 }
 
 export function Tabs({
   tabs,
   value,
-  onChange,
+  onValueChange,
   ariaLabel = "Tab list",
   className,
   ...props
@@ -43,7 +43,7 @@ export function Tabs({
             role="tab"
             aria-selected={isActive}
             disabled={tab.disabled}
-            onClick={() => onChange(tab.value)}
+            onClick={() => onValueChange(tab.value)}
             className={cn(
               "rounded-[var(--radius-sm)] px-3 py-1.5 text-xs font-medium transition",
               isActive ? "bg-white text-slate-900 shadow-[var(--shadow-xs)]" : "text-slate-600",
