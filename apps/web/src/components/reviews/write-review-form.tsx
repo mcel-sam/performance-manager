@@ -1,7 +1,7 @@
 "use client";
 
 import { EvidenceType, ReviewSubmissionStatus } from "@prisma/client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface EvidenceSummary {
   evidenceItemId: string;
@@ -73,6 +73,7 @@ export default function WriteReviewForm({
   const [missingQuestionIds, setMissingQuestionIds] = useState<string[]>([]);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const questionInputRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
 
   const [evidenceCounts, setEvidenceCounts] = useState<Record<EvidenceType, number>>(
     createEmptyEvidenceCounts(),
@@ -101,6 +102,17 @@ export default function WriteReviewForm({
     () => evidenceItemsByType[selectedEvidenceType] ?? [],
     [evidenceItemsByType, selectedEvidenceType],
   );
+  const requiredProgress = useMemo(() => {
+    const requiredQuestions = questionState.filter((question) => question.isRequired);
+    const answeredRequiredCount = requiredQuestions.filter(
+      (question) => question.responseText.trim().length > 0,
+    ).length;
+
+    return {
+      answered: answeredRequiredCount,
+      total: requiredQuestions.length,
+    };
+  }, [questionState]);
 
   const loadEvidence = useCallback(async () => {
     setEvidenceLoadState("loading");
@@ -249,8 +261,28 @@ export default function WriteReviewForm({
           payload?.code === "VALIDATION_ERROR" &&
           Array.isArray(payload?.details?.missingQuestionIds)
         ) {
-          setMissingQuestionIds(payload.details.missingQuestionIds);
+          const missingIds = payload.details.missingQuestionIds.filter(
+            (questionId: unknown): questionId is string =>
+              typeof questionId === "string" && questionId.length > 0,
+          );
+          setMissingQuestionIds(missingIds);
           setSubmitMessage("Please complete all required questions before submitting.");
+
+          const firstMissingQuestionId = missingIds[0];
+          if (firstMissingQuestionId) {
+            setActiveQuestionId(firstMissingQuestionId);
+
+            requestAnimationFrame(() => {
+              const firstMissingInput = questionInputRefs.current[firstMissingQuestionId];
+              if (!firstMissingInput) {
+                return;
+              }
+
+              firstMissingInput.scrollIntoView({ behavior: "smooth", block: "center" });
+              firstMissingInput.focus();
+            });
+          }
+
           return;
         }
 
@@ -387,7 +419,12 @@ export default function WriteReviewForm({
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold text-slate-900">Write Review</h2>
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">Write Review</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Required progress: {requiredProgress.answered}/{requiredProgress.total} answered
+            </p>
+          </div>
           <div className="text-sm font-medium text-slate-600">{saveLabel}</div>
         </div>
 
@@ -423,6 +460,9 @@ export default function WriteReviewForm({
 
                 <textarea
                   id={question.id}
+                  ref={(element) => {
+                    questionInputRefs.current[question.id] = element;
+                  }}
                   value={question.responseText}
                   onFocus={() => setActiveQuestionId(question.id)}
                   onChange={(event) => {
@@ -445,6 +485,8 @@ export default function WriteReviewForm({
                   }}
                   rows={5}
                   readOnly={isReadOnly}
+                  aria-invalid={isMissing}
+                  aria-describedby={isMissing ? `${question.id}-error` : undefined}
                   className={`w-full rounded-md border px-3 py-2 text-sm text-slate-900 outline-none transition focus:ring-2 focus:ring-slate-300 ${
                     isMissing ? "border-rose-400 bg-rose-50" : "border-slate-300"
                   } ${isReadOnly ? "bg-slate-100 text-slate-500" : "bg-white"}`}
@@ -452,7 +494,9 @@ export default function WriteReviewForm({
                 />
 
                 {isMissing ? (
-                  <p className="text-xs font-medium text-rose-700">This question is required.</p>
+                  <p id={`${question.id}-error`} className="text-xs font-medium text-rose-700">
+                    This required question is missing an answer.
+                  </p>
                 ) : null}
 
                 {question.attachedEvidence.length > 0 ? (
