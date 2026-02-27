@@ -17,7 +17,7 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Repo coding rules: `AGENTS.md`
 - Milestone execution tracking: `PLAN.md`
 
-## Implemented scope (through Milestone 2 Phase 3)
+## Implemented scope (through Milestone 3 Phase 1)
 
 - Milestone 0 foundation:
   - Local PostgreSQL dev database via `docker-compose.yml`
@@ -63,6 +63,15 @@ Performance Management System monorepo for reviews, calibration, and improvement
   - Finalize lock enforces read-only placement updates after session finalization
   - Calibration UI finalized banner + disabled move controls while preserving drawer/packet view
   - Audit event for calibration finalize (`CALIBRATION_FINALIZED`)
+- Milestone 3 Phase 1:
+  - Improvement plan schema + migration:
+    - `ImprovementPlan`, `ImprovementPlanGoal`, `ImprovementPlanCheckIn`
+  - Improvement plan APIs:
+    - `POST /api/performance/improvement-plans`
+    - `GET /api/performance/improvement-plans`
+    - `GET /api/performance/improvement-plans/:planId`
+  - Strict server-side permission gating for create/list/detail access
+  - Seed data for one improvement plan with goals
 
 ## Local setup
 
@@ -116,7 +125,7 @@ For calibration session testing, use:
 - `DEV_USER_ID=user_hr_admin_1` (full calibration access)
 - `DEV_USER_ID=user_manager_1` (can access session and move direct reports only)
 
-## API endpoints used in Milestone 1/2
+## API endpoints used in Milestone 1/2/3
 
 - `GET /api/admin/performance/review-cycles`
 - `GET /api/performance/reviews/tasks`
@@ -131,6 +140,9 @@ For calibration session testing, use:
 - `GET /api/performance/calibration/:sessionId`
 - `PATCH /api/performance/calibration/:sessionId/placements/:employeeId`
 - `POST /api/performance/calibration/:sessionId/finalize`
+- `POST /api/performance/improvement-plans`
+- `GET /api/performance/improvement-plans`
+- `GET /api/performance/improvement-plans/:planId`
 
 Note: API routes expect `x-user-id` and `x-org-id` headers.
 
@@ -175,6 +187,36 @@ curl -s -X PATCH 'http://localhost:3000/api/performance/calibration/calibration_
 # finalize calibration session (HR admin or calibrator)
 curl -s -X POST 'http://localhost:3000/api/performance/calibration/calibration_session_seed_1/finalize' \
   -H 'x-user-id: user_hr_admin_1' \
+  -H 'x-org-id: org_demo_1'
+```
+
+```bash
+# create improvement plan (HR admin)
+curl -s -X POST 'http://localhost:3000/api/performance/improvement-plans' \
+  -H 'content-type: application/json' \
+  -H 'x-user-id: user_hr_admin_1' \
+  -H 'x-org-id: org_demo_1' \
+  -d '{
+    "subjectEmployeeId":"emp_employee_1",
+    "title":"Q3 Support Plan",
+    "expectations":"Increase delivery reliability and communication quality.",
+    "startDate":"2026-07-01T00:00:00.000Z",
+    "endDate":"2026-09-30T00:00:00.000Z",
+    "goals":[{"title":"Maintain consistent weekly risk updates"}]
+  }'
+```
+
+```bash
+# list improvement plans (manager scope)
+curl -s 'http://localhost:3000/api/performance/improvement-plans' \
+  -H 'x-user-id: user_manager_1' \
+  -H 'x-org-id: org_demo_1'
+```
+
+```bash
+# get improvement plan detail (subject/manager/HR scope)
+curl -s 'http://localhost:3000/api/performance/improvement-plans/improvement_plan_seed_1' \
+  -H 'x-user-id: user_manager_1' \
   -H 'x-org-id: org_demo_1'
 ```
 

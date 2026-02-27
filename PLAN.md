@@ -318,7 +318,7 @@ npm run dev
 
 ## Milestone 3 — Improvement Plans MVP (Timeline + Audit + Export placeholder)
 
-**Status:** Not started  
+**Status:** Phase 1 completed locally on 2026-02-27 (PR number pending).  
 **Objective:** Create and manage improvement plans with compliance-ready records.
 
 ### Scope
@@ -358,8 +358,31 @@ npm run dev
 5. **Quality**
    - Tests for status transitions and audit events
 
+### Phase tracking
+
+#### Phase 1 — DB + create/list/detail APIs + strict permissions
+- [x] Add Prisma enums/models: `ImprovementPlan`, `ImprovementPlanGoal`, `ImprovementPlanCheckIn`
+- [x] Commit migration `add_improvement_plans_mvp`
+- [x] Add seed/dev data for one improvement plan and goals
+- [x] Add APIs:
+  - [x] `POST /api/performance/improvement-plans`
+  - [x] `GET /api/performance/improvement-plans`
+  - [x] `GET /api/performance/improvement-plans/:planId`
+- [x] Keep route handlers thin; move logic to `src/server/improvement-plans/*`
+- [x] Enforce server-side permissions (HR admin, manager direct-report scope, subject/manager/HR access scope)
+- [x] Add service tests for create/list/detail and permission denials
+- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
+- Completed in local workspace commit set on 2026-02-27 (PR number pending)
+
+#### Phase 2 — timeline/check-ins + status transitions + audit feed + export placeholder
+- [ ] Add plan timeline/check-in APIs and detail workflow
+- [ ] Add status transition API and audit events for state changes
+- [ ] Add audit event retrieval and export placeholder endpoint
+- [ ] Add UI routes `/performance/improvement-plans` and `/performance/improvement-plans/:planId`
+- [ ] Add loading/empty/error states and tests for status transitions/audit behavior
+
 ### Acceptance criteria
-- [ ] Authorized users can create and view plans
+- [x] Authorized users can create and view plans
 - [ ] Check-ins append to timeline and are audited
 - [ ] Export placeholder exists and is clearly marked
-- [ ] Unauthorized users cannot access plan data
+- [x] Unauthorized users cannot access plan data
