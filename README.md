@@ -17,7 +17,7 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Repo coding rules: `AGENTS.md`
 - Milestone execution tracking: `PLAN.md`
 
-## Implemented scope (through Milestone 3 Phase 2)
+## Implemented scope (through Milestone 3 Phase 3)
 
 - Milestone 0 foundation:
   - Local PostgreSQL dev database via `docker-compose.yml`
@@ -82,6 +82,16 @@ Performance Management System monorepo for reviews, calibration, and improvement
   - Status transition rules enforced server-side with required completion outcome
   - Audit events for check-in create and status transitions
   - Loading/empty/error states on the improvement plan detail timeline page
+- Milestone 3 Phase 3:
+  - Audit log API:
+    - `GET /api/performance/improvement-plans/:planId/audit`
+  - Export placeholder API:
+    - `GET /api/performance/improvement-plans/:planId/export` (returns HTTP 501 placeholder JSON)
+  - Improvement plan detail UI now includes:
+    - Timeline / Audit Log view toggle
+    - Audit log loading/empty/error states
+    - Export action with friendly placeholder response
+  - Permission gating for audit and export access (subject/manager/HR-admin scope)
 
 ## Local setup
 
@@ -156,6 +166,8 @@ For calibration session testing, use:
 - `GET /api/performance/improvement-plans/:planId`
 - `POST /api/performance/improvement-plans/:planId/checkins`
 - `PATCH /api/performance/improvement-plans/:planId/status`
+- `GET /api/performance/improvement-plans/:planId/audit`
+- `GET /api/performance/improvement-plans/:planId/export`
 
 Note: API routes expect `x-user-id` and `x-org-id` headers.
 
@@ -249,6 +261,20 @@ curl -s -X PATCH 'http://localhost:3000/api/performance/improvement-plans/improv
   -H 'x-user-id: user_manager_1' \
   -H 'x-org-id: org_demo_1' \
   -d '{"targetStatus":"ACTIVE"}'
+```
+
+```bash
+# fetch plan audit log
+curl -s 'http://localhost:3000/api/performance/improvement-plans/improvement_plan_seed_1/audit' \
+  -H 'x-user-id: user_manager_1' \
+  -H 'x-org-id: org_demo_1'
+```
+
+```bash
+# export placeholder response (HTTP 501 by design in MVP)
+curl -i 'http://localhost:3000/api/performance/improvement-plans/improvement_plan_seed_1/export' \
+  -H 'x-user-id: user_manager_1' \
+  -H 'x-org-id: org_demo_1'
 ```
 
 ## Quality gates

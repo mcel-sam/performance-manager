@@ -318,7 +318,7 @@ npm run dev
 
 ## Milestone 3 — Improvement Plans MVP (Timeline + Audit + Export placeholder)
 
-**Status:** Phase 1 and Phase 2 completed locally on 2026-02-27 (PR number pending).  
+**Status:** Phase 1, Phase 2, and Phase 3 completed locally on 2026-02-27 (PR number pending).  
 **Objective:** Create and manage improvement plans with compliance-ready records.
 
 ### Scope
@@ -393,14 +393,20 @@ npm run dev
 - [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
 - Completed in local workspace commit set on 2026-02-27 (PR number pending)
 
-#### Phase 3 — audit log UI/export placeholder (pending)
-- [ ] Add audit event retrieval endpoint for improvement plans
-- [ ] Add export placeholder endpoint and UI action
+#### Phase 3 — audit log view + export placeholder
+- [x] Add audit event retrieval endpoint for improvement plans
+- [x] Add export placeholder endpoint and UI action
+- [x] Add audit log view on `/performance/improvement-plans/:planId` with loading/empty/error states
+- [x] Add tests for audit feed and export placeholder behavior
+- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
+- Completed in local workspace commit set on 2026-02-27 (PR number pending)
+
+#### Milestone 3 follow-on (out of Phase 3 scope)
 - [ ] Add `/performance/improvement-plans` list route
-- [ ] Add tests for audit feed and export placeholder behavior
+- [ ] Add incremental UX polish beyond MVP placeholders
 
 ### Acceptance criteria
 - [x] Authorized users can create and view plans
 - [x] Check-ins append to timeline and are audited
-- [ ] Export placeholder exists and is clearly marked
+- [x] Export placeholder exists and is clearly marked
 - [x] Unauthorized users cannot access plan data
