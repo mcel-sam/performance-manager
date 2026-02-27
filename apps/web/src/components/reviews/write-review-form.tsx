@@ -434,6 +434,15 @@ export default function WriteReviewForm({
             description={`Required progress: ${requiredProgress.answered}/${requiredProgress.total} answered`}
             action={<span className="text-sm font-medium text-slate-600">{saveLabel}</span>}
           />
+          <details className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+            <summary className="cursor-pointer text-sm font-medium text-slate-900">
+              Submit guidance
+            </summary>
+            <p className="mt-2 text-xs text-slate-600">
+              Submit is final for this phase. After submit, your answers become read-only and packet
+              visibility follows cycle policy.
+            </p>
+          </details>
         </CardHeader>
         <CardContent className="space-y-5">
           {questionState.length === 0 ? (
@@ -567,6 +576,16 @@ export default function WriteReviewForm({
         title="Evidence Context"
         description="Select an answer and attach supporting evidence."
       >
+        <details className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+          <summary className="cursor-pointer text-sm font-medium text-slate-900">
+            Evidence guidance
+          </summary>
+          <p className="mt-2 text-xs text-slate-600">
+            Include concrete examples like feedback, updates, goals, or values recognition. You can
+            only view and attach evidence items visible to your role.
+          </p>
+        </details>
+
         <Card className="border-slate-200 shadow-none">
           <CardContent className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Selected answer</p>

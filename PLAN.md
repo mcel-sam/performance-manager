@@ -511,25 +511,26 @@ npm run dev
 ---
 
 ### Phase 3 — In-app Guidance (Help + Tooltips + Coaching)
-- [ ] Add persistent Help entry point in app shell (header or nav)
-- [ ] Add `/help` page with role-based sections and deep links:
-  - [ ] Employee: tasks, writing/submitting, evidence, viewing packet
-  - [ ] Manager: calibration, review participation, improvement plans
-  - [ ] HR: cycle setup, progress monitoring, calibration sessions, audit/export concepts
-- [ ] Add “Getting started” coaching card on Home (role-aware links)
-- [ ] Add contextual tooltips/helper text (concise, accessible) for:
-  - [ ] Submit (finality + visibility)
-  - [ ] Evidence (what counts + visibility)
-  - [ ] Calibration axes meaning + finalized/locked meaning
-  - [ ] Packet visibility rules (locked vs released)
-  - [ ] Improvement plan visibility & audit notes
-- [ ] Improve empty-state coaching copy on key pages (“what to do next”)
+- [x] Add persistent Help entry point in app shell (header or nav)
+- [x] Add `/help` page with role-based sections and deep links:
+  - [x] Employee: tasks, writing/submitting, evidence, viewing packet
+  - [x] Manager: calibration, review participation, improvement plans
+  - [x] HR: cycle setup, progress monitoring, calibration sessions, audit/export concepts
+- [x] Add “Getting started” coaching card on Home (role-aware links)
+- [x] Add contextual tooltips/helper text (concise, accessible) for:
+  - [x] Submit (finality + visibility)
+  - [x] Evidence (what counts + visibility)
+  - [x] Calibration axes meaning + finalized/locked meaning
+  - [x] Packet visibility rules (locked vs released)
+  - [x] Improvement plan visibility & audit notes
+- [x] Improve empty-state coaching copy on key pages (“what to do next”)
 
 **Acceptance criteria**
-- [ ] Users can self-serve core workflows without external training
-- [ ] Tooltips are accessible (keyboard + aria) and concise
-- [ ] `/help` provides accurate deep links to in-app pages
-- [ ] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+- [x] Users can self-serve core workflows without external training
+- [x] Tooltips are accessible (keyboard + aria) and concise
+- [x] `/help` provides accurate deep links to in-app pages
+- [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+- Completed in PR #5 (dev -> main Milestone 4 Phase 3)
 
 ---
 

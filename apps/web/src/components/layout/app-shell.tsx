@@ -35,6 +35,10 @@ const navItems = [
     href: "/admin/performance/review-cycles",
     label: "Admin Cycles",
   },
+  {
+    href: "/help",
+    label: "Help",
+  },
 ];
 
 export default function AppShell({ children }: AppShellProps) {

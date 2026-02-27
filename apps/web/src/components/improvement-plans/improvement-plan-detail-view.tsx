@@ -307,6 +307,11 @@ export default function ImprovementPlanDetailView({
         <Toast variant={exportMessage.includes("Unable") ? "error" : "info"}>{exportMessage}</Toast>
       ) : null}
 
+      <Toast variant="info">
+        Visibility is limited to the subject, manager chain, and HR. Check-ins and status transitions
+        are recorded in the audit log.
+      </Toast>
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <Card>

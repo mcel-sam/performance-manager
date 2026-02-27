@@ -34,6 +34,15 @@ export default async function ReviewPacketPage({ params }: ReviewPacketPageProps
         }
       />
 
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-slate-700">
+            Packet visibility follows cycle policy. Managers and HR can view in-progress packets;
+            employee access is available after release when policy allows.
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         <Card>
           <CardHeader>
