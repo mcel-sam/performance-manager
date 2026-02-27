@@ -15,6 +15,7 @@ interface CalibrationSessionPlacementRecord {
   employeeId: string;
   performanceBucket: CalibrationBucket;
   potentialBucket: CalibrationBucket;
+  justificationNote: string | null;
   employee: {
     id: string;
     firstName: string;
@@ -51,6 +52,7 @@ interface CalibrationPlacementAccessRecord {
   employeeId: string;
   performanceBucket: CalibrationBucket;
   potentialBucket: CalibrationBucket;
+  justificationNote: string | null;
   employee: {
     id: string;
     managerId: string | null;
@@ -109,6 +111,16 @@ interface CalibrationSessionDb {
         createdAt: true;
       };
     }) => Promise<{ id: string; createdAt: Date }>;
+    findFirst: (args: {
+      where: {
+        orgId: string;
+        sessionId: string;
+      };
+      select: {
+        id: true;
+        createdAt: true;
+      };
+    }) => Promise<{ id: string; createdAt: Date } | null>;
   };
   calibrationPlacement: {
     findFirst: (args: {
@@ -126,12 +138,14 @@ interface CalibrationSessionDb {
       data: {
         performanceBucket: CalibrationBucket;
         potentialBucket: CalibrationBucket;
+        justificationNote: string | null;
       };
       select: {
         id: true;
         employeeId: true;
         performanceBucket: true;
         potentialBucket: true;
+        justificationNote: true;
         updatedAt: true;
       };
     }) => Promise<{
@@ -139,6 +153,7 @@ interface CalibrationSessionDb {
       employeeId: string;
       performanceBucket: CalibrationBucket;
       potentialBucket: CalibrationBucket;
+      justificationNote: string | null;
       updatedAt: Date;
     }>;
   };
@@ -195,6 +210,7 @@ const movePlacementSchema = z.object({
   employeeId: z.string().trim().min(1),
   performanceBucket: z.nativeEnum(CalibrationBucket),
   potentialBucket: z.nativeEnum(CalibrationBucket),
+  justificationNote: z.string().trim().max(2000).optional().nullable(),
 });
 
 const performanceDefinitions: CalibrationAxisDefinition[] = [
@@ -252,6 +268,7 @@ export interface CalibrationSessionPlacement {
   managerName: string | null;
   performanceBucket: CalibrationBucket;
   potentialBucket: CalibrationBucket;
+  justificationNote: string | null;
   packetSummary: {
     totalSubmissions: number;
     submittedCount: number;
@@ -287,6 +304,7 @@ export interface MoveCalibrationPlacementResult {
   employeeId: string;
   performanceBucket: CalibrationBucket;
   potentialBucket: CalibrationBucket;
+  justificationNote: string | null;
   updatedAt: string;
 }
 
@@ -297,6 +315,13 @@ export interface FinalizeCalibrationSessionResult {
   finalizedAt: string;
   placementCount: number;
   participantCount: number;
+}
+
+export interface CalibrationExportPlaceholder {
+  sessionId: string;
+  snapshotId: string | null;
+  snapshotCreatedAt: string | null;
+  message: string;
 }
 
 export async function getCalibrationSessionData(
@@ -347,6 +372,7 @@ export async function getCalibrationSessionData(
           : null,
         performanceBucket: placement.performanceBucket,
         potentialBucket: placement.potentialBucket,
+        justificationNote: placement.justificationNote,
         packetSummary: summary,
         canMove:
           !session.isFinalized &&
@@ -406,6 +432,7 @@ export async function moveCalibrationPlacement(
       employeeId: true,
       performanceBucket: true,
       potentialBucket: true,
+      justificationNote: true,
       employee: {
         select: {
           id: true,
@@ -437,7 +464,8 @@ export async function moveCalibrationPlacement(
 
   const hasChanged =
     placement.performanceBucket !== parsed.data.performanceBucket ||
-    placement.potentialBucket !== parsed.data.potentialBucket;
+    placement.potentialBucket !== parsed.data.potentialBucket ||
+    placement.justificationNote !== normalizeNote(parsed.data.justificationNote, placement.justificationNote);
 
   if (!hasChanged) {
     return {
@@ -445,9 +473,15 @@ export async function moveCalibrationPlacement(
       employeeId: placement.employeeId,
       performanceBucket: placement.performanceBucket,
       potentialBucket: placement.potentialBucket,
+      justificationNote: placement.justificationNote,
       updatedAt: new Date().toISOString(),
     };
   }
+
+  const nextJustificationNote = normalizeNote(
+    parsed.data.justificationNote,
+    placement.justificationNote,
+  );
 
   const updatedPlacement = await db.calibrationPlacement.update({
     where: {
@@ -456,12 +490,14 @@ export async function moveCalibrationPlacement(
     data: {
       performanceBucket: parsed.data.performanceBucket,
       potentialBucket: parsed.data.potentialBucket,
+      justificationNote: nextJustificationNote,
     },
     select: {
       id: true,
       employeeId: true,
       performanceBucket: true,
       potentialBucket: true,
+      justificationNote: true,
       updatedAt: true,
     },
   });
@@ -481,6 +517,7 @@ export async function moveCalibrationPlacement(
         previousPotentialBucket: placement.potentialBucket,
         performanceBucket: updatedPlacement.performanceBucket,
         potentialBucket: updatedPlacement.potentialBucket,
+        noteLength: updatedPlacement.justificationNote?.length ?? 0,
       },
     },
   });
@@ -490,7 +527,47 @@ export async function moveCalibrationPlacement(
     employeeId: updatedPlacement.employeeId,
     performanceBucket: updatedPlacement.performanceBucket,
     potentialBucket: updatedPlacement.potentialBucket,
+    justificationNote: updatedPlacement.justificationNote,
     updatedAt: updatedPlacement.updatedAt.toISOString(),
+  };
+}
+
+export async function getCalibrationExportPlaceholder(
+  sessionId: string,
+  context: RequestContext,
+  db: CalibrationSessionDb = prisma as unknown as CalibrationSessionDb,
+): Promise<CalibrationExportPlaceholder> {
+  const parsed = sessionIdSchema.safeParse({ sessionId });
+  if (!parsed.success) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Invalid calibration session identifier",
+      400,
+      parsed.error.flatten(),
+    );
+  }
+
+  const session = await loadSessionRecord(parsed.data.sessionId, context.orgId, db);
+  await resolveSessionPermission(session, context, db);
+
+  const snapshot = await db.calibrationSnapshot.findFirst({
+    where: {
+      orgId: context.orgId,
+      sessionId: session.id,
+    },
+    select: {
+      id: true,
+      createdAt: true,
+    },
+  });
+
+  return {
+    sessionId: session.id,
+    snapshotId: snapshot?.id ?? null,
+    snapshotCreatedAt: snapshot?.createdAt.toISOString() ?? null,
+    message: snapshot
+      ? "Calibration export download will be enabled in a later milestone."
+      : "No finalized snapshot exists yet. Finalize the session before exporting.",
   };
 }
 
@@ -615,6 +692,7 @@ async function loadSessionRecord(
           employeeId: true,
           performanceBucket: true,
           potentialBucket: true,
+          justificationNote: true,
           employee: {
             select: {
               id: true,
@@ -657,6 +735,7 @@ function buildCalibrationSnapshotPayload(
       : null,
     performanceBucket: placement.performanceBucket,
     potentialBucket: placement.potentialBucket,
+    justificationNote: placement.justificationNote,
   }));
 
   const cellCounts = session.placements.reduce((counts, placement) => {
@@ -812,6 +891,17 @@ async function canMovePlacement(
 
 function canFinalizeSession(context: RequestContext): boolean {
   return context.role === UserRole.HR_ADMIN || context.role === UserRole.CALIBRATOR;
+}
+
+function normalizeNote(
+  nextNote: string | null | undefined,
+  currentNote: string | null,
+): string | null {
+  if (nextNote === undefined) {
+    return currentNote;
+  }
+
+  return nextNote === null || nextNote.length === 0 ? null : nextNote;
 }
 
 async function loadPacketSummaryByEmployee(

@@ -19,6 +19,7 @@ export async function PATCH(
         employeeId,
         performanceBucket: payload?.performanceBucket,
         potentialBucket: payload?.potentialBucket,
+        justificationNote: payload?.justificationNote,
       },
       requestContext,
     );
