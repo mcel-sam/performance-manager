@@ -489,23 +489,24 @@ npm run dev
 ---
 
 ### Phase 2 — Apply Consistency Across Core Flows
-- [ ] Refactor remaining core routes to use primitives/layout:
-  - [ ] Write review screen
-  - [ ] Packet view
-  - [ ] Calibration session view
-  - [ ] Improvement plans detail
-  - [ ] Admin review cycles new/create page (if still inconsistent)
-- [ ] Standardize loading/empty/error states using shared components
-- [ ] Add Skeleton loaders on packet/calibration/improvement plan detail where data fetches occur
-- [ ] Accessibility baseline pass:
-  - [ ] Focus states visible
-  - [ ] Keyboard navigation for drawers/modals
-  - [ ] `aria-label` on icon buttons
+- [x] Refactor remaining core routes to use primitives/layout:
+  - [x] Write review screen
+  - [x] Packet view
+  - [x] Calibration session view
+  - [x] Improvement plans detail
+  - [x] Admin review cycles new/create page (if still inconsistent)
+- [x] Standardize loading/empty/error states using shared components
+- [x] Add Skeleton loaders on packet/calibration/improvement plan detail where data fetches occur
+- [x] Accessibility baseline pass:
+  - [x] Focus states visible
+  - [x] Keyboard navigation for drawers/modals
+  - [x] `aria-label` on icon buttons
 
 **Acceptance criteria**
-- [ ] Core flows look consistent and use shared components
-- [ ] No mixed styling patterns remain on core routes
-- [ ] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+- [x] Core flows look consistent and use shared components
+- [x] No mixed styling patterns remain on core routes
+- [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+- Completed in PR #TBD (dev -> main Milestone 4 Phase 2)
 
 ---
 
