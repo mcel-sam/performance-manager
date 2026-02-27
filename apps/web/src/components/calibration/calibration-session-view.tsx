@@ -41,6 +41,7 @@ export default function CalibrationSessionView({
   auth,
   initialData,
 }: CalibrationSessionViewProps) {
+  const [session, setSession] = useState(initialData.session);
   const [placements, setPlacements] = useState(initialData.placements);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(
     initialData.placements[0]?.employeeId ?? null,
@@ -54,6 +55,8 @@ export default function CalibrationSessionView({
   );
   const [moveMessage, setMoveMessage] = useState<string | null>(null);
   const [isMoving, setIsMoving] = useState(false);
+  const [finalizeMessage, setFinalizeMessage] = useState<string | null>(null);
+  const [isFinalizing, setIsFinalizing] = useState(false);
 
   const performanceLabels = useMemo(
     () => buildAxisLabelMap(initialData.guidance.performance),
@@ -94,7 +97,7 @@ export default function CalibrationSessionView({
   }, [selectedPlacement]);
 
   async function handleMovePlacement() {
-    if (!selectedPlacement) {
+    if (!selectedPlacement || session.isFinalized) {
       return;
     }
 
@@ -119,7 +122,6 @@ export default function CalibrationSessionView({
       );
 
       const payload = (await response.json()) as {
-        code?: string;
         message?: string;
         performanceBucket?: CalibrationBucket;
         potentialBucket?: CalibrationBucket;
@@ -134,8 +136,7 @@ export default function CalibrationSessionView({
           placement.employeeId === selectedPlacement.employeeId
             ? {
                 ...placement,
-                performanceBucket:
-                  payload.performanceBucket ?? placement.performanceBucket,
+                performanceBucket: payload.performanceBucket ?? placement.performanceBucket,
                 potentialBucket: payload.potentialBucket ?? placement.potentialBucket,
               }
             : placement,
@@ -149,24 +150,82 @@ export default function CalibrationSessionView({
     }
   }
 
+  async function handleFinalizeSession() {
+    if (session.isFinalized || !initialData.viewer.canFinalize) {
+      return;
+    }
+
+    setIsFinalizing(true);
+    setFinalizeMessage(null);
+
+    try {
+      const response = await fetch(`/api/performance/calibration/${sessionId}/finalize`, {
+        method: "POST",
+        headers: {
+          "x-user-id": auth.userId,
+          "x-org-id": auth.orgId,
+        },
+      });
+
+      const payload = (await response.json()) as {
+        message?: string;
+        finalizedAt?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.message ?? "Unable to finalize session");
+      }
+
+      setSession((previous) => ({
+        ...previous,
+        isFinalized: true,
+        finalizedAt: payload.finalizedAt ?? previous.finalizedAt,
+      }));
+      setPlacements((previous) =>
+        previous.map((placement) => ({
+          ...placement,
+          canMove: false,
+        })),
+      );
+      setFinalizeMessage("Calibration finalized. Placements are now locked.");
+      setMoveMessage(null);
+    } catch (error) {
+      setFinalizeMessage(error instanceof Error ? error.message : "Unable to finalize session");
+    } finally {
+      setIsFinalizing(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <header className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            {initialData.session.name}
-          </h1>
-          <Badge variant="info">{initialData.session.cycleName}</Badge>
-          {initialData.session.isFinalized ? (
-            <Badge variant="warning">Read-only session</Badge>
-          ) : null}
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{session.name}</h1>
+          <Badge variant="info">{session.cycleName}</Badge>
+          {session.isFinalized ? <Badge variant="warning">Finalized</Badge> : <Badge variant="neutral">In progress</Badge>}
         </div>
         <p className="max-w-4xl text-sm text-slate-600">{initialData.guidance.summary}</p>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {!session.isFinalized && initialData.viewer.canFinalize ? (
+            <Button onClick={() => void handleFinalizeSession()} disabled={isFinalizing}>
+              {isFinalizing ? "Finalizing..." : "Finalize Session"}
+            </Button>
+          ) : null}
+          {session.finalizedAt ? (
+            <p className="text-xs text-slate-500">
+              Finalized on {new Date(session.finalizedAt).toLocaleString()}
+            </p>
+          ) : null}
+        </div>
+
+        {finalizeMessage ? (
+          <p className="text-sm text-slate-700">{finalizeMessage}</p>
+        ) : null}
+
         <div className="grid gap-3 text-sm text-slate-700 md:grid-cols-2">
           <details className="rounded-md border border-slate-200 bg-white p-3">
-            <summary className="cursor-pointer font-medium text-slate-900">
-              Performance definitions
-            </summary>
+            <summary className="cursor-pointer font-medium text-slate-900">Performance definitions</summary>
             <ul className="mt-2 space-y-1 text-xs text-slate-600">
               {initialData.guidance.performance.map((definition) => (
                 <li key={definition.bucket}>
@@ -177,9 +236,7 @@ export default function CalibrationSessionView({
             </ul>
           </details>
           <details className="rounded-md border border-slate-200 bg-white p-3">
-            <summary className="cursor-pointer font-medium text-slate-900">
-              Potential definitions
-            </summary>
+            <summary className="cursor-pointer font-medium text-slate-900">Potential definitions</summary>
             <ul className="mt-2 space-y-1 text-xs text-slate-600">
               {initialData.guidance.potential.map((definition) => (
                 <li key={definition.bucket}>
@@ -192,9 +249,9 @@ export default function CalibrationSessionView({
         </div>
       </header>
 
-      {initialData.session.isFinalized ? (
+      {session.isFinalized ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          This calibration session is locked. Placements are read-only.
+          This session is finalized. Placements are read-only.
         </div>
       ) : null}
 
@@ -335,7 +392,7 @@ export default function CalibrationSessionView({
                       </CardHeader>
                       <CardContent className="pt-0">
                         <Link
-                          href={`/performance/reviews/${initialData.session.cycleId}/packet/${selectedPlacement.employeeId}`}
+                          href={`/performance/reviews/${session.cycleId}/packet/${selectedPlacement.employeeId}`}
                           className="text-sm font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-700"
                         >
                           Open review packet
@@ -358,7 +415,7 @@ export default function CalibrationSessionView({
                             onChange={(event) =>
                               setMovePerformanceBucket(event.target.value as CalibrationBucket)
                             }
-                            disabled={!selectedPlacement.canMove || initialData.session.isFinalized}
+                            disabled={!selectedPlacement.canMove || session.isFinalized}
                           >
                             {performanceOrder.map((bucket) => (
                               <option key={bucket} value={bucket}>
@@ -375,7 +432,7 @@ export default function CalibrationSessionView({
                             onChange={(event) =>
                               setMovePotentialBucket(event.target.value as CalibrationBucket)
                             }
-                            disabled={!selectedPlacement.canMove || initialData.session.isFinalized}
+                            disabled={!selectedPlacement.canMove || session.isFinalized}
                           >
                             {potentialOrder.map((bucket) => (
                               <option key={bucket} value={bucket}>
@@ -387,23 +444,19 @@ export default function CalibrationSessionView({
 
                         <Button
                           onClick={() => void handleMovePlacement()}
-                          disabled={
-                            isMoving || !selectedPlacement.canMove || initialData.session.isFinalized
-                          }
+                          disabled={isMoving || !selectedPlacement.canMove || session.isFinalized}
                           className="w-full"
                         >
                           {isMoving ? "Updating..." : "Update placement"}
                         </Button>
 
-                        {!selectedPlacement.canMove && !initialData.session.isFinalized ? (
+                        {!selectedPlacement.canMove && !session.isFinalized ? (
                           <p className="text-xs text-amber-700">
                             You can only move placements for employees you manage.
                           </p>
                         ) : null}
 
-                        {moveMessage ? (
-                          <p className="text-xs text-slate-700">{moveMessage}</p>
-                        ) : null}
+                        {moveMessage ? <p className="text-xs text-slate-700">{moveMessage}</p> : null}
                       </CardContent>
                     </Card>
                   </div>
