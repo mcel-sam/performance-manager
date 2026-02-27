@@ -33,6 +33,9 @@ interface CalibrationSessionRecord {
   orgId: string;
   cycleId: string;
   name: string;
+  roleGroup: string | null;
+  performanceAxisConfig: unknown;
+  potentialAxisConfig: unknown;
   isFinalized: boolean;
   finalizedAt: Date | null;
   cycle: {
@@ -260,6 +263,7 @@ export interface CalibrationSessionData {
   session: {
     id: string;
     name: string;
+    roleGroup: string | null;
     cycleId: string;
     cycleName: string;
     cycleStatus: CycleStatus;
@@ -312,6 +316,14 @@ export async function getCalibrationSessionData(
 
   const session = await loadSessionRecord(parsed.data.sessionId, context.orgId, db);
   const permission = await resolveSessionPermission(session, context, db);
+  const configuredPerformanceDefinitions = resolveAxisDefinitions(
+    session.performanceAxisConfig,
+    performanceDefinitions,
+  );
+  const configuredPotentialDefinitions = resolveAxisDefinitions(
+    session.potentialAxisConfig,
+    potentialDefinitions,
+  );
   const packetSummaryByEmployee = await loadPacketSummaryByEmployee(
     context.orgId,
     session.cycleId,
@@ -347,6 +359,7 @@ export async function getCalibrationSessionData(
     session: {
       id: session.id,
       name: session.name,
+      roleGroup: session.roleGroup,
       cycleId: session.cycleId,
       cycleName: session.cycle.name,
       cycleStatus: session.cycle.status,
@@ -356,8 +369,8 @@ export async function getCalibrationSessionData(
     guidance: {
       summary:
         "Calibration aligns managers on how performance and potential are evaluated across the cohort.",
-      performance: performanceDefinitions,
-      potential: potentialDefinitions,
+      performance: configuredPerformanceDefinitions,
+      potential: configuredPotentialDefinitions,
     },
     viewer: {
       canMoveAny: permission.canMoveAny,
@@ -506,7 +519,12 @@ export async function finalizeCalibrationSession(
   }
 
   const finalizedAt = new Date();
-  const snapshotPayload = buildCalibrationSnapshotPayload(session, finalizedAt);
+  const snapshotPayload = buildCalibrationSnapshotPayload(
+    session,
+    finalizedAt,
+    resolveAxisDefinitions(session.performanceAxisConfig, performanceDefinitions),
+    resolveAxisDefinitions(session.potentialAxisConfig, potentialDefinitions),
+  );
 
   const snapshot = await db.calibrationSnapshot.create({
     data: {
@@ -576,6 +594,9 @@ async function loadSessionRecord(
       orgId: true,
       cycleId: true,
       name: true,
+      roleGroup: true,
+      performanceAxisConfig: true,
+      potentialAxisConfig: true,
       isFinalized: true,
       finalizedAt: true,
       cycle: {
@@ -624,6 +645,8 @@ async function loadSessionRecord(
 function buildCalibrationSnapshotPayload(
   session: CalibrationSessionRecord,
   finalizedAt: Date,
+  configuredPerformanceDefinitions: CalibrationAxisDefinition[],
+  configuredPotentialDefinitions: CalibrationAxisDefinition[],
 ): Record<string, unknown> {
   const placements = session.placements.map((placement) => ({
     employeeId: placement.employeeId,
@@ -648,8 +671,8 @@ function buildCalibrationSnapshotPayload(
     cycleName: session.cycle.name,
     timestamp: finalizedAt.toISOString(),
     axes: {
-      performance: performanceDefinitions,
-      potential: potentialDefinitions,
+      performance: configuredPerformanceDefinitions,
+      potential: configuredPotentialDefinitions,
     },
     notes: [],
     participants: placements.map((placement) => ({
@@ -665,6 +688,49 @@ function buildCalibrationSnapshotPayload(
     },
   };
 }
+
+function resolveAxisDefinitions(
+  axisConfig: unknown,
+  fallback: CalibrationAxisDefinition[],
+): CalibrationAxisDefinition[] {
+  if (!Array.isArray(axisConfig)) {
+    return fallback;
+  }
+
+  const parsed = axisConfig
+    .filter((item): item is CalibrationAxisDefinition => isCalibrationAxisDefinition(item))
+    .sort((left, right) => axisSortOrder[left.bucket] - axisSortOrder[right.bucket]);
+
+  const uniqueBuckets = new Set(parsed.map((definition) => definition.bucket));
+  if (parsed.length !== 3 || uniqueBuckets.size !== 3) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
+function isCalibrationAxisDefinition(value: unknown): value is CalibrationAxisDefinition {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    (candidate.bucket === CalibrationBucket.LOW ||
+      candidate.bucket === CalibrationBucket.MEDIUM ||
+      candidate.bucket === CalibrationBucket.HIGH) &&
+    typeof candidate.label === "string" &&
+    candidate.label.trim().length > 0 &&
+    typeof candidate.description === "string" &&
+    candidate.description.trim().length > 0
+  );
+}
+
+const axisSortOrder: Record<CalibrationBucket, number> = {
+  [CalibrationBucket.LOW]: 0,
+  [CalibrationBucket.MEDIUM]: 1,
+  [CalibrationBucket.HIGH]: 2,
+};
 
 async function resolveSessionPermission(
   session: CalibrationSessionRecord,
