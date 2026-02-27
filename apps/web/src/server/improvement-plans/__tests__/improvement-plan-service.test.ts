@@ -1,10 +1,16 @@
-import { ImprovementPlanStatus, UserRole } from "@prisma/client";
+import {
+  ImprovementPlanOutcome,
+  ImprovementPlanStatus,
+  UserRole,
+} from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
 import {
   createImprovementPlan,
+  createImprovementPlanCheckIn,
   getImprovementPlanDetail,
   listImprovementPlans,
+  transitionImprovementPlanStatus,
 } from "@/server/improvement-plans/improvement-plan-service";
 
 function buildDbMock() {
@@ -16,9 +22,37 @@ function buildDbMock() {
       create: vi.fn(),
       findMany: vi.fn(),
       findFirst: vi.fn(),
+      update: vi.fn(),
+    },
+    improvementPlanCheckIn: {
+      create: vi.fn(),
     },
     auditEvent: {
       create: vi.fn(),
+    },
+  };
+}
+
+function buildTimelineRecord(overrides?: {
+  id?: string;
+  content?: string;
+  status?: ImprovementPlanStatus | null;
+  outcome?: ImprovementPlanOutcome | null;
+}) {
+  return {
+    id: overrides?.id ?? "checkin_1",
+    content: overrides?.content ?? "Weekly check-in update.",
+    status: overrides?.status ?? ImprovementPlanStatus.ACTIVE,
+    outcome: overrides?.outcome ?? null,
+    checkInAt: new Date("2026-04-08T16:00:00.000Z"),
+    createdAt: new Date("2026-04-08T16:00:00.000Z"),
+    authorUser: {
+      id: "user_manager_1",
+      email: "manager@example.com",
+      employee: {
+        firstName: "Morgan",
+        lastName: "Manager",
+      },
     },
   };
 }
@@ -37,6 +71,12 @@ const managerContext = {
 
 const employeeContext = {
   userId: "user_employee_1",
+  orgId: "org_demo_1",
+  role: UserRole.EMPLOYEE,
+};
+
+const peerContext = {
+  userId: "user_peer_1",
   orgId: "org_demo_1",
   role: UserRole.EMPLOYEE,
 };
@@ -272,13 +312,14 @@ describe("getImprovementPlanDetail", () => {
           sortOrder: 1,
         },
       ],
-      checkIns: [{ id: "checkin_1" }],
+      checkIns: [buildTimelineRecord()],
     });
 
     const result = await getImprovementPlanDetail("plan_1", hrAdminContext, db as never);
 
     expect(result.id).toBe("plan_1");
     expect(result.checkInCount).toBe(1);
+    expect(result.timeline[0]?.authorName).toBe("Morgan Manager");
     expect(db.employee.findFirst).not.toHaveBeenCalled();
   });
 
@@ -307,6 +348,220 @@ describe("getImprovementPlanDetail", () => {
     });
 
     db.employee.findFirst.mockResolvedValue({
+      id: "emp_peer_1",
+      userId: "user_peer_1",
+      managerId: "emp_manager_1",
+      firstName: "Parker",
+      lastName: "Peer",
+    });
+
+    await expect(
+      getImprovementPlanDetail("plan_1", peerContext, db as never),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+  });
+});
+
+describe("createImprovementPlanCheckIn", () => {
+  it("allows authorized users to create check-ins and writes an audit event", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_manager_1",
+      userId: "user_manager_1",
+      managerId: "emp_hr_admin_1",
+      firstName: "Morgan",
+      lastName: "Manager",
+    });
+
+    db.improvementPlanCheckIn.create.mockResolvedValue(
+      buildTimelineRecord({
+        id: "checkin_42",
+        content: "Weekly goals are on track.",
+        status: ImprovementPlanStatus.ACTIVE,
+        outcome: null,
+      }),
+    );
+
+    db.auditEvent.create.mockResolvedValue({ id: "audit_checkin_1" });
+
+    const result = await createImprovementPlanCheckIn(
+      "plan_1",
+      {
+        note: "Weekly goals are on track.",
+      },
+      managerContext,
+      db as never,
+    );
+
+    expect(result.id).toBe("checkin_42");
+    expect(db.improvementPlanCheckIn.create).toHaveBeenCalledTimes(1);
+    expect(db.auditEvent.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("denies check-in creation for users outside plan participants", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_peer_1",
+      userId: "user_peer_1",
+      managerId: "emp_manager_1",
+      firstName: "Parker",
+      lastName: "Peer",
+    });
+
+    await expect(
+      createImprovementPlanCheckIn(
+        "plan_1",
+        { note: "I should not be able to post this." },
+        peerContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+
+    expect(db.improvementPlanCheckIn.create).not.toHaveBeenCalled();
+    expect(db.auditEvent.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("transitionImprovementPlanStatus", () => {
+  it("applies valid transitions and writes an audit event", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_manager_1",
+      userId: "user_manager_1",
+      managerId: "emp_hr_admin_1",
+      firstName: "Morgan",
+      lastName: "Manager",
+    });
+
+    db.improvementPlan.update.mockResolvedValue({
+      id: "plan_1",
+      status: ImprovementPlanStatus.COMPLETED,
+      outcome: ImprovementPlanOutcome.SUCCESSFUL,
+      updatedAt: new Date("2026-06-30T12:00:00.000Z"),
+    });
+
+    db.improvementPlanCheckIn.create.mockResolvedValue(
+      buildTimelineRecord({
+        id: "checkin_status_1",
+        content: "Plan completed successfully after consistent progress.",
+        status: ImprovementPlanStatus.COMPLETED,
+        outcome: ImprovementPlanOutcome.SUCCESSFUL,
+      }),
+    );
+
+    db.auditEvent.create.mockResolvedValue({ id: "audit_status_1" });
+
+    const result = await transitionImprovementPlanStatus(
+      "plan_1",
+      {
+        targetStatus: ImprovementPlanStatus.COMPLETED,
+        outcome: ImprovementPlanOutcome.SUCCESSFUL,
+        note: "Plan completed successfully after consistent progress.",
+      },
+      managerContext,
+      db as never,
+    );
+
+    expect(result.status).toBe(ImprovementPlanStatus.COMPLETED);
+    expect(result.outcome).toBe(ImprovementPlanOutcome.SUCCESSFUL);
+    expect(result.timelineEntry.id).toBe("checkin_status_1");
+    expect(db.improvementPlan.update).toHaveBeenCalledTimes(1);
+    expect(db.auditEvent.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects invalid transitions", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.DRAFT,
+      outcome: null,
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_manager_1",
+      userId: "user_manager_1",
+      managerId: "emp_hr_admin_1",
+      firstName: "Morgan",
+      lastName: "Manager",
+    });
+
+    await expect(
+      transitionImprovementPlanStatus(
+        "plan_1",
+        {
+          targetStatus: ImprovementPlanStatus.COMPLETED,
+          outcome: ImprovementPlanOutcome.SUCCESSFUL,
+        },
+        managerContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "INVALID_STATUS_TRANSITION",
+      status: 400,
+    });
+
+    expect(db.improvementPlan.update).not.toHaveBeenCalled();
+    expect(db.improvementPlanCheckIn.create).not.toHaveBeenCalled();
+    expect(db.auditEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("denies unauthorized users from changing status", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.DRAFT,
+      outcome: null,
+    });
+
+    db.employee.findFirst.mockResolvedValue({
       id: "emp_employee_1",
       userId: "user_employee_1",
       managerId: "emp_manager_1",
@@ -315,10 +570,20 @@ describe("getImprovementPlanDetail", () => {
     });
 
     await expect(
-      getImprovementPlanDetail("plan_1", employeeContext, db as never),
+      transitionImprovementPlanStatus(
+        "plan_1",
+        {
+          targetStatus: ImprovementPlanStatus.ACTIVE,
+        },
+        employeeContext,
+        db as never,
+      ),
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
       status: 403,
     });
+
+    expect(db.improvementPlan.update).not.toHaveBeenCalled();
+    expect(db.auditEvent.create).not.toHaveBeenCalled();
   });
 });
