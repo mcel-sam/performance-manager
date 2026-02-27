@@ -10,6 +10,8 @@ import {
   createImprovementPlanCheckIn,
   getImprovementPlanDetail,
   listImprovementPlans,
+  listImprovementPlanAuditEvents,
+  requestImprovementPlanExport,
   transitionImprovementPlanStatus,
 } from "@/server/improvement-plans/improvement-plan-service";
 
@@ -29,6 +31,7 @@ function buildDbMock() {
     },
     auditEvent: {
       create: vi.fn(),
+      findMany: vi.fn(),
     },
   };
 }
@@ -584,6 +587,152 @@ describe("transitionImprovementPlanStatus", () => {
     });
 
     expect(db.improvementPlan.update).not.toHaveBeenCalled();
+    expect(db.auditEvent.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("listImprovementPlanAuditEvents", () => {
+  it("returns audit events for authorized users", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_manager_1",
+      userId: "user_manager_1",
+      managerId: "emp_hr_admin_1",
+      firstName: "Morgan",
+      lastName: "Manager",
+    });
+
+    db.auditEvent.findMany.mockResolvedValue([
+      {
+        id: "audit_1",
+        action: "IMPROVEMENT_PLAN_STATUS_CHANGED",
+        entityType: "ImprovementPlan",
+        entityId: "plan_1",
+        metadata: {
+          nextStatus: "ACTIVE",
+        },
+        createdAt: new Date("2026-04-08T16:00:00.000Z"),
+        actorUser: {
+          id: "user_manager_1",
+          email: "manager@example.com",
+          employee: {
+            firstName: "Morgan",
+            lastName: "Manager",
+          },
+        },
+      },
+    ]);
+
+    const result = await listImprovementPlanAuditEvents("plan_1", managerContext, db as never);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.actorName).toBe("Morgan Manager");
+    expect(result[0]?.action).toBe("IMPROVEMENT_PLAN_STATUS_CHANGED");
+    expect(db.auditEvent.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("denies audit access for users outside plan participants", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_peer_1",
+      userId: "user_peer_1",
+      managerId: "emp_manager_1",
+      firstName: "Parker",
+      lastName: "Peer",
+    });
+
+    await expect(
+      listImprovementPlanAuditEvents("plan_1", peerContext, db as never),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+
+    expect(db.auditEvent.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("requestImprovementPlanExport", () => {
+  it("returns placeholder response and writes audit event for authorized users", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_manager_1",
+      userId: "user_manager_1",
+      managerId: "emp_hr_admin_1",
+      firstName: "Morgan",
+      lastName: "Manager",
+    });
+
+    db.auditEvent.create.mockResolvedValue({ id: "audit_export_1" });
+
+    const result = await requestImprovementPlanExport("plan_1", managerContext, db as never);
+
+    expect(result.planId).toBe("plan_1");
+    expect(result.message).toContain("not available yet");
+    expect(db.auditEvent.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("denies export requests for unauthorized users", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_peer_1",
+      userId: "user_peer_1",
+      managerId: "emp_manager_1",
+      firstName: "Parker",
+      lastName: "Peer",
+    });
+
+    await expect(
+      requestImprovementPlanExport("plan_1", peerContext, db as never),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+
     expect(db.auditEvent.create).not.toHaveBeenCalled();
   });
 });
