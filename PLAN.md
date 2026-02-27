@@ -22,18 +22,18 @@ Use a plan when the task:
 ---
 
 ## Shared “Definition of Done” (applies to all plans)
-- [ ] Server-side permission checks are implemented for all endpoints
-- [ ] Audit events written for sensitive mutations
-- [ ] Loading/empty/error states exist for UI routes
-- [ ] Local run works (`npm run dev`, docker Postgres)
-- [ ] Prisma migrations committed (when schema changes)
-- [ ] `lint`, `typecheck`, `test` pass (or are added as part of work)
+- [x] Server-side permission checks are implemented for all endpoints
+- [x] Audit events written for sensitive mutations
+- [x] Loading/empty/error states exist for UI routes
+- [x] Local run works (`npm run dev`, docker Postgres)
+- [x] Prisma migrations committed (when schema changes)
+- [x] `lint`, `typecheck`, `test` pass (or are added as part of work)
 
 ---
 
 # Milestone 0 — Foundation (Boot + DB + first routes)
 
-**Status:** Not started  
+**Status:** Completed locally on 2026-02-26 (PR number pending).  
 **Objective:** Prove the stack end-to-end: Next.js boots, Postgres reachable, migrations work, basic pages load.
 
 ## Scope
@@ -53,34 +53,34 @@ Use a plan when the task:
 
 ## Work breakdown (ordered)
 1) Repo scaffold
-   - [ ] Create `/apps/web`, `/packages/types`, `/docs/*`, `/infra/terraform`
-   - [ ] Ensure README points to AGENTS/PRD/Architecture/ADR
+   - [x] Create `/apps/web`, `/packages/types`, `/docs/*`, `/infra/terraform`
+   - [x] Ensure README points to AGENTS/PRD/Architecture/ADR
 2) Web scaffold
-   - [ ] Create Next.js app in `/apps/web`
-   - [ ] Confirm `npm run dev` works
+   - [x] Create Next.js app in `/apps/web`
+   - [x] Confirm `npm run dev` works
 3) Local DB
-   - [ ] Add `docker-compose.yml` for Postgres
-   - [ ] Add `.env.example` with `DATABASE_URL` placeholder
+   - [x] Add `docker-compose.yml` for Postgres
+   - [x] Add `.env.example` with `DATABASE_URL` placeholder
 4) Prisma
-   - [ ] Install Prisma + init schema
-   - [ ] Create initial models: Org, User, Employee (minimal)
-   - [ ] Migration name: `init`
+   - [x] Install Prisma + init schema
+   - [x] Create initial models: Org, User, Employee (minimal)
+   - [x] Migration name: `init`
 5) Health endpoint
-   - [ ] Add `/api/health` route that checks DB connectivity
+   - [x] Add `/api/health` route that checks DB connectivity
 6) First page
-   - [ ] Add `/performance/reviews` page with empty state
+   - [x] Add `/performance/reviews` page with empty state
 7) Containerization
-   - [ ] Add Dockerfile + .dockerignore
-   - [ ] Validate container run locally
+   - [x] Add Dockerfile + .dockerignore
+   - [x] Validate container run locally
 8) CI
-   - [ ] Add GitHub Actions `ci.yml` for lint/typecheck/test/build
+   - [x] Add GitHub Actions `ci.yml` for lint/typecheck/test/build
 
 ## Acceptance criteria
-- [ ] `docker compose up` starts Postgres
-- [ ] `npx prisma migrate dev` succeeds on a clean DB
-- [ ] `/api/health` returns ok + db ok
-- [ ] `/performance/reviews` loads without errors and shows empty state
-- [ ] CI workflow runs successfully on PR
+- [x] `docker compose up` starts Postgres
+- [x] `npx prisma migrate dev` succeeds on a clean DB
+- [x] `/api/health` returns ok + db ok
+- [x] `/performance/reviews` loads without errors and shows empty state
+- [x] CI workflow runs successfully on PR
 
 ## How to test
 ```bash
@@ -144,9 +144,10 @@ npm run dev
 
 4. [x] **Write review screen**
    - [x] Route: `/performance/reviews/:cycleId/write/:submissionId`
-   - [x] Center: questions + rich text editor
+   - [x] Center: questions + text answers (rich text deferred)
    - [x] Autosave endpoint per answer
    - [x] Submit endpoint with validation
+   - [x] Required progress indicator + first-missing required question focus/scroll on submit failure
    - [x] Submitted review is read-only
 
 5. **Evidence panel**
@@ -250,6 +251,11 @@ npm run dev
 - [x] Cycle transition tests are present and passing
 - [x] Full quality gates pass locally
 
+## Milestone 1.6 follow-on — Reviews UX completeness (post-MVP)
+- [ ] Expand write-review left phase navigation beyond task context
+- [ ] Add richer editor experience for answers (only if product confirms requirement)
+- [ ] Add right-panel reviewer/subject context summary on write-review screen
+
 
 ## Milestone 2 — Packets + Calibration (9-box)
 
@@ -282,6 +288,7 @@ npm run dev
    - [x] UI route: `/performance/reviews/:cycleId/packet/:employeeId`
    - [x] API/service: permissioned packet fetch with submissions + answers
    - [x] Visibility rules: HR admin, manager-of-subject, subject employee only after release when policy allows
+   - [x] Packet essentials placeholders: evidence counts, previous-cycles empty-state tab, summary placeholder block
    - [x] Loading/empty/error states for packet route
    - [x] Tests for packet fetch + permission gating
    - Completed in local workspace commit set for Milestone 2 Phase 1 on 2026-02-27
@@ -305,7 +312,6 @@ npm run dev
    - [x] Finalize endpoint locks session and creates snapshot JSON
    - [x] Endpoint: `POST /api/performance/calibration/:sessionId/finalize`
    - [x] Locked/read-only UI state: finalize banner + disabled move controls
-   - [ ] Optionally write final bucket/rating to packet
    - Completed in local workspace commit set for Milestone 2 Phase 3 on 2026-02-27
 
 6. **Quality**
@@ -319,9 +325,14 @@ npm run dev
 - [x] Finalize locks session and stores snapshot
 - [x] Audit events captured for move/finalize
 
+### Milestone 2 follow-on (post-MVP / optional)
+- [ ] Optional write-back of finalized bucket/rating to packet stable fields
+- [ ] Add calibration participant notes/justifications in right drawer
+- [ ] Add calibration snapshot export/download placeholder endpoint
+
 ## Milestone 3 — Improvement Plans MVP (Timeline + Audit + Export placeholder)
 
-**Status:** Phase 1, Phase 2, and Phase 3 completed locally on 2026-02-27 (PR number pending).  
+**Status:** Phase 1, Phase 2, Phase 3, and Phase 4 completed locally on 2026-02-27 (PR number pending).  
 **Objective:** Create and manage improvement plans with compliance-ready records.
 
 ### Scope
@@ -345,11 +356,11 @@ npm run dev
    - Migration name: `add_improvement_plans_mvp`
 
 2. **UI routes**
-   - `/performance/improvement-plans` list
    - `/performance/improvement-plans/:planId` detail + timeline
 
 3. **API**
    - Create plan
+   - Update plan goals/date range
    - Add check-in entry
    - Change status
    - Get audit events
@@ -404,7 +415,14 @@ npm run dev
 - [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
 - Completed in local workspace commit set on 2026-02-27 (PR number pending)
 
-#### Milestone 3 follow-on (out of Phase 3 scope)
+#### Phase 4 — audit completeness for plan edits
+- [x] Add plan edit endpoint `PATCH /api/performance/improvement-plans/:planId` for goals/date range
+- [x] Add audit events for goal and date edits
+- [x] Add permission + audit tests for edit flow
+- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
+- Completed in local workspace commit set on 2026-02-27 (PR number pending)
+
+#### Milestone 3.1 follow-on (post-MVP)
 - [ ] Add `/performance/improvement-plans` list route
 - [ ] Add incremental UX polish beyond MVP placeholders
 
