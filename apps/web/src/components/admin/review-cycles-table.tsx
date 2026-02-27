@@ -6,6 +6,16 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableWrapper,
+} from "@/components/ui/table";
+import { Toast } from "@/components/ui/toast";
 
 interface ReviewCycleRow {
   id: string;
@@ -117,39 +127,39 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
   return (
     <Card>
       <CardContent className="space-y-4 p-0">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Cycle</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Window</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Review Mix</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+        <TableWrapper>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cycle</TableHead>
+                <TableHead>Window</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Review Mix</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.map((cycle) => {
                 const nextStatus = transitionByStatus[cycle.status];
                 const isBusy = busyCycleId === cycle.id;
 
                 return (
-                  <tr key={cycle.id}>
-                    <td className="px-4 py-3">
+                  <TableRow key={cycle.id}>
+                    <TableCell>
                       <p className="font-semibold text-slate-900">{cycle.name}</p>
                       <p className="text-xs text-slate-500">{cycle.id}</p>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {new Date(cycle.startDate).toLocaleDateString()} - {" "}
+                    </TableCell>
+                    <TableCell className="text-slate-700">
+                      {new Date(cycle.startDate).toLocaleDateString()} -{" "}
                       {new Date(cycle.endDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={statusBadgeVariant[cycle.status]}>{cycle.status}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-slate-700">
+                    </TableCell>
+                    <TableCell className="text-slate-700">
                       Peer: {cycle.peerReviewCount} | Upward: {cycle.upwardReviewCount}
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
@@ -167,15 +177,22 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
                           {nextStatus ? `Move to ${nextStatus}` : "Final"}
                         </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableWrapper>
 
-        {message ? <p className="px-4 pb-4 text-sm text-slate-700">{message}</p> : null}
+        {message ? (
+          <Toast
+            variant={message.toLowerCase().includes("unable") ? "error" : "success"}
+            className="mx-4 mb-4"
+          >
+            {message}
+          </Toast>
+        ) : null}
       </CardContent>
     </Card>
   );

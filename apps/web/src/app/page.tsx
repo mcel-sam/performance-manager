@@ -1,10 +1,11 @@
 import Link from "next/link";
 
+import { PageHeader } from "@/components/layout/page-header";
+import { SectionHeader } from "@/components/layout/section-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -47,37 +48,42 @@ const modules = [
 export default function HomePage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Milestone 3</p>
-        <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
-          Reviews, calibration, and improvement plans
-        </h2>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          Use this workspace to run review workflows, calibrate cohorts, and document structured
-          improvement plans.
-        </p>
-      </section>
+      <PageHeader
+        eyebrow="Milestone 4"
+        title="Reviews, calibration, and improvement plans"
+        description="Use this workspace to run review workflows, calibrate cohorts, and document structured improvement plans."
+      />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {modules.map((module) => (
-          <Card key={module.title}>
-            <CardHeader className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-base">{module.title}</CardTitle>
-                <Badge variant={module.status === "Active" ? "success" : "info"}>{module.status}</Badge>
-              </div>
-              <CardDescription>{module.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0" />
-            <CardFooter>
-              <Link href={module.href} className="w-full">
-                <Button className="w-full" variant={module.status === "Active" ? "primary" : "outline"}>
-                  Open
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        ))}
+      <section className="space-y-4">
+        <SectionHeader
+          title="Workflow Modules"
+          description="Open one of the active modules below to continue work."
+        />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {modules.map((module) => (
+            <Card key={module.title}>
+              <CardHeader className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-base">{module.title}</CardTitle>
+                  <Badge variant={module.status === "Active" ? "success" : "info"}>
+                    {module.status}
+                  </Badge>
+                </div>
+                <CardDescription>{module.description}</CardDescription>
+              </CardHeader>
+              <CardFooter>
+                <Link href={module.href} className="w-full">
+                  <Button
+                    className="w-full"
+                    variant={module.status === "Active" ? "primary" : "outline"}
+                  >
+                    Open
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
       </section>
     </div>
   );

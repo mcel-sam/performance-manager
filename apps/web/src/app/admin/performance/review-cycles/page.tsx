@@ -3,6 +3,7 @@ import Link from "next/link";
 import { UserRole } from "@prisma/client";
 
 import ReviewCyclesTable from "@/components/admin/review-cycles-table";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { listReviewCycles } from "@/server/reviews/admin-cycle-service";
 
@@ -42,32 +44,26 @@ export default async function AdminReviewCyclesPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Review Cycles</h2>
-          <p className="text-sm text-slate-600">
-            Create cycles, generate submissions, and progress cycle states.
-          </p>
-        </div>
-        <Link href="/admin/performance/review-cycles/new">
-          <Button>Create Cycle</Button>
-        </Link>
-      </header>
+      <PageHeader
+        title="Review Cycles"
+        description="Create cycles, generate submissions, and progress cycle states."
+        action={
+          <Link href="/admin/performance/review-cycles/new">
+            <Button>Create Cycle</Button>
+          </Link>
+        }
+      />
 
       {cycles.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>No review cycles yet</CardTitle>
-            <CardDescription>
-              Start by creating your first cycle for this organization.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <EmptyState
+          title="No review cycles yet"
+          description="Start by creating your first cycle for this organization."
+          action={
             <Link href="/admin/performance/review-cycles/new">
               <Button>Create first cycle</Button>
             </Link>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
         <ReviewCyclesTable cycles={cycles} auth={{ userId: context.userId, orgId: context.orgId }} />
       )}
