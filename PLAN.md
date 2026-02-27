@@ -530,7 +530,7 @@ npm run dev
 - [x] Tooltips are accessible (keyboard + aria) and concise
 - [x] `/help` provides accurate deep links to in-app pages
 - [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
-- Completed in PR #TBD (dev -> main Milestone 4 Phase 3)
+- Completed in PR #5 (dev -> main Milestone 4 Phase 3)
 
 ---
 
