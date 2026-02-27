@@ -251,11 +251,6 @@ npm run dev
 - [x] Cycle transition tests are present and passing
 - [x] Full quality gates pass locally
 
-## Milestone 1.6 follow-on — Reviews UX completeness (post-MVP)
-- [ ] Expand write-review left phase navigation beyond task context
-- [ ] Add richer editor experience for answers (only if product confirms requirement)
-- [ ] Add right-panel reviewer/subject context summary on write-review screen
-
 
 ## Milestone 2 — Packets + Calibration (9-box)
 
@@ -324,11 +319,6 @@ npm run dev
 - [x] Calibration grid loads cohort and updates placement
 - [x] Finalize locks session and stores snapshot
 - [x] Audit events captured for move/finalize
-
-### Milestone 2 follow-on (post-MVP / optional)
-- [ ] Optional write-back of finalized bucket/rating to packet stable fields
-- [ ] Add calibration participant notes/justifications in right drawer
-- [ ] Add calibration snapshot export/download placeholder endpoint
 
 ## Milestone 3 — Improvement Plans MVP (Timeline + Audit + Export placeholder)
 
@@ -422,12 +412,52 @@ npm run dev
 - [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
 - Completed in local workspace commit set on 2026-02-27 (PR number pending)
 
-#### Milestone 3.1 follow-on (post-MVP)
-- [ ] Add `/performance/improvement-plans` list route
-- [ ] Add incremental UX polish beyond MVP placeholders
-
 ### Acceptance criteria
 - [x] Authorized users can create and view plans
 - [x] Check-ins append to timeline and are audited
 - [x] Export placeholder exists and is clearly marked
 - [x] Unauthorized users cannot access plan data
+
+## Milestone 4 — Launch Readiness & Analytics Foundations
+
+**Status:** Not started  
+**Objective:** Close remaining MVP-adjacent UX and operational gaps identified in `PRD_AUDIT.md`, while keeping scope controlled for launch readiness.
+
+### Scope
+
+#### In scope
+- Remaining follow-on work moved from Milestones 1.x / 2 / 3
+- UX completion for review writing and calibration context
+- Improvement plan discoverability and polish
+- Basic dashboard task surfacing (in-app)
+
+#### Out of scope
+- Compensation workflows
+- Advanced AI analytics engines
+- Full calibration write-back/ranking systems beyond agreed MVP+ scope
+
+### Work breakdown (ordered)
+
+1. **Write-review UX completeness**
+   - [ ] Expand write-review left phase navigation beyond task context
+   - [ ] Add right-panel reviewer/subject context summary on write-review screen
+   - [ ] Add richer editor experience for answers (only if product confirms requirement)
+
+2. **Calibration completion**
+   - [ ] Add calibration participant notes/justifications in right drawer
+   - [ ] Add calibration snapshot export/download placeholder endpoint + UI action
+   - [ ] Optional write-back of finalized bucket/rating to packet stable fields (if product confirms MVP+ inclusion)
+
+3. **Improvement plans completion**
+   - [ ] Add `/performance/improvement-plans` list route
+   - [ ] Add incremental UX polish beyond MVP placeholders
+
+4. **Launch readiness dashboard**
+   - [ ] Add dashboard task surfacing with assigned work and due-soon indicators
+
+### Acceptance criteria
+- [ ] Remaining follow-on items from Milestones 1/2/3 are tracked only in this milestone
+- [ ] New/updated endpoints include Zod validation + server-side permission checks
+- [ ] New mutations write audit events with non-sensitive metadata
+- [ ] New UI routes include loading/empty/error states
+- [ ] `lint`, `typecheck`, `test`, and `build` pass in `apps/web`
