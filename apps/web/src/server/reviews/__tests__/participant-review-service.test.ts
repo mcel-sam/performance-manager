@@ -103,6 +103,45 @@ describe("submitReviewSubmission", () => {
     ).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
       status: 400,
+      details: {
+        missingQuestionIds: ["template_q_2"],
+      },
+    });
+
+    expect(db.reviewSubmission.update).not.toHaveBeenCalled();
+    expect(db.auditEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("treats whitespace-only required responses as missing on submit", async () => {
+    const db = buildDbMock();
+
+    db.reviewSubmission.findFirst.mockResolvedValue(submissionRecord);
+    db.reviewAnswer.findMany.mockResolvedValue([
+      {
+        id: "answer_1",
+        questionId: "template_q_1",
+        responseText: "   ",
+      },
+      {
+        id: "answer_2",
+        questionId: "template_q_2",
+        responseText: "Completed goal updates",
+      },
+    ]);
+
+    await expect(
+      submitReviewSubmission(
+        "cycle_seed_draft_1",
+        "submission_seed_employee_self_1",
+        reviewerContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      status: 400,
+      details: {
+        missingQuestionIds: ["template_q_1"],
+      },
     });
 
     expect(db.reviewSubmission.update).not.toHaveBeenCalled();
