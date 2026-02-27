@@ -209,6 +209,7 @@ model ReviewSubmission {
   @@unique([cycleId, subjectEmployeeId, reviewerEmployeeId, relationship])
   @@index([orgId])
   @@index([cycleId, status])
+  @@index([packetId])
   @@index([subjectEmployeeId])
   @@index([reviewerEmployeeId])
 }
