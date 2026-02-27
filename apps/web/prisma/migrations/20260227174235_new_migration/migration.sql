@@ -1,0 +1,2 @@
+-- RenameIndex
+ALTER INDEX "CalibrationPlacement_sessionId_performanceBucket_potentialBucke" RENAME TO "CalibrationPlacement_sessionId_performanceBucket_potentialB_idx";
