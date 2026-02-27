@@ -457,33 +457,34 @@ npm run dev
 ---
 
 ### Phase 1 — UI Foundation (Design System Nucleus)
-- [ ] Define design tokens (typography scale, spacing, radii, shadows) via Tailwind config and/or CSS variables
-- [ ] Create/standardize core UI primitives:
-  - [ ] Button
-  - [ ] Card
-  - [ ] Input / Textarea
-  - [ ] Select
-  - [ ] Badge/StatusChip
-  - [ ] Tabs
-  - [ ] Table
-  - [ ] Drawer/SidePanel
-  - [ ] Modal
-  - [ ] Toast
-  - [ ] EmptyState
-  - [ ] Skeleton loader
-- [ ] Create standard layout components:
-  - [ ] PageHeader (title + subtitle + primary CTA slot)
-  - [ ] SectionHeader
-- [ ] Refactor 3 routes to use primitives/layout:
-  - [ ] Home
-  - [ ] /performance/reviews (tasks)
-  - [ ] One admin route (review cycles list OR calibration admin list)
-- [ ] Add a short “Visual spot-check” list to the PR description (manual QA checklist)
+- [x] Define design tokens (typography scale, spacing, radii, shadows) via Tailwind config and/or CSS variables
+- [x] Create/standardize core UI primitives:
+  - [x] Button
+  - [x] Card
+  - [x] Input / Textarea
+  - [x] Select
+  - [x] Badge/StatusChip
+  - [x] Tabs
+  - [x] Table
+  - [x] Drawer/SidePanel
+  - [x] Modal
+  - [x] Toast
+  - [x] EmptyState
+  - [x] Skeleton loader
+- [x] Create standard layout components:
+  - [x] PageHeader (title + subtitle + primary CTA slot)
+  - [x] SectionHeader
+- [x] Refactor 3 routes to use primitives/layout:
+  - [x] Home
+  - [x] /performance/reviews (tasks)
+  - [x] One admin route (review cycles list OR calibration admin list)
+- [x] Add a short “Visual spot-check” list to the PR description (manual QA checklist)
+- Completed in PR #TBD (dev -> main Milestone 4 Phase 1)
 
 **Acceptance criteria**
-- [ ] Refactored routes share consistent spacing/typography and components
-- [ ] No business logic changes
-- [ ] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+- [x] Refactored routes share consistent spacing/typography and components
+- [x] No business logic changes
+- [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
 
 ---
 
