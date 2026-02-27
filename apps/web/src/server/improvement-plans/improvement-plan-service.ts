@@ -85,6 +85,23 @@ interface ImprovementPlanAccessRecord {
   outcome: ImprovementPlanOutcome | null;
 }
 
+interface ImprovementPlanAuditRecord {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: Date;
+  actorUser: {
+    id: string;
+    email: string;
+    employee: {
+      firstName: string;
+      lastName: string;
+    } | null;
+  };
+}
+
 interface CreatedImprovementPlanRecord {
   id: string;
   title: string;
@@ -198,6 +215,14 @@ interface ImprovementPlanDb {
         metadata?: Record<string, unknown>;
       };
     }) => Promise<unknown>;
+    findMany: (args: {
+      where: Record<string, unknown>;
+      orderBy: {
+        createdAt: "desc";
+      };
+      take: number;
+      select: Record<string, unknown>;
+    }) => Promise<ImprovementPlanAuditRecord[]>;
   };
 }
 
@@ -289,6 +314,15 @@ export interface ImprovementPlanTimelineEntry {
   outcome: ImprovementPlanOutcome | null;
 }
 
+export interface ImprovementPlanAuditEvent {
+  id: string;
+  timestamp: string;
+  actorName: string;
+  actorUserId: string;
+  action: string;
+  description: string;
+}
+
 export interface ImprovementPlanDetail {
   id: string;
   subjectEmployeeId: string;
@@ -331,6 +365,12 @@ export interface ImprovementPlanStatusTransitionResult {
   outcome: ImprovementPlanOutcome | null;
   updatedAt: string;
   timelineEntry: ImprovementPlanTimelineEntry;
+}
+
+export interface ImprovementPlanExportPlaceholder {
+  planId: string;
+  requestedAt: string;
+  message: string;
 }
 
 export async function createImprovementPlan(
@@ -645,26 +685,7 @@ export async function getImprovementPlanDetail(
         orderBy: {
           checkInAt: "desc",
         },
-        select: {
-          id: true,
-          content: true,
-          status: true,
-          outcome: true,
-          checkInAt: true,
-          createdAt: true,
-          authorUser: {
-            select: {
-              id: true,
-              email: true,
-              employee: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-            },
-          },
-        },
+        select: checkInSelection,
       },
     },
   });
@@ -753,10 +774,10 @@ export async function createImprovementPlanCheckIn(
       orgId: context.orgId,
       actorUserId: context.userId,
       action: "IMPROVEMENT_PLAN_CHECKIN_CREATED",
-      entityType: "ImprovementPlanCheckIn",
-      entityId: createdCheckIn.id,
+      entityType: "ImprovementPlan",
+      entityId: plan.id,
       metadata: {
-        planId: plan.id,
+        checkInId: createdCheckIn.id,
         status: createdCheckIn.status,
         outcome: createdCheckIn.outcome,
         noteLength: parsed.data.note.length,
@@ -861,6 +882,91 @@ export async function transitionImprovementPlanStatus(
     outcome: updatedPlan.outcome,
     updatedAt: updatedPlan.updatedAt.toISOString(),
     timelineEntry: mapCheckInRecord(timelineEntryRecord),
+  };
+}
+
+export async function listImprovementPlanAuditEvents(
+  planId: string,
+  context: RequestContext,
+  db: ImprovementPlanDb = prisma as unknown as ImprovementPlanDb,
+): Promise<ImprovementPlanAuditEvent[]> {
+  const parsedPlanId = parsePlanId(planId);
+
+  const plan = await loadPlanAccessRecord(parsedPlanId, context.orgId, db);
+  const viewerEmployeeId = await resolveViewerEmployeeId(context, db);
+
+  if (!canAccessPlan(plan, context, viewerEmployeeId)) {
+    throw new AppError("FORBIDDEN", "You are not allowed to access this plan audit log", 403);
+  }
+
+  const events = await db.auditEvent.findMany({
+    where: {
+      orgId: context.orgId,
+      entityType: "ImprovementPlan",
+      entityId: plan.id,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 200,
+    select: {
+      id: true,
+      action: true,
+      entityType: true,
+      entityId: true,
+      metadata: true,
+      createdAt: true,
+      actorUser: {
+        select: {
+          id: true,
+          email: true,
+          employee: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return events.map(mapAuditRecord);
+}
+
+export async function requestImprovementPlanExport(
+  planId: string,
+  context: RequestContext,
+  db: ImprovementPlanDb = prisma as unknown as ImprovementPlanDb,
+): Promise<ImprovementPlanExportPlaceholder> {
+  const parsedPlanId = parsePlanId(planId);
+
+  const plan = await loadPlanAccessRecord(parsedPlanId, context.orgId, db);
+  const viewerEmployeeId = await resolveViewerEmployeeId(context, db);
+
+  if (!canAccessPlan(plan, context, viewerEmployeeId)) {
+    throw new AppError("FORBIDDEN", "You are not allowed to export this improvement plan", 403);
+  }
+
+  await db.auditEvent.create({
+    data: {
+      orgId: context.orgId,
+      actorUserId: context.userId,
+      action: "IMPROVEMENT_PLAN_EXPORT_REQUESTED",
+      entityType: "ImprovementPlan",
+      entityId: plan.id,
+      metadata: {
+        status: plan.status,
+        outcome: plan.outcome,
+      },
+    },
+  });
+
+  return {
+    planId: plan.id,
+    requestedAt: new Date().toISOString(),
+    message:
+      "Improvement plan export is not available yet. Use the timeline and audit log views for now.",
   };
 }
 
@@ -1051,6 +1157,48 @@ function mapCheckInRecord(record: ImprovementPlanCheckInRecord): ImprovementPlan
     status: record.status,
     outcome: record.outcome,
   };
+}
+
+function mapAuditRecord(record: ImprovementPlanAuditRecord): ImprovementPlanAuditEvent {
+  const actorName = record.actorUser.employee
+    ? `${record.actorUser.employee.firstName} ${record.actorUser.employee.lastName}`
+    : record.actorUser.email;
+
+  return {
+    id: record.id,
+    timestamp: record.createdAt.toISOString(),
+    actorName,
+    actorUserId: record.actorUser.id,
+    action: record.action,
+    description: buildAuditDescription(record.action, record.metadata),
+  };
+}
+
+function buildAuditDescription(
+  action: string,
+  metadata: Record<string, unknown> | null,
+): string {
+  if (action === "IMPROVEMENT_PLAN_CREATED") {
+    return "Created the improvement plan.";
+  }
+
+  if (action === "IMPROVEMENT_PLAN_CHECKIN_CREATED") {
+    return "Added a timeline check-in update.";
+  }
+
+  if (action === "IMPROVEMENT_PLAN_STATUS_CHANGED") {
+    const nextStatus =
+      typeof metadata?.nextStatus === "string" ? metadata.nextStatus : "updated";
+    const nextOutcome =
+      typeof metadata?.nextOutcome === "string" ? ` (${metadata.nextOutcome})` : "";
+    return `Changed plan status to ${nextStatus}${nextOutcome}.`;
+  }
+
+  if (action === "IMPROVEMENT_PLAN_EXPORT_REQUESTED") {
+    return "Requested a plan export.";
+  }
+
+  return "Recorded plan activity.";
 }
 
 const checkInSelection = {
