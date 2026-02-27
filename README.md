@@ -17,7 +17,7 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Repo coding rules: `AGENTS.md`
 - Milestone execution tracking: `PLAN.md`
 
-## Implemented scope (through Milestone 1 Phase 3)
+## Implemented scope (through Milestone 1.5)
 
 - Milestone 0 foundation:
   - Local PostgreSQL dev database via `docker-compose.yml`
@@ -37,6 +37,12 @@ Performance Management System monorepo for reviews, calibration, and improvement
   - Evidence drill-in in write review UI
   - Attach/detach evidence to answers
   - Audit events for evidence attach/detach
+- Milestone 1.5:
+  - App shell layout with global navigation
+  - Home page replacing default scaffold
+  - Shared UI primitives for admin/review surfaces
+  - Admin review cycle pages (`/admin/performance/review-cycles`, `/admin/performance/review-cycles/new`)
+  - Admin cycle status transition API (`PATCH /api/admin/performance/review-cycles/:cycleId/status`)
 
 ## Local setup
 
@@ -64,6 +70,8 @@ npm run dev
 
 4. Open key routes:
 
+- `http://localhost:3000/`
+- `http://localhost:3000/admin/performance/review-cycles`
 - `http://localhost:3000/api/health`
 - `http://localhost:3000/performance/reviews`
 
@@ -78,10 +86,12 @@ Set these in `apps/web/.env.local` to switch local user context.
 
 ## API endpoints used in Milestone 1
 
+- `GET /api/admin/performance/review-cycles`
 - `GET /api/performance/reviews/tasks`
 - `GET /api/performance/reviews/:cycleId/submissions/:submissionId`
 - `PATCH /api/performance/reviews/:cycleId/submissions/:submissionId/answers`
 - `POST /api/performance/reviews/:cycleId/submissions/:submissionId/submit`
+- `PATCH /api/admin/performance/review-cycles/:cycleId/status`
 - `GET /api/evidence?subjectEmployeeId=...&types=...`
 - `POST /api/review-answers/:answerId/evidence-links`
 - `DELETE /api/review-answers/:answerId/evidence-links/:evidenceItemId`

@@ -131,11 +131,11 @@ npm run dev
    - Migration name: `add_reviews_mvp_core`
 
 2. **Admin cycle setup**
-   - [ ] UI: `/admin/performance/review-cycles` list
-   - [ ] UI: `/admin/performance/review-cycles/new`
+   - [x] UI: `/admin/performance/review-cycles` list
+   - [x] UI: `/admin/performance/review-cycles/new`
    - [x] API: create cycle
    - [x] API: generate packets/submissions
-   - [ ] API: status transitions `Draft → Active → Locked → Released`
+   - [x] API: status transitions `Draft → Active → Locked → Released`
    - [x] Audit events for each mutation
 
 3. [x] **Tasks list**
@@ -159,7 +159,7 @@ npm run dev
    - [x] Tests for required validation
    - [x] Tests for permission denial on cross-submission access
    - [x] Tests for evidence attach/detach + no-leak visibility counts
-   - [ ] Tests for cycle state transitions
+   - [x] Tests for cycle state transitions
    - [x] Ensure empty/loading/error states
 
 7. [x] **Seed/demo**
@@ -195,7 +195,7 @@ npm run dev
 
 ## Milestone 1.5 — App Shell & UX Foundation + Reviews Hardening
 
-**Status:** Not started  
+**Status:** Completed locally on 2026-02-27 (PR number pending).  
 **Objective:** Establish a consistent app shell UX and close the remaining Milestone 1 gaps for admin workflow hardening.
 
 ### Scope
@@ -216,39 +216,39 @@ npm run dev
 ### Work breakdown (ordered)
 
 1. **App shell foundation**
-   - [ ] Add app shell layout used by main app routes
-   - [ ] Add primary navigation for Home, Reviews, and Admin Review Cycles
+   - [x] Add app shell layout used by main app routes
+   - [x] Add primary navigation for Home, Reviews, and Admin Review Cycles
 
 2. **Home route**
-   - [ ] Replace default Next.js starter page with product home route
-   - [ ] Add quick links to active workflows
+   - [x] Replace default Next.js starter page with product home route
+   - [x] Add quick links to active workflows
 
 3. **Shared UI primitives**
-   - [ ] Add shared primitives for button/card/badge/input/select (or equivalent)
-   - [ ] Use primitives in new admin/home views
+   - [x] Add shared primitives for button/card/badge/input/select (or equivalent)
+   - [x] Use primitives in new admin/home views
 
 4. **Admin review cycles UI**
-   - [ ] Add `/admin/performance/review-cycles` list page with loading/empty/error states
-   - [ ] Add `/admin/performance/review-cycles/new` create page with loading/error states
-   - [ ] Add UI actions to generate artifacts and transition status
+   - [x] Add `/admin/performance/review-cycles` list page with loading/empty/error states
+   - [x] Add `/admin/performance/review-cycles/new` create page with loading/error states
+   - [x] Add UI actions to generate artifacts and transition status
 
 5. **API hardening**
-   - [ ] Add cycle status transition server logic with Zod validation + permission checks
-   - [ ] Add thin route handler for transition endpoint
-   - [ ] Add cycle listing endpoint (for admin pages)
-   - [ ] Add audit events for status transitions
+   - [x] Add cycle status transition server logic with Zod validation + permission checks
+   - [x] Add thin route handler for transition endpoint
+   - [x] Add cycle listing endpoint (for admin pages)
+   - [x] Add audit events for status transitions
 
 6. **Quality**
-   - [ ] Add tests for valid and invalid cycle status transitions
-   - [ ] Ensure lint, typecheck, test, and build pass
+   - [x] Add tests for valid and invalid cycle status transitions
+   - [x] Ensure lint, typecheck, test, and build pass
 
 ### Acceptance criteria
-- [ ] App shell is visible on core app routes and provides stable navigation
-- [ ] Home page is no longer scaffold placeholder and links to key flows
-- [ ] Admin can create cycles from UI, generate artifacts, and move cycle status in order
-- [ ] Invalid or out-of-order status transitions are rejected server-side
-- [ ] Cycle transition tests are present and passing
-- [ ] Full quality gates pass locally
+- [x] App shell is visible on core app routes and provides stable navigation
+- [x] Home page is no longer scaffold placeholder and links to key flows
+- [x] Admin can create cycles from UI, generate artifacts, and move cycle status in order
+- [x] Invalid or out-of-order status transitions are rejected server-side
+- [x] Cycle transition tests are present and passing
+- [x] Full quality gates pass locally
 
 
 ## Milestone 2 — Packets + Calibration (9-box)
