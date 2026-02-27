@@ -53,7 +53,14 @@ export default async function PerformanceReviewsPage() {
         <EmptyState
           aria-label="Empty review task state"
           title="No assigned review tasks"
-          description="Assigned submissions will appear here when a cycle is generated."
+          description="Assigned submissions appear after HR generates cycle packets. Open Help for next steps and visibility rules."
+          action={
+            <Link href="/help">
+              <Button variant="outline" size="sm">
+                Open Help
+              </Button>
+            </Link>
+          }
         />
       ) : (
         <Card aria-label="Assigned review tasks">

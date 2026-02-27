@@ -240,11 +240,26 @@ export default function CalibrationSessionView({
         }
       />
 
+      <Toast variant="info">
+        Calibration aligns reviewers on performance and potential placements for this cycle before
+        outcomes are finalized.
+      </Toast>
+
       {finalizeMessage ? (
         <Toast variant={finalizeMessage.includes("Unable") ? "error" : "success"}>
           {finalizeMessage}
         </Toast>
       ) : null}
+
+      <details className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+        <summary className="cursor-pointer text-sm font-medium text-slate-900">
+          What finalized/locked means
+        </summary>
+        <p className="mt-2 text-xs text-slate-600">
+          Finalizing captures an immutable snapshot of placements and locks move controls. Packet links
+          remain viewable after lock.
+        </p>
+      </details>
 
       <div className="grid gap-3 text-sm text-slate-700 md:grid-cols-2">
         <details className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
@@ -279,6 +294,13 @@ export default function CalibrationSessionView({
         <EmptyState
           title="No cohort members yet"
           description="Populate this session with employees and initial placements to start calibration."
+          action={
+            <Link href="/admin/performance/calibration">
+              <Button size="sm" variant="outline">
+                Open calibration admin
+              </Button>
+            </Link>
+          }
         />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">

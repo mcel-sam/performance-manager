@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { getGettingStartedContent } from "@/components/home/getting-started";
 import { PageHeader } from "@/components/layout/page-header";
 import { SectionHeader } from "@/components/layout/section-header";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getDevRequestContext } from "@/server/auth/request-context";
 
 const modules = [
   {
@@ -43,16 +45,51 @@ const modules = [
     href: "/performance/improvement-plans/improvement_plan_seed_1",
     status: "Active",
   },
+  {
+    title: "Help Center",
+    description: "Get role-based guidance, workflow tips, and deep links for key actions.",
+    href: "/help",
+    status: "Active",
+  },
 ];
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const context = await getDevRequestContext();
+  const gettingStarted = getGettingStartedContent(context.role);
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <PageHeader
         eyebrow="Milestone 4"
         title="Reviews, calibration, and improvement plans"
         description="Use this workspace to run review workflows, calibrate cohorts, and document structured improvement plans."
+        metadata={
+          <span>
+            Signed in as <code>{context.role}</code> (<code>{context.userId}</code>)
+          </span>
+        }
       />
+
+      <Card>
+        <CardHeader className="space-y-2">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg">{gettingStarted.title}</CardTitle>
+            <Badge variant="info">{context.role}</Badge>
+          </div>
+          <CardDescription>{gettingStarted.description}</CardDescription>
+        </CardHeader>
+        <CardFooter className="flex flex-wrap gap-2">
+          {gettingStarted.links.map((link) => (
+            <Link key={link.href} href={link.href}>
+              <Button variant="outline" size="sm">
+                {link.label}
+              </Button>
+            </Link>
+          ))}
+        </CardFooter>
+      </Card>
 
       <section className="space-y-4">
         <SectionHeader
