@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Modal } from "@/components/ui/modal";
 import { Tabs } from "@/components/ui/tabs";
@@ -34,7 +35,22 @@ describe("ui foundation primitives", () => {
 
     expect(html).toContain('role="tablist"');
     expect(html).toContain('aria-selected="true"');
+    expect(html).toContain('tabindex="0"');
+    expect(html).toContain('tabindex="-1"');
     expect(html).toContain("Second");
+  });
+
+  it("renders drawer content in an aside", () => {
+    const html = renderToStaticMarkup(
+      createElement(Drawer, {
+        title: "Context",
+        description: "Drawer details",
+      }),
+    );
+
+    expect(html).toContain("<aside");
+    expect(html).toContain("Context");
+    expect(html).toContain("Drawer details");
   });
 
   it("renders toast messages with status role", () => {
