@@ -285,8 +285,8 @@ For any PR that adds or changes behavior:
 
 ### CI workflow (`ci.yml`)
 
-Must run on PRs:
-
+Must run on PRs and on push to `dev`:
+- CI must run on `pull_request` and on `push` to `dev` for fast feedback during implementation.
 - lint
 - typecheck
 - tests
@@ -318,6 +318,25 @@ Workflows should use repo/environment variables (or secrets if required) for:
 - `AZURE_LOCATION` (optional)
 
 Never print secrets in logs.
+
+## Branching & PR workflow (required)
+
+### Branch model
+- Default working branch: `dev`
+- Protected release branch: `main`
+- All merges into `main` must happen via PR from `dev` (no direct pushes).
+
+### Phase delivery rule
+- Each phase should be completed on `dev` (or a short-lived branch off `dev`) and then merged into `main` via PR.
+- Do not start the next phase until the PR to `main` is merged and CI is green.
+
+### PR requirements to merge to main
+- CI must pass (`CI / web`)
+- PR description must include the PR completion summary format (see Section 11)
+- `/PLAN.md` must be updated for completed items in the phase
+
+### Auto-merge (optional but recommended)
+- If auto-merge is enabled in the repo, enable auto-merge on phase PRs after verification.
 
 ---
 
@@ -395,6 +414,23 @@ At the end of each phase/PR, update `/PLAN.md`:
 - Add a short note like “Completed in PR #123”
 - Do not mark future-phase tasks as complete
 - If a milestone’s acceptance criteria are marked complete, but some work-breakdown items remain, move the remaining items into a follow-on milestone (e.g., “Milestone 1.1” or “Milestone 1.5”) instead of leaving them unchecked under the completed milestone.
+
+
+### Reinforcement loop gates (required)
+For phased work:
+- Implement only the next incomplete phase from `/PLAN.md`.
+- Run and pass quality gates: `lint`, `typecheck`, `test`, `build`.
+- Push changes to `dev`, open a PR from `dev` → `main`, and ensure `CI / web` is green.
+- Update `/PLAN.md` only for items completed in this PR.
+- Stop after the PR is ready (or merged). Do not proceed to the next phase until the PR is merged into `main`.
+
+### Default interpretation of “proceed”
+When the user says “proceed”, “next phase”, or “continue”, interpret it as:
+1) find the next incomplete phase in `/PLAN.md`
+2) implement only that phase
+3) pass quality gates + open PR `dev` → `main`
+4) update `/PLAN.md`
+5) stop
 
 ---
 

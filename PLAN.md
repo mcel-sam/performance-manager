@@ -251,11 +251,6 @@ npm run dev
 - [x] Cycle transition tests are present and passing
 - [x] Full quality gates pass locally
 
-## Milestone 1.6 follow-on — Reviews UX completeness (post-MVP)
-- [ ] Expand write-review left phase navigation beyond task context
-- [ ] Add richer editor experience for answers (only if product confirms requirement)
-- [ ] Add right-panel reviewer/subject context summary on write-review screen
-
 
 ## Milestone 2 — Packets + Calibration (9-box)
 
@@ -324,11 +319,6 @@ npm run dev
 - [x] Calibration grid loads cohort and updates placement
 - [x] Finalize locks session and stores snapshot
 - [x] Audit events captured for move/finalize
-
-### Milestone 2 follow-on (post-MVP / optional)
-- [ ] Optional write-back of finalized bucket/rating to packet stable fields
-- [ ] Add calibration participant notes/justifications in right drawer
-- [ ] Add calibration snapshot export/download placeholder endpoint
 
 ## Milestone 3 — Improvement Plans MVP (Timeline + Audit + Export placeholder)
 
@@ -422,12 +412,172 @@ npm run dev
 - [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
 - Completed in local workspace commit set on 2026-02-27 (PR number pending)
 
-#### Milestone 3.1 follow-on (post-MVP)
-- [ ] Add `/performance/improvement-plans` list route
-- [ ] Add incremental UX polish beyond MVP placeholders
-
 ### Acceptance criteria
 - [x] Authorized users can create and view plans
 - [x] Check-ins append to timeline and are audited
 - [x] Export placeholder exists and is clearly marked
 - [x] Unauthorized users cannot access plan data
+
+## Milestone 4 — UX Polish + Help & Launch Readiness (No Analytics Yet)
+
+**Status:** Not started  
+**Objective:** Make the product feel elegant and self-serve (Lattice-like UI polish + in-app guidance), while closing remaining MVP-adjacent UX gaps. Analytics dashboards will be handled in a later milestone after HR confirms the rating framework.
+
+### Implementation notes (tighten execution)
+- **Core routes in scope for UI consistency:** Home, Reviews Tasks, Write Review, Packet, Calibration, Improvement Plans (list/detail), Admin Review Cycles, Admin Calibration, Help.
+- **Component locations (to avoid sprawl):**
+  - UI primitives: `apps/web/src/components/ui/*`
+  - Layout components: `apps/web/src/components/layout/*`
+  - Page-specific components: colocate under the route folder or `apps/web/src/components/features/*`
+- **Manual visual QA checklist (include in PR description for UX phases):**
+  - [ ] Spacing/typography consistent with PageHeader + tokens
+  - [ ] Buttons/inputs/cards use shared primitives (no one-off styles)
+  - [ ] Focus rings visible; keyboard navigation works for drawers/modals
+  - [ ] Loading/empty/error states present and readable
+  - [ ] No layout break on common widths (desktop + narrow)
+
+### Scope
+
+#### In scope (this milestone)
+- UI Foundation / Design System polish (tokens + primitives + consistent layouts)
+- In-app Guidance (Help Center + tooltips + contextual coaching + better empty states)
+- Remaining follow-on UX gaps from Milestones 1–3:
+  - write-review UX completeness
+  - calibration notes + export placeholder
+  - improvement plan list route + polish
+- Basic home/dashboard task surfacing (in-app, lightweight)
+
+#### Out of scope (explicitly deferred)
+- Analytics dashboards and charts (Lattice-style insights)
+- Identity/SSO hardening and production RBAC rollout
+- Notifications/worker jobs
+- Advanced AI analytics engines
+- Full calibration write-back/ranking systems beyond agreed MVP+ scope
+
+---
+
+### Phase 1 — UI Foundation (Design System Nucleus)
+- [x] Define design tokens (typography scale, spacing, radii, shadows) via Tailwind config and/or CSS variables
+- [x] Create/standardize core UI primitives:
+  - [x] Button
+  - [x] Card
+  - [x] Input / Textarea
+  - [x] Select
+  - [x] Badge/StatusChip
+  - [x] Tabs
+  - [x] Table
+  - [x] Drawer/SidePanel
+  - [x] Modal
+  - [x] Toast
+  - [x] EmptyState
+  - [x] Skeleton loader
+- [x] Create standard layout components:
+  - [x] PageHeader (title + subtitle + primary CTA slot)
+  - [x] SectionHeader
+- [x] Refactor 3 routes to use primitives/layout:
+  - [x] Home
+  - [x] /performance/reviews (tasks)
+  - [x] One admin route (review cycles list OR calibration admin list)
+- [x] Add a short “Visual spot-check” list to the PR description (manual QA checklist)
+- Completed in PR #TBD (dev -> main Milestone 4 Phase 1)
+
+**Acceptance criteria**
+- [x] Refactored routes share consistent spacing/typography and components
+- [x] No business logic changes
+- [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+
+---
+
+### Phase 2 — Apply Consistency Across Core Flows
+- [ ] Refactor remaining core routes to use primitives/layout:
+  - [ ] Write review screen
+  - [ ] Packet view
+  - [ ] Calibration session view
+  - [ ] Improvement plans detail
+  - [ ] Admin review cycles new/create page (if still inconsistent)
+- [ ] Standardize loading/empty/error states using shared components
+- [ ] Add Skeleton loaders on packet/calibration/improvement plan detail where data fetches occur
+- [ ] Accessibility baseline pass:
+  - [ ] Focus states visible
+  - [ ] Keyboard navigation for drawers/modals
+  - [ ] `aria-label` on icon buttons
+
+**Acceptance criteria**
+- [ ] Core flows look consistent and use shared components
+- [ ] No mixed styling patterns remain on core routes
+- [ ] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+
+---
+
+### Phase 3 — In-app Guidance (Help + Tooltips + Coaching)
+- [ ] Add persistent Help entry point in app shell (header or nav)
+- [ ] Add `/help` page with role-based sections and deep links:
+  - [ ] Employee: tasks, writing/submitting, evidence, viewing packet
+  - [ ] Manager: calibration, review participation, improvement plans
+  - [ ] HR: cycle setup, progress monitoring, calibration sessions, audit/export concepts
+- [ ] Add “Getting started” coaching card on Home (role-aware links)
+- [ ] Add contextual tooltips/helper text (concise, accessible) for:
+  - [ ] Submit (finality + visibility)
+  - [ ] Evidence (what counts + visibility)
+  - [ ] Calibration axes meaning + finalized/locked meaning
+  - [ ] Packet visibility rules (locked vs released)
+  - [ ] Improvement plan visibility & audit notes
+- [ ] Improve empty-state coaching copy on key pages (“what to do next”)
+
+**Acceptance criteria**
+- [ ] Users can self-serve core workflows without external training
+- [ ] Tooltips are accessible (keyboard + aria) and concise
+- [ ] `/help` provides accurate deep links to in-app pages
+- [ ] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+
+---
+
+### Phase 4 — Remaining MVP-adjacent UX gaps (from PRD_AUDIT)
+This phase finishes the leftover functional UX items without adding analytics.
+
+#### Write-review UX completeness
+- [ ] Expand write-review left phase navigation beyond task context (clean phase nav)
+- [ ] Add right-panel reviewer/subject context summary on write-review screen
+- [ ] Add richer editor experience for answers (ONLY if product confirms; otherwise keep current)
+
+#### Calibration completion
+- [ ] Add calibration participant notes/justifications in right drawer (if not already)
+- [ ] Add calibration snapshot export/download placeholder endpoint + UI action
+- [ ] Optional write-back of finalized bucket/rating to packet stable fields (ONLY if product confirms)
+
+#### Improvement plans completion
+- [ ] Add `/performance/improvement-plans` list route
+- [ ] Add incremental UX polish beyond MVP placeholders
+
+#### Home/dashboard task surfacing
+- [ ] Add due-soon indicators for assigned review tasks and improvement plan check-ins (in-app only)
+
+**Acceptance criteria**
+- [ ] All remaining follow-on items from Milestones 1–3 are tracked and completed here (or explicitly deferred)
+- [ ] New/updated endpoints include Zod validation + server-side permission checks
+- [ ] New mutations write audit events with non-sensitive metadata
+- [ ] New UI routes include loading/empty/error states
+- [ ] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+
+
+## Milestone 5 — Analytics Foundations (Scaffold Only)
+
+**Status:** Not started  
+**Objective:** Prepare the platform for HR analytics dashboards without implementing final charts until the HR rating/competency framework is confirmed.
+
+### In scope
+- Add `/analytics` route and nav entry (placeholder)
+- Define privacy rules (small-N suppression) in code/constants (placeholder values)
+- Create reusable chart components and data-query service patterns (no real KPIs yet)
+- Add a lightweight “reporting query layer” abstraction (e.g., `src/server/analytics/*`)
+- Ensure metrics can be derived from stored ratings once rating framework is finalized
+
+### Out of scope
+- Final HR dashboards/KPIs
+- Trend reporting across cycles
+- Advanced “Explorer” builder
+
+### Acceptance criteria
+- `/analytics` page exists and is access-controlled (HR_ADMIN only)
+- Chart component scaffolding exists and is reusable
+- No hardcoded KPI assumptions are made before HR framework is finalized

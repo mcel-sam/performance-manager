@@ -80,21 +80,22 @@ This system is a greenfield Performance Management product built for an Azure-na
 ```
 /AGENTS.md
 /README.md
+/PLAN.md
 /docs
-/adr
-/architecture
-ARCHITECTURE.md
-/product
-PRD.md
+  /adr
+  /architecture
+    ARCHITECTURE.md
+  /product
+    PRD.md
 /infra
-/terraform
-/modules
-/env
-/dev
+  /terraform
+    /modules
+    /env
+      /dev
 /apps
-/web
+  /web
 /packages
-/types
+  /types
 ```
 
 
@@ -106,6 +107,22 @@ PRD.md
   - This keeps API routes thin and prevents “logic spaghetti”
 - Shared DTOs/types must live in `packages/types` and be imported by both UI and server.
 
+## UI system & guidance conventions
+
+### Design system location
+- UI primitives live in: `apps/web/src/components/ui/*`
+- Layout components live in: `apps/web/src/components/layout/*`
+- Feature/page components live in: `apps/web/src/components/features/*` (or colocated with routes)
+
+### UX standards
+- All pages use a standard `PageHeader` (title + optional subtitle + primary CTA slot).
+- Loading/empty/error states must use shared components (`Skeleton`, `EmptyState`).
+- Right-side drawers are standard for contextual inspection.
+- Tooltips and helper text should be concise (1–2 lines) and accessible (keyboard + aria).
+
+### Help & onboarding
+- A persistent Help entry point exists in the app shell.
+- `/help` is the canonical help page; contextual guidance appears on core flows.
 ---
 
 ## 5) Application architecture (Next.js)

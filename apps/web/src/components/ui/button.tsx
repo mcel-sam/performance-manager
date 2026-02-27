@@ -34,7 +34,7 @@ export function Button({
       {...props}
       type={type}
       className={cn(
-        "rounded-md font-medium transition disabled:cursor-not-allowed disabled:opacity-60",
+        "rounded-[var(--radius-md)] font-medium shadow-[var(--shadow-xs)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60",
         variantClasses[variant],
         sizeClasses[size],
         className,
