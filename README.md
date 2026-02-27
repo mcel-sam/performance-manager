@@ -17,7 +17,7 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Repo coding rules: `AGENTS.md`
 - Milestone execution tracking: `PLAN.md`
 
-## Implemented scope (through Milestone 2 Phase 2)
+## Implemented scope (through Milestone 2 Phase 3)
 
 - Milestone 0 foundation:
   - Local PostgreSQL dev database via `docker-compose.yml`
@@ -57,6 +57,12 @@ Performance Management System monorepo for reviews, calibration, and improvement
     - `PATCH /api/performance/calibration/:sessionId/placements/:employeeId`
   - Server-side move permission rules for HR admins, calibrators, and allowed managers
   - Audit events for placement moves
+- Milestone 2 Phase 3:
+  - Finalize endpoint (`POST /api/performance/calibration/:sessionId/finalize`)
+  - Immutable calibration snapshot persisted at finalize time (`CalibrationSnapshot`)
+  - Finalize lock enforces read-only placement updates after session finalization
+  - Calibration UI finalized banner + disabled move controls while preserving drawer/packet view
+  - Audit event for calibration finalize (`CALIBRATION_FINALIZED`)
 
 ## Local setup
 
@@ -124,6 +130,7 @@ For calibration session testing, use:
 - `GET /api/performance/reviews/:cycleId/packet/:employeeId`
 - `GET /api/performance/calibration/:sessionId`
 - `PATCH /api/performance/calibration/:sessionId/placements/:employeeId`
+- `POST /api/performance/calibration/:sessionId/finalize`
 
 Note: API routes expect `x-user-id` and `x-org-id` headers.
 
@@ -162,6 +169,13 @@ curl -s -X PATCH 'http://localhost:3000/api/performance/calibration/calibration_
   -H 'x-user-id: user_manager_1' \
   -H 'x-org-id: org_demo_1' \
   -d '{\"performanceBucket\":\"HIGH\",\"potentialBucket\":\"HIGH\"}'
+```
+
+```bash
+# finalize calibration session (HR admin or calibrator)
+curl -s -X POST 'http://localhost:3000/api/performance/calibration/calibration_session_seed_1/finalize' \
+  -H 'x-user-id: user_hr_admin_1' \
+  -H 'x-org-id: org_demo_1'
 ```
 
 ## Quality gates

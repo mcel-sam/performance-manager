@@ -253,7 +253,7 @@ npm run dev
 
 ## Milestone 2 — Packets + Calibration (9-box)
 
-**Status:** Phase 1 and Phase 2 completed locally on 2026-02-27; finalize workflow pending.  
+**Status:** Phase 1, Phase 2, and Phase 3 completed locally on 2026-02-27.  
 **Objective:** Managers/HR can view packets and calibrate a cohort in 9-box with finalize snapshot.
 
 ### Scope
@@ -274,8 +274,9 @@ npm run dev
 
 1. **Data model + migration**
    - [x] Add `CalibrationSession`, `CalibrationPlacement`
-   - [ ] Add `CalibrationSnapshot`
+   - [x] Add `CalibrationSnapshot`
    - [x] Migration name: `add_calibration_mvp`
+   - [x] Additional finalize migration: `add_calibration_snapshot_finalize_lock`
 
 2. **Phase 1 — Packet view**
    - [x] UI route: `/performance/reviews/:cycleId/packet/:employeeId`
@@ -298,18 +299,22 @@ npm run dev
    - Completed in local workspace commit set for Milestone 2 Phase 2 on 2026-02-27
 
 5. **Finalize**
-   - [ ] Finalize endpoint locks session and creates snapshot JSON
+   - [x] Finalize endpoint locks session and creates snapshot JSON
+   - [x] Endpoint: `POST /api/performance/calibration/:sessionId/finalize`
+   - [x] Locked/read-only UI state: finalize banner + disabled move controls
    - [ ] Optionally write final bucket/rating to packet
+   - Completed in local workspace commit set for Milestone 2 Phase 3 on 2026-02-27
 
 6. **Quality**
    - [x] Tests for session fetch permission gating and placement move authorization
-   - [ ] Tests for finalize locking + snapshot creation
+   - [x] Tests for finalize locking + snapshot creation
+   - [x] Tests for unauthorized finalize access
 
 ### Acceptance criteria
 - [x] Packet view works and is permission-gated
 - [x] Calibration grid loads cohort and updates placement
-- [ ] Finalize locks session and stores snapshot
-- [ ] Audit events captured for move/finalize
+- [x] Finalize locks session and stores snapshot
+- [x] Audit events captured for move/finalize
 
 ## Milestone 3 — Improvement Plans MVP (Timeline + Audit + Export placeholder)
 
