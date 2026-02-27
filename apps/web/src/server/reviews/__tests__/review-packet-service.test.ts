@@ -11,6 +11,9 @@ function buildDbMock() {
     employee: {
       findFirst: vi.fn(),
     },
+    evidenceItem: {
+      groupBy: vi.fn().mockResolvedValue([]),
+    },
   };
 }
 
@@ -95,6 +98,16 @@ describe("getReviewPacket", () => {
   it("returns packet submissions and answers for HR admin", async () => {
     const db = buildDbMock();
     db.reviewPacket.findFirst.mockResolvedValue(buildPacketRecord());
+    db.evidenceItem.groupBy.mockResolvedValue([
+      {
+        type: "FEEDBACK",
+        _count: { _all: 2 },
+      },
+      {
+        type: "GOAL",
+        _count: { _all: 1 },
+      },
+    ]);
 
     const result = await getReviewPacket(
       "cycle_seed_1",
@@ -105,8 +118,20 @@ describe("getReviewPacket", () => {
 
     expect(result.packet.subjectName).toBe("Elliot Employee");
     expect(result.packet.totalSubmissions).toBe(1);
+    expect(result.packet.evidenceCounts.FEEDBACK).toBe(2);
+    expect(result.packet.evidenceCounts.GOAL).toBe(1);
+    expect(result.packet.evidenceCounts.UPDATE).toBe(0);
     expect(result.submissions[0]?.answers[0]?.prompt).toBe(
       "What impact did this employee create this cycle?",
+    );
+    expect(db.evidenceItem.groupBy).toHaveBeenCalledTimes(1);
+    expect(db.evidenceItem.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          orgId: "org_demo_1",
+          subjectEmployeeId: "emp_employee_1",
+        }),
+      }),
     );
     expect(db.employee.findFirst).not.toHaveBeenCalled();
   });
