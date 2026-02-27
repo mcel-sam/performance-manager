@@ -560,7 +560,7 @@ This phase finishes the leftover functional UX items without adding analytics.
 - [x] New mutations write audit events with non-sensitive metadata
 - [x] New UI routes include loading/empty/error states
 - [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
-- Completed in PR #TBD (dev -> main Milestone 4 Phase 4)
+- Completed in PR #6 (dev -> main Milestone 4 Phase 4)
 
 
 ## Milestone 5 — Analytics Foundations (Scaffold Only)
