@@ -79,6 +79,33 @@ interface CalibrationSessionDb {
       };
       select: Record<string, unknown>;
     }) => Promise<CalibrationSessionRecord | null>;
+    update: (args: {
+      where: {
+        id: string;
+      };
+      data: {
+        isFinalized: boolean;
+        finalizedAt: Date;
+      };
+      select: {
+        id: true;
+        isFinalized: true;
+        finalizedAt: true;
+      };
+    }) => Promise<{ id: string; isFinalized: boolean; finalizedAt: Date | null }>;
+  };
+  calibrationSnapshot: {
+    create: (args: {
+      data: {
+        orgId: string;
+        sessionId: string;
+        snapshot: Record<string, unknown>;
+      };
+      select: {
+        id: true;
+        createdAt: true;
+      };
+    }) => Promise<{ id: string; createdAt: Date }>;
   };
   calibrationPlacement: {
     findFirst: (args: {
@@ -204,9 +231,9 @@ const potentialDefinitions: CalibrationAxisDefinition[] = [
 ];
 
 interface SessionPermissionState {
-  viewerEmployeeId: string | null;
   canMoveAny: boolean;
   canMoveEmployeeIds: Set<string>;
+  canFinalize: boolean;
 }
 
 export interface CalibrationAxisDefinition {
@@ -246,6 +273,7 @@ export interface CalibrationSessionData {
   };
   viewer: {
     canMoveAny: boolean;
+    canFinalize: boolean;
   };
   placements: CalibrationSessionPlacement[];
 }
@@ -256,6 +284,15 @@ export interface MoveCalibrationPlacementResult {
   performanceBucket: CalibrationBucket;
   potentialBucket: CalibrationBucket;
   updatedAt: string;
+}
+
+export interface FinalizeCalibrationSessionResult {
+  sessionId: string;
+  snapshotId: string;
+  isFinalized: boolean;
+  finalizedAt: string;
+  placementCount: number;
+  participantCount: number;
 }
 
 export async function getCalibrationSessionData(
@@ -273,58 +310,7 @@ export async function getCalibrationSessionData(
     );
   }
 
-  const session = await db.calibrationSession.findFirst({
-    where: {
-      id: parsed.data.sessionId,
-      orgId: context.orgId,
-    },
-    select: {
-      id: true,
-      orgId: true,
-      cycleId: true,
-      name: true,
-      isFinalized: true,
-      finalizedAt: true,
-      cycle: {
-        select: {
-          id: true,
-          name: true,
-          status: true,
-        },
-      },
-      placements: {
-        orderBy: {
-          employeeId: "asc",
-        },
-        select: {
-          id: true,
-          employeeId: true,
-          performanceBucket: true,
-          potentialBucket: true,
-          employee: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              managerId: true,
-              manager: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  if (!session) {
-    throw new AppError("NOT_FOUND", "Calibration session not found", 404);
-  }
-
+  const session = await loadSessionRecord(parsed.data.sessionId, context.orgId, db);
   const permission = await resolveSessionPermission(session, context, db);
   const packetSummaryByEmployee = await loadPacketSummaryByEmployee(
     context.orgId,
@@ -375,6 +361,7 @@ export async function getCalibrationSessionData(
     },
     viewer: {
       canMoveAny: permission.canMoveAny,
+      canFinalize: permission.canFinalize,
     },
     placements,
   };
@@ -494,6 +481,191 @@ export async function moveCalibrationPlacement(
   };
 }
 
+export async function finalizeCalibrationSession(
+  sessionId: string,
+  context: RequestContext,
+  db: CalibrationSessionDb = prisma as unknown as CalibrationSessionDb,
+): Promise<FinalizeCalibrationSessionResult> {
+  const parsed = sessionIdSchema.safeParse({ sessionId });
+  if (!parsed.success) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Invalid calibration session identifier",
+      400,
+      parsed.error.flatten(),
+    );
+  }
+
+  if (!canFinalizeSession(context)) {
+    throw new AppError("FORBIDDEN", "You are not allowed to finalize this calibration session", 403);
+  }
+
+  const session = await loadSessionRecord(parsed.data.sessionId, context.orgId, db);
+  if (session.isFinalized) {
+    throw new AppError("READ_ONLY", "Calibration session is already finalized", 409);
+  }
+
+  const finalizedAt = new Date();
+  const snapshotPayload = buildCalibrationSnapshotPayload(session, finalizedAt);
+
+  const snapshot = await db.calibrationSnapshot.create({
+    data: {
+      orgId: context.orgId,
+      sessionId: session.id,
+      snapshot: snapshotPayload,
+    },
+    select: {
+      id: true,
+      createdAt: true,
+    },
+  });
+
+  const updatedSession = await db.calibrationSession.update({
+    where: {
+      id: session.id,
+    },
+    data: {
+      isFinalized: true,
+      finalizedAt,
+    },
+    select: {
+      id: true,
+      isFinalized: true,
+      finalizedAt: true,
+    },
+  });
+
+  await db.auditEvent.create({
+    data: {
+      orgId: context.orgId,
+      actorUserId: context.userId,
+      action: "CALIBRATION_FINALIZED",
+      entityType: "CalibrationSession",
+      entityId: session.id,
+      metadata: {
+        sessionId: session.id,
+        cycleId: session.cycleId,
+        placementCount: session.placements.length,
+        participantCount: session.placements.length,
+      },
+    },
+  });
+
+  return {
+    sessionId: updatedSession.id,
+    snapshotId: snapshot.id,
+    isFinalized: updatedSession.isFinalized,
+    finalizedAt: (updatedSession.finalizedAt ?? snapshot.createdAt).toISOString(),
+    placementCount: session.placements.length,
+    participantCount: session.placements.length,
+  };
+}
+
+async function loadSessionRecord(
+  sessionId: string,
+  orgId: string,
+  db: CalibrationSessionDb,
+): Promise<CalibrationSessionRecord> {
+  const session = await db.calibrationSession.findFirst({
+    where: {
+      id: sessionId,
+      orgId,
+    },
+    select: {
+      id: true,
+      orgId: true,
+      cycleId: true,
+      name: true,
+      isFinalized: true,
+      finalizedAt: true,
+      cycle: {
+        select: {
+          id: true,
+          name: true,
+          status: true,
+        },
+      },
+      placements: {
+        orderBy: {
+          employeeId: "asc",
+        },
+        select: {
+          id: true,
+          employeeId: true,
+          performanceBucket: true,
+          potentialBucket: true,
+          employee: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              managerId: true,
+              manager: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!session) {
+    throw new AppError("NOT_FOUND", "Calibration session not found", 404);
+  }
+
+  return session;
+}
+
+function buildCalibrationSnapshotPayload(
+  session: CalibrationSessionRecord,
+  finalizedAt: Date,
+): Record<string, unknown> {
+  const placements = session.placements.map((placement) => ({
+    employeeId: placement.employeeId,
+    employeeName: `${placement.employee.firstName} ${placement.employee.lastName}`,
+    managerId: placement.employee.managerId,
+    managerName: placement.employee.manager
+      ? `${placement.employee.manager.firstName} ${placement.employee.manager.lastName}`
+      : null,
+    performanceBucket: placement.performanceBucket,
+    potentialBucket: placement.potentialBucket,
+  }));
+
+  const cellCounts = session.placements.reduce((counts, placement) => {
+    const key = `${placement.performanceBucket}:${placement.potentialBucket}`;
+    counts[key] = (counts[key] ?? 0) + 1;
+    return counts;
+  }, {} as Record<string, number>);
+
+  return {
+    sessionId: session.id,
+    cycleId: session.cycleId,
+    cycleName: session.cycle.name,
+    timestamp: finalizedAt.toISOString(),
+    axes: {
+      performance: performanceDefinitions,
+      potential: potentialDefinitions,
+    },
+    notes: [],
+    participants: placements.map((placement) => ({
+      employeeId: placement.employeeId,
+      employeeName: placement.employeeName,
+      managerId: placement.managerId,
+      managerName: placement.managerName,
+    })),
+    placements,
+    summary: {
+      placementCount: placements.length,
+      cellCounts,
+    },
+  };
+}
+
 async function resolveSessionPermission(
   session: CalibrationSessionRecord,
   context: RequestContext,
@@ -501,9 +673,9 @@ async function resolveSessionPermission(
 ): Promise<SessionPermissionState> {
   if (context.role === UserRole.HR_ADMIN || context.role === UserRole.CALIBRATOR) {
     return {
-      viewerEmployeeId: null,
       canMoveAny: true,
       canMoveEmployeeIds: new Set(session.placements.map((placement) => placement.employeeId)),
+      canFinalize: true,
     };
   }
 
@@ -536,9 +708,9 @@ async function resolveSessionPermission(
   }
 
   return {
-    viewerEmployeeId: viewerEmployee.id,
     canMoveAny: false,
     canMoveEmployeeIds: managedEmployeeIds,
+    canFinalize: false,
   };
 }
 
@@ -570,6 +742,10 @@ async function canMovePlacement(
   }
 
   return placement.employee.managerId === viewerEmployee.id;
+}
+
+function canFinalizeSession(context: RequestContext): boolean {
+  return context.role === UserRole.HR_ADMIN || context.role === UserRole.CALIBRATOR;
 }
 
 async function loadPacketSummaryByEmployee(
