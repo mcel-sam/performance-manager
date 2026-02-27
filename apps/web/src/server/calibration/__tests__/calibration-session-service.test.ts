@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   finalizeCalibrationSession,
+  getCalibrationExportPlaceholder,
   getCalibrationSessionData,
   moveCalibrationPlacement,
 } from "@/server/calibration/calibration-session-service";
@@ -20,6 +21,7 @@ function buildDbMock() {
     },
     calibrationSnapshot: {
       create: vi.fn(),
+      findFirst: vi.fn(),
     },
     calibrationPlacement: {
       findFirst: vi.fn(),
@@ -74,6 +76,7 @@ function buildSessionRecord(overrides?: { isFinalized?: boolean }) {
         employeeId: "emp_employee_1",
         performanceBucket: CalibrationBucket.HIGH,
         potentialBucket: CalibrationBucket.MEDIUM,
+        justificationNote: null,
         employee: {
           id: "emp_employee_1",
           firstName: "Elliot",
@@ -99,6 +102,7 @@ describe("moveCalibrationPlacement", () => {
       employeeId: "emp_employee_1",
       performanceBucket: CalibrationBucket.MEDIUM,
       potentialBucket: CalibrationBucket.MEDIUM,
+      justificationNote: null,
       employee: {
         id: "emp_employee_1",
         managerId: "emp_manager_1",
@@ -115,6 +119,7 @@ describe("moveCalibrationPlacement", () => {
       employeeId: "emp_employee_1",
       performanceBucket: CalibrationBucket.HIGH,
       potentialBucket: CalibrationBucket.HIGH,
+      justificationNote: "Strong impact across cross-functional initiatives.",
       updatedAt: new Date("2026-03-10T09:00:00.000Z"),
     });
     db.auditEvent.create.mockResolvedValue({ id: "audit_placement_move_1" });
@@ -125,6 +130,7 @@ describe("moveCalibrationPlacement", () => {
         employeeId: "emp_employee_1",
         performanceBucket: CalibrationBucket.HIGH,
         potentialBucket: CalibrationBucket.HIGH,
+        justificationNote: "Strong impact across cross-functional initiatives.",
       },
       hrAdminContext,
       db as never,
@@ -132,8 +138,18 @@ describe("moveCalibrationPlacement", () => {
 
     expect(result.performanceBucket).toBe(CalibrationBucket.HIGH);
     expect(result.potentialBucket).toBe(CalibrationBucket.HIGH);
+    expect(result.justificationNote).toBe("Strong impact across cross-functional initiatives.");
     expect(db.calibrationPlacement.update).toHaveBeenCalledTimes(1);
     expect(db.auditEvent.create).toHaveBeenCalledTimes(1);
+    expect(db.auditEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          metadata: expect.objectContaining({
+            noteLength: "Strong impact across cross-functional initiatives.".length,
+          }),
+        }),
+      }),
+    );
   });
 
   it("blocks unauthorized user from moving placement", async () => {
@@ -144,6 +160,7 @@ describe("moveCalibrationPlacement", () => {
       employeeId: "emp_manager_1",
       performanceBucket: CalibrationBucket.HIGH,
       potentialBucket: CalibrationBucket.HIGH,
+      justificationNote: null,
       employee: {
         id: "emp_manager_1",
         managerId: "emp_hr_admin_1",
@@ -187,6 +204,7 @@ describe("moveCalibrationPlacement", () => {
       employeeId: "emp_employee_1",
       performanceBucket: CalibrationBucket.HIGH,
       potentialBucket: CalibrationBucket.MEDIUM,
+      justificationNote: null,
       employee: {
         id: "emp_employee_1",
         managerId: "emp_manager_1",
@@ -367,6 +385,40 @@ describe("finalizeCalibrationSession", () => {
     ).rejects.toMatchObject({
       code: "READ_ONLY",
       status: 409,
+    });
+  });
+});
+
+describe("getCalibrationExportPlaceholder", () => {
+  it("returns export placeholder metadata for authorized users", async () => {
+    const db = buildDbMock();
+    db.calibrationSession.findFirst.mockResolvedValue(buildSessionRecord());
+    db.calibrationSnapshot.findFirst.mockResolvedValue({
+      id: "snapshot_1",
+      createdAt: new Date("2026-03-10T12:00:00.000Z"),
+    });
+    db.reviewPacket.findMany.mockResolvedValue([]);
+
+    const result = await getCalibrationExportPlaceholder(
+      "calibration_session_seed_1",
+      hrAdminContext,
+      db as never,
+    );
+
+    expect(result.snapshotId).toBe("snapshot_1");
+    expect(result.message).toContain("download");
+  });
+
+  it("denies export placeholder access for unauthorized users", async () => {
+    const db = buildDbMock();
+    db.calibrationSession.findFirst.mockResolvedValue(buildSessionRecord());
+    db.employee.findFirst.mockResolvedValue({ id: "emp_employee_1" });
+
+    await expect(
+      getCalibrationExportPlaceholder("calibration_session_seed_1", employeeContext, db as never),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
     });
   });
 });

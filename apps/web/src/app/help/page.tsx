@@ -48,7 +48,7 @@ const managerLinks: HelpLinkItem[] = [
   {
     label: "Improvement plans",
     description: "Track check-ins and status transitions for coaching plans.",
-    href: "/performance/improvement-plans/improvement_plan_seed_1",
+    href: "/performance/improvement-plans",
   },
 ];
 
@@ -66,7 +66,7 @@ const hrLinks: HelpLinkItem[] = [
   {
     label: "Audit and exports",
     description: "Review plan audit logs and export placeholders.",
-    href: "/performance/improvement-plans/improvement_plan_seed_1",
+    href: "/performance/improvement-plans",
   },
 ];
 

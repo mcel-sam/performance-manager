@@ -1,6 +1,7 @@
 "use client";
 
 import { EvidenceType, ReviewSubmissionStatus } from "@prisma/client";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { SectionHeader } from "@/components/layout/section-header";
@@ -40,6 +41,13 @@ interface WriteReviewFormProps {
   };
   questions: WriteReviewQuestion[];
   initialStatus: ReviewSubmissionStatus;
+  submissionContext: {
+    cycleName: string;
+    subjectName: string;
+    reviewerName: string;
+    relationship: string;
+    packetHref: string;
+  };
 }
 
 interface EvidenceResponse {
@@ -74,6 +82,7 @@ export default function WriteReviewForm({
   auth,
   questions,
   initialStatus,
+  submissionContext,
 }: WriteReviewFormProps) {
   const [questionState, setQuestionState] = useState<WriteReviewQuestion[]>(questions);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(questions[0]?.id ?? null);
@@ -576,6 +585,37 @@ export default function WriteReviewForm({
         title="Evidence Context"
         description="Select an answer and attach supporting evidence."
       >
+        <Card className="border-slate-200 shadow-none">
+          <CardContent className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Submission context
+            </p>
+            <dl className="space-y-1 text-sm text-slate-700">
+              <div>
+                <dt className="font-semibold text-slate-900">Cycle</dt>
+                <dd>{submissionContext.cycleName}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-900">Subject</dt>
+                <dd>{submissionContext.subjectName}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-900">Reviewer</dt>
+                <dd>{submissionContext.reviewerName}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-900">Relationship</dt>
+                <dd>{submissionContext.relationship}</dd>
+              </div>
+            </dl>
+            <Link href={submissionContext.packetHref}>
+              <Button variant="outline" size="sm">
+                Open packet view
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         <details className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
           <summary className="cursor-pointer text-sm font-medium text-slate-900">
             Evidence guidance

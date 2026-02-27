@@ -538,28 +538,29 @@ npm run dev
 This phase finishes the leftover functional UX items without adding analytics.
 
 #### Write-review UX completeness
-- [ ] Expand write-review left phase navigation beyond task context (clean phase nav)
-- [ ] Add right-panel reviewer/subject context summary on write-review screen
-- [ ] Add richer editor experience for answers (ONLY if product confirms; otherwise keep current)
+- [x] Expand write-review left phase navigation beyond task context (clean phase nav)
+- [x] Add right-panel reviewer/subject context summary on write-review screen
+- [x] Keep current answer editor for MVP (richer editor deferred pending product confirmation)
 
 #### Calibration completion
-- [ ] Add calibration participant notes/justifications in right drawer (if not already)
-- [ ] Add calibration snapshot export/download placeholder endpoint + UI action
-- [ ] Optional write-back of finalized bucket/rating to packet stable fields (ONLY if product confirms)
+- [x] Add calibration participant notes/justifications in right drawer (if not already)
+- [x] Add calibration snapshot export/download placeholder endpoint + UI action
+- [x] Optional write-back of finalized bucket/rating to packet stable fields explicitly deferred pending product confirmation
 
 #### Improvement plans completion
-- [ ] Add `/performance/improvement-plans` list route
-- [ ] Add incremental UX polish beyond MVP placeholders
+- [x] Add `/performance/improvement-plans` list route
+- [x] Add incremental UX polish beyond MVP placeholders
 
 #### Home/dashboard task surfacing
-- [ ] Add due-soon indicators for assigned review tasks and improvement plan check-ins (in-app only)
+- [x] Add due-soon indicators for assigned review tasks and improvement plan check-ins (in-app only)
 
 **Acceptance criteria**
-- [ ] All remaining follow-on items from Milestones 1–3 are tracked and completed here (or explicitly deferred)
-- [ ] New/updated endpoints include Zod validation + server-side permission checks
-- [ ] New mutations write audit events with non-sensitive metadata
-- [ ] New UI routes include loading/empty/error states
-- [ ] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+- [x] All remaining follow-on items from Milestones 1–3 are tracked and completed here (or explicitly deferred)
+- [x] New/updated endpoints include Zod validation + server-side permission checks
+- [x] New mutations write audit events with non-sensitive metadata
+- [x] New UI routes include loading/empty/error states
+- [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+- Completed in PR #6 (dev -> main Milestone 4 Phase 4)
 
 
 ## Milestone 5 — Analytics Foundations (Scaffold Only)

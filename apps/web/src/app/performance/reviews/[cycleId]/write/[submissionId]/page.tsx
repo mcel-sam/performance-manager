@@ -45,13 +45,21 @@ export default async function WriteReviewPage({ params }: WriteReviewPageProps) 
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Task Context</CardTitle>
+            <CardTitle className="text-base">Phase Navigation</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <nav className="space-y-2">
               <Link href="/performance/reviews">
                 <Button variant="outline" className="w-full justify-start">
                   Review Tasks
+                </Button>
+              </Link>
+              <p className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                Write Review
+              </p>
+              <Link href={`/performance/reviews/${cycleId}/packet/${data.submission.subjectEmployeeId}`}>
+                <Button variant="outline" className="w-full justify-start">
+                  Packet View
                 </Button>
               </Link>
               <p className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
@@ -83,6 +91,13 @@ export default async function WriteReviewPage({ params }: WriteReviewPageProps) 
           auth={{ userId: context.userId, orgId: context.orgId }}
           initialStatus={data.submission.status}
           questions={data.questions}
+          submissionContext={{
+            cycleName: data.submission.cycleName,
+            subjectName: data.submission.subjectName,
+            reviewerName: data.submission.reviewerName,
+            relationship: relationshipLabel[data.submission.relationship],
+            packetHref: `/performance/reviews/${cycleId}/packet/${data.submission.subjectEmployeeId}`,
+          }}
         />
       </div>
     </div>

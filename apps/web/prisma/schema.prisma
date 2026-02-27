@@ -348,6 +348,7 @@ model CalibrationPlacement {
   employeeId        String
   performanceBucket CalibrationBucket  @default(MEDIUM)
   potentialBucket   CalibrationBucket  @default(MEDIUM)
+  justificationNote String?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   org               Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)

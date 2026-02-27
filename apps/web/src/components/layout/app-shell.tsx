@@ -28,7 +28,7 @@ const navItems = [
     label: "Admin Calibration",
   },
   {
-    href: "/performance/improvement-plans/improvement_plan_seed_1",
+    href: "/performance/improvement-plans",
     label: "Improvement Plans",
   },
   {
