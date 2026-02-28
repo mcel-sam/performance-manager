@@ -582,6 +582,74 @@ This phase finishes the leftover functional UX items without adding analytics.
 - [x] Re-run manual visual QA checklist for core routes and capture results in PR description
 - [x] Ensure `lint`, `typecheck`, `test`, and `build` pass in `apps/web`
 
+## Milestone 4.2 — Playwright E2E Smoke Suite (UX Regression Gates)
+
+**Status:** Phase 1 complete; Phases 2 and 3 pending.  
+**Objective:** Add a small, stable Playwright smoke suite to catch UX regressions across core flows (Lattice-like UI polish protection). Keep scope minimal and tests reliable.
+
+### Scope
+
+#### In scope
+- Add Playwright test runner and repo configuration under `apps/web`
+- Add `apps/web/e2e/*` smoke tests for critical user journeys (5–8 tests max)
+- Use stable selectors (`data-testid`) for key interactive elements
+- Provide a repeatable local run path for E2E tests
+- Optional: add an E2E job in CI for PRs to `main` once stable
+
+#### Out of scope
+- Full visual regression screenshot diffing (can be added later)
+- Large suite of brittle UI tests
+- Testing every page or every component
+- Load/performance testing
+
+---
+
+### Phase 1 — Playwright Setup + First Smoke Test
+- [x] Install Playwright test dependencies in `apps/web` (`@playwright/test`)
+- [x] Create Playwright config (baseURL, webServer, retries, trace on failure)
+- [x] Add npm scripts in `apps/web/package.json`:
+  - [x] `test:e2e`
+  - [x] `test:e2e:ui`
+- [x] Add minimal smoke test: Home loads + navigation works
+- [x] Add/standardize `data-testid` attributes on primary nav and Home “Getting started” links (only what tests need)
+- [x] Document how to run E2E locally in README (short section)
+
+**Acceptance criteria**
+- [x] `npm run test:e2e` runs locally and passes consistently
+- [x] One smoke test is present and stable
+- [x] No flaky selectors (prefer `data-testid`)
+- Completed in PR #TBD (dev -> main Milestone 4.2 Phase 1)
+
+---
+
+### Phase 2 — Core Flow Smoke Coverage (Keep to ~5–8 tests)
+Add smoke tests (only core happy paths; no deep edge cases):
+- [ ] Reviews tasks list loads (`/performance/reviews`)
+- [ ] Write review: autosave works + submit locks (minimal path)
+- [ ] Packet page renders
+- [ ] Calibration: open drawer + move placement via accessible control
+- [ ] Improvement plan: add check-in and see timeline entry
+
+Implementation notes:
+- [ ] Add `data-testid` only where needed for stability (submit buttons, autosave indicator, drawer open, move placement control)
+- [ ] Keep each test under ~30–60 seconds and avoid brittle timing assumptions
+
+**Acceptance criteria**
+- [ ] All smoke tests pass locally in one run
+- [ ] Tests are stable across repeated runs
+- [ ] Failures produce trace/screenshots for debugging (configured)
+
+---
+
+### Phase 3 — CI Integration (Optional, after stability)
+- [ ] Add a separate CI job/workflow to run E2E smoke suite:
+  - [ ] Run on PRs to `main` (or nightly until stable)
+  - [ ] Upload trace/screenshots on failure
+- [ ] Ensure E2E does not block iteration if flaky (use retries and keep suite small)
+
+**Acceptance criteria**
+- [ ] E2E runs in CI reliably (or is scheduled nightly) with debuggable artifacts
+- [ ] CI remains fast enough for team velocity
 
 ## Milestone 5 — Analytics Foundations (Scaffold Only)
 
