@@ -7,7 +7,7 @@ import { cn } from "@/components/ui/cn";
 
 interface HelpHintProps extends HTMLAttributes<HTMLDivElement> {
   label: string;
-  children: ReactNode;
+  children?: ReactNode;
   buttonLabel?: string;
   defaultOpen?: boolean;
 }
