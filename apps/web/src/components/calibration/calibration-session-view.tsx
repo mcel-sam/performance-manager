@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
+import { HelpHint } from "@/components/ui/help-hint";
 import { Select } from "@/components/ui/select";
 import { Tabs } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -303,20 +304,17 @@ export default function CalibrationSessionView({
         <Toast variant={exportMessage.includes("Unable") ? "error" : "info"}>{exportMessage}</Toast>
       ) : null}
 
-      <details className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
-        <summary className="cursor-pointer text-sm font-medium text-slate-900">
-          What finalized/locked means
-        </summary>
-        <p className="mt-2 text-xs text-slate-600">
-          Finalizing captures an immutable snapshot of placements and locks move controls. Packet links
-          remain viewable after lock.
-        </p>
-      </details>
+      <HelpHint
+        label="What finalized/locked means"
+        buttonLabel="Toggle finalized and locked guidance"
+      >
+        Finalizing captures an immutable snapshot and locks placement controls. Packet links remain
+        viewable after lock.
+      </HelpHint>
 
       <div className="grid gap-3 text-sm text-slate-700 md:grid-cols-2">
-        <details className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
-          <summary className="cursor-pointer font-medium text-slate-900">Performance definitions</summary>
-          <ul className="mt-2 space-y-1 text-xs text-slate-600">
+        <HelpHint label="Performance definitions" buttonLabel="Toggle performance definitions">
+          <ul className="space-y-1">
             {initialData.guidance.performance.map((definition) => (
               <li key={definition.bucket}>
                 <span className="font-semibold text-slate-800">{definition.label}:</span>{" "}
@@ -324,10 +322,9 @@ export default function CalibrationSessionView({
               </li>
             ))}
           </ul>
-        </details>
-        <details className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
-          <summary className="cursor-pointer font-medium text-slate-900">Potential definitions</summary>
-          <ul className="mt-2 space-y-1 text-xs text-slate-600">
+        </HelpHint>
+        <HelpHint label="Potential definitions" buttonLabel="Toggle potential definitions">
+          <ul className="space-y-1">
             {initialData.guidance.potential.map((definition) => (
               <li key={definition.bucket}>
                 <span className="font-semibold text-slate-800">{definition.label}:</span>{" "}
@@ -335,7 +332,7 @@ export default function CalibrationSessionView({
               </li>
             ))}
           </ul>
-        </details>
+        </HelpHint>
       </div>
 
       {session.isFinalized ? (

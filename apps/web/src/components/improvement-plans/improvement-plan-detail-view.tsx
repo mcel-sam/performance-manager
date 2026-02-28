@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
+import { HelpHint } from "@/components/ui/help-hint";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
@@ -307,10 +308,13 @@ export default function ImprovementPlanDetailView({
         <Toast variant={exportMessage.includes("Unable") ? "error" : "info"}>{exportMessage}</Toast>
       ) : null}
 
-      <Toast variant="info">
-        Visibility is limited to the subject, manager chain, and HR. Check-ins and status transitions
+      <HelpHint
+        label="Visibility and audit rules"
+        buttonLabel="Toggle visibility and audit guidance"
+      >
+        Access is limited to the subject, manager chain, and HR. Check-ins and status transitions
         are recorded in the audit log.
-      </Toast>
+      </HelpHint>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">

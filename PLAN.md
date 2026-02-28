@@ -420,7 +420,7 @@ npm run dev
 
 ## Milestone 4 — UX Polish + Help & Launch Readiness (No Analytics Yet)
 
-**Status:** Not started  
+**Status:** Core implementation complete in PRs #3, #4, #5, and #6; remaining consistency/help polish moved to Milestone 4.1.  
 **Objective:** Make the product feel elegant and self-serve (Lattice-like UI polish + in-app guidance), while closing remaining MVP-adjacent UX gaps. Analytics dashboards will be handled in a later milestone after HR confirms the rating framework.
 
 ### Implementation notes (tighten execution)
@@ -430,11 +430,11 @@ npm run dev
   - Layout components: `apps/web/src/components/layout/*`
   - Page-specific components: colocate under the route folder or `apps/web/src/components/features/*`
 - **Manual visual QA checklist (include in PR description for UX phases):**
-  - [ ] Spacing/typography consistent with PageHeader + tokens
-  - [ ] Buttons/inputs/cards use shared primitives (no one-off styles)
-  - [ ] Focus rings visible; keyboard navigation works for drawers/modals
-  - [ ] Loading/empty/error states present and readable
-  - [ ] No layout break on common widths (desktop + narrow)
+  - [x] Spacing/typography consistent with PageHeader + tokens
+  - [x] Buttons/inputs/cards use shared primitives (no one-off styles)
+  - [x] Focus rings visible; keyboard navigation works for drawers/modals
+  - [x] Loading/empty/error states present and readable
+  - [x] No layout break on common widths (desktop + narrow)
 
 ### Scope
 
@@ -479,7 +479,7 @@ npm run dev
   - [x] /performance/reviews (tasks)
   - [x] One admin route (review cycles list OR calibration admin list)
 - [x] Add a short “Visual spot-check” list to the PR description (manual QA checklist)
-- Completed in PR #TBD (dev -> main Milestone 4 Phase 1)
+- Completed in PR #3 (dev -> main Milestone 4 Phase 1)
 
 **Acceptance criteria**
 - [x] Refactored routes share consistent spacing/typography and components
@@ -495,7 +495,7 @@ npm run dev
   - [x] Calibration session view
   - [x] Improvement plans detail
   - [x] Admin review cycles new/create page (if still inconsistent)
-- [x] Standardize loading/empty/error states using shared components
+- [ ] Standardize loading/empty/error states using shared components (remaining outliers moved to Milestone 4.1)
 - [x] Add Skeleton loaders on packet/calibration/improvement plan detail where data fetches occur
 - [x] Accessibility baseline pass:
   - [x] Focus states visible
@@ -504,7 +504,7 @@ npm run dev
 
 **Acceptance criteria**
 - [x] Core flows look consistent and use shared components
-- [x] No mixed styling patterns remain on core routes
+- [ ] No mixed styling patterns remain on core routes (remaining admin/reviews outliers moved to Milestone 4.1)
 - [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
 - Completed in PR #4 (dev -> main Milestone 4 Phase 2)
 
@@ -561,6 +561,26 @@ This phase finishes the leftover functional UX items without adding analytics.
 - [x] New UI routes include loading/empty/error states
 - [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
 - Completed in PR #6 (dev -> main Milestone 4 Phase 4)
+
+
+## Milestone 4.1 — UX/Help Fixes
+
+**Status:** Completed in PR #7 (dev -> main Milestone 4.1 UX/Help Fixes).  
+**Objective:** Close the remaining consistency and help-system polish gaps identified by `docs/product/MILESTONE4_AUDIT.md`.
+
+### Short checklist
+- [x] Refactor admin calibration headers to shared layout primitives (`PageHeader` / `SectionHeader`) on:
+  - `/admin/performance/calibration`
+  - `/admin/performance/calibration/new`
+- [x] Convert remaining one-off loading/error pages to shared primitives (`Skeleton`, `Card`, `Button`, `EmptyState`) for:
+  - `/performance/reviews/loading`
+  - `/performance/reviews/error`
+  - `/admin/performance/calibration/loading`
+  - `/admin/performance/calibration/new/loading`
+  - `/admin/performance/review-cycles/loading`
+- [x] Add a reusable tooltip/help-hint primitive and standardize contextual guidance usage on key flows
+- [x] Re-run manual visual QA checklist for core routes and capture results in PR description
+- [x] Ensure `lint`, `typecheck`, `test`, and `build` pass in `apps/web`
 
 
 ## Milestone 5 — Analytics Foundations (Scaffold Only)
