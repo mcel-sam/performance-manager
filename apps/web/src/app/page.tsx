@@ -112,8 +112,12 @@ export default async function HomePage() {
           <CardDescription>{gettingStarted.description}</CardDescription>
         </CardHeader>
         <CardFooter className="flex flex-wrap gap-2">
-          {gettingStarted.links.map((link) => (
-            <Link key={link.href} href={link.href}>
+          {gettingStarted.links.map((link, index) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              data-testid={`home-getting-started-link-${index}`}
+            >
               <Button variant="outline" size="sm">
                 {link.label}
               </Button>
