@@ -3,6 +3,8 @@ import Link from "next/link";
 import { UserRole } from "@prisma/client";
 
 import CalibrationSessionCreateForm from "@/components/admin/calibration-session-create-form";
+import { PageHeader } from "@/components/layout/page-header";
+import { SectionHeader } from "@/components/layout/section-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDevRequestContext } from "@/server/auth/request-context";
@@ -35,19 +37,20 @@ export default async function NewAdminCalibrationSessionPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            New Calibration Session
-          </h2>
-          <p className="text-sm text-slate-600">
-            Configure cycle, cohort members, axes, and session participants.
-          </p>
-        </div>
-        <Link href="/admin/performance/calibration">
-          <Button variant="outline">Back to sessions</Button>
-        </Link>
-      </header>
+      <PageHeader
+        title="New Calibration Session"
+        description="Configure cycle, cohort members, axes, and session participants."
+        action={
+          <Link href="/admin/performance/calibration">
+            <Button variant="outline">Back to sessions</Button>
+          </Link>
+        }
+      />
+
+      <SectionHeader
+        title="Session configuration"
+        description="Set participants, role group, and axis definitions before creating the session."
+      />
 
       <CalibrationSessionCreateForm
         options={options}

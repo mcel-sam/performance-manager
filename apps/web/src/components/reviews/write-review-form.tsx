@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
+import { HelpHint } from "@/components/ui/help-hint";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -443,15 +444,10 @@ export default function WriteReviewForm({
             description={`Required progress: ${requiredProgress.answered}/${requiredProgress.total} answered`}
             action={<span className="text-sm font-medium text-slate-600">{saveLabel}</span>}
           />
-          <details className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
-            <summary className="cursor-pointer text-sm font-medium text-slate-900">
-              Submit guidance
-            </summary>
-            <p className="mt-2 text-xs text-slate-600">
-              Submit is final for this phase. After submit, your answers become read-only and packet
-              visibility follows cycle policy.
-            </p>
-          </details>
+          <HelpHint label="Submit guidance" buttonLabel="Toggle submit guidance">
+            Submit is final for this phase. After submit, answers become read-only and packet
+            visibility follows cycle policy.
+          </HelpHint>
         </CardHeader>
         <CardContent className="space-y-5">
           {questionState.length === 0 ? (
@@ -616,15 +612,10 @@ export default function WriteReviewForm({
           </CardContent>
         </Card>
 
-        <details className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
-          <summary className="cursor-pointer text-sm font-medium text-slate-900">
-            Evidence guidance
-          </summary>
-          <p className="mt-2 text-xs text-slate-600">
-            Include concrete examples like feedback, updates, goals, or values recognition. You can
-            only view and attach evidence items visible to your role.
-          </p>
-        </details>
+        <HelpHint label="Evidence guidance" buttonLabel="Toggle evidence guidance">
+          Include concrete evidence from feedback, updates, goals, and values recognition. You can
+          only attach items visible to your role.
+        </HelpHint>
 
         <Card className="border-slate-200 shadow-none">
           <CardContent className="space-y-2">

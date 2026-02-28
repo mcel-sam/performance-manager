@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HelpHint } from "@/components/ui/help-hint";
 import ReviewPacketView from "@/components/reviews/review-packet-view";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getReviewPacket } from "@/server/reviews/review-packet-service";
@@ -34,14 +35,13 @@ export default async function ReviewPacketPage({ params }: ReviewPacketPageProps
         }
       />
 
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-sm text-slate-700">
-            Packet visibility follows cycle policy. Managers and HR can view in-progress packets;
-            employee access is available after release when policy allows.
-          </p>
-        </CardContent>
-      </Card>
+      <HelpHint
+        label="Packet visibility"
+        buttonLabel="Toggle review packet visibility guidance"
+      >
+        Managers and HR can view in-progress packets. Employees can view packet content after
+        release when cycle policy allows.
+      </HelpHint>
 
       <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         <Card>

@@ -3,8 +3,11 @@ import Link from "next/link";
 import { UserRole } from "@prisma/client";
 
 import CalibrationSessionsTable from "@/components/admin/calibration-sessions-table";
+import { PageHeader } from "@/components/layout/page-header";
+import { SectionHeader } from "@/components/layout/section-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { listCalibrationSessions } from "@/server/calibration/calibration-admin-service";
 
@@ -38,36 +41,34 @@ export default async function AdminCalibrationSessionsPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Calibration Sessions
-          </h2>
-          <p className="text-sm text-slate-600">
-            Create and manage calibration sessions by cycle and cohort.
-          </p>
-        </div>
-        <Link href="/admin/performance/calibration/new">
-          <Button>Create Session</Button>
-        </Link>
-      </header>
+      <PageHeader
+        title="Calibration Sessions"
+        description="Create and manage calibration sessions by cycle and cohort."
+        action={
+          <Link href="/admin/performance/calibration/new">
+            <Button>Create Session</Button>
+          </Link>
+        }
+      />
 
       {sessions.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>No calibration sessions yet</CardTitle>
-            <CardDescription>
-              Start by creating a session tied to a review cycle and cohort.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <EmptyState
+          title="No calibration sessions yet"
+          description="Start by creating a session tied to a review cycle and cohort."
+          action={
             <Link href="/admin/performance/calibration/new">
               <Button>Create first session</Button>
             </Link>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
-        <CalibrationSessionsTable sessions={sessions} />
+        <section className="space-y-3">
+          <SectionHeader
+            title="Session list"
+            description="Open an existing session to review placements or continue facilitation."
+          />
+          <CalibrationSessionsTable sessions={sessions} />
+        </section>
       )}
     </div>
   );
