@@ -299,6 +299,21 @@ npm test
 npm run build
 ```
 
+## E2E smoke tests (Playwright)
+
+Run from `apps/web` after DB migration + seed:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+Interactive runner:
+
+```bash
+npm run test:e2e:ui
+```
+
 ## Containerization
 
 Dockerfile location: repo root (`/Dockerfile`)

@@ -14,30 +14,37 @@ const navItems = [
   {
     href: "/",
     label: "Home",
+    testId: "nav-link-home",
   },
   {
     href: "/performance/reviews",
     label: "Reviews",
+    testId: "nav-link-reviews",
   },
   {
     href: "/performance/calibration/calibration_session_seed_1",
     label: "Calibration",
+    testId: "nav-link-calibration",
   },
   {
     href: "/admin/performance/calibration",
     label: "Admin Calibration",
+    testId: "nav-link-admin-calibration",
   },
   {
     href: "/performance/improvement-plans",
     label: "Improvement Plans",
+    testId: "nav-link-improvement-plans",
   },
   {
     href: "/admin/performance/review-cycles",
     label: "Admin Cycles",
+    testId: "nav-link-admin-cycles",
   },
   {
     href: "/help",
     label: "Help",
+    testId: "nav-link-help",
   },
 ];
 
@@ -65,6 +72,7 @@ export default function AppShell({ children }: AppShellProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  data-testid={item.testId}
                   className={cn(
                     "block rounded-md px-3 py-2 text-sm font-medium transition",
                     isActive
