@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
+import { HelpHint } from "@/components/ui/help-hint";
 import { Modal } from "@/components/ui/modal";
 import { Tabs } from "@/components/ui/tabs";
 import { Toast } from "@/components/ui/toast";
@@ -60,6 +61,33 @@ describe("ui foundation primitives", () => {
 
     expect(html).toContain('role="status"');
     expect(html).toContain("Saved successfully.");
+  });
+
+  it("renders help hint toggle with accessible attributes", () => {
+    const html = renderToStaticMarkup(
+      createElement(HelpHint, { label: "Submit guidance" }, "Submit is final."),
+    );
+
+    expect(html).toContain("Submit guidance");
+    expect(html).toContain('aria-label="Toggle help for Submit guidance"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain("hidden");
+  });
+
+  it("renders help hint content expanded when defaultOpen is true", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        HelpHint,
+        {
+          label: "Packet visibility",
+          defaultOpen: true,
+        },
+        "Managers and HR can view in-progress packets.",
+      ),
+    );
+
+    expect(html).toContain('aria-expanded="true"');
+    expect(html).toContain("Managers and HR can view in-progress packets.");
   });
 
   it("does not render modal markup when closed", () => {
