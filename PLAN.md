@@ -618,7 +618,7 @@ This phase finishes the leftover functional UX items without adding analytics.
 - [x] `npm run test:e2e` runs locally and passes consistently
 - [x] One smoke test is present and stable
 - [x] No flaky selectors (prefer `data-testid`)
-- Completed in PR #TBD (dev -> main Milestone 4.2 Phase 1)
+- Completed in PR #8 (dev -> main Milestone 4.2 Phase 1)
 
 ---
 
