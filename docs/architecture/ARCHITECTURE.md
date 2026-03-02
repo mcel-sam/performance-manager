@@ -174,6 +174,43 @@ The domain is heavily relational and requires strong integrity:
 - Every table includes `org_id` (or has a parent relationship that includes org).
 - All queries must scope by org and permission constraints.
 
+## Scorecard and analytics-ready data model
+
+This system stores structured competency ratings and deterministic scorecard outputs so HR reporting can be built without recomputing logic in the UI.
+
+### Competency dimensions
+- Review template questions that represent competencies must include a stable `dimension_key` (e.g., `communication`, `safety_compliance`).
+- Competency questions use a scale (1–5) and may support a stored “Not Observed / N/A” state.
+
+### Scorecard configuration (cycle-level)
+- Scorecard weights are configured per review cycle (global defaults initially).
+- Each scorecard metric has:
+  - `metric_key`
+  - `weight_percent` (total must sum to 100)
+
+### Derived scorecard results (packet-level)
+To enable dashboards and auditing, derived scorecard results are persisted:
+- Packet-level:
+  - `total_scorecard_percent`
+  - `scorecard_overall_rating` (1–5 mapped from thresholds)
+  - `final_rating_source` (`SCORECARD` or `CALIBRATION`)
+- Per-metric breakdown results:
+  - `scorecard_metric_result` records (packet_id, metric_key, self_rating, manager_rating, blended_rating, weight_percent, weighted_percent)
+
+### Snapshotting org attributes
+To prevent reporting drift when employee metadata changes mid-cycle, packets (or a cycle snapshot table) store:
+- snapshot_department
+- snapshot_title
+- snapshot_manager reference (id/name)
+
+### Peer/upward reviews
+Peer and upward submissions can store the same competency ratings/comments as reference input, but scorecard computations use Self + Manager only by default.
+
+### Demo mode (local HR review)
+For local demos and E2E tests, the system supports a development-only demo mode:
+- Demo pages/endpoints are guarded by `DEMO_MODE=true` and development environment checks.
+- Demo mode can create sample org/users/cycles and provide demo-role logins for Playwright smoke tests.
+
 ---
 
 ## 7) Authorization & permission model

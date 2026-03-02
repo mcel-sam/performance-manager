@@ -653,24 +653,150 @@ Implementation notes:
 - [x] CI remains fast enough for team velocity
 - Completed in PR #10 (dev -> main Milestone 4.2 Phase 3)
 
-## Milestone 5 — Analytics Foundations (Scaffold Only)
+## Milestone 5 — HR Scorecard + Analytics-ready Data Foundations + Demo Login (No Dashboards Yet)
 
 **Status:** Not started  
-**Objective:** Prepare the platform for HR analytics dashboards without implementing final charts until the HR rating/competency framework is confirmed.
+**Objective:** Implement the HR-defined rating model and store analytics-ready data (competencies + weighted scorecard) while enabling HR to run everything through the UI using demo logins/configs (no scripts). Dashboards/charts will be a later milestone once HR confirms reporting preferences.
 
-### In scope
-- Add `/analytics` route and nav entry (placeholder)
-- Define privacy rules (small-N suppression) in code/constants (placeholder values)
-- Create reusable chart components and data-query service patterns (no real KPIs yet)
-- Add a lightweight “reporting query layer” abstraction (e.g., `src/server/analytics/*`)
-- Ensure metrics can be derived from stored ratings once rating framework is finalized
+### HR form requirements (source)
+- Competencies rated **1–5** by **Employee + Manager**, with comments:
+  - Values / Culture Alignment
+  - Judgment & Decision-Making
+  - Safety & Compliance
+  - Technical Skills
+  - Quality of Work
+  - Communication
+  - Accountability
+  - Relationship Building
+  - Results Driven
+  - Attitude
+  - Service Oriented
+  - Adaptability
+- Performance Metrics Scorecard (weighted subset, totals to 100%):
+  - Quality of Work (15%)
+  - Communication (10%)
+  - Accountability (15%)
+  - Relationship Building (10%)
+  - Results Driven (20%)
+  - Attitude (10%)
+  - Service Oriented (10%)
+  - Adaptability (10%)
+- Blended Rating per metric: `(Employee + Manager) / 2`
+- Weighted Score % per metric: `(Blended / 5) * weight%`
+- Total % mapped to rating:
+  - 5 Exceptional: 90–100%
+  - 4 Exceeds: 80–89%
+  - 3 Meets: 70–79%
+  - 2 Needs Improvement: 60–69%
+  - 1 Unsatisfactory: <60%
 
-### Out of scope
-- Final HR dashboards/KPIs
-- Trend reporting across cycles
-- Advanced “Explorer” builder
+### Key decisions (locked for this milestone)
+- Peer/Upward reviews may collect the same 1–5 competency ratings + comments, but are **reference input only**.
+- Scorecard math uses **Self + Manager only** by default.
+- Scorecard weights are **global company-wide** (no per-department weights yet).
+- Support **N/A / Not Observed** as a stored rating state; exclude from scoring by default (unless HR specifies otherwise later).
 
-### Acceptance criteria
-- `/analytics` page exists and is access-controlled (HR_ADMIN only)
-- Chart component scaffolding exists and is reusable
-- No hardcoded KPI assumptions are made before HR framework is finalized
+### Scope
+
+#### In scope
+- Data model changes to represent competencies/ratings with stable `dimension_key`
+- Store self + manager competency ratings + comments (via existing submissions)
+- Store scorecard weights as cycle config (global company weights)
+- Compute and store derived scorecard outputs per employee packet:
+  - per-metric blended rating
+  - per-metric weighted percent
+  - total percent
+  - scorecard-mapped overall rating (1–5)
+- Persist per-metric breakdown results (for easy charting later)
+- Peer/upward reviews supported as **reference input** (ratings/comments stored) but **not included in scorecard math** (default)
+- Demo-mode UI setup:
+  - buttons/config pages to create demo org/users/cycle/calibration/plan (no scripts)
+  - sample username/password per role for local use only
+  - demo-only “log in as” or demo login page
+- Update Playwright smoke suite to use demo login + demo setup
+
+#### Out of scope
+- Analytics dashboards/charts (separate milestone after HR confirms reporting view)
+- Production SSO/identity hardening (later)
+- Notifications/worker jobs (later)
+
+---
+
+### Phase 1 — Data Model + Cycle Scorecard Config (schema + migration)
+- [ ] Add `dimension_key` + rating question type support for competency questions (SCALE 1–5)
+- [ ] Add support for **N/A / Not Observed** rating state (stored, excluded from score by default)
+- [ ] Add scorecard config tables tied to the cycle:
+  - [ ] metric_key, weight_percent (must sum to 100)
+- [ ] Add packet fields (or derived tables) for storing:
+  - [ ] total_scorecard_percent
+  - [ ] scorecard_overall_rating (1–5)
+  - [ ] final_rating_source (SCORECARD | CALIBRATION)
+- [ ] Add per-metric breakdown storage (analytics-ready):
+  - [ ] scorecard_metric_result: packet_id, metric_key, self_rating, manager_rating, blended_rating, weight_percent, weighted_percent
+- [ ] Add snapshot fields for org attributes at cycle time (department/title/manager) (to prevent reporting drift)
+- [ ] Migration committed and tests updated if needed
+
+Validation rules (Phase 1)
+- [ ] Weights sum-to-100 enforced server-side (not just UI)
+- [ ] Metric keys validated against an allowed list
+- [ ] N/A behavior documented and consistent
+
+**Acceptance criteria**
+- [ ] Schema supports competency ratings and scorecard weights
+- [ ] Per-metric breakdown results are persistable
+- [ ] Weights sum to 100 enforced at validation layer
+- [ ] `lint/typecheck/test/build` pass
+
+---
+
+### Phase 2 — Scorecard Computation Engine + Tests
+- [ ] Compute blended ratings from self + manager submissions
+- [ ] Apply weights and compute total percent + mapped overall rating
+- [ ] Persist derived results on packet
+- [ ] Persist per-metric results into scorecard_metric_result (required for later charts)
+- [ ] Recompute trigger on manager submit and/or cycle lock (choose one and document)
+- [ ] Calibration override behavior:
+  - [ ] If calibration finalized, final rating source can become CALIBRATION (store both)
+- [ ] Unit tests:
+  - [ ] blended formula correctness
+  - [ ] weighted sum correctness
+  - [ ] rating threshold mapping correctness
+  - [ ] recompute trigger behavior
+  - [ ] boundary cases: 79/80/89/90 and <60 handling
+  - [ ] N/A behavior correctness (documented rule)
+
+**Acceptance criteria**
+- [ ] Scorecard results computed deterministically and persisted
+- [ ] Tests prove formula correctness and mapping thresholds
+
+---
+
+### Phase 3 — Peer/Upward Reviews as Reference Input (No weighting)
+- [ ] Allow peer/upward submissions to include the same competency ratings/comments (1–5 + Not Observed)
+- [ ] Clearly label these as “Reference input” in manager view
+- [ ] Ensure scorecard computation ignores peer/upward by default
+- [ ] Permission tests for peer/upward visibility rules
+
+**Acceptance criteria**
+- [ ] Peer/upward data can be collected and viewed where allowed
+- [ ] Scorecard totals unaffected by peer/upward by default
+
+---
+
+### Phase 4 — Demo Mode UI + Sample Role Logins (No scripts)
+- [ ] Add DEMO_MODE guard (only in development)
+- [ ] Add a Demo Setup page in UI:
+  - [ ] Create demo org + employees + manager hierarchy
+  - [ ] Create demo cycle + generate submissions
+  - [ ] Create demo calibration session
+  - [ ] Create demo improvement plan
+- [ ] Add simple demo authentication:
+  - [ ] sample usernames/passwords for roles (Employee/Manager/HR/Calibrator)
+  - [ ] visible only in demo mode
+  - [ ] demo-only “log in as” or demo login page
+- [ ] Update Playwright smoke suite to use demo login + demo setup and run core flows
+
+**Acceptance criteria**
+- [ ] HR can demo everything from the UI with demo accounts (no scripts)
+- [ ] Demo setup is disabled outside DEMO_MODE
+- [ ] E2E suite still passes
