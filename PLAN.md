@@ -792,6 +792,7 @@ Validation rules (Phase 1)
 - [x] Add demo-first login route `/login` with role tiles (HR Admin, Calibrator, Manager, Employee)
 - [x] Add demo reset endpoint `POST /api/demo/reset` with typed confirmation (`RESET`) before wipe + seed
 - [x] Seed realistic construction-company walkthrough data (org hierarchy, cycle, submissions, evidence, calibration, improvement plan)
+- [x] Refine seeded demo narratives so reviews, evidence links, scorecard outcomes, and calibration placements are coherent for walkthroughs/reporting
 - [x] Remove Demo Setup / Demo Login clutter from app navigation (legacy `/demo/*` routes redirect to `/login`)
 - [x] Update Playwright smoke suite to use `/api/demo/reset` + `/login` role tiles and run core flows
 
@@ -800,6 +801,7 @@ Validation rules (Phase 1)
 - [x] Demo reset/auth is disabled outside `DEMO_MODE=true` and development runtime
 - [x] E2E suite still passes
 - Completed in PR #14 (initial) and refined in PR #15 (demo-first login hardening)
+- Seed coherence refinement completed in PR #20.
 
 ---
 
