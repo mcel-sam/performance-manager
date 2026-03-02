@@ -584,7 +584,7 @@ This phase finishes the leftover functional UX items without adding analytics.
 
 ## Milestone 4.2 — Playwright E2E Smoke Suite (UX Regression Gates)
 
-**Status:** Phase 1 complete; Phases 2 and 3 pending.  
+**Status:** Phases 1 and 2 complete; Phase 3 pending.  
 **Objective:** Add a small, stable Playwright smoke suite to catch UX regressions across core flows (Lattice-like UI polish protection). Keep scope minimal and tests reliable.
 
 ### Scope
@@ -624,20 +624,21 @@ This phase finishes the leftover functional UX items without adding analytics.
 
 ### Phase 2 — Core Flow Smoke Coverage (Keep to ~5–8 tests)
 Add smoke tests (only core happy paths; no deep edge cases):
-- [ ] Reviews tasks list loads (`/performance/reviews`)
-- [ ] Write review: autosave works + submit locks (minimal path)
-- [ ] Packet page renders
-- [ ] Calibration: open drawer + move placement via accessible control
-- [ ] Improvement plan: add check-in and see timeline entry
+- [x] Reviews tasks list loads (`/performance/reviews`)
+- [x] Write review: autosave works + submit locks (minimal path)
+- [x] Packet page renders
+- [x] Calibration: open drawer + move placement via accessible control
+- [x] Improvement plan: add check-in and see timeline entry
 
 Implementation notes:
-- [ ] Add `data-testid` only where needed for stability (submit buttons, autosave indicator, drawer open, move placement control)
-- [ ] Keep each test under ~30–60 seconds and avoid brittle timing assumptions
+- [x] Add `data-testid` only where needed for stability (submit buttons, autosave indicator, drawer open, move placement control)
+- [x] Keep each test under ~30–60 seconds and avoid brittle timing assumptions
 
 **Acceptance criteria**
-- [ ] All smoke tests pass locally in one run
-- [ ] Tests are stable across repeated runs
-- [ ] Failures produce trace/screenshots for debugging (configured)
+- [x] All smoke tests pass locally in one run
+- [x] Tests are stable across repeated runs
+- [x] Failures produce trace/screenshots for debugging (configured)
+- Completed in PR #9 (dev -> main Milestone 4.2 Phase 2)
 
 ---
 

@@ -442,7 +442,14 @@ export default function WriteReviewForm({
           <SectionHeader
             title="Write Review"
             description={`Required progress: ${requiredProgress.answered}/${requiredProgress.total} answered`}
-            action={<span className="text-sm font-medium text-slate-600">{saveLabel}</span>}
+            action={
+              <span
+                className="text-sm font-medium text-slate-600"
+                data-testid="write-review-save-state"
+              >
+                {saveLabel}
+              </span>
+            }
           />
           <HelpHint label="Submit guidance" buttonLabel="Toggle submit guidance">
             Submit is final for this phase. After submit, answers become read-only and packet
@@ -485,6 +492,7 @@ export default function WriteReviewForm({
 
                     <Textarea
                       id={question.id}
+                      data-testid={`write-review-answer-${question.id}`}
                       ref={(element) => {
                         questionInputRefs.current[question.id] = element;
                       }}
@@ -565,6 +573,7 @@ export default function WriteReviewForm({
               type="button"
               onClick={handleSubmit}
               disabled={isReadOnly || isSubmitting}
+              data-testid="write-review-submit"
             >
               {isReadOnly ? "Submitted" : isSubmitting ? "Submitting..." : "Submit Review"}
             </Button>

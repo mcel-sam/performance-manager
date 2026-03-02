@@ -6,6 +6,7 @@ export default defineConfig({
   testDir: "./e2e",
   timeout: 60_000,
   fullyParallel: false,
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
@@ -19,5 +20,10 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: {
+      ...process.env,
+      DEV_USER_ID: process.env.DEV_USER_ID ?? "user_manager_1",
+      DEV_ORG_ID: process.env.DEV_ORG_ID ?? "org_demo_1",
+    },
   },
 });

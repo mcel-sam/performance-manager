@@ -403,6 +403,7 @@ export default function CalibrationSessionView({
                                           key={placement.placementId}
                                           type="button"
                                           aria-label={`Select ${placement.employeeName} placement`}
+                                          data-testid={`calibration-placement-${placement.employeeId}`}
                                           onClick={() => setSelectedEmployeeId(placement.employeeId)}
                                           className={`w-full rounded-[var(--radius-md)] border px-3 py-2 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
                                             isSelected
@@ -495,6 +496,7 @@ export default function CalibrationSessionView({
                         <label className="block space-y-1 text-sm font-medium text-slate-700">
                           <span>Performance</span>
                           <Select
+                            data-testid="calibration-performance-select"
                             value={movePerformanceBucket}
                             onChange={(event) =>
                               setMovePerformanceBucket(event.target.value as CalibrationBucket)
@@ -512,6 +514,7 @@ export default function CalibrationSessionView({
                         <label className="block space-y-1 text-sm font-medium text-slate-700">
                           <span>Potential</span>
                           <Select
+                            data-testid="calibration-potential-select"
                             value={movePotentialBucket}
                             onChange={(event) =>
                               setMovePotentialBucket(event.target.value as CalibrationBucket)
@@ -541,6 +544,7 @@ export default function CalibrationSessionView({
                           onClick={() => void handleMovePlacement()}
                           disabled={isMoving || !selectedPlacement.canMove || session.isFinalized}
                           className="w-full"
+                          data-testid="calibration-save-placement"
                         >
                           {isMoving ? "Updating..." : "Save placement"}
                         </Button>
