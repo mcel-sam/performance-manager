@@ -1,14 +1,18 @@
 import {
+  CompetencyDimensionKey,
   FinalRatingSource,
   ReviewRelationship,
   ReviewSubmissionStatus,
+  ScorecardMetricKey,
   UserRole,
 } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  getReportingCompetencies,
   getReportingProgress,
   getReportingRatings,
+  getReportingScorecard,
   listReportingCycles,
 } from "@/server/reporting/reporting-service";
 
@@ -219,5 +223,185 @@ describe("reporting-service", () => {
       snapshotTitle: "Foreman",
     });
     expect(query.where).not.toHaveProperty("subjectEmployee");
+  });
+
+  it("returns competency insights with department heatmap and self-manager gap", async () => {
+    const db = createReportingDbMock();
+    db.reviewPacket.findMany.mockResolvedValue([
+      buildPacketRecord({
+        id: "packet_1",
+        subjectEmployeeId: "emp_1",
+        selfStatus: ReviewSubmissionStatus.SUBMITTED,
+        managerStatus: ReviewSubmissionStatus.SUBMITTED,
+        snapshotDepartment: "Operations",
+        snapshotTitle: "Project Engineer",
+      }),
+      buildPacketRecord({
+        id: "packet_2",
+        subjectEmployeeId: "emp_2",
+        selfStatus: ReviewSubmissionStatus.SUBMITTED,
+        managerStatus: ReviewSubmissionStatus.SUBMITTED,
+        snapshotDepartment: "Field Operations",
+        snapshotTitle: "Foreman",
+      }),
+    ]);
+    db.reviewAnswer.findMany.mockResolvedValue([
+      {
+        scaleRating: 3,
+        notObserved: false,
+        submission: { packetId: "packet_1", relationship: ReviewRelationship.SELF },
+        question: { dimensionKey: CompetencyDimensionKey.COMMUNICATION },
+      },
+      {
+        scaleRating: 4,
+        notObserved: false,
+        submission: { packetId: "packet_1", relationship: ReviewRelationship.MANAGER },
+        question: { dimensionKey: CompetencyDimensionKey.COMMUNICATION },
+      },
+      {
+        scaleRating: 2,
+        notObserved: false,
+        submission: { packetId: "packet_2", relationship: ReviewRelationship.SELF },
+        question: { dimensionKey: CompetencyDimensionKey.COMMUNICATION },
+      },
+      {
+        scaleRating: 2,
+        notObserved: false,
+        submission: { packetId: "packet_2", relationship: ReviewRelationship.MANAGER },
+        question: { dimensionKey: CompetencyDimensionKey.COMMUNICATION },
+      },
+      {
+        scaleRating: 5,
+        notObserved: false,
+        submission: { packetId: "packet_1", relationship: ReviewRelationship.SELF },
+        question: { dimensionKey: CompetencyDimensionKey.QUALITY_OF_WORK },
+      },
+      {
+        scaleRating: null,
+        notObserved: true,
+        submission: { packetId: "packet_1", relationship: ReviewRelationship.MANAGER },
+        question: { dimensionKey: CompetencyDimensionKey.QUALITY_OF_WORK },
+      },
+      {
+        scaleRating: 4,
+        notObserved: false,
+        submission: { packetId: "packet_2", relationship: ReviewRelationship.SELF },
+        question: { dimensionKey: CompetencyDimensionKey.QUALITY_OF_WORK },
+      },
+      {
+        scaleRating: 5,
+        notObserved: false,
+        submission: { packetId: "packet_2", relationship: ReviewRelationship.MANAGER },
+        question: { dimensionKey: CompetencyDimensionKey.QUALITY_OF_WORK },
+      },
+    ]);
+
+    const result = await getReportingCompetencies(
+      {
+        cycleId: "cycle_seed_1",
+        smallNThreshold: 1,
+      },
+      hrAdminContext,
+      db as never,
+    );
+
+    const communication = result.competencies.find(
+      (item) => item.dimensionKey === CompetencyDimensionKey.COMMUNICATION,
+    );
+
+    expect(communication).toBeDefined();
+    expect(communication?.averageRating).toBe(2.75);
+    expect(communication?.self.averageRating).toBe(2.5);
+    expect(communication?.manager.averageRating).toBe(3);
+    expect(communication?.selfManagerGap.averageGap).toBe(0.5);
+    expect(communication?.departmentBreakdown).toEqual([
+      { department: "Field Operations", observedCount: 2, averageRating: 2 },
+      { department: "Operations", observedCount: 2, averageRating: 3.5 },
+    ]);
+  });
+
+  it("returns scorecard metrics with Not Observed counts and gaps", async () => {
+    const db = createReportingDbMock();
+    db.reviewPacket.findMany.mockResolvedValue([
+      buildPacketRecord({
+        id: "packet_1",
+        subjectEmployeeId: "emp_1",
+        selfStatus: ReviewSubmissionStatus.SUBMITTED,
+        managerStatus: ReviewSubmissionStatus.SUBMITTED,
+        snapshotDepartment: "Operations",
+      }),
+      buildPacketRecord({
+        id: "packet_2",
+        subjectEmployeeId: "emp_2",
+        selfStatus: ReviewSubmissionStatus.SUBMITTED,
+        managerStatus: ReviewSubmissionStatus.SUBMITTED,
+        snapshotDepartment: "Field Operations",
+      }),
+    ]);
+    db.reviewAnswer.findMany.mockResolvedValue([
+      {
+        scaleRating: 5,
+        notObserved: false,
+        submission: { packetId: "packet_1", relationship: ReviewRelationship.SELF },
+        question: { dimensionKey: CompetencyDimensionKey.QUALITY_OF_WORK },
+      },
+      {
+        scaleRating: null,
+        notObserved: true,
+        submission: { packetId: "packet_1", relationship: ReviewRelationship.MANAGER },
+        question: { dimensionKey: CompetencyDimensionKey.QUALITY_OF_WORK },
+      },
+      {
+        scaleRating: 4,
+        notObserved: false,
+        submission: { packetId: "packet_2", relationship: ReviewRelationship.SELF },
+        question: { dimensionKey: CompetencyDimensionKey.QUALITY_OF_WORK },
+      },
+      {
+        scaleRating: 5,
+        notObserved: false,
+        submission: { packetId: "packet_2", relationship: ReviewRelationship.MANAGER },
+        question: { dimensionKey: CompetencyDimensionKey.QUALITY_OF_WORK },
+      },
+    ]);
+
+    const result = await getReportingScorecard(
+      {
+        cycleId: "cycle_seed_1",
+        smallNThreshold: 1,
+      },
+      hrAdminContext,
+      db as never,
+    );
+
+    const qualityMetric = result.metrics.find(
+      (metric) => metric.metricKey === ScorecardMetricKey.QUALITY_OF_WORK,
+    );
+
+    expect(qualityMetric).toBeDefined();
+    expect(qualityMetric?.observedCount).toBe(3);
+    expect(qualityMetric?.notObservedCount).toBe(1);
+    expect(qualityMetric?.averageRating).toBe(4.67);
+    expect(qualityMetric?.self.averageRating).toBe(4.5);
+    expect(qualityMetric?.manager.averageRating).toBe(5);
+    expect(qualityMetric?.selfManagerGap.averageGap).toBe(1);
+  });
+
+  it("enforces HR-admin-only scorecard access", async () => {
+    const db = createReportingDbMock();
+
+    await expect(
+      getReportingScorecard(
+        {
+          cycleId: "cycle_seed_1",
+          smallNThreshold: 1,
+        },
+        managerContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
   });
 });

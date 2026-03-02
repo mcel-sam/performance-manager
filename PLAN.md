@@ -944,20 +944,21 @@ We will follow proven patterns:
 ## Phase 3 — Competency & Scorecard insights (HR-required list)
 
 ### Competencies tab
-- [ ] Heatmap: Department × Competency (avg or median; exclude Not Observed)
-- [ ] Click a competency to drill into distribution (self vs manager comparison)
-- [ ] Show “Self vs Manager gap” summary (where differences are largest)
+- [x] Heatmap: Department × Competency (avg or median; exclude Not Observed)
+- [x] Click a competency to drill into distribution (self vs manager comparison)
+- [x] Show “Self vs Manager gap” summary (where differences are largest)
 
 ### Scorecard tab
-- [ ] 8 weighted metrics:
+- [x] 8 weighted metrics:
   - per metric distribution / average by dept/title
   - optional “gap” view (self vs manager)
-- [ ] Show count of Not Observed per metric (data quality)
+- [x] Show count of Not Observed per metric (data quality)
 
 **Acceptance criteria**
-- [ ] HR can see competency breakdown for all requested competencies
-- [ ] HR can break down by dept/title and drill to employee list
-- [ ] UI remains fast (pagination/caching where needed)
+- [x] HR can see competency breakdown for all requested competencies
+- [x] HR can break down by dept/title and drill to employee list
+- [x] UI remains fast (pagination/caching where needed)
+- Completed in PR #18 (dev -> main Milestone 6 Phase 3)
 
 ---
 
