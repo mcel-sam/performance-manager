@@ -10,6 +10,10 @@ import { z } from "zod";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
+import {
+  recomputePacketScorecard,
+  shouldRecomputeScorecardOnSubmissionSubmit,
+} from "@/server/scorecard/scorecard-service";
 
 interface TemplateQuestion {
   id: string;
@@ -28,6 +32,7 @@ interface SubmissionAccessRecord {
   id: string;
   orgId: string;
   cycleId: string;
+  packetId: string;
   status: ReviewSubmissionStatus;
   submittedAt: Date | null;
   relationship: ReviewRelationship;
@@ -545,6 +550,10 @@ export async function submitReviewSubmission(
     },
   });
 
+  if (shouldRecomputeScorecardOnSubmissionSubmit(submission.relationship)) {
+    await recomputePacketScorecard(submission.packetId, context);
+  }
+
   return {
     submissionId: updatedSubmission.id,
     status: updatedSubmission.status,
@@ -568,6 +577,7 @@ async function getSubmissionForAccess(
       id: true,
       orgId: true,
       cycleId: true,
+      packetId: true,
       status: true,
       submittedAt: true,
       relationship: true,
