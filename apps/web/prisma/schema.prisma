@@ -272,6 +272,8 @@ model ReviewPacket {
   @@index([cycleId])
   @@index([subjectEmployeeId])
   @@index([cycleId, scorecardOverallRating])
+  @@index([orgId, cycleId, snapshotDepartment, snapshotTitle])
+  @@index([orgId, cycleId, finalRatingSource])
 }
 
 model ReviewSubmission {
