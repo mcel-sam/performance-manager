@@ -4,6 +4,7 @@ import {
   EvidenceType,
   EvidenceVisibility,
   ReviewRelationship,
+  ReviewQuestionType,
   ReviewSubmissionStatus,
   UserRole,
 } from "@prisma/client";
@@ -17,9 +18,12 @@ interface ReviewAnswerRecord {
   id: string;
   questionId: string;
   responseText: string;
+  scaleRating: number | null;
+  notObserved: boolean;
   question: {
     id: string;
     prompt: string;
+    questionType: ReviewQuestionType;
     isRequired: boolean;
     sortOrder: number;
   };
@@ -123,6 +127,7 @@ export interface ReviewPacketData {
   submissions: {
     submissionId: string;
     relationship: ReviewRelationship;
+    isReferenceInput: boolean;
     status: ReviewSubmissionStatus;
     submittedAt: string | null;
     reviewerName: string;
@@ -130,8 +135,11 @@ export interface ReviewPacketData {
       answerId: string;
       questionId: string;
       prompt: string;
+      questionType: ReviewQuestionType;
       isRequired: boolean;
       responseText: string;
+      scaleRating: number | null;
+      notObserved: boolean;
     }[];
   }[];
 }
@@ -195,10 +203,13 @@ export async function getReviewPacket(
               id: true,
               questionId: true,
               responseText: true,
+              scaleRating: true,
+              notObserved: true,
               question: {
                 select: {
                   id: true,
                   prompt: true,
+                  questionType: true,
                   isRequired: true,
                   sortOrder: true,
                 },
@@ -222,6 +233,9 @@ export async function getReviewPacket(
     .map((submission) => ({
       submissionId: submission.id,
       relationship: submission.relationship,
+      isReferenceInput:
+        submission.relationship === ReviewRelationship.PEER ||
+        submission.relationship === ReviewRelationship.UPWARD,
       status: submission.status,
       submittedAt: submission.submittedAt?.toISOString() ?? null,
       reviewerName: `${submission.reviewerEmployee.firstName} ${submission.reviewerEmployee.lastName}`,
@@ -231,8 +245,11 @@ export async function getReviewPacket(
           answerId: answer.id,
           questionId: answer.questionId,
           prompt: answer.question.prompt,
+          questionType: answer.question.questionType,
           isRequired: answer.question.isRequired,
           responseText: answer.responseText,
+          scaleRating: answer.scaleRating,
+          notObserved: answer.notObserved,
         })),
     }));
 
