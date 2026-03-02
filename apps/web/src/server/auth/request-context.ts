@@ -1,6 +1,8 @@
 import { UserRole } from "@prisma/client";
+import { cookies } from "next/headers";
 
 import { prisma } from "@/server/db/prisma";
+import { decodeDemoSession, DEMO_SESSION_COOKIE, isDemoModeEnabled } from "@/server/demo/demo-mode";
 import { AppError } from "@/server/http/errors";
 
 interface AuthDb {
@@ -58,8 +60,17 @@ export function requireRole(context: RequestContext, role: UserRole): void {
 export async function getDevRequestContext(
   db: AuthDb = prisma,
 ): Promise<RequestContext> {
-  const userId = process.env.DEV_USER_ID ?? "user_employee_1";
-  const orgId = process.env.DEV_ORG_ID ?? "org_demo_1";
+  let userId = process.env.DEV_USER_ID ?? "user_employee_1";
+  let orgId = process.env.DEV_ORG_ID ?? "org_demo_1";
+
+  if (isDemoModeEnabled()) {
+    const cookieStore = await cookies();
+    const session = decodeDemoSession(cookieStore.get(DEMO_SESSION_COOKIE)?.value);
+    if (session) {
+      userId = session.userId;
+      orgId = session.orgId;
+    }
+  }
 
   const user = await db.user.findFirst({
     where: { id: userId, orgId },
