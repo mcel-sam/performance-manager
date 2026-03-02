@@ -863,27 +863,27 @@ We will follow proven patterns:
 ## Phase 1 — Reporting data layer (APIs + tests)
 
 ### Server module
-- [ ] Create `apps/web/src/server/reporting/*` for reporting queries and aggregation
-- [ ] Add permission gating: HR_ADMIN only (expand later to managers)
-- [ ] Enforce org scoping + snapshot fields (department/title) to prevent drift
+- [x] Create `apps/web/src/server/reporting/*` for reporting queries and aggregation
+- [x] Add permission gating: HR_ADMIN only (expand later to managers)
+- [x] Enforce org scoping + snapshot fields (department/title) to prevent drift
 
 ### Endpoints (HR admin)
-- [ ] `GET /api/admin/reporting/cycles` (list cycles)
-- [ ] `GET /api/admin/reporting/progress?cycleId=...&department=&title=`  
+- [x] `GET /api/admin/reporting/cycles` (list cycles)
+- [x] `GET /api/admin/reporting/progress?cycleId=...&department=&title=`  
   Returns:
   - totals: notStarted/inProgress/completed
   - splits: self(notStarted/inProgress/completed), manager(notStarted/inProgress/completed)
-- [ ] `GET /api/admin/reporting/ratings?cycleId=...&department=&title=&ratingSource=`  
+- [x] `GET /api/admin/reporting/ratings?cycleId=...&department=&title=&ratingSource=`  
   ratingSource:
   - `FINAL` (final_rating_source applied)
   - `SCORECARD` (baseline)
   Returns distribution of rating 1–5 + counts
-- [ ] `GET /api/admin/reporting/competencies?cycleId=...&department=&title=`  
+- [x] `GET /api/admin/reporting/competencies?cycleId=...&department=&title=`  
   Returns per competency (dimension_key):
   - distribution (1–5 + notObserved)
   - optional avg (exclude notObserved)
   - optional self vs manager gap stats
-- [ ] `GET /api/admin/reporting/people?cycleId=...&department=&title=&status=&ratingSource=`  
+- [x] `GET /api/admin/reporting/people?cycleId=...&department=&title=&status=&ratingSource=`  
   Returns paginated employee rows:
   - employeeName, dept, title
   - selfStatus, managerStatus
@@ -892,18 +892,19 @@ We will follow proven patterns:
   - links: packet, calibration session (if exists), improvement plan (if exists)
 
 ### Small-N suppression
-- [ ] Implement threshold (default 5) for grouped charts/tables:
+- [x] Implement threshold (default 5) for grouped charts/tables:
   - if group size < threshold → show “Insufficient data” or roll into “Other”
 
 ### Tests
-- [ ] Unit tests for aggregation correctness (progress + distribution)
-- [ ] Permission tests (HR only)
-- [ ] Snapshot drift test: reporting uses snapshot_department/title (not live employee field)
+- [x] Unit tests for aggregation correctness (progress + distribution)
+- [x] Permission tests (HR only)
+- [x] Snapshot drift test: reporting uses snapshot_department/title (not live employee field)
 
 **Acceptance criteria**
-- [ ] APIs return all KPI data needed for UI without recomputing on client
-- [ ] Permission/scoping correct
-- [ ] lint/typecheck/test/build pass
+- [x] APIs return all KPI data needed for UI without recomputing on client
+- [x] Permission/scoping correct
+- [x] lint/typecheck/test/build pass
+- Completed in PR #16 (dev -> main Milestone 6 Phase 1)
 
 ---
 
