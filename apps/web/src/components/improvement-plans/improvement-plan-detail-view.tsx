@@ -469,8 +469,13 @@ export default function ImprovementPlanDetailView({
                   onChange={(event) => setCheckInNote(event.target.value)}
                   className="min-h-28"
                   placeholder="Add a timeline update..."
+                  data-testid="improvement-checkin-input"
                 />
-                <Button onClick={() => void handleCreateCheckIn()} disabled={isSavingCheckIn}>
+                <Button
+                  onClick={() => void handleCreateCheckIn()}
+                  disabled={isSavingCheckIn}
+                  data-testid="improvement-checkin-submit"
+                >
                   {isSavingCheckIn ? "Saving..." : "Add Check-in"}
                 </Button>
                 {checkInMessage ? (
