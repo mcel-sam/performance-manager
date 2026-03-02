@@ -783,6 +783,7 @@ Validation rules (Phase 1)
 **Acceptance criteria**
 - [x] Peer/upward data can be collected and viewed where allowed
 - [x] Scorecard totals unaffected by peer/upward by default
+- Completed in PR #13 (dev -> main Milestone 5 Phase 3)
 
 ---
 
