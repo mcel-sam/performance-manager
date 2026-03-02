@@ -805,3 +805,10 @@ Validation rules (Phase 1)
 - [x] Demo setup is disabled outside DEMO_MODE
 - [x] E2E suite still passes
 - Completed in PR #14 (dev -> main Milestone 5 Phase 4)
+
+---
+
+## Milestone 5 Follow-on UI Polish
+
+- [x] Presentation Mode hide redundant hub sections (`PRESENTATION_MODE`) by hiding Home “Workflow Modules” and Help role quick-link cards.
+- Completed in PR #15 (dev -> main docs + presentation mode polish)
