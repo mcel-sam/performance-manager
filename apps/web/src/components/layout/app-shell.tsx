@@ -33,6 +33,11 @@ const baseNavItems = [
     testId: "nav-link-admin-calibration",
   },
   {
+    href: "/admin/performance/reporting",
+    label: "Admin Reporting",
+    testId: "nav-link-admin-reporting",
+  },
+  {
     href: "/performance/improvement-plans",
     label: "Improvement Plans",
     testId: "nav-link-improvement-plans",
