@@ -39,6 +39,7 @@ const submissionRecord = {
   id: "submission_seed_employee_self_1",
   orgId: "org_demo_1",
   cycleId: "cycle_seed_draft_1",
+  packetId: "packet_seed_employee_1",
   status: ReviewSubmissionStatus.IN_PROGRESS,
   submittedAt: null,
   relationship: ReviewRelationship.SELF,

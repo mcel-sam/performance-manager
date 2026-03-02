@@ -1,6 +1,7 @@
 import {
   CalibrationBucket,
   CycleStatus,
+  FinalRatingSource,
   ReviewSubmissionStatus,
   UserRole,
 } from "@prisma/client";
@@ -32,6 +33,7 @@ function buildDbMock() {
     },
     reviewPacket: {
       findMany: vi.fn(),
+      updateMany: vi.fn(),
     },
     auditEvent: {
       create: vi.fn(),
@@ -294,6 +296,7 @@ describe("finalizeCalibrationSession", () => {
       isFinalized: true,
       finalizedAt: new Date("2026-03-10T12:00:00.000Z"),
     });
+    db.reviewPacket.updateMany.mockResolvedValue({ count: 1 });
     db.auditEvent.create.mockResolvedValue({ id: "audit_finalize_1" });
 
     const result = await finalizeCalibrationSession(
@@ -322,6 +325,13 @@ describe("finalizeCalibrationSession", () => {
       }),
     );
     expect(db.calibrationSession.update).toHaveBeenCalledTimes(1);
+    expect(db.reviewPacket.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          finalRatingSource: FinalRatingSource.CALIBRATION,
+        }),
+      }),
+    );
     expect(db.auditEvent.create).toHaveBeenCalledTimes(1);
   });
 
@@ -351,6 +361,7 @@ describe("finalizeCalibrationSession", () => {
       isFinalized: true,
       finalizedAt: new Date("2026-03-10T12:00:00.000Z"),
     });
+    db.reviewPacket.updateMany.mockResolvedValue({ count: 1 });
     db.auditEvent.create.mockResolvedValue({ id: "audit_finalize_2" });
 
     await finalizeCalibrationSession("calibration_session_seed_1", hrAdminContext, db as never);
