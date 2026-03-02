@@ -247,7 +247,52 @@ Every meaningful mutation must create an `audit_event`, including:
 ### Test tooling (LOCKED)
 - Use **Vitest** for unit tests (preferred) OR **Jest** if already installed. Pick one and keep consistent.
 - Use **@testing-library/react** for component tests (when needed).
-- Use **Playwright** only for a small number of critical E2E flows (later), not for everything.
+- Use **Playwright** for a **small number of critical E2E smoke flows** (not for everything). E2E tests should be stable and focus on core user journeys.
+
+### E2E (Playwright) policy
+- Use Playwright for a **small number of critical end-to-end (E2E) flows** to prevent UX regressions.
+- E2E tests live in: `apps/web/e2e/*`
+- Prefer stable selectors:
+  - Use `data-testid` on key interactive elements (buttons, tabs, drawers, submit actions).
+  - Avoid brittle CSS selectors.
+- Commands (must exist in `apps/web/package.json` once Playwright is added):
+  - `npm run test:e2e` (headless)
+  - `npm run test:e2e:ui` (interactive)
+- Minimum E2E smoke suite targets (keep to ~5–8 tests):
+  1) Home loads + navigation works
+  2) Review tasks list loads
+  3) Write review: autosave works + submit locks
+  4) Packet page renders
+  5) Calibration: open drawer + move placement
+  6) Improvement plan: add check-in and see timeline entry
+- CI strategy:
+  - Initially run Playwright on demand or nightly until stable.
+  - Once stable, run E2E smoke suite on PRs to `main`.
+
+## Demo mode and test accounts (development-only)
+
+To support HR demos and Playwright E2E tests, this repo may include a **demo mode**.
+
+### Demo mode guardrails (HARD RULES)
+- Demo endpoints/pages must be enabled **only** when:
+  - `DEMO_MODE=true`, and
+  - the environment is development (e.g., `NODE_ENV=development`)
+- Demo mode must never be enabled by default in production deployments.
+- Demo features must never require committing secrets; demo credentials are for local use only.
+
+### Demo accounts (for local use)
+- Provide sample credentials for: Employee, Manager, HR_ADMIN, CALIBRATOR.
+- Prefer a “Log in as” demo UI (demo-only) or a minimal demo login page.
+- Demo setup should allow creating:
+  - demo org + employees + manager hierarchy
+  - demo review cycle + generated submissions
+  - demo calibration session
+  - demo improvement plan
+
+### Playwright E2E expectations
+- Playwright smoke tests should use demo mode for stable authentication and data setup.
+- E2E tests must rely on stable selectors (`data-testid`) and avoid brittle CSS selectors.
+- Keep the E2E smoke suite small and stable; focus on core flows only.
 
 ### Minimum test expectations
 For any PR that adds or changes behavior:

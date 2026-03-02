@@ -9,6 +9,10 @@ import { z } from "zod";
 
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
+import {
+  resolveScorecardMetricConfig,
+  scorecardMetricListSchema,
+} from "@/server/scorecard/scorecard-config";
 
 interface ReviewCycleRecord {
   id: string;
@@ -41,6 +45,10 @@ interface ReviewCycleListRecord {
 
 interface EmployeeSummary {
   id: string;
+  firstName: string;
+  lastName: string;
+  department: string | null;
+  title: string | null;
   managerId: string | null;
 }
 
@@ -56,18 +64,7 @@ interface CreateManyResult {
 interface AdminCycleDb {
   reviewCycle: {
     create: (args: {
-      data: {
-        orgId: string;
-        name: string;
-        startDate: Date;
-        endDate: Date;
-        status: CycleStatus;
-        visibilityPolicy: CycleVisibilityPolicy;
-        selfReviewRequired: boolean;
-        managerReviewRequired: boolean;
-        peerReviewCount: number;
-        upwardReviewCount: number;
-      };
+      data: Record<string, unknown>;
     }) => Promise<ReviewCycleRecord>;
     findFirst: (args: {
       where: { id: string; orgId: string };
@@ -126,13 +123,28 @@ interface AdminCycleDb {
   employee: {
     findMany: (args: {
       where: { orgId: string };
-      select: { id: true; managerId: true };
+      select: {
+        id: true;
+        firstName: true;
+        lastName: true;
+        department: true;
+        title: true;
+        managerId: true;
+      };
       orderBy: { id: "asc" };
     }) => Promise<EmployeeSummary[]>;
   };
   reviewPacket: {
     createMany: (args: {
-      data: { orgId: string; cycleId: string; subjectEmployeeId: string }[];
+      data: {
+        orgId: string;
+        cycleId: string;
+        subjectEmployeeId: string;
+        snapshotDepartment?: string | null;
+        snapshotTitle?: string | null;
+        snapshotManagerEmployeeId?: string | null;
+        snapshotManagerName?: string | null;
+      }[];
       skipDuplicates: boolean;
     }) => Promise<CreateManyResult>;
     findMany: (args: {
@@ -186,6 +198,7 @@ const createReviewCycleSchema = z
     managerReviewRequired: z.boolean().default(true),
     peerReviewCount: z.number().int().min(0).max(20).default(0),
     upwardReviewCount: z.number().int().min(0).max(20).default(0),
+    scorecardMetrics: scorecardMetricListSchema.optional(),
   })
   .superRefine((value, ctx) => {
     const startDate = new Date(value.startDate);
@@ -290,6 +303,7 @@ export async function createReviewCycle(
     throw new AppError("VALIDATION_ERROR", "Invalid cycle payload", 400, parsed.error.flatten());
   }
 
+  const scorecardMetrics = resolveScorecardMetricConfig(parsed.data.scorecardMetrics);
   const cycle = await db.reviewCycle.create({
     data: {
       orgId: context.orgId,
@@ -302,6 +316,13 @@ export async function createReviewCycle(
       managerReviewRequired: parsed.data.managerReviewRequired,
       peerReviewCount: parsed.data.peerReviewCount,
       upwardReviewCount: parsed.data.upwardReviewCount,
+      scorecardMetrics: {
+        create: scorecardMetrics.map((metric) => ({
+          orgId: context.orgId,
+          metricKey: metric.metricKey,
+          weightPercent: metric.weightPercent,
+        })),
+      },
     },
   });
 
@@ -315,6 +336,7 @@ export async function createReviewCycle(
       metadata: {
         name: cycle.name,
         status: cycle.status,
+        scorecardMetricCount: scorecardMetrics.length,
       },
     },
   });
@@ -368,7 +390,14 @@ export async function generateCycleArtifacts(
 
   const employees = await db.employee.findMany({
     where: { orgId: context.orgId },
-    select: { id: true, managerId: true },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      department: true,
+      title: true,
+      managerId: true,
+    },
     orderBy: { id: "asc" },
   });
 
@@ -376,11 +405,21 @@ export async function generateCycleArtifacts(
     throw new AppError("NO_EMPLOYEES", "No employees found for cycle generation", 400);
   }
 
+  const managerNameByEmployeeId = new Map<string, string>(
+    employees.map((employee) => [employee.id, `${employee.firstName} ${employee.lastName}`]),
+  );
+
   const packetInsertResult = await db.reviewPacket.createMany({
     data: employees.map((employee) => ({
       orgId: context.orgId,
       cycleId,
       subjectEmployeeId: employee.id,
+      snapshotDepartment: employee.department,
+      snapshotTitle: employee.title,
+      snapshotManagerEmployeeId: employee.managerId,
+      snapshotManagerName: employee.managerId
+        ? (managerNameByEmployeeId.get(employee.managerId) ?? null)
+        : null,
     })),
     skipDuplicates: true,
   });

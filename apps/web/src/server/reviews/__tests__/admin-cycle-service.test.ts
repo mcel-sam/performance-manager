@@ -68,6 +68,15 @@ describe("createReviewCycle", () => {
 
     expect(result.id).toBe("cycle_1");
     expect(db.reviewCycle.create).toHaveBeenCalledTimes(1);
+    expect(db.reviewCycle.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          scorecardMetrics: expect.objectContaining({
+            create: expect.any(Array),
+          }),
+        }),
+      }),
+    );
     expect(db.auditEvent.create).toHaveBeenCalledTimes(1);
   });
 
@@ -111,6 +120,31 @@ describe("createReviewCycle", () => {
       status: 400,
     });
   });
+
+  it("rejects invalid scorecard metric weights", async () => {
+    const db = buildDbMock();
+
+    await expect(
+      createReviewCycle(
+        {
+          name: "Invalid scorecard",
+          startDate: "2026-04-01T00:00:00.000Z",
+          endDate: "2026-04-30T00:00:00.000Z",
+          scorecardMetrics: [
+            {
+              metricKey: "QUALITY_OF_WORK",
+              weightPercent: 50,
+            },
+          ],
+        },
+        adminContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      status: 400,
+    });
+  });
 });
 
 describe("generateCycleArtifacts", () => {
@@ -126,8 +160,22 @@ describe("generateCycleArtifacts", () => {
       upwardReviewCount: 0,
     });
     db.employee.findMany.mockResolvedValue([
-      { id: "emp_a", managerId: null },
-      { id: "emp_b", managerId: "emp_a" },
+      {
+        id: "emp_a",
+        firstName: "Ava",
+        lastName: "Admin",
+        department: "HR",
+        title: "HR Admin",
+        managerId: null,
+      },
+      {
+        id: "emp_b",
+        firstName: "Ben",
+        lastName: "Builder",
+        department: "Engineering",
+        title: "Engineer",
+        managerId: "emp_a",
+      },
     ]);
     db.reviewPacket.createMany.mockResolvedValue({ count: 2 });
     db.reviewPacket.findMany.mockResolvedValue([
@@ -157,6 +205,19 @@ describe("generateCycleArtifacts", () => {
             subjectEmployeeId: "emp_b",
             reviewerEmployeeId: "emp_a",
             relationship: ReviewRelationship.MANAGER,
+          }),
+        ]),
+      }),
+    );
+    expect(db.reviewPacket.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            subjectEmployeeId: "emp_b",
+            snapshotDepartment: "Engineering",
+            snapshotTitle: "Engineer",
+            snapshotManagerEmployeeId: "emp_a",
+            snapshotManagerName: "Ava Admin",
           }),
         ]),
       }),

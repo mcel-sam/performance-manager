@@ -349,6 +349,71 @@ MVP can be in-app only; email reminders can come later.
 - Enforce permission checks server-side for every read/write.
 - Do not leak data through counts (e.g., evidence counts for unauthorized items should not reveal existence).
 
+## Ratings and scorecard model (HR-aligned)
+
+This product supports both narrative feedback and structured ratings to enable consistent performance decisions and HR reporting.
+
+### Competency ratings (structured)
+- The annual review uses a competency framework where **each competency is rated on a 1–5 scale** by:
+  - the Employee (self review)
+  - the Manager (manager review)
+- Each competency also supports optional comments from both parties.
+- The system must store a stable `dimension_key` for each competency question so results can be aggregated consistently across cycles (e.g., `communication`, `safety_compliance`).
+
+**Competency list (initial)**
+- Values / Culture Alignment
+- Judgment & Decision-Making
+- Safety & Compliance
+- Technical Skills
+- Quality of Work
+- Communication
+- Accountability
+- Relationship Building
+- Results Driven
+- Attitude
+- Service Oriented
+- Adaptability
+
+### “Not Observed / N/A” handling
+- Competency ratings may optionally be marked **Not Observed / N/A**.
+- Default reporting behavior: N/A ratings are stored and displayed but **excluded from scorecard calculations** unless HR defines a different rule later.
+
+### Scorecard (weighted overall performance score)
+The HR scorecard computes a deterministic overall score using a weighted subset of competencies. The default scoring inputs are **Self + Manager**.
+
+**Weighted metrics and weights (sum to 100%)**
+- Quality of Work (15%)
+- Communication (10%)
+- Accountability (15%)
+- Relationship Building (10%)
+- Results Driven (20%)
+- Attitude (10%)
+- Service Oriented (10%)
+- Adaptability (10%)
+
+**Formulas**
+- Blended Rating per metric: `(Employee rating + Manager rating) / 2`
+- Weighted Score % per metric: `(Blended Rating / 5) × weight%`
+- Total Performance %: sum of weighted metric percentages
+
+**Total % → Overall Rating mapping**
+- 5 Exceptional: 90–100%
+- 4 Exceeds: 80–89%
+- 3 Meets: 70–79%
+- 2 Needs Improvement: 60–69%
+- 1 Unsatisfactory: <60%
+
+### Peer and upward reviews (reference input)
+- Peer and upward reviews may collect the same 1–5 competency ratings and comments, but they are **reference input only** by default.
+- Peer/upward inputs are **not included** in scorecard math unless HR explicitly adopts a weighting rule in a future iteration.
+
+### Calibration interaction (final rating source)
+- The system stores scorecard-derived results as a baseline.
+- If calibration is finalized and overrides outcomes, the system must preserve both:
+  - the scorecard-derived outcome, and
+  - the calibration-derived outcome,
+  and clearly track the `final_rating_source` as either `SCORECARD` or `CALIBRATION`.
+
 ## 11) Reporting & Analytics (post-MVP direction)
 
 The reference system includes an “Explorer” style analytics builder with measures, breakdowns, exports, and permission controls.
