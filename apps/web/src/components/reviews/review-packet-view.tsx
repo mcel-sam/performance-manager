@@ -140,9 +140,12 @@ export default function ReviewPacketView({ data }: ReviewPacketViewProps) {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <CardTitle className="text-lg">{submission.reviewerName}</CardTitle>
-                        <p className="text-sm text-slate-600">
-                          Relationship: {relationshipLabel[submission.relationship]}
-                        </p>
+                        <div className="mt-1 flex items-center gap-2 text-sm text-slate-600">
+                          <span>Relationship: {relationshipLabel[submission.relationship]}</span>
+                          {submission.isReferenceInput ? (
+                            <Badge variant="info">Reference input</Badge>
+                          ) : null}
+                        </div>
                       </div>
                       <div className="text-right text-xs text-slate-600">
                         <Badge variant="neutral">{statusLabel[submission.status]}</Badge>
@@ -176,6 +179,16 @@ export default function ReviewPacketView({ data }: ReviewPacketViewProps) {
                             <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
                               {answer.responseText || "No response provided."}
                             </p>
+                            {answer.questionType === "SCALE_1_TO_5" ? (
+                              <p className="mt-2 text-xs font-medium text-slate-600">
+                                Rating:{" "}
+                                {answer.notObserved
+                                  ? "Not observed (excluded from score)"
+                                  : answer.scaleRating != null
+                                    ? `${answer.scaleRating}/5`
+                                    : "Not rated"}
+                              </p>
+                            ) : null}
                           </li>
                         ))}
                       </ol>
