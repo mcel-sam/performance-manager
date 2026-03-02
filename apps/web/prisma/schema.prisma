@@ -40,6 +40,42 @@ enum ReviewSubmissionStatus {
   RETURNED
 }
 
+enum ReviewQuestionType {
+  TEXT
+  SCALE_1_TO_5
+}
+
+enum CompetencyDimensionKey {
+  VALUES_CULTURE_ALIGNMENT
+  JUDGMENT_DECISION_MAKING
+  SAFETY_COMPLIANCE
+  TECHNICAL_SKILLS
+  QUALITY_OF_WORK
+  COMMUNICATION
+  ACCOUNTABILITY
+  RELATIONSHIP_BUILDING
+  RESULTS_DRIVEN
+  ATTITUDE
+  SERVICE_ORIENTED
+  ADAPTABILITY
+}
+
+enum ScorecardMetricKey {
+  QUALITY_OF_WORK
+  COMMUNICATION
+  ACCOUNTABILITY
+  RELATIONSHIP_BUILDING
+  RESULTS_DRIVEN
+  ATTITUDE
+  SERVICE_ORIENTED
+  ADAPTABILITY
+}
+
+enum FinalRatingSource {
+  SCORECARD
+  CALIBRATION
+}
+
 enum EvidenceType {
   FEEDBACK
   UPDATE
@@ -87,6 +123,8 @@ model Org {
   reviewPackets           ReviewPacket[]
   reviewSubmissions       ReviewSubmission[]
   reviewAnswers           ReviewAnswer[]
+  reviewCycleMetrics      ReviewCycleScorecardMetric[]
+  scorecardMetricResults  ScorecardMetricResult[]
   evidenceItems           EvidenceItem[]
   answerEvidenceLinks     AnswerEvidenceLink[]
   calibrationSessions     CalibrationSession[]
@@ -123,6 +161,8 @@ model Employee {
   userId                      String                 @unique
   firstName                   String
   lastName                    String
+  department                  String?
+  title                       String?
   managerId                   String?
   createdAt                   DateTime               @default(now())
   updatedAt                   DateTime               @updatedAt
@@ -166,6 +206,8 @@ model ReviewTemplateQuestion {
   orgId      String
   templateId String
   prompt     String
+  questionType ReviewQuestionType @default(TEXT)
+  dimensionKey CompetencyDimensionKey?
   isRequired Boolean        @default(true)
   sortOrder  Int            @default(0)
   createdAt  DateTime       @default(now())
@@ -176,6 +218,7 @@ model ReviewTemplateQuestion {
 
   @@index([orgId])
   @@index([templateId, sortOrder])
+  @@index([templateId, dimensionKey])
 }
 
 model ReviewCycle {
@@ -198,6 +241,7 @@ model ReviewCycle {
   packets               ReviewPacket[]
   submissions           ReviewSubmission[]
   calibrationSessions   CalibrationSession[]
+  scorecardMetrics      ReviewCycleScorecardMetric[]
 
   @@index([orgId])
   @@index([orgId, status])
@@ -208,17 +252,26 @@ model ReviewPacket {
   orgId             String
   cycleId           String
   subjectEmployeeId String
+  snapshotDepartment String?
+  snapshotTitle      String?
+  snapshotManagerEmployeeId String?
+  snapshotManagerName String?
+  totalScorecardPercent Float?
+  scorecardOverallRating Int?
+  finalRatingSource FinalRatingSource?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   org               Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
   cycle             ReviewCycle        @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   subjectEmployee   Employee           @relation("ReviewPacketSubjectEmployee", fields: [subjectEmployeeId], references: [id], onDelete: Cascade)
   submissions       ReviewSubmission[]
+  scorecardMetricResults ScorecardMetricResult[]
 
   @@unique([cycleId, subjectEmployeeId])
   @@index([orgId])
   @@index([cycleId])
   @@index([subjectEmployeeId])
+  @@index([cycleId, scorecardOverallRating])
 }
 
 model ReviewSubmission {
@@ -254,6 +307,8 @@ model ReviewAnswer {
   submissionId  String
   questionId    String
   responseText  String
+  scaleRating   Int?
+  notObserved   Boolean                @default(false)
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   org           Org                    @relation(fields: [orgId], references: [id], onDelete: Restrict)
@@ -264,6 +319,44 @@ model ReviewAnswer {
   @@unique([submissionId, questionId])
   @@index([orgId])
   @@index([submissionId])
+}
+
+model ReviewCycleScorecardMetric {
+  id           String            @id @default(cuid())
+  orgId        String
+  cycleId      String
+  metricKey    ScorecardMetricKey
+  weightPercent Float
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  org          Org               @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  cycle        ReviewCycle       @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  @@unique([cycleId, metricKey])
+  @@index([orgId])
+  @@index([cycleId])
+}
+
+model ScorecardMetricResult {
+  id               String            @id @default(cuid())
+  orgId            String
+  packetId         String
+  metricKey        ScorecardMetricKey
+  selfRating       Int?
+  managerRating    Int?
+  selfNotObserved  Boolean           @default(false)
+  managerNotObserved Boolean         @default(false)
+  blendedRating    Float?
+  weightPercent    Float
+  weightedPercent  Float?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  org              Org               @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  packet           ReviewPacket      @relation(fields: [packetId], references: [id], onDelete: Cascade)
+
+  @@unique([packetId, metricKey])
+  @@index([orgId])
+  @@index([packetId])
 }
 
 model EvidenceItem {

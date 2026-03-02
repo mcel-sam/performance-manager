@@ -1,12 +1,15 @@
 import {
   PrismaClient,
   CalibrationBucket,
+  CompetencyDimensionKey,
   CycleVisibilityPolicy,
   CycleStatus,
   EvidenceType,
   EvidenceVisibility,
+  ReviewQuestionType,
   ReviewRelationship,
   ReviewSubmissionStatus,
+  ScorecardMetricKey,
   UserRole,
 } from "@prisma/client";
 
@@ -88,6 +91,8 @@ async function main() {
       userId: users.hrAdmin,
       firstName: "Harper",
       lastName: "Admin",
+      department: "People Operations",
+      title: "HR Admin",
       managerId: null,
     },
     create: {
@@ -96,6 +101,8 @@ async function main() {
       userId: users.hrAdmin,
       firstName: "Harper",
       lastName: "Admin",
+      department: "People Operations",
+      title: "HR Admin",
       managerId: null,
     },
   });
@@ -107,6 +114,8 @@ async function main() {
       userId: users.manager,
       firstName: "Morgan",
       lastName: "Manager",
+      department: "Engineering",
+      title: "Engineering Manager",
       managerId: employees.hrAdmin,
     },
     create: {
@@ -115,6 +124,8 @@ async function main() {
       userId: users.manager,
       firstName: "Morgan",
       lastName: "Manager",
+      department: "Engineering",
+      title: "Engineering Manager",
       managerId: employees.hrAdmin,
     },
   });
@@ -126,6 +137,8 @@ async function main() {
       userId: users.employee,
       firstName: "Elliot",
       lastName: "Employee",
+      department: "Engineering",
+      title: "Software Engineer",
       managerId: employees.manager,
     },
     create: {
@@ -134,6 +147,8 @@ async function main() {
       userId: users.employee,
       firstName: "Elliot",
       lastName: "Employee",
+      department: "Engineering",
+      title: "Software Engineer",
       managerId: employees.manager,
     },
   });
@@ -145,6 +160,8 @@ async function main() {
       userId: users.peer,
       firstName: "Parker",
       lastName: "Peer",
+      department: "Engineering",
+      title: "QA Engineer",
       managerId: employees.manager,
     },
     create: {
@@ -153,6 +170,8 @@ async function main() {
       userId: users.peer,
       firstName: "Parker",
       lastName: "Peer",
+      department: "Engineering",
+      title: "QA Engineer",
       managerId: employees.manager,
     },
   });
@@ -181,6 +200,8 @@ async function main() {
       orgId,
       templateId,
       prompt: "What impact did this employee create this cycle?",
+      questionType: ReviewQuestionType.TEXT,
+      dimensionKey: null,
       isRequired: true,
       sortOrder: 1,
     },
@@ -189,6 +210,8 @@ async function main() {
       orgId,
       templateId,
       prompt: "What impact did this employee create this cycle?",
+      questionType: ReviewQuestionType.TEXT,
+      dimensionKey: null,
       isRequired: true,
       sortOrder: 1,
     },
@@ -200,6 +223,8 @@ async function main() {
       orgId,
       templateId,
       prompt: "What growth areas should this employee focus on?",
+      questionType: ReviewQuestionType.TEXT,
+      dimensionKey: null,
       isRequired: true,
       sortOrder: 2,
     },
@@ -208,10 +233,100 @@ async function main() {
       orgId,
       templateId,
       prompt: "What growth areas should this employee focus on?",
+      questionType: ReviewQuestionType.TEXT,
+      dimensionKey: null,
       isRequired: true,
       sortOrder: 2,
     },
   });
+
+  const competencyQuestions = [
+    {
+      id: "template_q_comp_values",
+      prompt: "Values / Culture Alignment",
+      dimensionKey: CompetencyDimensionKey.VALUES_CULTURE_ALIGNMENT,
+    },
+    {
+      id: "template_q_comp_judgment",
+      prompt: "Judgment & Decision-Making",
+      dimensionKey: CompetencyDimensionKey.JUDGMENT_DECISION_MAKING,
+    },
+    {
+      id: "template_q_comp_safety",
+      prompt: "Safety & Compliance",
+      dimensionKey: CompetencyDimensionKey.SAFETY_COMPLIANCE,
+    },
+    {
+      id: "template_q_comp_technical",
+      prompt: "Technical Skills",
+      dimensionKey: CompetencyDimensionKey.TECHNICAL_SKILLS,
+    },
+    {
+      id: "template_q_comp_quality",
+      prompt: "Quality of Work",
+      dimensionKey: CompetencyDimensionKey.QUALITY_OF_WORK,
+    },
+    {
+      id: "template_q_comp_communication",
+      prompt: "Communication",
+      dimensionKey: CompetencyDimensionKey.COMMUNICATION,
+    },
+    {
+      id: "template_q_comp_accountability",
+      prompt: "Accountability",
+      dimensionKey: CompetencyDimensionKey.ACCOUNTABILITY,
+    },
+    {
+      id: "template_q_comp_relationship",
+      prompt: "Relationship Building",
+      dimensionKey: CompetencyDimensionKey.RELATIONSHIP_BUILDING,
+    },
+    {
+      id: "template_q_comp_results",
+      prompt: "Results Driven",
+      dimensionKey: CompetencyDimensionKey.RESULTS_DRIVEN,
+    },
+    {
+      id: "template_q_comp_attitude",
+      prompt: "Attitude",
+      dimensionKey: CompetencyDimensionKey.ATTITUDE,
+    },
+    {
+      id: "template_q_comp_service",
+      prompt: "Service Oriented",
+      dimensionKey: CompetencyDimensionKey.SERVICE_ORIENTED,
+    },
+    {
+      id: "template_q_comp_adaptability",
+      prompt: "Adaptability",
+      dimensionKey: CompetencyDimensionKey.ADAPTABILITY,
+    },
+  ];
+
+  for (const [index, question] of competencyQuestions.entries()) {
+    await prisma.reviewTemplateQuestion.upsert({
+      where: { id: question.id },
+      update: {
+        orgId,
+        templateId,
+        prompt: question.prompt,
+        questionType: ReviewQuestionType.SCALE_1_TO_5,
+        dimensionKey: question.dimensionKey,
+        isRequired: false,
+        sortOrder: index + 10,
+      },
+      create: {
+        id: question.id,
+        orgId,
+        templateId,
+        prompt: question.prompt,
+        questionType: ReviewQuestionType.SCALE_1_TO_5,
+        dimensionKey: question.dimensionKey,
+        isRequired: false,
+        sortOrder: index + 10,
+      },
+    });
+  }
 
   await prisma.reviewCycle.upsert({
     where: { id: "cycle_seed_draft_1" },
@@ -244,11 +359,70 @@ async function main() {
     },
   });
 
+  const scorecardMetrics = [
+    { metricKey: ScorecardMetricKey.QUALITY_OF_WORK, weightPercent: 15 },
+    { metricKey: ScorecardMetricKey.COMMUNICATION, weightPercent: 10 },
+    { metricKey: ScorecardMetricKey.ACCOUNTABILITY, weightPercent: 15 },
+    { metricKey: ScorecardMetricKey.RELATIONSHIP_BUILDING, weightPercent: 10 },
+    { metricKey: ScorecardMetricKey.RESULTS_DRIVEN, weightPercent: 20 },
+    { metricKey: ScorecardMetricKey.ATTITUDE, weightPercent: 10 },
+    { metricKey: ScorecardMetricKey.SERVICE_ORIENTED, weightPercent: 10 },
+    { metricKey: ScorecardMetricKey.ADAPTABILITY, weightPercent: 10 },
+  ];
+
+  for (const metric of scorecardMetrics) {
+    await prisma.reviewCycleScorecardMetric.upsert({
+      where: {
+        cycleId_metricKey: {
+          cycleId: "cycle_seed_draft_1",
+          metricKey: metric.metricKey,
+        },
+      },
+      update: {
+        orgId,
+        weightPercent: metric.weightPercent,
+      },
+      create: {
+        orgId,
+        cycleId: "cycle_seed_draft_1",
+        metricKey: metric.metricKey,
+        weightPercent: metric.weightPercent,
+      },
+    });
+  }
+
   const packetIds = {
     hrAdmin: "packet_seed_hr_admin_1",
     manager: "packet_seed_manager_1",
     employee: "packet_seed_employee_1",
     peer: "packet_seed_peer_1",
+  };
+
+  const packetSnapshotBySubjectId = {
+    [employees.hrAdmin]: {
+      snapshotDepartment: "People Operations",
+      snapshotTitle: "HR Admin",
+      snapshotManagerEmployeeId: null,
+      snapshotManagerName: null,
+    },
+    [employees.manager]: {
+      snapshotDepartment: "Engineering",
+      snapshotTitle: "Engineering Manager",
+      snapshotManagerEmployeeId: employees.hrAdmin,
+      snapshotManagerName: "Harper Admin",
+    },
+    [employees.employee]: {
+      snapshotDepartment: "Engineering",
+      snapshotTitle: "Software Engineer",
+      snapshotManagerEmployeeId: employees.manager,
+      snapshotManagerName: "Morgan Manager",
+    },
+    [employees.peer]: {
+      snapshotDepartment: "Engineering",
+      snapshotTitle: "QA Engineer",
+      snapshotManagerEmployeeId: employees.manager,
+      snapshotManagerName: "Morgan Manager",
+    },
   };
 
   await prisma.reviewPacket.upsert({
@@ -257,12 +431,14 @@ async function main() {
       orgId,
       cycleId: "cycle_seed_draft_1",
       subjectEmployeeId: employees.hrAdmin,
+      ...packetSnapshotBySubjectId[employees.hrAdmin],
     },
     create: {
       id: packetIds.hrAdmin,
       orgId,
       cycleId: "cycle_seed_draft_1",
       subjectEmployeeId: employees.hrAdmin,
+      ...packetSnapshotBySubjectId[employees.hrAdmin],
     },
   });
 
@@ -272,12 +448,14 @@ async function main() {
       orgId,
       cycleId: "cycle_seed_draft_1",
       subjectEmployeeId: employees.manager,
+      ...packetSnapshotBySubjectId[employees.manager],
     },
     create: {
       id: packetIds.manager,
       orgId,
       cycleId: "cycle_seed_draft_1",
       subjectEmployeeId: employees.manager,
+      ...packetSnapshotBySubjectId[employees.manager],
     },
   });
 
@@ -287,12 +465,14 @@ async function main() {
       orgId,
       cycleId: "cycle_seed_draft_1",
       subjectEmployeeId: employees.employee,
+      ...packetSnapshotBySubjectId[employees.employee],
     },
     create: {
       id: packetIds.employee,
       orgId,
       cycleId: "cycle_seed_draft_1",
       subjectEmployeeId: employees.employee,
+      ...packetSnapshotBySubjectId[employees.employee],
     },
   });
 
@@ -302,12 +482,14 @@ async function main() {
       orgId,
       cycleId: "cycle_seed_draft_1",
       subjectEmployeeId: employees.peer,
+      ...packetSnapshotBySubjectId[employees.peer],
     },
     create: {
       id: packetIds.peer,
       orgId,
       cycleId: "cycle_seed_draft_1",
       subjectEmployeeId: employees.peer,
+      ...packetSnapshotBySubjectId[employees.peer],
     },
   });
 
