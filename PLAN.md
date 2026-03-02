@@ -655,7 +655,7 @@ Implementation notes:
 
 ## Milestone 5 — HR Scorecard + Analytics-ready Data Foundations + Demo Login (No Dashboards Yet)
 
-**Status:** Not started  
+**Status:** Phase 1, Phase 2, Phase 3, and Phase 4 completed in PRs #11, #12, #13, and #14.  
 **Objective:** Implement the HR-defined rating model and store analytics-ready data (competencies + weighted scorecard) while enabling HR to run everything through the UI using demo logins/configs (no scripts). Dashboards/charts will be a later milestone once HR confirms reporting preferences.
 
 ### HR form requirements (source)
@@ -804,3 +804,4 @@ Validation rules (Phase 1)
 - [x] HR can demo everything from the UI with demo accounts (no scripts)
 - [x] Demo setup is disabled outside DEMO_MODE
 - [x] E2E suite still passes
+- Completed in PR #14 (dev -> main Milestone 5 Phase 4)
