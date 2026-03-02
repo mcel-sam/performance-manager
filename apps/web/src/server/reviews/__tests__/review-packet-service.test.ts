@@ -46,7 +46,92 @@ function buildPacketRecord(overrides?: {
   visibilityPolicy?: CycleVisibilityPolicy;
   subjectUserId?: string;
   subjectManagerId?: string | null;
+  includeReferenceSubmission?: boolean;
 }) {
+  const submissions: Array<{
+    id: string;
+    relationship: ReviewRelationship;
+    status: ReviewSubmissionStatus;
+    submittedAt: Date;
+    reviewerEmployee: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    };
+    answers: Array<{
+      id: string;
+      questionId: string;
+      responseText: string;
+      scaleRating: number | null;
+      notObserved: boolean;
+      question: {
+        id: string;
+        prompt: string;
+        questionType: "TEXT" | "SCALE_1_TO_5";
+        isRequired: boolean;
+        sortOrder: number;
+      };
+    }>;
+  }> = [
+    {
+      id: "submission_1",
+      relationship: ReviewRelationship.SELF,
+      status: ReviewSubmissionStatus.SUBMITTED,
+      submittedAt: new Date("2026-03-12T10:00:00.000Z"),
+      reviewerEmployee: {
+        id: "emp_employee_1",
+        firstName: "Elliot",
+        lastName: "Employee",
+      },
+      answers: [
+        {
+          id: "answer_1",
+          questionId: "question_1",
+          responseText: "Delivered impact.",
+          scaleRating: null,
+          notObserved: false,
+          question: {
+            id: "question_1",
+            prompt: "What impact did this employee create this cycle?",
+            questionType: "TEXT",
+            isRequired: true,
+            sortOrder: 1,
+          },
+        },
+      ],
+    },
+  ];
+
+  if (overrides?.includeReferenceSubmission) {
+    submissions.push({
+      id: "submission_2",
+      relationship: ReviewRelationship.PEER,
+      status: ReviewSubmissionStatus.SUBMITTED,
+      submittedAt: new Date("2026-03-12T12:00:00.000Z"),
+      reviewerEmployee: {
+        id: "emp_peer_1",
+        firstName: "Parker",
+        lastName: "Peer",
+      },
+      answers: [
+        {
+          id: "answer_2",
+          questionId: "question_2",
+          responseText: "Strong collaboration on delivery handoffs.",
+          scaleRating: 4,
+          notObserved: false,
+          question: {
+            id: "question_2",
+            prompt: "Communication",
+            questionType: "SCALE_1_TO_5",
+            isRequired: false,
+            sortOrder: 2,
+          },
+        },
+      ],
+    });
+  }
+
   return {
     id: "packet_seed_employee_1",
     cycleId: "cycle_seed_1",
@@ -65,32 +150,7 @@ function buildPacketRecord(overrides?: {
       firstName: "Elliot",
       lastName: "Employee",
     },
-    submissions: [
-      {
-        id: "submission_1",
-        relationship: ReviewRelationship.SELF,
-        status: ReviewSubmissionStatus.SUBMITTED,
-        submittedAt: new Date("2026-03-12T10:00:00.000Z"),
-        reviewerEmployee: {
-          id: "emp_employee_1",
-          firstName: "Elliot",
-          lastName: "Employee",
-        },
-        answers: [
-          {
-            id: "answer_1",
-            questionId: "question_1",
-            responseText: "Delivered impact.",
-            question: {
-              id: "question_1",
-              prompt: "What impact did this employee create this cycle?",
-              isRequired: true,
-              sortOrder: 1,
-            },
-          },
-        ],
-      },
-    ],
+    submissions,
   };
 }
 
@@ -149,6 +209,30 @@ describe("getReviewPacket", () => {
     );
 
     expect(result.packet.id).toBe("packet_seed_employee_1");
+  });
+
+  it("marks peer submissions as reference input", async () => {
+    const db = buildDbMock();
+    db.reviewPacket.findFirst.mockResolvedValue(
+      buildPacketRecord({
+        includeReferenceSubmission: true,
+      }),
+    );
+    db.employee.findFirst.mockResolvedValue({ id: "emp_manager_1" });
+
+    const result = await getReviewPacket(
+      "cycle_seed_1",
+      "emp_employee_1",
+      managerContext,
+      db as never,
+    );
+
+    const peerSubmission = result.submissions.find(
+      (submission) => submission.relationship === ReviewRelationship.PEER,
+    );
+
+    expect(peerSubmission).toBeDefined();
+    expect(peerSubmission?.isReferenceInput).toBe(true);
   });
 
   it("allows subject employee only after release when policy allows", async () => {
@@ -213,6 +297,25 @@ describe("getReviewPacket", () => {
       buildPacketRecord({
         cycleStatus: CycleStatus.RELEASED,
         visibilityPolicy: CycleVisibilityPolicy.EMPLOYEE_AFTER_RELEASE,
+      }),
+    );
+    db.employee.findFirst.mockResolvedValue({ id: "emp_peer_1" });
+
+    await expect(
+      getReviewPacket("cycle_seed_1", "emp_employee_1", otherEmployeeContext, db as never),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+  });
+
+  it("denies peer reviewer from opening full packet despite authored reference input", async () => {
+    const db = buildDbMock();
+    db.reviewPacket.findFirst.mockResolvedValue(
+      buildPacketRecord({
+        cycleStatus: CycleStatus.RELEASED,
+        visibilityPolicy: CycleVisibilityPolicy.EMPLOYEE_AFTER_RELEASE,
+        includeReferenceSubmission: true,
       }),
     );
     db.employee.findFirst.mockResolvedValue({ id: "emp_peer_1" });

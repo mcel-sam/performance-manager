@@ -46,6 +46,11 @@ function buildPacketRecord(overrides?: {
     scaleRating: number | null;
     notObserved?: boolean;
   }[];
+  peerAnswers?: {
+    metricKey: ScorecardMetricKey;
+    scaleRating: number | null;
+    notObserved?: boolean;
+  }[];
 }) {
   const selfAnswers =
     overrides?.selfAnswers ??
@@ -73,6 +78,8 @@ function buildPacketRecord(overrides?: {
       },
     ];
 
+  const peerAnswers = overrides?.peerAnswers ?? [];
+
   return {
     id: "packet_seed_employee_1",
     orgId: context.orgId,
@@ -95,6 +102,16 @@ function buildPacketRecord(overrides?: {
       {
         relationship: ReviewRelationship.SELF,
         answers: selfAnswers.map((answer) => ({
+          scaleRating: answer.scaleRating,
+          notObserved: answer.notObserved ?? false,
+          question: {
+            dimensionKey: answer.metricKey,
+          },
+        })),
+      },
+      {
+        relationship: ReviewRelationship.PEER,
+        answers: peerAnswers.map((answer) => ({
           scaleRating: answer.scaleRating,
           notObserved: answer.notObserved ?? false,
           question: {
@@ -244,5 +261,36 @@ describe("recomputePacketScorecard", () => {
         }),
       }),
     );
+  });
+
+  it("ignores peer and upward inputs for scorecard totals by default", async () => {
+    const db = buildDbMock();
+    db.reviewPacket.findFirst.mockResolvedValue(
+      buildPacketRecord({
+        peerAnswers: [
+          {
+            metricKey: ScorecardMetricKey.QUALITY_OF_WORK,
+            scaleRating: 1,
+          },
+        ],
+      }),
+    );
+    db.scorecardMetricResult.upsert.mockResolvedValue({ id: "metric_result_4" });
+    db.reviewPacket.update.mockResolvedValue({
+      id: "packet_seed_employee_1",
+      totalScorecardPercent: 19.5,
+      scorecardOverallRating: 1,
+      finalRatingSource: FinalRatingSource.SCORECARD,
+    });
+    db.auditEvent.create.mockResolvedValue({ id: "audit_scorecard_4" });
+
+    const result = await recomputePacketScorecard("packet_seed_employee_1", context, db as never);
+
+    expect(result.totalScorecardPercent).toBe(19.5);
+    expect(result.metrics.find((metric) => metric.metricKey === ScorecardMetricKey.QUALITY_OF_WORK))
+      .toMatchObject({
+        selfRating: 4,
+        managerRating: 5,
+      });
   });
 });

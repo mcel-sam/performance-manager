@@ -1,4 +1,10 @@
-import { CycleStatus, ReviewRelationship, ReviewSubmissionStatus, UserRole } from "@prisma/client";
+import {
+  CycleStatus,
+  ReviewQuestionType,
+  ReviewRelationship,
+  ReviewSubmissionStatus,
+  UserRole,
+} from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -67,12 +73,16 @@ const submissionRecord = {
         {
           id: "template_q_1",
           prompt: "Required question 1",
+          questionType: ReviewQuestionType.TEXT,
+          dimensionKey: null,
           isRequired: true,
           sortOrder: 1,
         },
         {
           id: "template_q_2",
           prompt: "Required question 2",
+          questionType: ReviewQuestionType.TEXT,
+          dimensionKey: null,
           isRequired: true,
           sortOrder: 2,
         },
@@ -91,6 +101,8 @@ describe("submitReviewSubmission", () => {
         id: "answer_1",
         questionId: "template_q_1",
         responseText: "Completed work",
+        scaleRating: null,
+        notObserved: false,
       },
     ]);
 
@@ -122,11 +134,15 @@ describe("submitReviewSubmission", () => {
         id: "answer_1",
         questionId: "template_q_1",
         responseText: "   ",
+        scaleRating: null,
+        notObserved: false,
       },
       {
         id: "answer_2",
         questionId: "template_q_2",
         responseText: "Completed goal updates",
+        scaleRating: null,
+        notObserved: false,
       },
     ]);
 
@@ -158,11 +174,15 @@ describe("submitReviewSubmission", () => {
         id: "answer_1",
         questionId: "template_q_1",
         responseText: "Completed work",
+        scaleRating: null,
+        notObserved: false,
       },
       {
         id: "answer_2",
         questionId: "template_q_2",
         responseText: "Growth plan",
+        scaleRating: null,
+        notObserved: false,
       },
     ]);
     db.reviewSubmission.update.mockResolvedValue({
@@ -182,6 +202,108 @@ describe("submitReviewSubmission", () => {
     expect(result.status).toBe(ReviewSubmissionStatus.SUBMITTED);
     expect(db.reviewSubmission.update).toHaveBeenCalledTimes(1);
     expect(db.auditEvent.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires scale questions to have a rating or not-observed flag", async () => {
+    const db = buildDbMock();
+    db.reviewSubmission.findFirst.mockResolvedValue({
+      ...submissionRecord,
+      cycle: {
+        ...submissionRecord.cycle,
+        template: {
+          ...submissionRecord.cycle.template,
+          questions: [
+            submissionRecord.cycle.template.questions[0],
+            {
+              ...submissionRecord.cycle.template.questions[1],
+              questionType: ReviewQuestionType.SCALE_1_TO_5,
+            },
+          ],
+        },
+      },
+    });
+    db.reviewAnswer.findMany.mockResolvedValue([
+      {
+        id: "answer_1",
+        questionId: "template_q_1",
+        responseText: "Completed work",
+        scaleRating: null,
+        notObserved: false,
+      },
+      {
+        id: "answer_2",
+        questionId: "template_q_2",
+        responseText: "Performance comment without numeric rating",
+        scaleRating: null,
+        notObserved: false,
+      },
+    ]);
+
+    await expect(
+      submitReviewSubmission(
+        "cycle_seed_draft_1",
+        "submission_seed_employee_self_1",
+        reviewerContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      status: 400,
+      details: {
+        missingQuestionIds: ["template_q_2"],
+      },
+    });
+  });
+
+  it("accepts required scale question when marked not observed with comment", async () => {
+    const db = buildDbMock();
+    db.reviewSubmission.findFirst.mockResolvedValue({
+      ...submissionRecord,
+      cycle: {
+        ...submissionRecord.cycle,
+        template: {
+          ...submissionRecord.cycle.template,
+          questions: [
+            submissionRecord.cycle.template.questions[0],
+            {
+              ...submissionRecord.cycle.template.questions[1],
+              questionType: ReviewQuestionType.SCALE_1_TO_5,
+            },
+          ],
+        },
+      },
+    });
+    db.reviewAnswer.findMany.mockResolvedValue([
+      {
+        id: "answer_1",
+        questionId: "template_q_1",
+        responseText: "Completed work",
+        scaleRating: null,
+        notObserved: false,
+      },
+      {
+        id: "answer_2",
+        questionId: "template_q_2",
+        responseText: "Not enough interaction this cycle to observe.",
+        scaleRating: null,
+        notObserved: true,
+      },
+    ]);
+    db.reviewSubmission.update.mockResolvedValue({
+      id: "submission_seed_employee_self_1",
+      status: ReviewSubmissionStatus.SUBMITTED,
+      submittedAt: new Date("2026-03-15T09:00:00.000Z"),
+    });
+    db.auditEvent.create.mockResolvedValue({ id: "audit_submit_2" });
+
+    const result = await submitReviewSubmission(
+      "cycle_seed_draft_1",
+      "submission_seed_employee_self_1",
+      reviewerContext,
+      db as never,
+    );
+
+    expect(result.status).toBe(ReviewSubmissionStatus.SUBMITTED);
   });
 });
 
