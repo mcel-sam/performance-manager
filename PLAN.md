@@ -811,7 +811,7 @@ Validation rules (Phase 1)
 
 ## Milestone 6 — Reporting Module (HR KPIs + Lattice-style Insights)
 
-**Status:** Not started  
+**Status:** Phase 1, Phase 2, Phase 3, and Phase 4 completed in PRs #16, #17, #18, and #19.  
 **Objective:** Deliver an HR-facing Reporting module that tracks cycle progress + rating distributions + competency breakdowns by Department and Position Title, using our analytics-ready data (dimension_key, scorecard outputs, snapshots). Provide Lattice-like UX: filterable dashboards, distributions, heatmaps, and downloadable tables.
 
 ### Why this milestone
@@ -964,19 +964,20 @@ We will follow proven patterns:
 
 ## Phase 4 — Exports + polish (Lattice-like finishing touches)
 
-- [ ] Add “Download PNG” for charts (optional, later) 
-- [ ] Add CSV exports:
+- [ ] Add “Download PNG” for charts (optional, later; deferred)
+- [x] Add CSV exports:
   - progress summary
   - rating distribution table
   - competency breakdown table
-- [ ] Add tooltips explaining:
+- [x] Add tooltips explaining:
   - what counts as “in progress”
   - what “Final vs Scorecard baseline” means
   - Not Observed handling
-- [ ] Performance hardening:
+- [x] Performance hardening:
   - indexes for reporting queries
   - server-side pagination enforced
 
 **Acceptance criteria**
-- [ ] Reporting is demo-ready and trustworthy for HR decision meetings
-- [ ] Exports are usable for presentations and follow-up analysis
+- [x] Reporting is demo-ready and trustworthy for HR decision meetings
+- [x] Exports are usable for presentations and follow-up analysis
+- Completed in PR #19 (dev -> main Milestone 6 Phase 4)
