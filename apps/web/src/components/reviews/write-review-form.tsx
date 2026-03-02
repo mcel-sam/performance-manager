@@ -1,6 +1,6 @@
 "use client";
 
-import { EvidenceType, ReviewSubmissionStatus } from "@prisma/client";
+import { EvidenceType, ReviewQuestionType, ReviewSubmissionStatus } from "@prisma/client";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
 import { HelpHint } from "@/components/ui/help-hint";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,9 +27,13 @@ interface EvidenceSummary {
 interface WriteReviewQuestion {
   id: string;
   prompt: string;
+  questionType: ReviewQuestionType;
+  dimensionKey: string | null;
   isRequired: boolean;
   answerId: string | null;
   responseText: string;
+  scaleRating: number | null;
+  notObserved: boolean;
   attachedEvidence: EvidenceSummary[];
 }
 
@@ -125,7 +130,11 @@ export default function WriteReviewForm({
   const requiredProgress = useMemo(() => {
     const requiredQuestions = questionState.filter((question) => question.isRequired);
     const answeredRequiredCount = requiredQuestions.filter(
-      (question) => question.responseText.trim().length > 0,
+      (question) =>
+        question.questionType === ReviewQuestionType.SCALE_1_TO_5
+          ? question.responseText.trim().length > 0 &&
+            (question.notObserved || question.scaleRating != null)
+          : question.responseText.trim().length > 0,
     ).length;
 
     return {
@@ -200,6 +209,14 @@ export default function WriteReviewForm({
             body: JSON.stringify({
               questionId: dirtyQuestion.id,
               responseText: dirtyQuestion.responseText,
+              scaleRating:
+                dirtyQuestion.questionType === ReviewQuestionType.SCALE_1_TO_5
+                  ? dirtyQuestion.scaleRating
+                  : null,
+              notObserved:
+                dirtyQuestion.questionType === ReviewQuestionType.SCALE_1_TO_5
+                  ? dirtyQuestion.notObserved
+                  : false,
             }),
           },
         );
@@ -490,6 +507,86 @@ export default function WriteReviewForm({
                       </Button>
                     </div>
 
+                    {question.questionType === ReviewQuestionType.SCALE_1_TO_5 ? (
+                      <div className="grid gap-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3 md:grid-cols-[220px_minmax(0,1fr)]">
+                        <label className="space-y-1">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Rating (1-5)
+                          </span>
+                          <Select
+                            data-testid={`write-review-scale-${question.id}`}
+                            value={
+                              question.notObserved
+                                ? ""
+                                : question.scaleRating != null
+                                  ? String(question.scaleRating)
+                                  : ""
+                            }
+                            disabled={isReadOnly || question.notObserved}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              const nextScaleRating = value ? Number(value) : null;
+
+                              setQuestionState((previous) =>
+                                previous.map((entry) =>
+                                  entry.id === question.id
+                                    ? {
+                                        ...entry,
+                                        scaleRating: Number.isNaN(nextScaleRating)
+                                          ? null
+                                          : nextScaleRating,
+                                        notObserved: false,
+                                      }
+                                    : entry,
+                                ),
+                              );
+                              setDirtyQuestionId(question.id);
+                              setMissingQuestionIds((previous) =>
+                                previous.filter((missingId) => missingId !== question.id),
+                              );
+                            }}
+                          >
+                            <option value="">Select a rating</option>
+                            <option value="1">1 - Unsatisfactory</option>
+                            <option value="2">2 - Needs Improvement</option>
+                            <option value="3">3 - Meets</option>
+                            <option value="4">4 - Exceeds</option>
+                            <option value="5">5 - Exceptional</option>
+                          </Select>
+                        </label>
+
+                        <label className="flex items-center gap-2 self-end text-sm text-slate-700">
+                          <input
+                            data-testid={`write-review-not-observed-${question.id}`}
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-slate-300"
+                            checked={question.notObserved}
+                            disabled={isReadOnly}
+                            onChange={(event) => {
+                              const checked = event.target.checked;
+
+                              setQuestionState((previous) =>
+                                previous.map((entry) =>
+                                  entry.id === question.id
+                                    ? {
+                                        ...entry,
+                                        notObserved: checked,
+                                        scaleRating: checked ? null : entry.scaleRating,
+                                      }
+                                    : entry,
+                                ),
+                              );
+                              setDirtyQuestionId(question.id);
+                              setMissingQuestionIds((previous) =>
+                                previous.filter((missingId) => missingId !== question.id),
+                              );
+                            }}
+                          />
+                          Not observed (exclude from scoring)
+                        </label>
+                      </div>
+                    ) : null}
+
                     <Textarea
                       id={question.id}
                       data-testid={`write-review-answer-${question.id}`}
@@ -523,7 +620,11 @@ export default function WriteReviewForm({
                       className={`${isMissing ? "border-rose-400 bg-rose-50" : ""} ${
                         isReadOnly ? "bg-slate-100 text-slate-500" : ""
                       }`}
-                      placeholder="Write your answer"
+                      placeholder={
+                        question.questionType === ReviewQuestionType.SCALE_1_TO_5
+                          ? "Add a short comment to support this rating"
+                          : "Write your answer"
+                      }
                     />
 
                     {isMissing ? (

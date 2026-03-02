@@ -775,14 +775,15 @@ Validation rules (Phase 1)
 ---
 
 ### Phase 3 — Peer/Upward Reviews as Reference Input (No weighting)
-- [ ] Allow peer/upward submissions to include the same competency ratings/comments (1–5 + Not Observed)
-- [ ] Clearly label these as “Reference input” in manager view
-- [ ] Ensure scorecard computation ignores peer/upward by default
-- [ ] Permission tests for peer/upward visibility rules
+- [x] Allow peer/upward submissions to include the same competency ratings/comments (1–5 + Not Observed)
+- [x] Clearly label these as “Reference input” in manager view
+- [x] Ensure scorecard computation ignores peer/upward by default
+- [x] Permission tests for peer/upward visibility rules
 
 **Acceptance criteria**
-- [ ] Peer/upward data can be collected and viewed where allowed
-- [ ] Scorecard totals unaffected by peer/upward by default
+- [x] Peer/upward data can be collected and viewed where allowed
+- [x] Scorecard totals unaffected by peer/upward by default
+- Completed in PR #13 (dev -> main Milestone 5 Phase 3)
 
 ---
 

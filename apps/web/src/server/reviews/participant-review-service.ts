@@ -1,7 +1,9 @@
 import {
   CycleStatus,
+  CompetencyDimensionKey,
   EvidenceType,
   ReviewRelationship,
+  ReviewQuestionType,
   ReviewSubmissionStatus,
   UserRole,
 } from "@prisma/client";
@@ -18,6 +20,8 @@ import {
 interface TemplateQuestion {
   id: string;
   prompt: string;
+  questionType: ReviewQuestionType;
+  dimensionKey: CompetencyDimensionKey | null;
   isRequired: boolean;
   sortOrder: number;
 }
@@ -80,6 +84,8 @@ interface ReviewAnswerRecord {
   id: string;
   questionId: string;
   responseText: string;
+  scaleRating: number | null;
+  notObserved: boolean;
   evidenceLinks: {
     evidenceItemId: string;
     evidenceItem: {
@@ -125,6 +131,8 @@ interface ParticipantReviewDb {
           select: {
             id: true;
             prompt: true;
+            questionType: true;
+            dimensionKey: true;
             isRequired: true;
             sortOrder: true;
           };
@@ -152,9 +160,13 @@ interface ParticipantReviewDb {
         submissionId: string;
         questionId: string;
         responseText: string;
+        scaleRating: number | null;
+        notObserved: boolean;
       };
       update: {
         responseText: string;
+        scaleRating: number | null;
+        notObserved: boolean;
       };
       select: {
         id: true;
@@ -186,6 +198,8 @@ const autosaveSchema = z.object({
   submissionId: z.string().trim().min(1),
   questionId: z.string().trim().min(1),
   responseText: z.string().max(8000),
+  scaleRating: z.number().int().min(1).max(5).nullable().optional(),
+  notObserved: z.boolean().optional(),
 });
 
 export interface ReviewTaskListItem {
@@ -228,9 +242,13 @@ export interface WriteReviewData {
   questions: {
     id: string;
     prompt: string;
+    questionType: ReviewQuestionType;
+    dimensionKey: CompetencyDimensionKey | null;
     isRequired: boolean;
     answerId: string | null;
     responseText: string;
+    scaleRating: number | null;
+    notObserved: boolean;
     attachedEvidence: AttachedEvidenceSummary[];
   }[];
   evidenceCounts: Record<EvidenceType, number>;
@@ -324,6 +342,8 @@ export async function getWriteReviewData(
       id: true,
       questionId: true,
       responseText: true,
+      scaleRating: true,
+      notObserved: true,
       evidenceLinks: {
         select: {
           evidenceItemId: true,
@@ -365,9 +385,13 @@ export async function getWriteReviewData(
       return {
         id: question.id,
         prompt: question.prompt,
+        questionType: question.questionType,
+        dimensionKey: question.dimensionKey,
         isRequired: question.isRequired,
         answerId: answer?.id ?? null,
         responseText: answer?.responseText ?? "",
+        scaleRating: answer?.scaleRating ?? null,
+        notObserved: answer?.notObserved ?? false,
         attachedEvidence:
           answer?.evidenceLinks.map((link) => ({
             evidenceItemId: link.evidenceItemId,
@@ -403,10 +427,26 @@ export async function autosaveReviewAnswer(
   }
 
   const template = await resolveTemplateForSubmission(submission, db);
-  const questionExists = template.questions.some((question) => question.id === parsed.data.questionId);
-  if (!questionExists) {
+  const question = template.questions.find(
+    (templateQuestion) => templateQuestion.id === parsed.data.questionId,
+  );
+  if (!question) {
     throw new AppError("INVALID_QUESTION", "Question does not belong to this submission template", 400);
   }
+
+  if (question.questionType === ReviewQuestionType.TEXT && parsed.data.notObserved) {
+    throw new AppError("VALIDATION_ERROR", "notObserved is only valid for scale questions", 400);
+  }
+
+  if (question.questionType === ReviewQuestionType.TEXT && parsed.data.scaleRating != null) {
+    throw new AppError("VALIDATION_ERROR", "scaleRating is only valid for scale questions", 400);
+  }
+
+  const notObserved = parsed.data.notObserved ?? false;
+  const scaleRating =
+    question.questionType === ReviewQuestionType.SCALE_1_TO_5 && !notObserved
+      ? (parsed.data.scaleRating ?? null)
+      : null;
 
   const answer = await db.reviewAnswer.upsert({
     where: {
@@ -420,9 +460,13 @@ export async function autosaveReviewAnswer(
       submissionId: submission.id,
       questionId: parsed.data.questionId,
       responseText: parsed.data.responseText,
+      scaleRating,
+      notObserved,
     },
     update: {
       responseText: parsed.data.responseText,
+      scaleRating,
+      notObserved,
     },
     select: {
       id: true,
@@ -433,7 +477,7 @@ export async function autosaveReviewAnswer(
   let status: ReviewSubmissionStatus = submission.status;
   if (
     submission.status === ReviewSubmissionStatus.NOT_STARTED &&
-    parsed.data.responseText.trim().length > 0
+    (parsed.data.responseText.trim().length > 0 || scaleRating != null || notObserved)
   ) {
     const updated = await db.reviewSubmission.update({
       where: { id: submission.id },
@@ -478,6 +522,7 @@ export async function submitReviewSubmission(
   const requiredQuestionIds = template.questions
     .filter((question) => question.isRequired)
     .map((question) => question.id);
+  const questionById = new Map(template.questions.map((question) => [question.id, question]));
 
   const answers = await db.reviewAnswer.findMany({
     where: {
@@ -488,6 +533,8 @@ export async function submitReviewSubmission(
       id: true,
       questionId: true,
       responseText: true,
+      scaleRating: true,
+      notObserved: true,
       evidenceLinks: {
         select: {
           evidenceItemId: true,
@@ -504,9 +551,24 @@ export async function submitReviewSubmission(
     },
   });
 
-  const completedQuestionIds = new Set(
-    answers.filter((answer) => answer.responseText.trim().length > 0).map((answer) => answer.questionId),
-  );
+  const completedQuestionIds = new Set<string>();
+  for (const answer of answers) {
+    const templateQuestion = questionById.get(answer.questionId);
+    if (!templateQuestion) {
+      continue;
+    }
+
+    const hasComment = answer.responseText.trim().length > 0;
+    const hasScaleValue = answer.notObserved || answer.scaleRating != null;
+    const isCompleted =
+      templateQuestion.questionType === ReviewQuestionType.SCALE_1_TO_5
+        ? hasComment && hasScaleValue
+        : hasComment;
+
+    if (isCompleted) {
+      completedQuestionIds.add(answer.questionId);
+    }
+  }
 
   const missingQuestionIds = requiredQuestionIds.filter(
     (questionId) => !completedQuestionIds.has(questionId),
@@ -611,6 +673,8 @@ async function getSubmissionForAccess(
                 select: {
                   id: true,
                   prompt: true,
+                  questionType: true,
+                  dimensionKey: true,
                   isRequired: true,
                   sortOrder: true,
                 },
@@ -660,6 +724,8 @@ async function resolveTemplateForSubmission(
         select: {
           id: true,
           prompt: true,
+          questionType: true,
+          dimensionKey: true,
           isRequired: true,
           sortOrder: true,
         },
