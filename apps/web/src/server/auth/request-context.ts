@@ -60,32 +60,45 @@ export function requireRole(context: RequestContext, role: UserRole): void {
 export async function getDevRequestContext(
   db: AuthDb = prisma,
 ): Promise<RequestContext> {
-  let userId = process.env.DEV_USER_ID ?? "user_employee_1";
-  let orgId = process.env.DEV_ORG_ID ?? "org_demo_1";
-
   if (isDemoModeEnabled()) {
     const cookieStore = await cookies();
     const session = decodeDemoSession(cookieStore.get(DEMO_SESSION_COOKIE)?.value);
-    if (session) {
-      userId = session.userId;
-      orgId = session.orgId;
+    if (!session) {
+      throw new AppError(
+        "UNAUTHORIZED",
+        "Demo session is missing. Sign in from /login.",
+        401,
+      );
     }
+
+    const user = await db.user.findFirst({
+      where: { id: session.userId, orgId: session.orgId },
+      select: { id: true, orgId: true, role: true },
+    });
+
+    if (!user) {
+      throw new AppError(
+        "UNAUTHORIZED",
+        "Demo session is invalid. Reset demo data and sign in again from /login.",
+        401,
+      );
+    }
+
+    return {
+      userId: user.id,
+      orgId: user.orgId,
+      role: user.role,
+    };
   }
 
+  const userId = process.env.DEV_USER_ID ?? "user_employee_1";
+  const orgId = process.env.DEV_ORG_ID ?? "org_demo_1";
   const user = await db.user.findFirst({
     where: { id: userId, orgId },
     select: { id: true, orgId: true, role: true },
   });
 
   if (!user) {
-    if (isDemoModeEnabled()) {
-      return {
-        userId,
-        orgId,
-        role: inferDemoRoleFromUserId(userId),
-      };
-    }
-
     throw new AppError(
       "UNAUTHORIZED",
       "Development user context is not configured. Run db seed and set DEV_USER_ID/DEV_ORG_ID if needed.",
@@ -98,20 +111,4 @@ export async function getDevRequestContext(
     orgId: user.orgId,
     role: user.role,
   };
-}
-
-function inferDemoRoleFromUserId(userId: string): UserRole {
-  if (userId.includes("hr_admin")) {
-    return UserRole.HR_ADMIN;
-  }
-
-  if (userId.includes("calibrator")) {
-    return UserRole.CALIBRATOR;
-  }
-
-  if (userId.includes("manager")) {
-    return UserRole.MANAGER;
-  }
-
-  return UserRole.EMPLOYEE;
 }

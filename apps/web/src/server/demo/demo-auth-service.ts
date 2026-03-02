@@ -2,57 +2,48 @@ import { UserRole } from "@prisma/client";
 import { z } from "zod";
 
 import { prisma } from "@/server/db/prisma";
-import { requireDemoMode } from "@/server/demo/demo-mode";
+import { demoOrgId, demoPrimaryRoleUserByRole } from "@/server/demo/demo-constants";
+import { assertDemoMode } from "@/server/demo/demo-mode";
 import { AppError } from "@/server/http/errors";
 
-export const demoOrgId = "org_demo_1";
+const demoRoleLoginSchema = z.object({
+  role: z.nativeEnum(UserRole),
+});
 
-export interface DemoAccountHint {
-  role: UserRole;
-  email: string;
-  password: string;
-  label: string;
-}
-
-const demoAccountHints: DemoAccountHint[] = [
+const demoRoleTiles = [
   {
     role: UserRole.HR_ADMIN,
-    email: "hr-admin@example.com",
-    password: "demo-hr-admin",
-    label: "HR Admin",
+    label: "Sign in as HR Admin",
+    subtitle: "Run cycles, calibrations, and release workflows.",
+    testId: "login-role-hr-admin",
   },
   {
     role: UserRole.CALIBRATOR,
-    email: "calibrator@example.com",
-    password: "demo-calibrator",
-    label: "Calibrator",
+    label: "Sign in as Calibrator",
+    subtitle: "Facilitate placements and alignment discussions.",
+    testId: "login-role-calibrator",
   },
   {
     role: UserRole.MANAGER,
-    email: "manager@example.com",
-    password: "demo-manager",
-    label: "Manager",
+    label: "Sign in as Manager",
+    subtitle: "Write manager reviews, calibrate, and track plans.",
+    testId: "login-role-manager",
   },
   {
     role: UserRole.EMPLOYEE,
-    email: "employee@example.com",
-    password: "demo-employee",
-    label: "Employee",
+    label: "Sign in as Employee",
+    subtitle: "Complete self review tasks and submit evidence-backed input.",
+    testId: "login-role-employee",
   },
-];
-
-const demoLoginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
+] as const;
 
 interface DemoAuthDb {
   user: {
     findFirst: (args: {
       where: {
+        id?: string;
         orgId: string;
-        email: string;
-        role: UserRole;
+        role?: UserRole;
       };
       select: {
         id: true;
@@ -63,43 +54,46 @@ interface DemoAuthDb {
   };
 }
 
+export interface DemoRoleTile {
+  role: UserRole;
+  label: string;
+  subtitle: string;
+  testId: string;
+}
+
 export interface DemoAuthResult {
   userId: string;
   orgId: string;
   role: UserRole;
 }
 
-export function listDemoAccountHints(): DemoAccountHint[] {
-  requireDemoMode();
-  return demoAccountHints;
+export function listDemoRoleTiles(): DemoRoleTile[] {
+  assertDemoMode();
+  return demoRoleTiles.map((tile) => ({ ...tile }));
 }
 
-export async function authenticateDemoAccount(
+export async function authenticateDemoRole(
   input: unknown,
   db: DemoAuthDb = prisma,
 ): Promise<DemoAuthResult> {
-  requireDemoMode();
+  assertDemoMode();
 
-  const parsed = demoLoginSchema.safeParse(input);
+  const parsed = demoRoleLoginSchema.safeParse(input);
   if (!parsed.success) {
-    throw new AppError("VALIDATION_ERROR", "Invalid demo login payload", 400, parsed.error.flatten());
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Invalid demo role payload",
+      400,
+      parsed.error.flatten(),
+    );
   }
 
-  const match = demoAccountHints.find(
-    (account) =>
-      account.email.toLowerCase() === parsed.data.email.toLowerCase() &&
-      account.password === parsed.data.password,
-  );
-
-  if (!match) {
-    throw new AppError("UNAUTHORIZED", "Invalid demo credentials", 401);
-  }
-
-  const user = await db.user.findFirst({
+  const preferredUserId = demoPrimaryRoleUserByRole[parsed.data.role];
+  let user = await db.user.findFirst({
     where: {
+      id: preferredUserId,
       orgId: demoOrgId,
-      email: match.email,
-      role: match.role,
+      role: parsed.data.role,
     },
     select: {
       id: true,
@@ -109,11 +103,25 @@ export async function authenticateDemoAccount(
   });
 
   if (!user) {
+    user = await db.user.findFirst({
+      where: {
+        orgId: demoOrgId,
+        role: parsed.data.role,
+      },
+      select: {
+        id: true,
+        orgId: true,
+        role: true,
+      },
+    });
+  }
+
+  if (!user) {
     throw new AppError(
       "DEMO_DATA_MISSING",
-      "Demo account does not exist yet. Run Demo Setup first.",
+      "Demo accounts are not ready yet. Reset and seed demo data from /login.",
       409,
-      { email: match.email },
+      { role: parsed.data.role },
     );
   }
 

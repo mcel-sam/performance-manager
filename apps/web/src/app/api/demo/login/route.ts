@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 
-import { authenticateDemoAccount } from "@/server/demo/demo-auth-service";
-import { DEMO_SESSION_COOKIE, encodeDemoSession, requireDemoMode } from "@/server/demo/demo-mode";
+import { authenticateDemoRole } from "@/server/demo/demo-auth-service";
+import { DEMO_SESSION_COOKIE, encodeDemoSession, assertDemoMode } from "@/server/demo/demo-mode";
 import { toErrorPayload } from "@/server/http/errors";
 
 export async function POST(request: Request) {
   try {
-    requireDemoMode();
+    assertDemoMode();
     const payload = await request.json();
-    const account = await authenticateDemoAccount(payload);
+    const account = await authenticateDemoRole(payload);
 
     const response = NextResponse.json(
       {
