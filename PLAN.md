@@ -584,7 +584,7 @@ This phase finishes the leftover functional UX items without adding analytics.
 
 ## Milestone 4.2 — Playwright E2E Smoke Suite (UX Regression Gates)
 
-**Status:** Phases 1 and 2 complete; Phase 3 pending.  
+**Status:** Completed in PRs #8, #9, and #10.  
 **Objective:** Add a small, stable Playwright smoke suite to catch UX regressions across core flows (Lattice-like UI polish protection). Keep scope minimal and tests reliable.
 
 ### Scope
@@ -643,14 +643,15 @@ Implementation notes:
 ---
 
 ### Phase 3 — CI Integration (Optional, after stability)
-- [ ] Add a separate CI job/workflow to run E2E smoke suite:
-  - [ ] Run on PRs to `main` (or nightly until stable)
-  - [ ] Upload trace/screenshots on failure
-- [ ] Ensure E2E does not block iteration if flaky (use retries and keep suite small)
+- [x] Add a separate CI job/workflow to run E2E smoke suite:
+  - [x] Run on PRs to `main` (or nightly until stable)
+  - [x] Upload trace/screenshots on failure
+- [x] Ensure E2E does not block iteration if flaky (use retries and keep suite small)
 
 **Acceptance criteria**
-- [ ] E2E runs in CI reliably (or is scheduled nightly) with debuggable artifacts
-- [ ] CI remains fast enough for team velocity
+- [x] E2E runs in CI reliably (or is scheduled nightly) with debuggable artifacts
+- [x] CI remains fast enough for team velocity
+- Completed in PR #10 (dev -> main Milestone 4.2 Phase 3)
 
 ## Milestone 5 — Analytics Foundations (Scaffold Only)
 
