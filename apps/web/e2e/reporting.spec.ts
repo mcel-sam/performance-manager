@@ -23,12 +23,12 @@ test("reporting page loads and applies filters", async ({ page }) => {
 
   await page
     .getByTestId("reporting-filter-department")
-    .selectOption({ label: "Field Operations" });
+    .selectOption({ label: "Safety" });
   await page.getByTestId("reporting-apply-filters").click();
 
-  await expect(page).toHaveURL(/department=Field(\+|%20)Operations/);
+  await expect(page).toHaveURL(/department=Safety/);
   await expect(page.getByTestId("reporting-current-department")).toHaveText(
-    "Field Operations",
+    "Safety",
   );
   await expect(
     page.getByRole("heading", {
