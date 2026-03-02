@@ -45,7 +45,7 @@ test("packet page renders for manager visibility scope", async ({ page }) => {
   await loginAsManager(page);
   await page.goto("/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1");
 
-  await expect(page.locator("header").getByRole("heading", { name: "Elliot Employee" })).toBeVisible();
+  await expect(page.locator("header").getByRole("heading", { name: /Elliot/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Evidence counts" })).toBeVisible();
   await expect(page.getByText("Packet visibility")).toBeVisible();
 });

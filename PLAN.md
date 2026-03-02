@@ -709,11 +709,11 @@ Implementation notes:
   - scorecard-mapped overall rating (1–5)
 - Persist per-metric breakdown results (for easy charting later)
 - Peer/upward reviews supported as **reference input** (ratings/comments stored) but **not included in scorecard math** (default)
-- Demo-mode UI setup:
-  - buttons/config pages to create demo org/users/cycle/calibration/plan (no scripts)
-  - sample username/password per role for local use only
-  - demo-only “log in as” or demo login page
-- Update Playwright smoke suite to use demo login + demo setup
+- Demo-mode login/reset setup:
+  - `/login` role tiles for HR Admin, Calibrator, Manager, Employee
+  - `/api/demo/reset` to wipe + reseed realistic demo data in development
+  - demo-only auth/session flow enabled only with guardrails
+- Update Playwright smoke suite to use `/api/demo/reset` + `/login`
 
 #### Out of scope
 - Analytics dashboards/charts (separate milestone after HR confirms reporting view)
@@ -789,19 +789,191 @@ Validation rules (Phase 1)
 
 ### Phase 4 — Demo Mode UI + Sample Role Logins (No scripts)
 - [x] Add DEMO_MODE guard (only in development)
-- [x] Add a Demo Setup page in UI:
-  - [x] Create demo org + employees + manager hierarchy
-  - [x] Create demo cycle + generate submissions
-  - [x] Create demo calibration session
-  - [x] Create demo improvement plan
-- [x] Add simple demo authentication:
-  - [x] sample usernames/passwords for roles (Employee/Manager/HR/Calibrator)
-  - [x] visible only in demo mode
-  - [x] demo-only “log in as” or demo login page
-- [x] Update Playwright smoke suite to use demo login + demo setup and run core flows
+- [x] Add demo-first login route `/login` with role tiles (HR Admin, Calibrator, Manager, Employee)
+- [x] Add demo reset endpoint `POST /api/demo/reset` with typed confirmation (`RESET`) before wipe + seed
+- [x] Seed realistic construction-company walkthrough data (org hierarchy, cycle, submissions, evidence, calibration, improvement plan)
+- [x] Remove Demo Setup / Demo Login clutter from app navigation (legacy `/demo/*` routes redirect to `/login`)
+- [x] Update Playwright smoke suite to use `/api/demo/reset` + `/login` role tiles and run core flows
 
 **Acceptance criteria**
-- [x] HR can demo everything from the UI with demo accounts (no scripts)
-- [x] Demo setup is disabled outside DEMO_MODE
+- [x] HR can demo everything from `/login` (reset + role sign-in) without scripts
+- [x] Demo reset/auth is disabled outside `DEMO_MODE=true` and development runtime
 - [x] E2E suite still passes
-- Completed in PR #14 (dev -> main Milestone 5 Phase 4)
+- Completed in PR #14 (initial) and refined in PR #15 (demo-first login hardening)
+
+---
+
+## Milestone 5 Follow-on UI Polish
+
+- [x] Presentation Mode hide redundant hub sections (`PRESENTATION_MODE`) by hiding Home “Workflow Modules” and Help role quick-link cards.
+- Completed in PR #15 (dev -> main docs + presentation mode polish)
+
+
+## Milestone 6 — Reporting Module (HR KPIs + Lattice-style Insights)
+
+**Status:** Not started  
+**Objective:** Deliver an HR-facing Reporting module that tracks cycle progress + rating distributions + competency breakdowns by Department and Position Title, using our analytics-ready data (dimension_key, scorecard outputs, snapshots). Provide Lattice-like UX: filterable dashboards, distributions, heatmaps, and downloadable tables.
+
+### Why this milestone
+HR needs to track:
+- # forms not started / in progress / completed
+- in progress with employee vs manager
+- summary of employees in each rating
+- breakdown by Department and Position Title
+- performance ratings by competency (Values/Culture, Judgment, Safety, etc.)
+
+We will follow proven patterns:
+- Progress reporting states Completed/In progress/Not started with filtering (Lattice-style).
+- Results analytics for ratings/competencies/weighted scores with bar/heatmap/distribution and employee table exports. 
+
+---
+
+### Scope
+
+#### In scope
+- New HR reporting area in the app shell (Admin-only initially)
+- Cycle selector + filter bar (Department, Position Title; optional Manager)
+- Progress KPIs: not started / in progress / completed, plus employee vs manager splits
+- Overall rating distributions (scorecard baseline and final rating source)
+- Competency breakdown reports for the HR competency list (dimension_key-based)
+- “Employee table” drilldown view + CSV exports
+- Small-N suppression to avoid leaking info in tiny groups (configurable threshold)
+
+#### Out of scope
+- Advanced “Explorer” / ad-hoc reporting builder
+- Multi-cycle trend lines (optional later)
+- AI sentiment analytics for open-ended text
+
+---
+
+### UX design (Lattice-inspired)
+- Reporting entry point: **Admin → Reporting**
+- Structure:
+  - **Progress** tab: KPI cards + segmented bars + “reviewee status” rollups
+  - **Results** tab: rating distribution + histogram + employee table
+  - **Competencies** tab: heatmap + distribution drilldowns
+  - **Scorecard** tab: weighted metric breakdown (8 metrics) + gap views
+- Always show:
+  - Cycle selector (required)
+  - Filters (Department, Position Title; Manager optional)
+  - “Export CSV” for tables; “Download PNG” for charts later (optional) 
+
+---
+
+## Phase 1 — Reporting data layer (APIs + tests)
+
+### Server module
+- [ ] Create `apps/web/src/server/reporting/*` for reporting queries and aggregation
+- [ ] Add permission gating: HR_ADMIN only (expand later to managers)
+- [ ] Enforce org scoping + snapshot fields (department/title) to prevent drift
+
+### Endpoints (HR admin)
+- [ ] `GET /api/admin/reporting/cycles` (list cycles)
+- [ ] `GET /api/admin/reporting/progress?cycleId=...&department=&title=`  
+  Returns:
+  - totals: notStarted/inProgress/completed
+  - splits: self(notStarted/inProgress/completed), manager(notStarted/inProgress/completed)
+- [ ] `GET /api/admin/reporting/ratings?cycleId=...&department=&title=&ratingSource=`  
+  ratingSource:
+  - `FINAL` (final_rating_source applied)
+  - `SCORECARD` (baseline)
+  Returns distribution of rating 1–5 + counts
+- [ ] `GET /api/admin/reporting/competencies?cycleId=...&department=&title=`  
+  Returns per competency (dimension_key):
+  - distribution (1–5 + notObserved)
+  - optional avg (exclude notObserved)
+  - optional self vs manager gap stats
+- [ ] `GET /api/admin/reporting/people?cycleId=...&department=&title=&status=&ratingSource=`  
+  Returns paginated employee rows:
+  - employeeName, dept, title
+  - selfStatus, managerStatus
+  - finalRating + source
+  - scorecardPercent
+  - links: packet, calibration session (if exists), improvement plan (if exists)
+
+### Small-N suppression
+- [ ] Implement threshold (default 5) for grouped charts/tables:
+  - if group size < threshold → show “Insufficient data” or roll into “Other”
+
+### Tests
+- [ ] Unit tests for aggregation correctness (progress + distribution)
+- [ ] Permission tests (HR only)
+- [ ] Snapshot drift test: reporting uses snapshot_department/title (not live employee field)
+
+**Acceptance criteria**
+- [ ] APIs return all KPI data needed for UI without recomputing on client
+- [ ] Permission/scoping correct
+- [ ] lint/typecheck/test/build pass
+
+---
+
+## Phase 2 — Reporting UI (Progress + Results)
+
+### Routes
+- [ ] `apps/web/src/app/admin/performance/reporting/page.tsx` (entry)
+- [ ] Tabs: Progress, Results (Competencies/Scorecard come in Phase 3)
+
+### Progress tab (HR KPIs)
+- [ ] KPI cards:
+  - not started
+  - in progress
+  - completed
+  - in progress (employee/self)
+  - in progress (manager)
+- [ ] Segmented bar showing Completed/In progress/Not started totals 
+- [ ] Filters: Department + Position Title
+- [ ] Drilldown table: employees by status (pagination)
+
+### Results tab (overall rating)
+- [ ] Rating distribution chart (1–5) with toggle:
+  - Final (calibration override where applicable)
+  - Scorecard baseline
+- [ ] “Distribution / histogram” view to detect leniency/harshness patterns 
+- [ ] Employee table with CSV export 
+
+**Acceptance criteria**
+- [ ] HR can filter by dept/title and see progress + rating distributions
+- [ ] Export CSV works for employee table
+- [ ] UI uses shared primitives (PageHeader, Card, Table, EmptyState, Skeleton)
+- [ ] Playwright smoke suite extended with 1 reporting test (page loads + filters apply)
+
+---
+
+## Phase 3 — Competency & Scorecard insights (HR-required list)
+
+### Competencies tab
+- [ ] Heatmap: Department × Competency (avg or median; exclude Not Observed)
+- [ ] Click a competency to drill into distribution (self vs manager comparison)
+- [ ] Show “Self vs Manager gap” summary (where differences are largest)
+
+### Scorecard tab
+- [ ] 8 weighted metrics:
+  - per metric distribution / average by dept/title
+  - optional “gap” view (self vs manager)
+- [ ] Show count of Not Observed per metric (data quality)
+
+**Acceptance criteria**
+- [ ] HR can see competency breakdown for all requested competencies
+- [ ] HR can break down by dept/title and drill to employee list
+- [ ] UI remains fast (pagination/caching where needed)
+
+---
+
+## Phase 4 — Exports + polish (Lattice-like finishing touches)
+
+- [ ] Add “Download PNG” for charts (optional, later) 
+- [ ] Add CSV exports:
+  - progress summary
+  - rating distribution table
+  - competency breakdown table
+- [ ] Add tooltips explaining:
+  - what counts as “in progress”
+  - what “Final vs Scorecard baseline” means
+  - Not Observed handling
+- [ ] Performance hardening:
+  - indexes for reporting queries
+  - server-side pagination enforced
+
+**Acceptance criteria**
+- [ ] Reporting is demo-ready and trustworthy for HR decision meetings
+- [ ] Exports are usable for presentations and follow-up analysis

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { DEMO_SESSION_COOKIE, requireDemoMode } from "@/server/demo/demo-mode";
+import { DEMO_SESSION_COOKIE, assertDemoMode } from "@/server/demo/demo-mode";
 import { toErrorPayload } from "@/server/http/errors";
 
 export async function POST() {
   try {
-    requireDemoMode();
+    assertDemoMode();
     const response = NextResponse.json({ ok: true }, { status: 200 });
     response.cookies.set({
       name: DEMO_SESSION_COOKIE,

@@ -14,6 +14,8 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Product requirements: `docs/product/PRD.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - ADR stack decision: `docs/adr/0001-stack.md`
+- Demo walkthrough: `docs/demo/WALKTHROUGH.md`
+- HR demo checklist: `docs/demo/HR_DEMO_CHECKLIST.md`
 - Repo coding rules: `AGENTS.md`
 - Milestone execution tracking: `PLAN.md`
 
@@ -114,9 +116,9 @@ Performance Management System monorepo for reviews, calibration, and improvement
   - Scorecard explicitly ignores peer/upward by default
 - Milestone 5 Phase 4:
   - Development-only `DEMO_MODE` guardrails
-  - Demo login page (`/demo/login`) with sample role credentials
-  - Demo setup page (`/demo/setup`) for UI-driven provisioning (org/cycle/calibration/improvement-plan)
-  - Playwright smoke suite switched to demo setup + demo login flow
+  - Demo-first login page (`/login`) with one-click role sign-in tiles
+  - Demo reset endpoint (`POST /api/demo/reset`) with typed confirmation and full reseed
+  - Playwright smoke suite switched to demo reset + `/login` role tile sign-in flow
 
 ## Local setup
 
@@ -173,10 +175,17 @@ NEXT_PUBLIC_DEMO_MODE=true
 
 Then run:
 
-1. `http://localhost:3000/demo/setup` and click **Run full demo setup**
-2. `http://localhost:3000/demo/login` and sign in as one of the demo roles
+1. Open `http://localhost:3000/login`
+2. Click **Reset demo database & load sample data**
+3. In the confirmation modal, type `RESET` and confirm
+4. Use one of the role tiles:
+   - **Sign in as HR Admin**
+   - **Sign in as Calibrator**
+   - **Sign in as Manager**
+   - **Sign in as Employee**
 
 Demo routes and endpoints are disabled unless `DEMO_MODE=true` **and** the app runs in development mode.
+When demo mode is enabled, unauthenticated page requests redirect to `/login`.
 
 For packet viewing against seeded data, use:
 
@@ -214,9 +223,9 @@ For calibration session testing, use:
 - `GET /api/performance/improvement-plans/:planId/export`
 - `POST /api/demo/login`
 - `POST /api/demo/logout`
-- `POST /api/demo/setup`
+- `POST /api/demo/reset`
 
-Note: API routes expect `x-user-id` and `x-org-id` headers.
+Note: In normal dev mode, API routes expect `x-user-id` and `x-org-id` headers (or `DEV_USER_ID`/`DEV_ORG_ID`). In `DEMO_MODE`, app page routes use the demo session cookie from `/login`.
 
 ## Quick manual checks
 
@@ -337,7 +346,7 @@ npm run build
 
 ## E2E smoke tests (Playwright)
 
-Run from `apps/web` after DB migration. The suite provisions demo data through `/api/demo/setup` and signs in through `/demo/login`:
+Run from `apps/web` after DB migration. The suite provisions demo data through `/api/demo/reset` and signs in through `/login` role tiles:
 
 ```bash
 npx playwright install chromium

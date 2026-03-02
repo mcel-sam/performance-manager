@@ -14,7 +14,7 @@ test("home loads and primary navigation opens reviews", async ({ page }) => {
       name: "Reviews, calibration, and improvement plans",
     }),
   ).toBeVisible();
-  await expect(page.getByTestId("nav-link-demo-login")).toBeVisible();
+  await expect(page.getByTestId("nav-link-help")).toBeVisible();
   await expect(page.getByTestId("nav-link-reviews")).toBeVisible();
   await expect(page.getByTestId("home-getting-started-link-0")).toBeVisible();
 

@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { appEnv } from "@/config/env";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { listImprovementPlans } from "@/server/improvement-plans/improvement-plan-service";
 import { listAssignedReviewTasks } from "@/server/reviews/participant-review-service";
@@ -164,37 +165,39 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="space-y-4">
-        <SectionHeader
-          title="Workflow Modules"
-          description="Open one of the active modules below to continue work."
-        />
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {modules.map((module) => (
-            <Card key={module.title}>
-              <CardHeader className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-base">{module.title}</CardTitle>
-                  <Badge variant={module.status === "Active" ? "success" : "info"}>
-                    {module.status}
-                  </Badge>
-                </div>
-                <CardDescription>{module.description}</CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <Link href={module.href} className="w-full">
-                  <Button
-                    className="w-full"
-                    variant={module.status === "Active" ? "primary" : "outline"}
-                  >
-                    Open
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {!appEnv.presentationMode ? (
+        <section className="space-y-4">
+          <SectionHeader
+            title="Workflow Modules"
+            description="Open one of the active modules below to continue work."
+          />
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {modules.map((module) => (
+              <Card key={module.title}>
+                <CardHeader className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-base">{module.title}</CardTitle>
+                    <Badge variant={module.status === "Active" ? "success" : "info"}>
+                      {module.status}
+                    </Badge>
+                  </div>
+                  <CardDescription>{module.description}</CardDescription>
+                </CardHeader>
+                <CardFooter>
+                  <Link href={module.href} className="w-full">
+                    <Button
+                      className="w-full"
+                      variant={module.status === "Active" ? "primary" : "outline"}
+                    >
+                      Open
+                    </Button>
+                  </Link>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

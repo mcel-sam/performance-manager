@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { appEnv } from "@/config/env";
 import { getDevRequestContext } from "@/server/auth/request-context";
 
 export const dynamic = "force-dynamic";
@@ -25,12 +26,12 @@ const employeeLinks: HelpLinkItem[] = [
   {
     label: "Write and submit",
     description: "Draft answers, attach evidence, and submit your review.",
-    href: "/performance/reviews/review_cycle_seed_1/write/review_submission_seed_self",
+    href: "/performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_self_1",
   },
   {
     label: "View packet",
     description: "Review packet visibility after release.",
-    href: "/performance/reviews/review_cycle_seed_1/packet/employee_subject_seed_1",
+    href: "/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1",
   },
 ];
 
@@ -86,34 +87,45 @@ export default async function HelpPage() {
         }
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Getting started by role</CardTitle>
-          <CardDescription>
-            Pick a section below. Each link opens the in-app flow directly.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <RoleHelpSection
-            role={UserRole.EMPLOYEE}
-            activeRole={context.role}
-            title="Employee"
-            items={employeeLinks}
-          />
-          <RoleHelpSection
-            role={UserRole.MANAGER}
-            activeRole={context.role}
-            title="Manager"
-            items={managerLinks}
-          />
-          <RoleHelpSection
-            role={UserRole.HR_ADMIN}
-            activeRole={context.role}
-            title="HR Admin"
-            items={hrLinks}
-          />
-        </CardContent>
-      </Card>
+      {!appEnv.presentationMode ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Getting started by role</CardTitle>
+            <CardDescription>
+              Pick a section below. Each link opens the in-app flow directly.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-3">
+            <RoleHelpSection
+              role={UserRole.EMPLOYEE}
+              activeRole={context.role}
+              title="Employee"
+              items={employeeLinks}
+            />
+            <RoleHelpSection
+              role={UserRole.MANAGER}
+              activeRole={context.role}
+              title="Manager"
+              items={managerLinks}
+            />
+            <RoleHelpSection
+              role={UserRole.HR_ADMIN}
+              activeRole={context.role}
+              title="HR Admin"
+              items={hrLinks}
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Presentation mode active</CardTitle>
+            <CardDescription>
+              Role quick-link cards are hidden. Use the left navigation to open workflows.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
     </div>
   );
 }

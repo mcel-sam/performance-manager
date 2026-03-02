@@ -1,12 +1,13 @@
 import { AppError } from "@/server/http/errors";
+import { appEnv } from "@/config/env";
 
 export const DEMO_SESSION_COOKIE = "pm_demo_session";
 
 export function isDemoModeEnabled(): boolean {
-  return process.env.DEMO_MODE === "true" && process.env.NODE_ENV === "development";
+  return appEnv.demoModeEnabled;
 }
 
-export function requireDemoMode(): void {
+export function assertDemoMode(): void {
   if (!isDemoModeEnabled()) {
     throw new AppError("NOT_FOUND", "Demo mode is unavailable", 404);
   }
