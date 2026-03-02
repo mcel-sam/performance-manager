@@ -723,29 +723,29 @@ Implementation notes:
 ---
 
 ### Phase 1 — Data Model + Cycle Scorecard Config (schema + migration)
-- [ ] Add `dimension_key` + rating question type support for competency questions (SCALE 1–5)
-- [ ] Add support for **N/A / Not Observed** rating state (stored, excluded from score by default)
-- [ ] Add scorecard config tables tied to the cycle:
-  - [ ] metric_key, weight_percent (must sum to 100)
-- [ ] Add packet fields (or derived tables) for storing:
-  - [ ] total_scorecard_percent
-  - [ ] scorecard_overall_rating (1–5)
-  - [ ] final_rating_source (SCORECARD | CALIBRATION)
-- [ ] Add per-metric breakdown storage (analytics-ready):
-  - [ ] scorecard_metric_result: packet_id, metric_key, self_rating, manager_rating, blended_rating, weight_percent, weighted_percent
-- [ ] Add snapshot fields for org attributes at cycle time (department/title/manager) (to prevent reporting drift)
-- [ ] Migration committed and tests updated if needed
+- [x] Add `dimension_key` + rating question type support for competency questions (SCALE 1–5)
+- [x] Add support for **N/A / Not Observed** rating state (stored, excluded from score by default)
+- [x] Add scorecard config tables tied to the cycle:
+  - [x] metric_key, weight_percent (must sum to 100)
+- [x] Add packet fields (or derived tables) for storing:
+  - [x] total_scorecard_percent
+  - [x] scorecard_overall_rating (1–5)
+  - [x] final_rating_source (SCORECARD | CALIBRATION)
+- [x] Add per-metric breakdown storage (analytics-ready):
+  - [x] scorecard_metric_result: packet_id, metric_key, self_rating, manager_rating, blended_rating, weight_percent, weighted_percent
+- [x] Add snapshot fields for org attributes at cycle time (department/title/manager) (to prevent reporting drift)
+- [x] Migration committed and tests updated if needed
 
 Validation rules (Phase 1)
-- [ ] Weights sum-to-100 enforced server-side (not just UI)
-- [ ] Metric keys validated against an allowed list
-- [ ] N/A behavior documented and consistent
+- [x] Weights sum-to-100 enforced server-side (not just UI)
+- [x] Metric keys validated against an allowed list
+- [x] N/A behavior documented and consistent
 
 **Acceptance criteria**
-- [ ] Schema supports competency ratings and scorecard weights
-- [ ] Per-metric breakdown results are persistable
-- [ ] Weights sum to 100 enforced at validation layer
-- [ ] `lint/typecheck/test/build` pass
+- [x] Schema supports competency ratings and scorecard weights
+- [x] Per-metric breakdown results are persistable
+- [x] Weights sum to 100 enforced at validation layer
+- [x] `lint/typecheck/test/build` pass
 
 ---
 
