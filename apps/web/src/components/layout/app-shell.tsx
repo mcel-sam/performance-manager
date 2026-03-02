@@ -10,7 +10,7 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-const navItems = [
+const baseNavItems = [
   {
     href: "/",
     label: "Home",
@@ -50,6 +50,22 @@ const navItems = [
 
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
+  const showDemoLinks = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const navItems = showDemoLinks
+    ? [
+        ...baseNavItems,
+        {
+          href: "/demo/login",
+          label: "Demo Login",
+          testId: "nav-link-demo-login",
+        },
+        {
+          href: "/demo/setup",
+          label: "Demo Setup",
+          testId: "nav-link-demo-setup",
+        },
+      ]
+    : baseNavItems;
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">

@@ -655,7 +655,7 @@ Implementation notes:
 
 ## Milestone 5 — HR Scorecard + Analytics-ready Data Foundations + Demo Login (No Dashboards Yet)
 
-**Status:** Not started  
+**Status:** Phase 1, Phase 2, Phase 3, and Phase 4 completed in PRs #11, #12, #13, and #14.  
 **Objective:** Implement the HR-defined rating model and store analytics-ready data (competencies + weighted scorecard) while enabling HR to run everything through the UI using demo logins/configs (no scripts). Dashboards/charts will be a later milestone once HR confirms reporting preferences.
 
 ### HR form requirements (source)
@@ -788,19 +788,20 @@ Validation rules (Phase 1)
 ---
 
 ### Phase 4 — Demo Mode UI + Sample Role Logins (No scripts)
-- [ ] Add DEMO_MODE guard (only in development)
-- [ ] Add a Demo Setup page in UI:
-  - [ ] Create demo org + employees + manager hierarchy
-  - [ ] Create demo cycle + generate submissions
-  - [ ] Create demo calibration session
-  - [ ] Create demo improvement plan
-- [ ] Add simple demo authentication:
-  - [ ] sample usernames/passwords for roles (Employee/Manager/HR/Calibrator)
-  - [ ] visible only in demo mode
-  - [ ] demo-only “log in as” or demo login page
-- [ ] Update Playwright smoke suite to use demo login + demo setup and run core flows
+- [x] Add DEMO_MODE guard (only in development)
+- [x] Add a Demo Setup page in UI:
+  - [x] Create demo org + employees + manager hierarchy
+  - [x] Create demo cycle + generate submissions
+  - [x] Create demo calibration session
+  - [x] Create demo improvement plan
+- [x] Add simple demo authentication:
+  - [x] sample usernames/passwords for roles (Employee/Manager/HR/Calibrator)
+  - [x] visible only in demo mode
+  - [x] demo-only “log in as” or demo login page
+- [x] Update Playwright smoke suite to use demo login + demo setup and run core flows
 
 **Acceptance criteria**
-- [ ] HR can demo everything from the UI with demo accounts (no scripts)
-- [ ] Demo setup is disabled outside DEMO_MODE
-- [ ] E2E suite still passes
+- [x] HR can demo everything from the UI with demo accounts (no scripts)
+- [x] Demo setup is disabled outside DEMO_MODE
+- [x] E2E suite still passes
+- Completed in PR #14 (dev -> main Milestone 5 Phase 4)

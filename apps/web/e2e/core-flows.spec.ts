@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
 
+import { ensureDemoSetup, loginAsManager } from "./helpers/demo";
+
+test.beforeAll(async ({ request }) => {
+  await ensureDemoSetup(request);
+});
+
 test("reviews tasks list loads", async ({ page }) => {
+  await loginAsManager(page);
   await page.goto("/performance/reviews");
 
   await expect(
@@ -13,6 +20,7 @@ test("reviews tasks list loads", async ({ page }) => {
 });
 
 test("write review autosave and submit locks the submission", async ({ page }) => {
+  await loginAsManager(page);
   await page.goto("/performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_manager_1");
 
   const firstAnswer = page.getByTestId("write-review-answer-template_q_1");
@@ -34,6 +42,7 @@ test("write review autosave and submit locks the submission", async ({ page }) =
 });
 
 test("packet page renders for manager visibility scope", async ({ page }) => {
+  await loginAsManager(page);
   await page.goto("/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1");
 
   await expect(page.locator("header").getByRole("heading", { name: "Elliot Employee" })).toBeVisible();
@@ -42,6 +51,7 @@ test("packet page renders for manager visibility scope", async ({ page }) => {
 });
 
 test("calibration allows drawer context and placement movement", async ({ page }) => {
+  await loginAsManager(page);
   await page.goto("/performance/calibration/calibration_session_seed_1");
 
   await page.getByTestId("calibration-placement-emp_employee_1").click();
@@ -57,6 +67,7 @@ test("calibration allows drawer context and placement movement", async ({ page }
 });
 
 test("improvement plan check-in creates a timeline entry", async ({ page }) => {
+  await loginAsManager(page);
   await page.goto("/performance/improvement-plans/improvement_plan_seed_1");
 
   const checkInNote = `E2E check-in ${Date.now()}`;
