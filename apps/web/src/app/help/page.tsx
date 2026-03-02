@@ -26,12 +26,12 @@ const employeeLinks: HelpLinkItem[] = [
   {
     label: "Write and submit",
     description: "Draft answers, attach evidence, and submit your review.",
-    href: "/performance/reviews/review_cycle_seed_1/write/review_submission_seed_self",
+    href: "/performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_self_1",
   },
   {
     label: "View packet",
     description: "Review packet visibility after release.",
-    href: "/performance/reviews/review_cycle_seed_1/packet/employee_subject_seed_1",
+    href: "/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1",
   },
 ];
 

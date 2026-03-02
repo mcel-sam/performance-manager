@@ -50,22 +50,15 @@ const baseNavItems = [
 
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
-  const showDemoLinks = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-  const navItems = showDemoLinks
-    ? [
-        ...baseNavItems,
-        {
-          href: "/demo/login",
-          label: "Demo Login",
-          testId: "nav-link-demo-login",
-        },
-        {
-          href: "/demo/setup",
-          label: "Demo Setup",
-          testId: "nav-link-demo-setup",
-        },
-      ]
-    : baseNavItems;
+  const isPublicRoute = pathname === "/login";
+
+  if (isPublicRoute) {
+    return (
+      <div className="min-h-screen bg-slate-100 text-slate-900">
+        <main className="mx-auto w-full max-w-6xl p-6">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -79,7 +72,7 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
 
           <nav className="space-y-1 p-3">
-            {navItems.map((item) => {
+            {baseNavItems.map((item) => {
               const isActive =
                 pathname === item.href ||
                 (item.href !== "/" && pathname.startsWith(item.href));

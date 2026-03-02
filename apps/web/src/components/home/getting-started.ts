@@ -44,7 +44,7 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
           { label: "Open review tasks", href: "/performance/reviews" },
           {
             label: "Write self review",
-            href: "/performance/reviews/review_cycle_seed_1/write/review_submission_seed_self",
+            href: "/performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_self_1",
           },
           { label: "Open help center", href: "/help" },
         ],
