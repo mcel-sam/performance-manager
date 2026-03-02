@@ -17,7 +17,7 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Repo coding rules: `AGENTS.md`
 - Milestone execution tracking: `PLAN.md`
 
-## Implemented scope (through Milestone 3 Phase 3)
+## Implemented scope (through Milestone 5 Phase 4)
 
 - Milestone 0 foundation:
   - Local PostgreSQL dev database via `docker-compose.yml`
@@ -100,6 +100,23 @@ Performance Management System monorepo for reviews, calibration, and improvement
     - Audit log loading/empty/error states
     - Export action with friendly placeholder response
   - Permission gating for audit and export access (subject/manager/HR-admin scope)
+- Milestone 5 Phase 1:
+  - Scorecard-ready schema foundations (`ReviewQuestionType`, `CompetencyDimensionKey`, cycle scorecard config, packet scorecard fields, per-metric result table)
+  - Snapshot org attributes on packets (department/title/manager)
+- Milestone 5 Phase 2:
+  - Scorecard computation engine (Self + Manager weighted scoring)
+  - Deterministic packet/per-metric persistence
+  - Recompute trigger on manager submit
+  - Calibration finalize sets `finalRatingSource=CALIBRATION`
+- Milestone 5 Phase 3:
+  - Write-review support for competency scale ratings + not-observed state
+  - Peer/upward packet entries labeled as “Reference input”
+  - Scorecard explicitly ignores peer/upward by default
+- Milestone 5 Phase 4:
+  - Development-only `DEMO_MODE` guardrails
+  - Demo login page (`/demo/login`) with sample role credentials
+  - Demo setup page (`/demo/setup`) for UI-driven provisioning (org/cycle/calibration/improvement-plan)
+  - Playwright smoke suite switched to demo setup + demo login flow
 
 ## Local setup
 
@@ -116,7 +133,7 @@ cd apps/web
 cp .env.example .env.local
 npm install
 npx prisma migrate dev
-npm run db:seed
+npm run db:seed # optional: legacy terminal seed path
 ```
 
 3. Run the app:
@@ -144,6 +161,22 @@ The web UI uses a local dev request context by default:
 - `DEV_ORG_ID=org_demo_1`
 
 Set these in `apps/web/.env.local` to switch local user context.
+
+## Demo mode (Phase 5)
+
+Enable demo mode in `apps/web/.env.local`:
+
+```bash
+DEMO_MODE=true
+NEXT_PUBLIC_DEMO_MODE=true
+```
+
+Then run:
+
+1. `http://localhost:3000/demo/setup` and click **Run full demo setup**
+2. `http://localhost:3000/demo/login` and sign in as one of the demo roles
+
+Demo routes and endpoints are disabled unless `DEMO_MODE=true` **and** the app runs in development mode.
 
 For packet viewing against seeded data, use:
 
@@ -179,6 +212,9 @@ For calibration session testing, use:
 - `PATCH /api/performance/improvement-plans/:planId/status`
 - `GET /api/performance/improvement-plans/:planId/audit`
 - `GET /api/performance/improvement-plans/:planId/export`
+- `POST /api/demo/login`
+- `POST /api/demo/logout`
+- `POST /api/demo/setup`
 
 Note: API routes expect `x-user-id` and `x-org-id` headers.
 
@@ -301,7 +337,7 @@ npm run build
 
 ## E2E smoke tests (Playwright)
 
-Run from `apps/web` after DB migration + seed:
+Run from `apps/web` after DB migration. The suite provisions demo data through `/api/demo/setup` and signs in through `/demo/login`:
 
 ```bash
 npx playwright install chromium

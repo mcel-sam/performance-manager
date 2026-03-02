@@ -788,19 +788,19 @@ Validation rules (Phase 1)
 ---
 
 ### Phase 4 — Demo Mode UI + Sample Role Logins (No scripts)
-- [ ] Add DEMO_MODE guard (only in development)
-- [ ] Add a Demo Setup page in UI:
-  - [ ] Create demo org + employees + manager hierarchy
-  - [ ] Create demo cycle + generate submissions
-  - [ ] Create demo calibration session
-  - [ ] Create demo improvement plan
-- [ ] Add simple demo authentication:
-  - [ ] sample usernames/passwords for roles (Employee/Manager/HR/Calibrator)
-  - [ ] visible only in demo mode
-  - [ ] demo-only “log in as” or demo login page
-- [ ] Update Playwright smoke suite to use demo login + demo setup and run core flows
+- [x] Add DEMO_MODE guard (only in development)
+- [x] Add a Demo Setup page in UI:
+  - [x] Create demo org + employees + manager hierarchy
+  - [x] Create demo cycle + generate submissions
+  - [x] Create demo calibration session
+  - [x] Create demo improvement plan
+- [x] Add simple demo authentication:
+  - [x] sample usernames/passwords for roles (Employee/Manager/HR/Calibrator)
+  - [x] visible only in demo mode
+  - [x] demo-only “log in as” or demo login page
+- [x] Update Playwright smoke suite to use demo login + demo setup and run core flows
 
 **Acceptance criteria**
-- [ ] HR can demo everything from the UI with demo accounts (no scripts)
-- [ ] Demo setup is disabled outside DEMO_MODE
-- [ ] E2E suite still passes
+- [x] HR can demo everything from the UI with demo accounts (no scripts)
+- [x] Demo setup is disabled outside DEMO_MODE
+- [x] E2E suite still passes
