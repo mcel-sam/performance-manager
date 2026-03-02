@@ -14,6 +14,8 @@ Performance Management System monorepo for reviews, calibration, and improvement
 - Product requirements: `docs/product/PRD.md`
 - Architecture: `docs/architecture/ARCHITECTURE.md`
 - ADR stack decision: `docs/adr/0001-stack.md`
+- Demo walkthrough: `docs/demo/WALKTHROUGH.md`
+- HR demo checklist: `docs/demo/HR_DEMO_CHECKLIST.md`
 - Repo coding rules: `AGENTS.md`
 - Milestone execution tracking: `PLAN.md`
 
