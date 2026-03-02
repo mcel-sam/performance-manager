@@ -911,32 +911,33 @@ We will follow proven patterns:
 ## Phase 2 — Reporting UI (Progress + Results)
 
 ### Routes
-- [ ] `apps/web/src/app/admin/performance/reporting/page.tsx` (entry)
-- [ ] Tabs: Progress, Results (Competencies/Scorecard come in Phase 3)
+- [x] `apps/web/src/app/admin/performance/reporting/page.tsx` (entry)
+- [x] Tabs: Progress, Results (Competencies/Scorecard come in Phase 3)
 
 ### Progress tab (HR KPIs)
-- [ ] KPI cards:
+- [x] KPI cards:
   - not started
   - in progress
   - completed
   - in progress (employee/self)
   - in progress (manager)
-- [ ] Segmented bar showing Completed/In progress/Not started totals 
-- [ ] Filters: Department + Position Title
-- [ ] Drilldown table: employees by status (pagination)
+- [x] Segmented bar showing Completed/In progress/Not started totals 
+- [x] Filters: Department + Position Title
+- [x] Drilldown table: employees by status (pagination)
 
 ### Results tab (overall rating)
-- [ ] Rating distribution chart (1–5) with toggle:
+- [x] Rating distribution chart (1–5) with toggle:
   - Final (calibration override where applicable)
   - Scorecard baseline
-- [ ] “Distribution / histogram” view to detect leniency/harshness patterns 
-- [ ] Employee table with CSV export 
+- [x] “Distribution / histogram” view to detect leniency/harshness patterns 
+- [x] Employee table with CSV export 
 
 **Acceptance criteria**
-- [ ] HR can filter by dept/title and see progress + rating distributions
-- [ ] Export CSV works for employee table
-- [ ] UI uses shared primitives (PageHeader, Card, Table, EmptyState, Skeleton)
-- [ ] Playwright smoke suite extended with 1 reporting test (page loads + filters apply)
+- [x] HR can filter by dept/title and see progress + rating distributions
+- [x] Export CSV works for employee table
+- [x] UI uses shared primitives (PageHeader, Card, Table, EmptyState, Skeleton)
+- [x] Playwright smoke suite extended with 1 reporting test (page loads + filters apply)
+- Completed in PR #17 (dev -> main Milestone 6 Phase 2)
 
 ---
 
