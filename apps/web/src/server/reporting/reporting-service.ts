@@ -4,6 +4,7 @@ import {
   ImprovementPlanStatus,
   ReviewRelationship,
   ReviewSubmissionStatus,
+  ScorecardMetricKey,
   UserRole,
 } from "@prisma/client";
 import { z } from "zod";
@@ -47,6 +48,17 @@ const peopleFilterSchema = baseFilterSchema.extend({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE),
 });
+
+const scorecardMetricDimensionMap: Record<ScorecardMetricKey, CompetencyDimensionKey> = {
+  [ScorecardMetricKey.QUALITY_OF_WORK]: CompetencyDimensionKey.QUALITY_OF_WORK,
+  [ScorecardMetricKey.COMMUNICATION]: CompetencyDimensionKey.COMMUNICATION,
+  [ScorecardMetricKey.ACCOUNTABILITY]: CompetencyDimensionKey.ACCOUNTABILITY,
+  [ScorecardMetricKey.RELATIONSHIP_BUILDING]: CompetencyDimensionKey.RELATIONSHIP_BUILDING,
+  [ScorecardMetricKey.RESULTS_DRIVEN]: CompetencyDimensionKey.RESULTS_DRIVEN,
+  [ScorecardMetricKey.ATTITUDE]: CompetencyDimensionKey.ATTITUDE,
+  [ScorecardMetricKey.SERVICE_ORIENTED]: CompetencyDimensionKey.SERVICE_ORIENTED,
+  [ScorecardMetricKey.ADAPTABILITY]: CompetencyDimensionKey.ADAPTABILITY,
+};
 
 interface ReportingCycleRecord {
   id: string;
@@ -154,11 +166,23 @@ interface CompetencyGapAccumulator {
   managerRating: number | null;
 }
 
+interface DepartmentRatingAccumulator {
+  observedCount: number;
+  observedRatingSum: number;
+}
+
 interface CompetencyAccumulator {
   distribution: Record<"1" | "2" | "3" | "4" | "5", number>;
+  selfDistribution: Record<"1" | "2" | "3" | "4" | "5", number>;
+  managerDistribution: Record<"1" | "2" | "3" | "4" | "5", number>;
   notObservedCount: number;
   observedCount: number;
   observedRatingSum: number;
+  selfObservedCount: number;
+  selfObservedRatingSum: number;
+  managerObservedCount: number;
+  managerObservedRatingSum: number;
+  departmentBreakdown: Map<string, DepartmentRatingAccumulator>;
   gapByPacket: Map<string, CompetencyGapAccumulator>;
 }
 
@@ -212,9 +236,24 @@ export interface ReportingRatingsResult {
 export interface ReportingCompetencyResult {
   dimensionKey: CompetencyDimensionKey;
   distribution: Record<"1" | "2" | "3" | "4" | "5", number>;
+  selfDistribution: Record<"1" | "2" | "3" | "4" | "5", number>;
+  managerDistribution: Record<"1" | "2" | "3" | "4" | "5", number>;
   notObservedCount: number;
   observedCount: number;
   averageRating: number | null;
+  self: {
+    observedCount: number;
+    averageRating: number | null;
+  };
+  manager: {
+    observedCount: number;
+    averageRating: number | null;
+  };
+  departmentBreakdown: Array<{
+    department: string;
+    observedCount: number;
+    averageRating: number | null;
+  }>;
   selfManagerGap: {
     comparedCount: number;
     averageGap: number | null;
@@ -224,6 +263,44 @@ export interface ReportingCompetencyResult {
 
 export interface ReportingCompetenciesResponse {
   competencies: ReportingCompetencyResult[];
+  filters: {
+    cycleId: string;
+    department?: string;
+    title?: string;
+    departments: string[];
+    titles: string[];
+  };
+  suppression: ReportingSuppressionState;
+}
+
+export interface ReportingScorecardMetricResult {
+  metricKey: ScorecardMetricKey;
+  distribution: Record<"1" | "2" | "3" | "4" | "5", number>;
+  notObservedCount: number;
+  observedCount: number;
+  averageRating: number | null;
+  self: {
+    observedCount: number;
+    averageRating: number | null;
+  };
+  manager: {
+    observedCount: number;
+    averageRating: number | null;
+  };
+  departmentBreakdown: Array<{
+    department: string;
+    observedCount: number;
+    averageRating: number | null;
+  }>;
+  selfManagerGap: {
+    comparedCount: number;
+    averageGap: number | null;
+    averageAbsoluteGap: number | null;
+  };
+}
+
+export interface ReportingScorecardResponse {
+  metrics: ReportingScorecardMetricResult[];
   filters: {
     cycleId: string;
     department?: string;
@@ -306,6 +383,10 @@ export function parseRatingsFilters(
 }
 
 export function parseCompetenciesFilters(searchParams: URLSearchParams): NormalizedReportFilters {
+  return parseProgressFilters(searchParams);
+}
+
+export function parseScorecardFilters(searchParams: URLSearchParams): NormalizedReportFilters {
   return parseProgressFilters(searchParams);
 }
 
@@ -543,6 +624,9 @@ export async function getReportingCompetencies(
   }
 
   const packetIds = scope.packets.map((packet) => packet.id);
+  const departmentByPacketId = new Map(
+    scope.packets.map((packet) => [packet.id, packet.snapshotDepartment ?? "Unspecified"]),
+  );
 
   const answers = await db.reviewAnswer.findMany({
     where: {
@@ -586,13 +670,7 @@ export async function getReportingCompetencies(
       continue;
     }
 
-    const accumulator = byDimension.get(dimensionKey) ?? {
-      distribution: emptyRatingDistribution(),
-      notObservedCount: 0,
-      observedCount: 0,
-      observedRatingSum: 0,
-      gapByPacket: new Map<string, CompetencyGapAccumulator>(),
-    };
+    const accumulator = byDimension.get(dimensionKey) ?? createEmptyCompetencyAccumulator();
 
     if (answer.notObserved || typeof answer.scaleRating !== "number") {
       accumulator.notObservedCount += 1;
@@ -602,6 +680,34 @@ export async function getReportingCompetencies(
         accumulator.distribution[scoreKey] += 1;
         accumulator.observedCount += 1;
         accumulator.observedRatingSum += answer.scaleRating;
+
+        const relationship =
+          answer.submission.relationship === ReviewRelationship.SELF
+            ? "SELF"
+            : answer.submission.relationship === ReviewRelationship.MANAGER
+              ? "MANAGER"
+              : null;
+
+        if (relationship === "SELF") {
+          accumulator.selfDistribution[scoreKey] += 1;
+          accumulator.selfObservedCount += 1;
+          accumulator.selfObservedRatingSum += answer.scaleRating;
+        }
+
+        if (relationship === "MANAGER") {
+          accumulator.managerDistribution[scoreKey] += 1;
+          accumulator.managerObservedCount += 1;
+          accumulator.managerObservedRatingSum += answer.scaleRating;
+        }
+
+        const department = departmentByPacketId.get(answer.submission.packetId) ?? "Unspecified";
+        const departmentAccumulator = accumulator.departmentBreakdown.get(department) ?? {
+          observedCount: 0,
+          observedRatingSum: 0,
+        };
+        departmentAccumulator.observedCount += 1;
+        departmentAccumulator.observedRatingSum += answer.scaleRating;
+        accumulator.departmentBreakdown.set(department, departmentAccumulator);
       }
     }
 
@@ -625,13 +731,7 @@ export async function getReportingCompetencies(
   }
 
   const competencies = Object.values(CompetencyDimensionKey).map((dimensionKey) => {
-    const accumulator = byDimension.get(dimensionKey) ?? {
-      distribution: emptyRatingDistribution(),
-      notObservedCount: 0,
-      observedCount: 0,
-      observedRatingSum: 0,
-      gapByPacket: new Map<string, CompetencyGapAccumulator>(),
-    };
+    const accumulator = byDimension.get(dimensionKey) ?? createEmptyCompetencyAccumulator();
 
     let comparedCount = 0;
     let gapSum = 0;
@@ -651,12 +751,38 @@ export async function getReportingCompetencies(
     return {
       dimensionKey,
       distribution: accumulator.distribution,
+      selfDistribution: accumulator.selfDistribution,
+      managerDistribution: accumulator.managerDistribution,
       notObservedCount: accumulator.notObservedCount,
       observedCount: accumulator.observedCount,
       averageRating:
         accumulator.observedCount > 0
           ? roundTo(accumulator.observedRatingSum / accumulator.observedCount)
           : null,
+      self: {
+        observedCount: accumulator.selfObservedCount,
+        averageRating:
+          accumulator.selfObservedCount > 0
+            ? roundTo(accumulator.selfObservedRatingSum / accumulator.selfObservedCount)
+            : null,
+      },
+      manager: {
+        observedCount: accumulator.managerObservedCount,
+        averageRating:
+          accumulator.managerObservedCount > 0
+            ? roundTo(accumulator.managerObservedRatingSum / accumulator.managerObservedCount)
+            : null,
+      },
+      departmentBreakdown: Array.from(accumulator.departmentBreakdown.entries())
+        .map(([department, value]) => ({
+          department,
+          observedCount: value.observedCount,
+          averageRating:
+            value.observedCount > 0
+              ? roundTo(value.observedRatingSum / value.observedCount)
+              : null,
+        }))
+        .sort((left, right) => left.department.localeCompare(right.department)),
       selfManagerGap: {
         comparedCount,
         averageGap: comparedCount > 0 ? roundTo(gapSum / comparedCount) : null,
@@ -675,6 +801,73 @@ export async function getReportingCompetencies(
       titles: scope.filterOptions.titles,
     },
     suppression: unsuppressedState(),
+  };
+}
+
+export async function getReportingScorecard(
+  filters: NormalizedReportFilters,
+  context: RequestContext,
+  db: ReportingDb = prisma as unknown as ReportingDb,
+): Promise<ReportingScorecardResponse> {
+  const competencyData = await getReportingCompetencies(filters, context, db);
+
+  if (competencyData.suppression.suppressed) {
+    return {
+      metrics: [],
+      filters: competencyData.filters,
+      suppression: competencyData.suppression,
+    };
+  }
+
+  const competencyByKey = new Map(
+    competencyData.competencies.map((competency) => [competency.dimensionKey, competency]),
+  );
+
+  const metrics = Object.values(ScorecardMetricKey).map((metricKey) => {
+    const dimensionKey = scorecardMetricDimensionMap[metricKey];
+    const competency = competencyByKey.get(dimensionKey);
+
+    if (!competency) {
+      return {
+        metricKey,
+        distribution: emptyRatingDistribution(),
+        notObservedCount: 0,
+        observedCount: 0,
+        averageRating: null,
+        self: {
+          observedCount: 0,
+          averageRating: null,
+        },
+        manager: {
+          observedCount: 0,
+          averageRating: null,
+        },
+        departmentBreakdown: [],
+        selfManagerGap: {
+          comparedCount: 0,
+          averageGap: null,
+          averageAbsoluteGap: null,
+        },
+      };
+    }
+
+    return {
+      metricKey,
+      distribution: competency.distribution,
+      notObservedCount: competency.notObservedCount,
+      observedCount: competency.observedCount,
+      averageRating: competency.averageRating,
+      self: competency.self,
+      manager: competency.manager,
+      departmentBreakdown: competency.departmentBreakdown,
+      selfManagerGap: competency.selfManagerGap,
+    };
+  });
+
+  return {
+    metrics,
+    filters: competencyData.filters,
+    suppression: competencyData.suppression,
   };
 }
 
@@ -989,6 +1182,23 @@ function emptyRatingDistribution(): Record<"1" | "2" | "3" | "4" | "5", number> 
     "3": 0,
     "4": 0,
     "5": 0,
+  };
+}
+
+function createEmptyCompetencyAccumulator(): CompetencyAccumulator {
+  return {
+    distribution: emptyRatingDistribution(),
+    selfDistribution: emptyRatingDistribution(),
+    managerDistribution: emptyRatingDistribution(),
+    notObservedCount: 0,
+    observedCount: 0,
+    observedRatingSum: 0,
+    selfObservedCount: 0,
+    selfObservedRatingSum: 0,
+    managerObservedCount: 0,
+    managerObservedRatingSum: 0,
+    departmentBreakdown: new Map<string, DepartmentRatingAccumulator>(),
+    gapByPacket: new Map<string, CompetencyGapAccumulator>(),
   };
 }
 
