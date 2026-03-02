@@ -751,24 +751,25 @@ Validation rules (Phase 1)
 ---
 
 ### Phase 2 — Scorecard Computation Engine + Tests
-- [ ] Compute blended ratings from self + manager submissions
-- [ ] Apply weights and compute total percent + mapped overall rating
-- [ ] Persist derived results on packet
-- [ ] Persist per-metric results into scorecard_metric_result (required for later charts)
-- [ ] Recompute trigger on manager submit and/or cycle lock (choose one and document)
-- [ ] Calibration override behavior:
-  - [ ] If calibration finalized, final rating source can become CALIBRATION (store both)
-- [ ] Unit tests:
-  - [ ] blended formula correctness
-  - [ ] weighted sum correctness
-  - [ ] rating threshold mapping correctness
-  - [ ] recompute trigger behavior
-  - [ ] boundary cases: 79/80/89/90 and <60 handling
-  - [ ] N/A behavior correctness (documented rule)
+- [x] Compute blended ratings from self + manager submissions
+- [x] Apply weights and compute total percent + mapped overall rating
+- [x] Persist derived results on packet
+- [x] Persist per-metric results into scorecard_metric_result (required for later charts)
+- [x] Recompute trigger on manager submit and/or cycle lock (choose one and document)
+  - [x] Chosen trigger: recompute on manager submission submit
+- [x] Calibration override behavior:
+  - [x] If calibration finalized, final rating source can become CALIBRATION (store both)
+- [x] Unit tests:
+  - [x] blended formula correctness
+  - [x] weighted sum correctness
+  - [x] rating threshold mapping correctness
+  - [x] recompute trigger behavior
+  - [x] boundary cases: 79/80/89/90 and <60 handling
+  - [x] N/A behavior correctness (documented rule)
 
 **Acceptance criteria**
-- [ ] Scorecard results computed deterministically and persisted
-- [ ] Tests prove formula correctness and mapping thresholds
+- [x] Scorecard results computed deterministically and persisted
+- [x] Tests prove formula correctness and mapping thresholds
 
 ---
 
