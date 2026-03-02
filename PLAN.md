@@ -770,6 +770,7 @@ Validation rules (Phase 1)
 **Acceptance criteria**
 - [x] Scorecard results computed deterministically and persisted
 - [x] Tests prove formula correctness and mapping thresholds
+- Completed in PR #12 (dev -> main Milestone 5 Phase 2)
 
 ---
 
