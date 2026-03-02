@@ -37,18 +37,21 @@ npm run dev
 
 ## Demo Mode setup (required for walkthrough)
 
-1. Open `http://localhost:3000/demo/setup`.
-2. In **Demo Setup**, click **Run** for **Run full demo setup**.
-   - Optional: run each step separately:
-     - **Create demo org and users**
-     - **Create review cycle and submissions**
-     - **Create calibration session**
-     - **Create improvement plan**
-3. Open `http://localhost:3000/demo/login`.
-4. Use one of the account cards on that page (for example **HR Admin**, **Manager**, **Employee**, **Calibrator**) and click **Sign in**.
+1. Open `http://localhost:3000/login`.
+2. Click **Reset demo database & load sample data**.
+3. In the confirmation modal, type `RESET`, then click **Confirm reset**.
+4. After success, click one role tile to sign in (for example **Sign in as HR Admin**).
 
 Important:
-- Do not copy credentials into docs or code. Use the sample credentials shown in the Demo Login UI.
+- Do not hardcode credentials in docs or code. Use the role tiles in the login UI.
+
+## Seeded persona stories (quick reference)
+
+- **Elliot Barnes** (`emp_employee_1`): high performer with coaching plan for executive communication.
+- **Priya Das** (`emp_employee_3`): active improvement plan, trending up with strong recent check-ins.
+- **Maya Chen** (`emp_employee_2`): safety incident learning case with safety-focused evidence.
+- **Noah Bennett** (`emp_employee_4`): new hire with limited observation and multiple Not Observed competencies.
+- **Managers receive upward input**: manager packets include upward reference submissions.
 
 ## Navigation map (left menu)
 
@@ -59,8 +62,7 @@ Important:
 - `/performance/improvement-plans` → **Improvement Plans**
 - `/admin/performance/review-cycles` → **Admin Cycles**
 - `/help` → **Help**
-- `/demo/login` → **Demo Login** (Demo Mode)
-- `/demo/setup` → **Demo Setup** (Demo Mode)
+- `/login` → **Demo Login + Reset** (Demo Mode)
 
 ## HR Admin walkthrough
 
@@ -138,7 +140,7 @@ Important:
    - Use **Change Status** and click **Update Status**
 
 Note:
-- There is currently no “Create plan” button in the UI. Plan creation is available via demo setup or `POST /api/performance/improvement-plans`.
+- There is currently no “Create plan” button in the UI. Plan creation is seeded in Demo Mode or available via `POST /api/performance/improvement-plans`.
 
 ## Employee walkthrough
 
@@ -160,7 +162,7 @@ Note:
 
 ## Calibrator walkthrough (optional)
 
-1. Sign in as **Calibrator** at `/demo/login`.
+1. Sign in as **Calibrator** at `/login`.
 2. Open `/performance/calibration/:sessionId`.
 3. Move placements with **Performance** and **Potential** selects.
 4. Add optional **Justification notes**.
@@ -172,8 +174,8 @@ Note:
 Use this script for a short live demo.
 
 1. Minute 0-2: Setup
-- Open `/demo/setup`, click **Run** on **Run full demo setup**.
-- Open `/demo/login`, sign in as **HR Admin** using the UI-provided credentials.
+- Open `/login`, click **Reset demo database & load sample data**, type `RESET`, then confirm.
+- Sign in as **HR Admin** from the role tiles.
 
 2. Minute 2-6: Cycle administration
 - Go to `/admin/performance/review-cycles`.
@@ -181,7 +183,7 @@ Use this script for a short live demo.
 - On a cycle row, click **Generate**, then **Move to ACTIVE** and **Move to LOCKED**.
 
 3. Minute 6-9: Manager experience
-- Switch to **Manager** in `/demo/login`.
+- Switch to **Manager** from `/login`.
 - Open `/performance/reviews`, click **Open Review**.
 - Show autosave state and submit with **Submit Review**.
 - Show evidence attach flow in **Evidence Context**.
@@ -199,8 +201,8 @@ Use this script for a short live demo.
 ## Troubleshooting
 
 - “Admin access required” card:
-  - Switch to HR Admin or Calibrator at `/demo/login`.
+  - Switch to HR Admin or Calibrator at `/login`.
 - Empty lists/no records:
-  - Re-run `/demo/setup` and click **Run** on **Run full demo setup**.
+  - Re-run the reset flow on `/login` and confirm with `RESET`.
 - Demo pages not available:
   - Verify `DEMO_MODE=true` and `NEXT_PUBLIC_DEMO_MODE=true` in `apps/web/.env.local`, then restart dev server.
