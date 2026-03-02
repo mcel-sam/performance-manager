@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { HelpHint } from "@/components/ui/help-hint";
 import { Select } from "@/components/ui/select";
 import {
   Table,
@@ -29,6 +30,11 @@ import {
   TableWrapper,
 } from "@/components/ui/table";
 import { getDevRequestContext } from "@/server/auth/request-context";
+import {
+  buildCompetencyBreakdownCsv,
+  buildProgressSummaryCsv,
+  buildRatingsDistributionCsv,
+} from "@/server/reporting/reporting-export";
 import {
   getReportingCompetencies,
   getReportingPeople,
@@ -264,6 +270,9 @@ export default async function AdminReportingPage({
       : null;
 
   const csvHref = buildCsvHref(people.rows);
+  const progressCsvHref = toDataCsvHref(buildProgressSummaryCsv(progress));
+  const ratingsCsvHref = toDataCsvHref(buildRatingsDistributionCsv(ratings));
+  const competenciesCsvHref = toDataCsvHref(buildCompetencyBreakdownCsv(competencies));
   const competencyHeatmapRows = buildCompetencyHeatmapRows(competencies.competencies);
   const scorecardHeatmapRows = buildScorecardHeatmapRows(scorecard.metrics);
 
@@ -406,10 +415,16 @@ export default async function AdminReportingPage({
       </section>
 
       {selectedTab === "progress" ? (
-        <ProgressTabContent progress={progress} totalPeople={totalPeople} />
+        <ProgressTabContent
+          progress={progress}
+          totalPeople={totalPeople}
+          progressCsvHref={progressCsvHref}
+        />
       ) : null}
 
-      {selectedTab === "results" ? <ResultsTabContent ratings={ratings} /> : null}
+      {selectedTab === "results" ? (
+        <ResultsTabContent ratings={ratings} ratingsCsvHref={ratingsCsvHref} />
+      ) : null}
 
       {selectedTab === "competencies" ? (
         <CompetenciesTabContent
@@ -418,6 +433,7 @@ export default async function AdminReportingPage({
           selectedCompetency={selectedCompetency}
           baseQuery={baseQuery}
           heatmapRows={competencyHeatmapRows}
+          competenciesCsvHref={competenciesCsvHref}
         />
       ) : null}
 
@@ -569,9 +585,11 @@ export default async function AdminReportingPage({
 function ProgressTabContent({
   progress,
   totalPeople,
+  progressCsvHref,
 }: {
   progress: Awaited<ReturnType<typeof getReportingProgress>>;
   totalPeople: number;
+  progressCsvHref: string;
 }) {
   if (progress.suppression.suppressed) {
     return (
@@ -617,12 +635,23 @@ function ProgressTabContent({
 
       <Card>
         <CardHeader>
-          <CardTitle>Status mix</CardTitle>
-          <CardDescription>
-            Distribution across {totalPeople} employees in the current filter scope.
-          </CardDescription>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Status mix</CardTitle>
+              <CardDescription>
+                Distribution across {totalPeople} employees in the current filter scope.
+              </CardDescription>
+            </div>
+            <a
+              href={progressCsvHref}
+              download="reporting-progress-summary.csv"
+              className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+            >
+              Export progress CSV
+            </a>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           <div className="flex h-4 overflow-hidden rounded-full border border-slate-200">
             <div
               className="bg-rose-200"
@@ -642,6 +671,10 @@ function ProgressTabContent({
             <span>In progress: {progress.totals.inProgress}</span>
             <span>Completed: {progress.totals.completed}</span>
           </div>
+          <HelpHint label="What counts as In progress?">
+            In progress means either the self review or manager review has started, but both are not
+            submitted yet.
+          </HelpHint>
         </CardContent>
       </Card>
     </>
@@ -650,8 +683,10 @@ function ProgressTabContent({
 
 function ResultsTabContent({
   ratings,
+  ratingsCsvHref,
 }: {
   ratings: Awaited<ReturnType<typeof getReportingRatings>>;
+  ratingsCsvHref: string;
 }) {
   if (ratings.suppression.suppressed) {
     return (
@@ -669,14 +704,25 @@ function ResultsTabContent({
     <section className="grid gap-4 xl:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Rating distribution</CardTitle>
-          <CardDescription>
-            {ratings.ratingSource === "FINAL"
-              ? "Final rating source"
-              : "Scorecard baseline rating source"}
-          </CardDescription>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Rating distribution</CardTitle>
+              <CardDescription>
+                {ratings.ratingSource === "FINAL"
+                  ? "Final rating source"
+                  : "Scorecard baseline rating source"}
+              </CardDescription>
+            </div>
+            <a
+              href={ratingsCsvHref}
+              download="reporting-ratings-distribution.csv"
+              className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+            >
+              Export ratings CSV
+            </a>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           {(["5", "4", "3", "2", "1"] as const).map((ratingKey) => (
             <div key={ratingKey} className="space-y-1">
               <div className="flex items-center justify-between text-sm text-slate-700">
@@ -693,6 +739,10 @@ function ResultsTabContent({
               </div>
             </div>
           ))}
+          <HelpHint label="Final vs scorecard baseline">
+            Final reflects the current final rating source. Scorecard baseline shows the
+            scorecard-derived rating before calibration overrides.
+          </HelpHint>
         </CardContent>
       </Card>
 
@@ -719,6 +769,7 @@ function CompetenciesTabContent({
   selectedCompetency,
   baseQuery,
   heatmapRows,
+  competenciesCsvHref,
 }: {
   competencies: ReportingCompetencyResult[];
   suppression: { suppressed: boolean; message: string | null };
@@ -735,6 +786,7 @@ function CompetenciesTabContent({
       averageRating: number | null;
     }>;
   }>;
+  competenciesCsvHref: string;
 }) {
   if (suppression.suppressed) {
     return (
@@ -751,12 +803,23 @@ function CompetenciesTabContent({
     <section className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Competency summary</CardTitle>
-          <CardDescription>
-            Average, distribution, and self vs manager gap by competency.
-          </CardDescription>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Competency summary</CardTitle>
+              <CardDescription>
+                Average, distribution, and self vs manager gap by competency.
+              </CardDescription>
+            </div>
+            <a
+              href={competenciesCsvHref}
+              download="reporting-competency-breakdown.csv"
+              className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+            >
+              Export competencies CSV
+            </a>
+          </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="space-y-4 p-0">
           <TableWrapper>
             <Table>
               <TableHeader>
@@ -808,6 +871,12 @@ function CompetenciesTabContent({
               </TableBody>
             </Table>
           </TableWrapper>
+          <div className="px-5 pb-5">
+            <HelpHint label="How Not Observed is handled">
+              Not Observed entries are counted in data-quality totals and excluded from metric
+              averages and self-vs-manager gap calculations.
+            </HelpHint>
+          </div>
         </CardContent>
       </Card>
 
@@ -858,7 +927,7 @@ function CompetenciesTabContent({
       </Card>
 
       {selectedCompetency ? (
-        <Card>
+        <Card data-testid="reporting-competency-drilldown">
           <CardHeader>
             <CardTitle>{humanizeEnumValue(selectedCompetency.dimensionKey)} drilldown</CardTitle>
             <CardDescription>
@@ -883,6 +952,10 @@ function CompetenciesTabContent({
                 </div>
               ))}
             </div>
+            <HelpHint label="How Not Observed is handled" className="md:col-span-2">
+              Not Observed responses are stored and reported separately. They are excluded from
+              average calculations and self-vs-manager gap math.
+            </HelpHint>
           </CardContent>
         </Card>
       ) : null}
@@ -1167,6 +1240,10 @@ function buildCsvHref(rows: ReportingPeopleRow[]): string {
     .map((cells) => cells.map((cell) => escapeCsvCell(cell)).join(","))
     .join("\n");
 
+  return `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
+}
+
+function toDataCsvHref(csv: string): string {
   return `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
 }
 
