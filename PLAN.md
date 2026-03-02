@@ -799,7 +799,7 @@ Validation rules (Phase 1)
 - [x] HR can demo everything from `/login` (reset + role sign-in) without scripts
 - [x] Demo reset/auth is disabled outside `DEMO_MODE=true` and development runtime
 - [x] E2E suite still passes
-- Completed in PR #14 (initial) and refined in current `dev` PR (demo-first login hardening)
+- Completed in PR #14 (initial) and refined in PR #15 (demo-first login hardening)
 
 ---
 
