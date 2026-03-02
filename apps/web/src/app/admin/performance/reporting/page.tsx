@@ -1,6 +1,11 @@
 import Link from "next/link";
 
-import { ReviewSubmissionStatus, UserRole } from "@prisma/client";
+import {
+  CompetencyDimensionKey,
+  ReviewSubmissionStatus,
+  ScorecardMetricKey,
+  UserRole,
+} from "@prisma/client";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -25,23 +30,28 @@ import {
 } from "@/components/ui/table";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import {
+  getReportingCompetencies,
   getReportingPeople,
   getReportingProgress,
   getReportingRatings,
+  getReportingScorecard,
   listReportingCycles,
+  parseCompetenciesFilters,
   parsePeopleFilters,
   parseProgressFilters,
   parseRatingsFilters,
+  parseScorecardFilters,
+  type ReportingCompetencyResult,
   type ReportingPeopleRow,
+  type ReportingScorecardMetricResult,
 } from "@/server/reporting/reporting-service";
 
 type QueryValue = string | string[] | undefined;
-
 type SearchParamsShape = Record<string, QueryValue>;
 
 type ProgressStatusFilter = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 type RatingSourceFilter = "FINAL" | "SCORECARD";
-type ReportingTab = "progress" | "results";
+type ReportingTab = "progress" | "results" | "competencies" | "scorecard";
 
 const submissionStatusLabel: Record<ReviewSubmissionStatus, string> = {
   NOT_STARTED: "Not started",
@@ -55,6 +65,9 @@ const progressStatusLabel: Record<ProgressStatusFilter, string> = {
   IN_PROGRESS: "In progress",
   COMPLETED: "Completed",
 };
+
+const competencyOrder = Object.values(CompetencyDimensionKey);
+const scorecardOrder = Object.values(ScorecardMetricKey);
 
 export const dynamic = "force-dynamic";
 
@@ -106,13 +119,14 @@ export default async function AdminReportingPage({
   }
 
   const selectedCycleId = resolveCycleId(getSingleValue(query.cycleId), cyclesResult.cycles);
-  const selectedTab: ReportingTab = getSingleValue(query.tab) === "results" ? "results" : "progress";
+  const selectedTab = parseTab(getSingleValue(query.tab));
   const selectedDepartment = getSingleValue(query.department);
   const selectedTitle = getSingleValue(query.title);
   const selectedRatingSource: RatingSourceFilter =
     getSingleValue(query.ratingSource) === "SCORECARD" ? "SCORECARD" : "FINAL";
   const selectedStatus = parseProgressStatus(getSingleValue(query.status));
   const selectedPage = parsePositiveInt(getSingleValue(query.page), 1);
+  const requestedDimensionKey = parseDimensionKey(getSingleValue(query.dimensionKey));
 
   const progressFilters = parseProgressFilters(
     toUrlSearchParams({
@@ -131,6 +145,22 @@ export default async function AdminReportingPage({
     }),
   );
 
+  const competenciesFilters = parseCompetenciesFilters(
+    toUrlSearchParams({
+      cycleId: selectedCycleId,
+      department: selectedDepartment,
+      title: selectedTitle,
+    }),
+  );
+
+  const scorecardFilters = parseScorecardFilters(
+    toUrlSearchParams({
+      cycleId: selectedCycleId,
+      department: selectedDepartment,
+      title: selectedTitle,
+    }),
+  );
+
   const peopleFilters = parsePeopleFilters(
     toUrlSearchParams({
       cycleId: selectedCycleId,
@@ -143,7 +173,7 @@ export default async function AdminReportingPage({
     }),
   );
 
-  const [filterCatalog, progress, ratings, people] = await Promise.all([
+  const [filterCatalog, progress, ratings, competencies, scorecard, people] = await Promise.all([
     getReportingProgress(
       {
         cycleId: selectedCycleId,
@@ -153,6 +183,8 @@ export default async function AdminReportingPage({
     ),
     getReportingProgress(progressFilters, context),
     getReportingRatings(ratingsFilters, context),
+    getReportingCompetencies(competenciesFilters, context),
+    getReportingScorecard(scorecardFilters, context),
     getReportingPeople(peopleFilters, context),
   ]);
 
@@ -167,6 +199,12 @@ export default async function AdminReportingPage({
 
   const departmentOptions = filterCatalog.filters.departments;
   const titleOptions = filterCatalog.filters.titles;
+
+  const selectedCompetency =
+    competencies.competencies.find((item) => item.dimensionKey === requestedDimensionKey) ??
+    competencies.competencies.find((item) => item.observedCount > 0) ??
+    competencies.competencies[0] ??
+    null;
 
   const baseQuery = {
     cycleId: selectedCycleId,
@@ -188,6 +226,19 @@ export default async function AdminReportingPage({
     page: "1",
   });
 
+  const competenciesTabHref = toQueryString({
+    ...baseQuery,
+    tab: "competencies",
+    dimensionKey: selectedCompetency?.dimensionKey,
+    page: "1",
+  });
+
+  const scorecardTabHref = toQueryString({
+    ...baseQuery,
+    tab: "scorecard",
+    page: "1",
+  });
+
   const previousPageHref =
     people.pagination.page > 1
       ? toQueryString({
@@ -195,6 +246,7 @@ export default async function AdminReportingPage({
           tab: selectedTab,
           status: selectedStatus,
           ratingSource: selectedRatingSource,
+          dimensionKey: selectedCompetency?.dimensionKey,
           page: String(people.pagination.page - 1),
         })
       : null;
@@ -206,17 +258,20 @@ export default async function AdminReportingPage({
           tab: selectedTab,
           status: selectedStatus,
           ratingSource: selectedRatingSource,
+          dimensionKey: selectedCompetency?.dimensionKey,
           page: String(people.pagination.page + 1),
         })
       : null;
 
   const csvHref = buildCsvHref(people.rows);
+  const competencyHeatmapRows = buildCompetencyHeatmapRows(competencies.competencies);
+  const scorecardHeatmapRows = buildScorecardHeatmapRows(scorecard.metrics);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
       <PageHeader
         title="Reporting"
-        description="Review completion trends and rating outcomes for the selected cycle."
+        description="Review completion trends, ratings, and competency outcomes for the selected cycle."
         metadata={
           cycle ? (
             <span>
@@ -237,6 +292,9 @@ export default async function AdminReportingPage({
           <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-6" method="get">
             <input type="hidden" name="tab" value={selectedTab} />
             <input type="hidden" name="page" value="1" />
+            {selectedCompetency ? (
+              <input type="hidden" name="dimensionKey" value={selectedCompetency.dimensionKey} />
+            ) : null}
 
             <label className="flex flex-col gap-2 text-sm text-slate-700">
               Cycle
@@ -324,6 +382,20 @@ export default async function AdminReportingPage({
           >
             Results
           </Link>
+          <Link
+            href={competenciesTabHref}
+            data-testid="reporting-tab-competencies"
+            className={tabClassName(selectedTab === "competencies")}
+          >
+            Competencies
+          </Link>
+          <Link
+            href={scorecardTabHref}
+            data-testid="reporting-tab-scorecard"
+            className={tabClassName(selectedTab === "scorecard")}
+          >
+            Scorecard
+          </Link>
         </div>
 
         <div className="text-sm text-slate-600">
@@ -334,138 +406,28 @@ export default async function AdminReportingPage({
       </section>
 
       {selectedTab === "progress" ? (
-        <>
-          {progress.suppression.suppressed ? (
-            <EmptyState
-              title="Insufficient data for selected filters"
-              description={
-                progress.suppression.message ??
-                "Widen the filter scope to view aggregate progress safely."
-              }
-            />
-          ) : (
-            <>
-              <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-                <MetricCard
-                  title="Not started"
-                  value={progress.totals.notStarted}
-                  caption="No self or manager progress yet"
-                />
-                <MetricCard
-                  title="In progress"
-                  value={progress.totals.inProgress}
-                  caption="At least one review is underway"
-                />
-                <MetricCard
-                  title="Completed"
-                  value={progress.totals.completed}
-                  caption="Self and manager submitted"
-                />
-                <MetricCard
-                  title="Self in progress"
-                  value={progress.self.inProgress}
-                  caption="Employee draft activity"
-                />
-                <MetricCard
-                  title="Manager in progress"
-                  value={progress.manager.inProgress}
-                  caption="Manager draft activity"
-                />
-              </section>
+        <ProgressTabContent progress={progress} totalPeople={totalPeople} />
+      ) : null}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Status mix</CardTitle>
-                  <CardDescription>
-                    Distribution across {totalPeople} employees in the current filter scope.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex h-4 overflow-hidden rounded-full border border-slate-200">
-                    <div
-                      className="bg-rose-200"
-                      style={{ width: percent(progress.totals.notStarted, totalPeople) }}
-                    />
-                    <div
-                      className="bg-amber-200"
-                      style={{ width: percent(progress.totals.inProgress, totalPeople) }}
-                    />
-                    <div
-                      className="bg-emerald-200"
-                      style={{ width: percent(progress.totals.completed, totalPeople) }}
-                    />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
-                    <span>Not started: {progress.totals.notStarted}</span>
-                    <span>In progress: {progress.totals.inProgress}</span>
-                    <span>Completed: {progress.totals.completed}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </>
-      ) : (
-        <>
-          {ratings.suppression.suppressed ? (
-            <EmptyState
-              title="Insufficient data for selected filters"
-              description={
-                ratings.suppression.message ??
-                "Widen the filter scope to view rating distributions safely."
-              }
-            />
-          ) : (
-            <section className="grid gap-4 xl:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Rating distribution</CardTitle>
-                  <CardDescription>
-                    {ratings.ratingSource === "FINAL"
-                      ? "Final rating source"
-                      : "Scorecard baseline rating source"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {(["5", "4", "3", "2", "1"] as const).map((ratingKey) => (
-                    <div key={ratingKey} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm text-slate-700">
-                        <span>Rating {ratingKey}</span>
-                        <span>{ratings.distribution[ratingKey]}</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-slate-100">
-                        <div
-                          className="h-full rounded-full bg-slate-700"
-                          style={{
-                            width: percent(
-                              ratings.distribution[ratingKey],
-                              ratings.ratedCount,
-                            ),
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+      {selectedTab === "results" ? <ResultsTabContent ratings={ratings} /> : null}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Source breakdown</CardTitle>
-                  <CardDescription>
-                    Final vs scorecard baseline source counts across included packets.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-slate-700">
-                  <p>Scorecard source: {ratings.sourceSummary.scorecard}</p>
-                  <p>Calibration source: {ratings.sourceSummary.calibration}</p>
-                  <p>Unset source: {ratings.sourceSummary.unset}</p>
-                </CardContent>
-              </Card>
-            </section>
-          )}
-        </>
-      )}
+      {selectedTab === "competencies" ? (
+        <CompetenciesTabContent
+          competencies={competencies.competencies}
+          suppression={competencies.suppression}
+          selectedCompetency={selectedCompetency}
+          baseQuery={baseQuery}
+          heatmapRows={competencyHeatmapRows}
+        />
+      ) : null}
+
+      {selectedTab === "scorecard" ? (
+        <ScorecardTabContent
+          metrics={scorecard.metrics}
+          suppression={scorecard.suppression}
+          heatmapRows={scorecardHeatmapRows}
+        />
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -572,18 +534,25 @@ export default async function AdminReportingPage({
 
           <div className="flex items-center justify-between px-5 pb-5 text-sm text-slate-600">
             <span>
-              Page {people.pagination.page} of {Math.max(people.pagination.totalPages, 1)} ({people.pagination.totalRows} employees)
+              Page {people.pagination.page} of {Math.max(people.pagination.totalPages, 1)} (
+              {people.pagination.totalRows} employees)
             </span>
             <div className="flex items-center gap-2">
               {previousPageHref ? (
-                <Link href={previousPageHref} className="text-xs font-medium text-slate-700 underline underline-offset-2">
+                <Link
+                  href={previousPageHref}
+                  className="text-xs font-medium text-slate-700 underline underline-offset-2"
+                >
                   Previous
                 </Link>
               ) : (
                 <span className="text-xs text-slate-400">Previous</span>
               )}
               {nextPageHref ? (
-                <Link href={nextPageHref} className="text-xs font-medium text-slate-700 underline underline-offset-2">
+                <Link
+                  href={nextPageHref}
+                  className="text-xs font-medium text-slate-700 underline underline-offset-2"
+                >
                   Next
                 </Link>
               ) : (
@@ -594,6 +563,457 @@ export default async function AdminReportingPage({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function ProgressTabContent({
+  progress,
+  totalPeople,
+}: {
+  progress: Awaited<ReturnType<typeof getReportingProgress>>;
+  totalPeople: number;
+}) {
+  if (progress.suppression.suppressed) {
+    return (
+      <EmptyState
+        title="Insufficient data for selected filters"
+        description={
+          progress.suppression.message ??
+          "Widen the filter scope to view aggregate progress safely."
+        }
+      />
+    );
+  }
+
+  return (
+    <>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard
+          title="Not started"
+          value={progress.totals.notStarted}
+          caption="No self or manager progress yet"
+        />
+        <MetricCard
+          title="In progress"
+          value={progress.totals.inProgress}
+          caption="At least one review is underway"
+        />
+        <MetricCard
+          title="Completed"
+          value={progress.totals.completed}
+          caption="Self and manager submitted"
+        />
+        <MetricCard
+          title="Self in progress"
+          value={progress.self.inProgress}
+          caption="Employee draft activity"
+        />
+        <MetricCard
+          title="Manager in progress"
+          value={progress.manager.inProgress}
+          caption="Manager draft activity"
+        />
+      </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Status mix</CardTitle>
+          <CardDescription>
+            Distribution across {totalPeople} employees in the current filter scope.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex h-4 overflow-hidden rounded-full border border-slate-200">
+            <div
+              className="bg-rose-200"
+              style={{ width: percent(progress.totals.notStarted, totalPeople) }}
+            />
+            <div
+              className="bg-amber-200"
+              style={{ width: percent(progress.totals.inProgress, totalPeople) }}
+            />
+            <div
+              className="bg-emerald-200"
+              style={{ width: percent(progress.totals.completed, totalPeople) }}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+            <span>Not started: {progress.totals.notStarted}</span>
+            <span>In progress: {progress.totals.inProgress}</span>
+            <span>Completed: {progress.totals.completed}</span>
+          </div>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+function ResultsTabContent({
+  ratings,
+}: {
+  ratings: Awaited<ReturnType<typeof getReportingRatings>>;
+}) {
+  if (ratings.suppression.suppressed) {
+    return (
+      <EmptyState
+        title="Insufficient data for selected filters"
+        description={
+          ratings.suppression.message ??
+          "Widen the filter scope to view rating distributions safely."
+        }
+      />
+    );
+  }
+
+  return (
+    <section className="grid gap-4 xl:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Rating distribution</CardTitle>
+          <CardDescription>
+            {ratings.ratingSource === "FINAL"
+              ? "Final rating source"
+              : "Scorecard baseline rating source"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {(["5", "4", "3", "2", "1"] as const).map((ratingKey) => (
+            <div key={ratingKey} className="space-y-1">
+              <div className="flex items-center justify-between text-sm text-slate-700">
+                <span>Rating {ratingKey}</span>
+                <span>{ratings.distribution[ratingKey]}</span>
+              </div>
+              <div className="h-2 rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-slate-700"
+                  style={{
+                    width: percent(ratings.distribution[ratingKey], ratings.ratedCount),
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Source breakdown</CardTitle>
+          <CardDescription>
+            Final vs scorecard baseline source counts across included packets.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-slate-700">
+          <p>Scorecard source: {ratings.sourceSummary.scorecard}</p>
+          <p>Calibration source: {ratings.sourceSummary.calibration}</p>
+          <p>Unset source: {ratings.sourceSummary.unset}</p>
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
+
+function CompetenciesTabContent({
+  competencies,
+  suppression,
+  selectedCompetency,
+  baseQuery,
+  heatmapRows,
+}: {
+  competencies: ReportingCompetencyResult[];
+  suppression: { suppressed: boolean; message: string | null };
+  selectedCompetency: ReportingCompetencyResult | null;
+  baseQuery: {
+    cycleId: string;
+    department?: string;
+    title?: string;
+  };
+  heatmapRows: Array<{
+    department: string;
+    cells: Array<{
+      dimensionKey: CompetencyDimensionKey;
+      averageRating: number | null;
+    }>;
+  }>;
+}) {
+  if (suppression.suppressed) {
+    return (
+      <EmptyState
+        title="Insufficient data for selected filters"
+        description={
+          suppression.message ?? "Widen filters to unlock competency insights safely."
+        }
+      />
+    );
+  }
+
+  return (
+    <section className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Competency summary</CardTitle>
+          <CardDescription>
+            Average, distribution, and self vs manager gap by competency.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <TableWrapper>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Competency</TableHead>
+                  <TableHead>Avg</TableHead>
+                  <TableHead>Self avg</TableHead>
+                  <TableHead>Manager avg</TableHead>
+                  <TableHead>Gap (mgr-self)</TableHead>
+                  <TableHead>Not observed</TableHead>
+                  <TableHead>Drill in</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {competencyOrder.map((dimensionKey) => {
+                  const competency = competencies.find((item) => item.dimensionKey === dimensionKey);
+                  if (!competency) {
+                    return null;
+                  }
+
+                  const detailHref = toQueryString({
+                    ...baseQuery,
+                    tab: "competencies",
+                    dimensionKey,
+                    page: "1",
+                  });
+
+                  return (
+                    <TableRow key={dimensionKey}>
+                      <TableCell className="font-medium text-slate-900">
+                        {humanizeEnumValue(dimensionKey)}
+                      </TableCell>
+                      <TableCell>{formatNumber(competency.averageRating)}</TableCell>
+                      <TableCell>{formatNumber(competency.self.averageRating)}</TableCell>
+                      <TableCell>{formatNumber(competency.manager.averageRating)}</TableCell>
+                      <TableCell>{formatNumber(competency.selfManagerGap.averageGap)}</TableCell>
+                      <TableCell>{competency.notObservedCount}</TableCell>
+                      <TableCell>
+                        <Link
+                          href={detailHref}
+                          className="text-xs font-medium text-slate-700 underline underline-offset-2"
+                        >
+                          View details
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableWrapper>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Department × competency heatmap</CardTitle>
+          <CardDescription>
+            Average competency ratings by department (Not Observed excluded).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {heatmapRows.length === 0 ? (
+            <div className="p-5">
+              <EmptyState
+                title="No department heatmap data"
+                description="Adjust filters to include departments with observed competency ratings."
+              />
+            </div>
+          ) : (
+            <TableWrapper>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Department</TableHead>
+                    {competencyOrder.map((dimensionKey) => (
+                      <TableHead key={`heatmap-header-${dimensionKey}`}>
+                        {shortCompetencyLabel(dimensionKey)}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {heatmapRows.map((row) => (
+                    <TableRow key={`heatmap-row-${row.department}`}>
+                      <TableCell className="font-medium text-slate-900">{row.department}</TableCell>
+                      {row.cells.map((cell) => (
+                        <TableCell key={`heatmap-cell-${row.department}-${cell.dimensionKey}`}>
+                          {formatNumber(cell.averageRating)}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableWrapper>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedCompetency ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{humanizeEnumValue(selectedCompetency.dimensionKey)} drilldown</CardTitle>
+            <CardDescription>
+              Distribution and self vs manager comparison for the selected competency.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2 text-sm text-slate-700">
+              <p>Overall average: {formatNumber(selectedCompetency.averageRating)}</p>
+              <p>Self average: {formatNumber(selectedCompetency.self.averageRating)}</p>
+              <p>Manager average: {formatNumber(selectedCompetency.manager.averageRating)}</p>
+              <p>
+                Average gap (manager - self): {formatNumber(selectedCompetency.selfManagerGap.averageGap)}
+              </p>
+            </div>
+            <div className="space-y-2 text-sm text-slate-700">
+              {(["1", "2", "3", "4", "5"] as const).map((ratingKey) => (
+                <div key={`competency-drill-${ratingKey}`} className="flex items-center gap-3">
+                  <span className="w-12">{ratingKey}</span>
+                  <span>Self: {selectedCompetency.selfDistribution[ratingKey]}</span>
+                  <span>Manager: {selectedCompetency.managerDistribution[ratingKey]}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+    </section>
+  );
+}
+
+function ScorecardTabContent({
+  metrics,
+  suppression,
+  heatmapRows,
+}: {
+  metrics: ReportingScorecardMetricResult[];
+  suppression: { suppressed: boolean; message: string | null };
+  heatmapRows: Array<{
+    department: string;
+    cells: Array<{
+      metricKey: ScorecardMetricKey;
+      averageRating: number | null;
+    }>;
+  }>;
+}) {
+  if (suppression.suppressed) {
+    return (
+      <EmptyState
+        title="Insufficient data for selected filters"
+        description={suppression.message ?? "Widen filters to unlock scorecard insights safely."}
+      />
+    );
+  }
+
+  return (
+    <section className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Scorecard metric insights</CardTitle>
+          <CardDescription>
+            Distribution, averages, and self vs manager gaps for weighted scorecard metrics.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <TableWrapper>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Metric</TableHead>
+                  <TableHead>Avg</TableHead>
+                  <TableHead>Self avg</TableHead>
+                  <TableHead>Manager avg</TableHead>
+                  <TableHead>Gap</TableHead>
+                  <TableHead>Not observed</TableHead>
+                  <TableHead>Distribution (1-5)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {scorecardOrder.map((metricKey) => {
+                  const metric = metrics.find((item) => item.metricKey === metricKey);
+                  if (!metric) {
+                    return null;
+                  }
+
+                  const distributionSummary = ["1", "2", "3", "4", "5"]
+                    .map((bucket) => `${bucket}:${metric.distribution[bucket as keyof typeof metric.distribution]}`)
+                    .join(" ");
+
+                  return (
+                    <TableRow key={metricKey}>
+                      <TableCell className="font-medium text-slate-900">
+                        {humanizeEnumValue(metricKey)}
+                      </TableCell>
+                      <TableCell>{formatNumber(metric.averageRating)}</TableCell>
+                      <TableCell>{formatNumber(metric.self.averageRating)}</TableCell>
+                      <TableCell>{formatNumber(metric.manager.averageRating)}</TableCell>
+                      <TableCell>{formatNumber(metric.selfManagerGap.averageGap)}</TableCell>
+                      <TableCell>{metric.notObservedCount}</TableCell>
+                      <TableCell className="text-xs text-slate-700">{distributionSummary}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableWrapper>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Department × scorecard heatmap</CardTitle>
+          <CardDescription>
+            Average scorecard metric ratings by department (Not Observed excluded).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {heatmapRows.length === 0 ? (
+            <div className="p-5">
+              <EmptyState
+                title="No scorecard heatmap data"
+                description="Adjust filters to include departments with observed scorecard metrics."
+              />
+            </div>
+          ) : (
+            <TableWrapper>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Department</TableHead>
+                    {scorecardOrder.map((metricKey) => (
+                      <TableHead key={`scorecard-heatmap-header-${metricKey}`}>
+                        {shortMetricLabel(metricKey)}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {heatmapRows.map((row) => (
+                    <TableRow key={`scorecard-heatmap-row-${row.department}`}>
+                      <TableCell className="font-medium text-slate-900">{row.department}</TableCell>
+                      {row.cells.map((cell) => (
+                        <TableCell key={`scorecard-heatmap-cell-${row.department}-${cell.metricKey}`}>
+                          {formatNumber(cell.averageRating)}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableWrapper>
+          )}
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 
@@ -668,6 +1088,28 @@ function parseProgressStatus(value: string | undefined): ProgressStatusFilter | 
   return undefined;
 }
 
+function parseTab(value: string | undefined): ReportingTab {
+  if (
+    value === "progress" ||
+    value === "results" ||
+    value === "competencies" ||
+    value === "scorecard"
+  ) {
+    return value;
+  }
+
+  return "progress";
+}
+
+function parseDimensionKey(value: string | undefined): CompetencyDimensionKey | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = competencyOrder.find((item) => item === value);
+  return parsed;
+}
+
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   if (!value) {
     return fallback;
@@ -735,4 +1177,100 @@ function escapeCsvCell(value: string | number): string {
   }
 
   return normalized;
+}
+
+function humanizeEnumValue(value: string): string {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function shortCompetencyLabel(key: CompetencyDimensionKey): string {
+  const label = humanizeEnumValue(key);
+  return label.length > 14 ? `${label.slice(0, 14)}…` : label;
+}
+
+function shortMetricLabel(key: ScorecardMetricKey): string {
+  const label = humanizeEnumValue(key);
+  return label.length > 12 ? `${label.slice(0, 12)}…` : label;
+}
+
+function formatNumber(value: number | null): string {
+  if (typeof value !== "number") {
+    return "-";
+  }
+
+  return value.toFixed(2);
+}
+
+function buildCompetencyHeatmapRows(competencies: ReportingCompetencyResult[]): Array<{
+  department: string;
+  cells: Array<{
+    dimensionKey: CompetencyDimensionKey;
+    averageRating: number | null;
+  }>;
+}> {
+  const departments = new Set<string>();
+  const byDimension = new Map(
+    competencies.map((competency) => [competency.dimensionKey, competency]),
+  );
+
+  for (const competency of competencies) {
+    for (const breakdown of competency.departmentBreakdown) {
+      departments.add(breakdown.department);
+    }
+  }
+
+  return Array.from(departments)
+    .sort((left, right) => left.localeCompare(right))
+    .map((department) => ({
+      department,
+      cells: competencyOrder.map((dimensionKey) => {
+        const competency = byDimension.get(dimensionKey);
+        const departmentCell = competency?.departmentBreakdown.find(
+          (breakdown) => breakdown.department === department,
+        );
+
+        return {
+          dimensionKey,
+          averageRating: departmentCell?.averageRating ?? null,
+        };
+      }),
+    }));
+}
+
+function buildScorecardHeatmapRows(metrics: ReportingScorecardMetricResult[]): Array<{
+  department: string;
+  cells: Array<{
+    metricKey: ScorecardMetricKey;
+    averageRating: number | null;
+  }>;
+}> {
+  const departments = new Set<string>();
+  const byMetric = new Map(metrics.map((metric) => [metric.metricKey, metric]));
+
+  for (const metric of metrics) {
+    for (const breakdown of metric.departmentBreakdown) {
+      departments.add(breakdown.department);
+    }
+  }
+
+  return Array.from(departments)
+    .sort((left, right) => left.localeCompare(right))
+    .map((department) => ({
+      department,
+      cells: scorecardOrder.map((metricKey) => {
+        const metric = byMetric.get(metricKey);
+        const departmentCell = metric?.departmentBreakdown.find(
+          (breakdown) => breakdown.department === department,
+        );
+
+        return {
+          metricKey,
+          averageRating: departmentCell?.averageRating ?? null,
+        };
+      }),
+    }));
 }
