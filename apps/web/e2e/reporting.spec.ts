@@ -36,3 +36,14 @@ test("reporting page loads and applies filters", async ({ page }) => {
     }),
   ).toBeVisible();
 });
+
+test("reporting competency drilldown opens from summary table", async ({ page }) => {
+  await loginAsHrAdmin(page);
+  await page.goto("/admin/performance/reporting?tab=competencies");
+
+  await expect(page.getByRole("heading", { name: "Competency summary" })).toBeVisible();
+  await page.getByRole("link", { name: "View details" }).first().click();
+
+  await expect(page).toHaveURL(/tab=competencies/);
+  await expect(page.getByTestId("reporting-competency-drilldown")).toBeVisible();
+});
