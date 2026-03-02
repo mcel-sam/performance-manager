@@ -1,6 +1,7 @@
 import {
   CalibrationBucket,
   CycleStatus,
+  FinalRatingSource,
   ReviewSubmissionStatus,
   UserRole,
 } from "@prisma/client";
@@ -186,6 +187,18 @@ interface CalibrationSessionDb {
         };
       };
     }) => Promise<ReviewPacketSummaryRecord[]>;
+    updateMany: (args: {
+      where: {
+        orgId: string;
+        cycleId: string;
+        subjectEmployeeId: {
+          in: string[];
+        };
+      };
+      data: {
+        finalRatingSource: FinalRatingSource;
+      };
+    }) => Promise<{ count: number }>;
   };
   auditEvent: {
     create: (args: {
@@ -627,6 +640,19 @@ export async function finalizeCalibrationSession(
       id: true,
       isFinalized: true,
       finalizedAt: true,
+    },
+  });
+
+  await db.reviewPacket.updateMany({
+    where: {
+      orgId: context.orgId,
+      cycleId: session.cycleId,
+      subjectEmployeeId: {
+        in: session.placements.map((placement) => placement.employeeId),
+      },
+    },
+    data: {
+      finalRatingSource: FinalRatingSource.CALIBRATION,
     },
   });
 
