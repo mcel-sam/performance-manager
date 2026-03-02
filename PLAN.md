@@ -746,6 +746,7 @@ Validation rules (Phase 1)
 - [x] Per-metric breakdown results are persistable
 - [x] Weights sum to 100 enforced at validation layer
 - [x] `lint/typecheck/test/build` pass
+- Completed in PR #11 (dev -> main Milestone 5 Phase 1)
 
 ---
 
