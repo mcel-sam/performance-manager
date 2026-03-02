@@ -78,6 +78,14 @@ export async function getDevRequestContext(
   });
 
   if (!user) {
+    if (isDemoModeEnabled()) {
+      return {
+        userId,
+        orgId,
+        role: inferDemoRoleFromUserId(userId),
+      };
+    }
+
     throw new AppError(
       "UNAUTHORIZED",
       "Development user context is not configured. Run db seed and set DEV_USER_ID/DEV_ORG_ID if needed.",
@@ -90,4 +98,20 @@ export async function getDevRequestContext(
     orgId: user.orgId,
     role: user.role,
   };
+}
+
+function inferDemoRoleFromUserId(userId: string): UserRole {
+  if (userId.includes("hr_admin")) {
+    return UserRole.HR_ADMIN;
+  }
+
+  if (userId.includes("calibrator")) {
+    return UserRole.CALIBRATOR;
+  }
+
+  if (userId.includes("manager")) {
+    return UserRole.MANAGER;
+  }
+
+  return UserRole.EMPLOYEE;
 }
