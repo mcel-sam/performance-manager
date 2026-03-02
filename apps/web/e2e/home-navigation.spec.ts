@@ -1,13 +1,20 @@
 import { expect, test } from "@playwright/test";
 
+import { ensureDemoSetup, loginAsManager } from "./helpers/demo";
+
+test.beforeAll(async ({ request }) => {
+  await ensureDemoSetup(request);
+});
+
 test("home loads and primary navigation opens reviews", async ({ page }) => {
-  await page.goto("/");
+  await loginAsManager(page);
 
   await expect(
     page.getByRole("heading", {
       name: "Reviews, calibration, and improvement plans",
     }),
   ).toBeVisible();
+  await expect(page.getByTestId("nav-link-demo-login")).toBeVisible();
   await expect(page.getByTestId("nav-link-reviews")).toBeVisible();
   await expect(page.getByTestId("home-getting-started-link-0")).toBeVisible();
 

@@ -22,6 +22,8 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       ...process.env,
+      DEMO_MODE: process.env.DEMO_MODE ?? "true",
+      NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE ?? "true",
       DEV_USER_ID: process.env.DEV_USER_ID ?? "user_manager_1",
       DEV_ORG_ID: process.env.DEV_ORG_ID ?? "org_demo_1",
     },
