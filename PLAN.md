@@ -638,7 +638,7 @@ Implementation notes:
 - [x] All smoke tests pass locally in one run
 - [x] Tests are stable across repeated runs
 - [x] Failures produce trace/screenshots for debugging (configured)
-- Completed in PR #TBD (dev -> main Milestone 4.2 Phase 2)
+- Completed in PR #9 (dev -> main Milestone 4.2 Phase 2)
 
 ---
 
