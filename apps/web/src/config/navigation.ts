@@ -45,7 +45,7 @@ const allNavItems = {
   teamReviews: {
     key: "teamReviews",
     href: "/performance/team-reviews",
-    label: "Team Reviews",
+    label: "My Team",
     testId: "nav-link-team-reviews",
   },
   calibration: {

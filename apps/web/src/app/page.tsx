@@ -380,7 +380,7 @@ function getRoleWorkflowModules(role: UserRole) {
     case UserRole.MANAGER:
       return [
         {
-          title: "Team Reviews",
+          title: "My Team",
           description: "Track direct-report manager reviews and outstanding actions.",
           href: "/performance/team-reviews",
           status: "Active",

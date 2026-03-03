@@ -30,6 +30,8 @@ interface TeamReviewsDb {
             id: true;
             firstName: true;
             lastName: true;
+            title: true;
+            department: true;
           };
         };
         cycle: {
@@ -40,6 +42,7 @@ interface TeamReviewsDb {
             endDate: true;
           };
         };
+        dueAt: true;
       };
       orderBy: Array<
         | {
@@ -62,6 +65,8 @@ interface TeamReviewsDb {
           id: string;
           firstName: string;
           lastName: string;
+          title: string | null;
+          department: string | null;
         };
         cycle: {
           id: string;
@@ -69,31 +74,45 @@ interface TeamReviewsDb {
           status: CycleStatus;
           endDate: Date;
         };
+        dueAt: Date | null;
       }>
     >;
   };
 }
 
 export interface TeamReviewDashboard {
+  cycles: Array<{
+    id: string;
+    name: string;
+    status: CycleStatus;
+  }>;
   cycle: {
     id: string;
     name: string;
     status: CycleStatus;
   } | null;
   kpis: {
-    awaitingReview: number;
-    inProgress: number;
-    completed: number;
+    totalDirectReports: number;
+    awaitingManagerReview: number;
+    inProgressManagerReview: number;
+    completedManagerReview: number;
+    selfNotStarted: number;
+    overdueManagerReview: number;
   };
   rows: Array<{
     employeeId: string;
     employeeName: string;
+    title: string | null;
+    department: string | null;
     statuses: Partial<Record<ReviewRelationship, ReviewSubmissionStatus>>;
     managerSubmissionId: string | null;
+    managerDueAt: Date | null;
     packetHref: string | null;
     managerReviewHref: string | null;
   }>;
 }
+
+type TeamReviewRow = TeamReviewDashboard["rows"][number];
 
 const pendingStatuses = new Set<ReviewSubmissionStatus>([
   ReviewSubmissionStatus.NOT_STARTED,
@@ -103,6 +122,7 @@ const inProgressStatuses = new Set<ReviewSubmissionStatus>([ReviewSubmissionStat
 
 export async function getManagerTeamReviewDashboard(
   context: RequestContext,
+  options: { cycleId?: string } = {},
   db: TeamReviewsDb = prisma as unknown as TeamReviewsDb,
 ): Promise<TeamReviewDashboard> {
   if (context.role !== UserRole.MANAGER) {
@@ -121,11 +141,15 @@ export async function getManagerTeamReviewDashboard(
 
   if (!managerEmployee) {
     return {
+      cycles: [],
       cycle: null,
       kpis: {
-        awaitingReview: 0,
-        inProgress: 0,
-        completed: 0,
+        totalDirectReports: 0,
+        awaitingManagerReview: 0,
+        inProgressManagerReview: 0,
+        completedManagerReview: 0,
+        selfNotStarted: 0,
+        overdueManagerReview: 0,
       },
       rows: [],
     };
@@ -149,6 +173,8 @@ export async function getManagerTeamReviewDashboard(
           id: true,
           firstName: true,
           lastName: true,
+          title: true,
+          department: true,
         },
       },
       cycle: {
@@ -159,46 +185,95 @@ export async function getManagerTeamReviewDashboard(
           endDate: true,
         },
       },
+      dueAt: true,
     },
     orderBy: [{ cycle: { endDate: "desc" } }, { subjectEmployeeId: "asc" }],
   });
 
   if (submissions.length === 0) {
     return {
+      cycles: [],
       cycle: null,
       kpis: {
-        awaitingReview: 0,
-        inProgress: 0,
-        completed: 0,
+        totalDirectReports: 0,
+        awaitingManagerReview: 0,
+        inProgressManagerReview: 0,
+        completedManagerReview: 0,
+        selfNotStarted: 0,
+        overdueManagerReview: 0,
       },
       rows: [],
     };
   }
 
-  const latestCycleId = submissions[0].cycleId;
-  const cycleSubmissions = submissions.filter((submission) => submission.cycleId === latestCycleId);
+  const cyclesById = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      status: CycleStatus;
+      endDate: Date;
+    }
+  >();
+  for (const submission of submissions) {
+    if (!cyclesById.has(submission.cycle.id)) {
+      cyclesById.set(submission.cycle.id, {
+        id: submission.cycle.id,
+        name: submission.cycle.name,
+        status: submission.cycle.status,
+        endDate: submission.cycle.endDate,
+      });
+    }
+  }
+
+  const cycles = Array.from(cyclesById.values())
+    .sort((a, b) => b.endDate.getTime() - a.endDate.getTime())
+    .map((cycle) => ({
+      id: cycle.id,
+      name: cycle.name,
+      status: cycle.status,
+    }));
+
+  const selectedCycleId =
+    options.cycleId && cycles.some((cycle) => cycle.id === options.cycleId)
+      ? options.cycleId
+      : cycles[0]?.id ?? null;
+
+  if (!selectedCycleId) {
+    return {
+      cycles: [],
+      cycle: null,
+      kpis: {
+        totalDirectReports: 0,
+        awaitingManagerReview: 0,
+        inProgressManagerReview: 0,
+        completedManagerReview: 0,
+        selfNotStarted: 0,
+        overdueManagerReview: 0,
+      },
+      rows: [],
+    };
+  }
+
+  const cycleSubmissions = submissions.filter((submission) => submission.cycleId === selectedCycleId);
   const cycle = cycleSubmissions[0].cycle;
 
   const rowByEmployeeId = new Map<
     string,
-    {
-      employeeId: string;
-      employeeName: string;
-      statuses: Partial<Record<ReviewRelationship, ReviewSubmissionStatus>>;
-      managerSubmissionId: string | null;
-      packetHref: string | null;
-      managerReviewHref: string | null;
-    }
+    TeamReviewRow
   >();
 
   for (const submission of cycleSubmissions) {
-    const existing =
+    const existing: TeamReviewRow =
       rowByEmployeeId.get(submission.subjectEmployeeId) ??
       {
         employeeId: submission.subjectEmployeeId,
         employeeName: `${submission.subjectEmployee.firstName} ${submission.subjectEmployee.lastName}`,
+        title: submission.subjectEmployee.title,
+        department: submission.subjectEmployee.department,
         statuses: {},
         managerSubmissionId: null,
+        managerDueAt: null,
         packetHref: `/performance/reviews/${submission.cycleId}/packet/${submission.subjectEmployeeId}`,
         managerReviewHref: null,
       };
@@ -207,6 +282,7 @@ export async function getManagerTeamReviewDashboard(
     if (submission.relationship === ReviewRelationship.MANAGER) {
       existing.managerSubmissionId = submission.id;
       existing.managerReviewHref = `/performance/reviews/${submission.cycleId}/write/${submission.id}`;
+      existing.managerDueAt = submission.dueAt;
     }
 
     rowByEmployeeId.set(submission.subjectEmployeeId, existing);
@@ -216,34 +292,52 @@ export async function getManagerTeamReviewDashboard(
     a.employeeName.localeCompare(b.employeeName),
   );
 
-  let awaitingReview = 0;
-  let inProgress = 0;
-  let completed = 0;
+  let awaitingManagerReview = 0;
+  let inProgressManagerReview = 0;
+  let completedManagerReview = 0;
+  let selfNotStarted = 0;
+  let overdueManagerReview = 0;
+  const now = new Date();
+
   for (const row of rows) {
     const managerStatus = row.statuses[ReviewRelationship.MANAGER];
     if (!managerStatus || pendingStatuses.has(managerStatus)) {
-      awaitingReview += 1;
-      continue;
+      awaitingManagerReview += 1;
+    } else if (inProgressStatuses.has(managerStatus)) {
+      inProgressManagerReview += 1;
+    } else {
+      completedManagerReview += 1;
     }
 
-    if (inProgressStatuses.has(managerStatus)) {
-      inProgress += 1;
-      continue;
+    const selfStatus = row.statuses[ReviewRelationship.SELF];
+    if (!selfStatus || selfStatus === ReviewSubmissionStatus.NOT_STARTED) {
+      selfNotStarted += 1;
     }
 
-    completed += 1;
+    if (
+      row.managerDueAt &&
+      row.managerDueAt.getTime() < now.getTime() &&
+      managerStatus &&
+      managerStatus !== ReviewSubmissionStatus.SUBMITTED
+    ) {
+      overdueManagerReview += 1;
+    }
   }
 
   return {
+    cycles,
     cycle: {
       id: cycle.id,
       name: cycle.name,
       status: cycle.status,
     },
     kpis: {
-      awaitingReview,
-      inProgress,
-      completed,
+      totalDirectReports: rows.length,
+      awaitingManagerReview,
+      inProgressManagerReview,
+      completedManagerReview,
+      selfNotStarted,
+      overdueManagerReview,
     },
     rows,
   };

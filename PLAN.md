@@ -1329,33 +1329,34 @@ Feedback observed:
 ## Phase 4 — Manager experience redesign: Team Reviews → My Team hub
 
 ### 4A) Rename and reshape manager page
-- [ ] Rename “Team Reviews” to “My Team” (or “Team”) in nav and header
-- [ ] Page structure:
-  - [ ] Header with cycle selector and team size (total direct reports)
-  - [ ] KPI cards:
-    - [ ] Total direct reports
-    - [ ] Awaiting manager review
-    - [ ] Self not started (optional)
-    - [ ] Overdue (optional if due dates exist)
-  - [ ] Direct reports table always visible:
+- [x] Rename “Team Reviews” to “My Team” (or “Team”) in nav and header
+- [x] Page structure:
+  - [x] Header with cycle selector and team size (total direct reports)
+  - [x] KPI cards:
+    - [x] Total direct reports
+    - [x] Awaiting manager review
+    - [x] Self not started (optional)
+    - [x] Overdue (optional if due dates exist)
+  - [x] Direct reports table always visible:
     - name, title, department
     - status chips by direction (self/manager/peer/upward)
     - primary action: “Open profile” (drawer)
     - secondary actions: “Open review” / “Open packet”
-- [ ] Add drilldown drawer for a direct report:
-  - [ ] quick actions + snapshot of review statuses
-  - [ ] link to packet
+- [x] Add drilldown drawer for a direct report:
+  - [x] quick actions + snapshot of review statuses
+  - [x] link to packet
   - [ ] minimal “insights” if available (optional)
 
 ### 4B) Progress bar simplification
-- [ ] Keep segmented progress bar, but show totals + % clearly
-- [ ] Ensure labels reflect a single goal: “manager review completion” or “cycle completion”
+- [x] Keep segmented progress bar, but show totals + % clearly
+- [x] Ensure labels reflect a single goal: “manager review completion” or “cycle completion”
 
 **Acceptance criteria**
-- [ ] Manager sees team total count
-- [ ] Manager can drill into a direct report without being forced into reviews list
-- [ ] “Open review” is contextual and not the primary navigation flow
-- [ ] Add 1 Playwright test: manager My Team loads and shows direct reports
+- [x] Manager sees team total count
+- [x] Manager can drill into a direct report without being forced into reviews list
+- [x] “Open review” is contextual and not the primary navigation flow
+- [x] Add 1 Playwright test: manager My Team loads and shows direct reports
+- Completed in PR #33.
 
 ---
 
