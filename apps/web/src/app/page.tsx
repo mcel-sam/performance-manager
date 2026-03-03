@@ -383,7 +383,7 @@ function getRoleWorkflowModules(role: UserRole) {
           title: "Team Reviews",
           description: "Track direct-report manager reviews and outstanding actions.",
           href: "/performance/team-reviews",
-          status: "Planned",
+          status: "Active",
         },
         {
           title: "Participant Reviews",

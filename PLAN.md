@@ -1128,7 +1128,7 @@ We will follow proven patterns:
 
 **Goal:** Managers need a “control panel” like Lattice’s Team Reviews.
 
-- [ ] Add manager page: `/performance/team-reviews`
+- [x] Add manager page: `/performance/team-reviews`
   - KPI cards: awaiting review, in progress, completed
   - Progress bar segmented by status
   - List of direct reports with status chips per review type:
@@ -1137,12 +1137,13 @@ We will follow proven patterns:
     - peer/upward status (if relevant)
   - Drill-in action: open packet or open manager review task
 - [ ] Add “Show reviewers” / “who owes what” popover (optional MVP)
-- [ ] Ensure data sources use org hierarchy (manager → directs)
+- [x] Ensure data sources use org hierarchy (manager → directs)
 
 **Acceptance criteria**
-- [ ] Manager can instantly see team progress and what to do next
-- [ ] Drill-ins work and respect permissions
-- [ ] Playwright: add 1 test for manager team page loads + shows direct reports
+- [x] Manager can instantly see team progress and what to do next
+- [x] Drill-ins work and respect permissions
+- [x] Playwright: add 1 test for manager team page loads + shows direct reports
+- Completed in PR #26.
 
 ---
 
