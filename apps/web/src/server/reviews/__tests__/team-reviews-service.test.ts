@@ -1,4 +1,10 @@
-import { CycleStatus, ReviewRelationship, ReviewSubmissionStatus, UserRole } from "@prisma/client";
+import {
+  CycleStatus,
+  FinalRatingSource,
+  ReviewRelationship,
+  ReviewSubmissionStatus,
+  UserRole,
+} from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
 import { getManagerTeamReviewDashboard } from "@/server/reviews/team-reviews-service";
@@ -18,6 +24,9 @@ describe("getManagerTeamReviewDashboard", () => {
             findFirst: vi.fn(),
           },
           reviewSubmission: {
+            findMany: vi.fn(),
+          },
+          reviewPacket: {
             findMany: vi.fn(),
           },
         },
@@ -100,6 +109,14 @@ describe("getManagerTeamReviewDashboard", () => {
           },
         ]),
       },
+      reviewPacket: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            scorecardOverallRating: 4,
+            finalRatingSource: FinalRatingSource.SCORECARD,
+          },
+        ]),
+      },
     };
 
     const dashboard = await getManagerTeamReviewDashboard(
@@ -120,5 +137,7 @@ describe("getManagerTeamReviewDashboard", () => {
     expect(dashboard.kpis.awaitingManagerReview).toBe(0);
     expect(dashboard.kpis.inProgressManagerReview).toBe(1);
     expect(dashboard.kpis.completedManagerReview).toBe(0);
+    expect(dashboard.insights.scorecardDistribution["4"]).toBe(1);
+    expect(dashboard.insights.finalDistribution["4"]).toBe(1);
   });
 });
