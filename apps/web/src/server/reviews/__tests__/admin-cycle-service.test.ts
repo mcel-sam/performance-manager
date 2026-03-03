@@ -1,4 +1,10 @@
-import { CycleStatus, CycleVisibilityPolicy, ReviewRelationship, UserRole } from "@prisma/client";
+import {
+  CycleStatus,
+  CycleVisibilityPolicy,
+  PeerAssignmentMode,
+  ReviewRelationship,
+  UserRole,
+} from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -30,6 +36,7 @@ function buildDbMock() {
     },
     reviewSubmission: {
       createMany: vi.fn(),
+      groupBy: vi.fn(),
     },
     auditEvent: {
       create: vi.fn(),
@@ -51,7 +58,13 @@ describe("createReviewCycle", () => {
       selfReviewRequired: true,
       managerReviewRequired: true,
       peerReviewCount: 1,
+      peerAssignmentMode: PeerAssignmentMode.HR_ASSIGNED,
       upwardReviewCount: 0,
+      upwardReviewsForManagersOnly: true,
+      selfReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      managerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      peerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      upwardReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
     });
     db.auditEvent.create.mockResolvedValue({ id: "audit_1" });
 
@@ -157,7 +170,13 @@ describe("generateCycleArtifacts", () => {
       selfReviewRequired: true,
       managerReviewRequired: true,
       peerReviewCount: 0,
+      peerAssignmentMode: PeerAssignmentMode.HR_ASSIGNED,
       upwardReviewCount: 0,
+      upwardReviewsForManagersOnly: true,
+      selfReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      managerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      peerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      upwardReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
     });
     db.employee.findMany.mockResolvedValue([
       {
@@ -195,16 +214,19 @@ describe("generateCycleArtifacts", () => {
             subjectEmployeeId: "emp_a",
             reviewerEmployeeId: "emp_a",
             relationship: ReviewRelationship.SELF,
+            dueAt: new Date("2026-04-30T23:59:59.999Z"),
           }),
           expect.objectContaining({
             subjectEmployeeId: "emp_b",
             reviewerEmployeeId: "emp_b",
             relationship: ReviewRelationship.SELF,
+            dueAt: new Date("2026-04-30T23:59:59.999Z"),
           }),
           expect.objectContaining({
             subjectEmployeeId: "emp_b",
             reviewerEmployeeId: "emp_a",
             relationship: ReviewRelationship.MANAGER,
+            dueAt: new Date("2026-04-30T23:59:59.999Z"),
           }),
         ]),
       }),
@@ -233,7 +255,13 @@ describe("generateCycleArtifacts", () => {
       selfReviewRequired: true,
       managerReviewRequired: true,
       peerReviewCount: 0,
+      peerAssignmentMode: PeerAssignmentMode.HR_ASSIGNED,
       upwardReviewCount: 0,
+      upwardReviewsForManagersOnly: true,
+      selfReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      managerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      peerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      upwardReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
     });
 
     await expect(generateCycleArtifacts("cycle_1", adminContext, db as never)).rejects.toMatchObject(
@@ -255,7 +283,13 @@ describe("transitionReviewCycleStatus", () => {
       selfReviewRequired: true,
       managerReviewRequired: true,
       peerReviewCount: 1,
+      peerAssignmentMode: PeerAssignmentMode.HR_ASSIGNED,
       upwardReviewCount: 0,
+      upwardReviewsForManagersOnly: true,
+      selfReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      managerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      peerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      upwardReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
     });
     db.reviewCycle.update.mockResolvedValue({
       id: "cycle_1",
@@ -288,7 +322,13 @@ describe("transitionReviewCycleStatus", () => {
       selfReviewRequired: true,
       managerReviewRequired: true,
       peerReviewCount: 1,
+      peerAssignmentMode: PeerAssignmentMode.HR_ASSIGNED,
       upwardReviewCount: 0,
+      upwardReviewsForManagersOnly: true,
+      selfReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      managerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      peerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      upwardReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
     });
 
     await expect(
