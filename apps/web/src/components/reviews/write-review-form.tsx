@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
 import { HelpHint } from "@/components/ui/help-hint";
+import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
@@ -112,6 +113,9 @@ export default function WriteReviewForm({
   const [selectedEvidenceType, setSelectedEvidenceType] = useState<EvidenceType>(
     EvidenceType.FEEDBACK,
   );
+  const [evidenceSearch, setEvidenceSearch] = useState("");
+  const [showContextDetails, setShowContextDetails] = useState(false);
+  const [showSelectedAnswerDetails, setShowSelectedAnswerDetails] = useState(false);
   const [evidenceMessage, setEvidenceMessage] = useState<string | null>(null);
   const [attachingEvidenceId, setAttachingEvidenceId] = useState<string | null>(null);
   const [detachingEvidenceKey, setDetachingEvidenceKey] = useState<string | null>(null);
@@ -185,6 +189,17 @@ export default function WriteReviewForm({
     () => evidenceItemsByType[selectedEvidenceType] ?? [],
     [evidenceItemsByType, selectedEvidenceType],
   );
+  const filteredEvidenceItems = useMemo(() => {
+    const normalizedQuery = evidenceSearch.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return selectedEvidenceItems;
+    }
+
+    return selectedEvidenceItems.filter((item) => {
+      const haystack = `${item.title} ${item.summary}`.toLowerCase();
+      return haystack.includes(normalizedQuery);
+    });
+  }, [evidenceSearch, selectedEvidenceItems]);
 
   const sectionProgress = useMemo(
     () =>
@@ -266,6 +281,10 @@ export default function WriteReviewForm({
   }, [loadEvidence]);
 
   useEffect(() => {
+    setEvidenceSearch("");
+  }, [selectedEvidenceType]);
+
+  useEffect(() => {
     if (sections.length === 0) {
       return;
     }
@@ -284,6 +303,10 @@ export default function WriteReviewForm({
       setActiveQuestionId(activeSectionQuestionIds[0]);
     }
   }, [activeQuestionId, activeSectionQuestionIds]);
+
+  useEffect(() => {
+    setShowSelectedAnswerDetails(false);
+  }, [activeQuestionId]);
 
   useEffect(() => {
     if (!dirtyQuestionId || isReadOnly) {
@@ -885,37 +908,68 @@ export default function WriteReviewForm({
       </Card>
 
       <Drawer
-        title="Evidence Context"
-        description="Select an answer and attach supporting evidence."
+        title="Evidence"
+        description="Attach supporting evidence without leaving this review."
       >
         <Card className="border-slate-200 shadow-none">
-          <CardContent className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Submission context
-            </p>
-            <dl className="space-y-1 text-sm text-slate-700">
-              <div>
-                <dt className="font-semibold text-slate-900">Cycle</dt>
-                <dd>{submissionContext.cycleName}</dd>
+          <CardContent className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Context</p>
+              <p className="text-sm font-medium text-slate-900">{submissionContext.subjectName}</p>
+              <p className="text-xs text-slate-600">
+                {submissionContext.relationship} · {submissionContext.cycleName}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {evidenceTypeOrder.map((type) => (
+                <div
+                  key={type}
+                  className="rounded-[var(--radius-sm)] border border-slate-200 bg-slate-50 px-2 py-1"
+                >
+                  <span className="font-medium text-slate-700">{evidenceTypeLabel[type]}</span>
+                  <span className="ml-1 text-slate-500">({evidenceCounts[type] ?? 0})</span>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-testid="write-review-context-toggle"
+              onClick={() => setShowContextDetails((value) => !value)}
+            >
+              {showContextDetails ? "Hide details" : "Show details"}
+            </Button>
+
+            {showContextDetails ? (
+              <div className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+                <dl className="space-y-1 text-sm text-slate-700">
+                  <div>
+                    <dt className="font-semibold text-slate-900">Cycle</dt>
+                    <dd>{submissionContext.cycleName}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold text-slate-900">Subject</dt>
+                    <dd>{submissionContext.subjectName}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold text-slate-900">Reviewer</dt>
+                    <dd>{submissionContext.reviewerName}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold text-slate-900">Relationship</dt>
+                    <dd>{submissionContext.relationship}</dd>
+                  </div>
+                </dl>
+                <Link href={submissionContext.packetHref}>
+                  <Button variant="outline" size="sm">
+                    Open packet view
+                  </Button>
+                </Link>
               </div>
-              <div>
-                <dt className="font-semibold text-slate-900">Subject</dt>
-                <dd>{submissionContext.subjectName}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-900">Reviewer</dt>
-                <dd>{submissionContext.reviewerName}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-900">Relationship</dt>
-                <dd>{submissionContext.relationship}</dd>
-              </div>
-            </dl>
-            <Link href={submissionContext.packetHref}>
-              <Button variant="outline" size="sm">
-                Open packet view
-              </Button>
-            </Link>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -925,11 +979,29 @@ export default function WriteReviewForm({
         </HelpHint>
 
         <Card className="border-slate-200 shadow-none">
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Selected answer</p>
             <p className="text-sm text-slate-700">
-              {activeQuestion ? activeQuestion.prompt : "Select an answer to attach evidence."}
+              {activeQuestion
+                ? truncateText(activeQuestion.prompt, 96)
+                : "Select an answer to attach evidence."}
             </p>
+            {activeQuestion ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                data-testid="write-review-selected-answer-toggle"
+                onClick={() => setShowSelectedAnswerDetails((value) => !value)}
+              >
+                {showSelectedAnswerDetails ? "Hide full prompt" : "Show full prompt"}
+              </Button>
+            ) : null}
+            {activeQuestion && showSelectedAnswerDetails ? (
+              <p className="rounded-[var(--radius-sm)] border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                {activeQuestion.prompt}
+              </p>
+            ) : null}
             {!activeQuestion?.answerId ? (
               <Toast variant="warning">
                 Type in this answer and wait for autosave before attaching evidence.
@@ -969,12 +1041,29 @@ export default function WriteReviewForm({
               }))}
             />
 
-            <section className="space-y-2">
+            <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-900">
                   {evidenceTypeLabel[selectedEvidenceType]} details
                 </h3>
                 <span className="text-xs text-slate-500">Max {evidenceLimitPerType}</span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Search
+                  </span>
+                  <Input
+                    data-testid="write-review-evidence-search"
+                    value={evidenceSearch}
+                    onChange={(event) => setEvidenceSearch(event.target.value)}
+                    placeholder="Search title or summary"
+                  />
+                </label>
+                <p className="text-xs text-slate-500">
+                  Showing {filteredEvidenceItems.length} of {selectedEvidenceItems.length}
+                </p>
               </div>
 
               {selectedEvidenceItems.length === 0 ? (
@@ -983,16 +1072,24 @@ export default function WriteReviewForm({
                   description="No evidence items are available for this type."
                   className="p-4"
                 />
+              ) : filteredEvidenceItems.length === 0 ? (
+                <EmptyState
+                  title="No evidence matches"
+                  description="Try a broader keyword or switch evidence type."
+                  className="p-4"
+                />
               ) : (
                 <div className="space-y-2">
-                  {selectedEvidenceItems.map((item) => {
+                  {filteredEvidenceItems.map((item) => {
                     const isAttaching = attachingEvidenceId === item.evidenceItemId;
 
                     return (
                       <Card key={item.evidenceItemId}>
-                        <CardContent className="space-y-2">
+                        <CardContent className="space-y-2.5">
                           <h4 className="text-sm font-semibold text-slate-900">{item.title}</h4>
-                          <p className="text-xs text-slate-600">{item.summary}</p>
+                          <p className="text-xs text-slate-600">
+                            {truncateText(item.summary, 160)}
+                          </p>
                           <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                             <span>{new Date(item.occurredAt).toLocaleDateString()}</span>
                             <span>Source: {evidenceTypeLabel[item.type]}</span>
@@ -1033,6 +1130,14 @@ function createEmptyEvidenceCounts(): Record<EvidenceType, number> {
     [EvidenceType.GOAL]: 0,
     [EvidenceType.VALUE_RECOGNITION]: 0,
   };
+}
+
+function truncateText(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength - 3)}...`;
 }
 
 function formatDimensionKey(value: string): string {

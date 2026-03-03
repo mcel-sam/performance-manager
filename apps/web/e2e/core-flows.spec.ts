@@ -24,6 +24,17 @@ test("write review autosave and submit locks the submission", async ({ page }) =
   await page.goto("/performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_manager_1");
 
   await expect(page.getByTestId("write-review-section-1")).toBeVisible();
+  await expect(page.getByTestId("write-review-context-toggle")).toHaveText("Show details");
+  await page.getByTestId("write-review-context-toggle").click();
+  await expect(page.getByTestId("write-review-context-toggle")).toHaveText("Hide details");
+  await page.getByTestId("write-review-selected-answer-toggle").click();
+  await expect(page.getByTestId("write-review-selected-answer-toggle")).toHaveText(
+    "Hide full prompt",
+  );
+  await page.getByTestId("write-review-evidence-search").fill("zzzz-no-match");
+  await expect(page.getByText("No evidence matches")).toBeVisible();
+  await page.getByTestId("write-review-evidence-search").fill("");
+
   const firstAnswer = page.getByTestId("write-review-answer-template_q_1");
   const secondAnswer = page.getByTestId("write-review-answer-template_q_2");
   const noteSuffix = Date.now();
