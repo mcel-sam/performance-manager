@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RouteErrorState } from "@/components/ui/route-error-state";
 
 interface TeamReviewsErrorProps {
   error: Error;
@@ -10,16 +9,13 @@ interface TeamReviewsErrorProps {
 
 export default function TeamReviewsError({ error, reset }: TeamReviewsErrorProps) {
   return (
-    <Card className="max-w-4xl border-rose-200">
-      <CardHeader>
-        <CardTitle className="text-rose-900">Unable to load team reviews</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-rose-700">{error.message}</p>
-        <Button type="button" variant="danger" onClick={reset}>
-          Try again
-        </Button>
-      </CardContent>
-    </Card>
+    <RouteErrorState
+      title="Unable to load My Team"
+      description="Team review data could not be loaded. Retry to refresh direct report statuses."
+      error={error}
+      onRetry={reset}
+      maxWidthClassName="max-w-4xl"
+      data-testid="team-reviews-error"
+    />
   );
 }

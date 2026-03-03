@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RouteErrorState } from "@/components/ui/route-error-state";
 
 interface WriteReviewErrorProps {
   error: Error;
@@ -10,16 +9,13 @@ interface WriteReviewErrorProps {
 
 export default function WriteReviewError({ error, reset }: WriteReviewErrorProps) {
   return (
-    <Card className="mx-auto w-full max-w-2xl border-rose-200">
-      <CardHeader>
-        <CardTitle className="text-rose-900">Unable to load review</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-rose-700">{error.message}</p>
-        <Button type="button" variant="danger" onClick={reset}>
-          Try again
-        </Button>
-      </CardContent>
-    </Card>
+    <RouteErrorState
+      title="Unable to load review"
+      description="This review draft could not be loaded. Retry to restore your writing workspace."
+      error={error}
+      onRetry={reset}
+      maxWidthClassName="max-w-2xl"
+      data-testid="write-review-error"
+    />
   );
 }

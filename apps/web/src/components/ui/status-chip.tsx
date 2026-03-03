@@ -21,7 +21,7 @@ export function StatusChip({ tone = "neutral", className, ...props }: StatusChip
     <span
       {...props}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] leading-4 transition-colors duration-150",
         toneClass[tone],
         className,
       )}

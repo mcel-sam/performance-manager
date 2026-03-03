@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RouteErrorState } from "@/components/ui/route-error-state";
 
 interface ReviewsErrorProps {
   error: Error;
@@ -10,16 +9,13 @@ interface ReviewsErrorProps {
 
 export default function ReviewsError({ error, reset }: ReviewsErrorProps) {
   return (
-    <Card className="max-w-3xl border-rose-200">
-      <CardHeader>
-        <CardTitle className="text-rose-900">Unable to load reviews</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-rose-700">{error.message}</p>
-        <Button type="button" variant="danger" onClick={reset}>
-          Try again
-        </Button>
-      </CardContent>
-    </Card>
+    <RouteErrorState
+      title="Unable to load reviews"
+      description="We could not load your assigned review tasks. Retry to refresh cycle and submission data."
+      error={error}
+      onRetry={reset}
+      maxWidthClassName="max-w-3xl"
+      data-testid="reviews-error"
+    />
   );
 }
