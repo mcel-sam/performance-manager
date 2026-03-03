@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { ensureDemoSetup, loginAsManager } from "./helpers/demo";
+import { ensureDemoSetup, loginAsEmployee, loginAsManager } from "./helpers/demo";
 
 test.beforeAll(async ({ request }) => {
   await ensureDemoSetup(request);
@@ -11,7 +11,7 @@ test("home loads and primary navigation opens reviews", async ({ page }) => {
 
   await expect(
     page.getByRole("heading", {
-      name: "Reviews, calibration, and improvement plans",
+      name: "Performance workflows by role",
     }),
   ).toBeVisible();
   await expect(page.getByTestId("nav-link-help")).toBeVisible();
@@ -25,4 +25,16 @@ test("home loads and primary navigation opens reviews", async ({ page }) => {
       name: "Performance Reviews",
     }),
   ).toBeVisible();
+});
+
+test("employee navigation hides admin and calibration modules", async ({ page }) => {
+  await loginAsEmployee(page);
+
+  await expect(page.getByTestId("nav-link-home")).toBeVisible();
+  await expect(page.getByTestId("nav-link-reviews")).toBeVisible();
+  await expect(page.getByTestId("nav-link-help")).toBeVisible();
+  await expect(page.getByTestId("nav-link-admin-cycles")).toHaveCount(0);
+  await expect(page.getByTestId("nav-link-admin-calibration")).toHaveCount(0);
+  await expect(page.getByTestId("nav-link-admin-reporting")).toHaveCount(0);
+  await expect(page.getByTestId("nav-link-calibration")).toHaveCount(0);
 });

@@ -2,59 +2,23 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import type { UserRole } from "@prisma/client";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { cn } from "@/components/ui/cn";
+import type { ShellNavItem } from "@/config/navigation";
 
 interface AppShellProps {
   children: ReactNode;
+  navItems: ShellNavItem[];
+  viewer: {
+    role: UserRole;
+    userId: string;
+  } | null;
 }
 
-const baseNavItems = [
-  {
-    href: "/",
-    label: "Home",
-    testId: "nav-link-home",
-  },
-  {
-    href: "/performance/reviews",
-    label: "Reviews",
-    testId: "nav-link-reviews",
-  },
-  {
-    href: "/performance/calibration/calibration_session_seed_1",
-    label: "Calibration",
-    testId: "nav-link-calibration",
-  },
-  {
-    href: "/admin/performance/calibration",
-    label: "Admin Calibration",
-    testId: "nav-link-admin-calibration",
-  },
-  {
-    href: "/admin/performance/reporting",
-    label: "Admin Reporting",
-    testId: "nav-link-admin-reporting",
-  },
-  {
-    href: "/performance/improvement-plans",
-    label: "Improvement Plans",
-    testId: "nav-link-improvement-plans",
-  },
-  {
-    href: "/admin/performance/review-cycles",
-    label: "Admin Cycles",
-    testId: "nav-link-admin-cycles",
-  },
-  {
-    href: "/help",
-    label: "Help",
-    testId: "nav-link-help",
-  },
-];
-
-export default function AppShell({ children }: AppShellProps) {
+export default function AppShell({ children, navItems, viewer }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isSwitchingUser, setIsSwitchingUser] = useState(false);
@@ -92,10 +56,15 @@ export default function AppShell({ children }: AppShellProps) {
               Performance Manager
             </p>
             <h1 className="mt-1 text-lg font-semibold text-slate-900">Workspace</h1>
+            {viewer ? (
+              <p className="mt-2 text-xs text-slate-500">
+                {viewer.role} <span className="text-slate-400">({viewer.userId})</span>
+              </p>
+            ) : null}
           </div>
 
           <nav className="space-y-1 p-3">
-            {baseNavItems.map((item) => {
+            {navItems.map((item) => {
               const isActive =
                 pathname === item.href ||
                 (item.href !== "/" && pathname.startsWith(item.href));
