@@ -1259,7 +1259,7 @@ Feedback observed:
 - [x] Only one nav item is active at a time
 - [x] Deep-work pages have noticeably more usable center width
 - [x] `lint/typecheck/test/build/test:e2e` pass
-- Completed in PR #TBD.
+- Completed in PR #30.
 
 ---
 
