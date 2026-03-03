@@ -1120,7 +1120,7 @@ We will follow proven patterns:
 - [x] HR can explain “who owes what” from the UI
 - [x] Generated tasks have correct due dates and types
 - [x] UI mirrors Lattice pattern: structured steps, not a long form
-- Completed in PR #TBD.
+- Completed in PR #25.
 
 ---
 
