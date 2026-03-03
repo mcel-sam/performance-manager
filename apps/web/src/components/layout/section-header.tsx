@@ -13,6 +13,7 @@ export function SectionHeader({ title, description, action, className, ...props 
     <div {...props} className={cn("flex flex-wrap items-start justify-between gap-3", className)}>
       <div>
         <h2 className="text-xl font-semibold tracking-tight text-slate-900">{title}</h2>
+        <div className="mt-1 h-0.5 w-16 rounded-full bg-gradient-to-r from-teal-400 to-amber-300" />
         {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
       </div>
       {action ? <div>{action}</div> : null}

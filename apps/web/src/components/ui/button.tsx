@@ -6,9 +6,11 @@ type ButtonVariant = "primary" | "secondary" | "outline" | "danger";
 type ButtonSize = "sm" | "md";
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-slate-900 text-white hover:bg-slate-700",
-  secondary: "bg-slate-600 text-white hover:bg-slate-500",
-  outline: "border border-slate-300 bg-white text-slate-800 hover:bg-slate-100",
+  primary:
+    "bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-strong)]",
+  secondary: "bg-teal-700 text-white hover:bg-teal-600",
+  outline:
+    "border border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50",
   danger: "bg-rose-700 text-white hover:bg-rose-600",
 };
 
@@ -34,7 +36,7 @@ export function Button({
       {...props}
       type={type}
       className={cn(
-        "rounded-[var(--radius-md)] font-medium shadow-[var(--shadow-xs)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60",
+        "rounded-[var(--radius-md)] font-medium shadow-[var(--shadow-xs)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 disabled:cursor-not-allowed disabled:opacity-60",
         variantClasses[variant],
         sizeClasses[size],
         className,

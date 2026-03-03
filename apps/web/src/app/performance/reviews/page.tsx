@@ -2,9 +2,9 @@ import Link from "next/link";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { StatusChip } from "@/components/ui/status-chip";
 import {
   Table,
   TableBody,
@@ -33,6 +33,13 @@ const statusLabel = {
   RETURNED: "Returned",
 } as const;
 
+const statusTone = {
+  NOT_STARTED: "neutral",
+  IN_PROGRESS: "info",
+  SUBMITTED: "success",
+  RETURNED: "warning",
+} as const;
+
 export default async function PerformanceReviewsPage() {
   const context = await getDevRequestContext();
   const tasks = await listAssignedReviewTasks(context);
@@ -54,6 +61,11 @@ export default async function PerformanceReviewsPage() {
           aria-label="Empty review task state"
           title="No assigned review tasks"
           description="Assigned submissions appear after HR generates cycle packets. Open Help for next steps and visibility rules."
+          icon={<span aria-hidden="true">🗂</span>}
+          nextSteps={[
+            "Ask HR to generate packets for an active cycle.",
+            "Check Help for cycle status and visibility expectations.",
+          ]}
           action={
             <Link href="/help">
               <Button variant="outline" size="sm">
@@ -86,7 +98,7 @@ export default async function PerformanceReviewsPage() {
                         {relationshipLabel[task.relationship]}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="neutral">{statusLabel[task.status]}</Badge>
+                        <StatusChip tone={statusTone[task.status]}>{statusLabel[task.status]}</StatusChip>
                       </TableCell>
                       <TableCell className="text-slate-700">
                         {new Date(task.cycleEndDate).toLocaleDateString()}

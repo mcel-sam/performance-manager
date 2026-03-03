@@ -23,13 +23,13 @@ export function PageHeader({
     <header
       {...props}
       className={cn(
-        "flex flex-wrap items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-slate-200 bg-white p-6 shadow-[var(--shadow-sm)]",
+        "flex flex-wrap items-start justify-between gap-4 rounded-[var(--radius-lg)] border border-teal-200 bg-gradient-to-r from-white via-teal-50/55 to-amber-50/35 p-6 shadow-[var(--shadow-sm)]",
         className,
       )}
     >
       <div className="space-y-1">
         {eyebrow ? (
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{eyebrow}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-700">{eyebrow}</p>
         ) : null}
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{title}</h1>
         {description ? <p className="text-sm text-slate-600">{description}</p> : null}
