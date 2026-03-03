@@ -33,6 +33,11 @@ enum ReviewRelationship {
   UPWARD
 }
 
+enum PeerAssignmentMode {
+  HR_ASSIGNED
+  NOMINATION
+}
+
 enum ReviewSubmissionStatus {
   NOT_STARTED
   IN_PROGRESS
@@ -232,7 +237,13 @@ model ReviewCycle {
   selfReviewRequired    Boolean               @default(true)
   managerReviewRequired Boolean               @default(true)
   peerReviewCount       Int                   @default(0)
+  peerAssignmentMode    PeerAssignmentMode    @default(HR_ASSIGNED)
   upwardReviewCount     Int                   @default(0)
+  upwardReviewsForManagersOnly Boolean        @default(true)
+  selfReviewDueAt       DateTime?
+  managerReviewDueAt    DateTime?
+  peerReviewDueAt       DateTime?
+  upwardReviewDueAt     DateTime?
   templateId            String?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
@@ -285,6 +296,7 @@ model ReviewSubmission {
   reviewerEmployeeId String
   relationship       ReviewRelationship
   status             ReviewSubmissionStatus @default(NOT_STARTED)
+  dueAt              DateTime?
   submittedAt        DateTime?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt
@@ -298,6 +310,7 @@ model ReviewSubmission {
   @@unique([cycleId, subjectEmployeeId, reviewerEmployeeId, relationship])
   @@index([orgId])
   @@index([cycleId, status])
+  @@index([cycleId, dueAt])
   @@index([packetId])
   @@index([subjectEmployeeId])
   @@index([reviewerEmployeeId])
