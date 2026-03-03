@@ -992,4 +992,4 @@ We will follow proven patterns:
 - [x] Reporting is demo-ready and trustworthy for HR decision meetings
 - [x] Exports are usable for presentations and follow-up analysis
 - Completed in PR #19 (dev -> main Milestone 6 Phase 4)
-- Download PNG chart exports completed in PR #22.
+- Download PNG chart exports completed in PR #21.
