@@ -495,7 +495,7 @@ npm run dev
   - [x] Calibration session view
   - [x] Improvement plans detail
   - [x] Admin review cycles new/create page (if still inconsistent)
-- [ ] Standardize loading/empty/error states using shared components (remaining outliers moved to Milestone 4.1)
+- [x] Standardize loading/empty/error states using shared components (completed in Milestone 4.1, PR #7)
 - [x] Add Skeleton loaders on packet/calibration/improvement plan detail where data fetches occur
 - [x] Accessibility baseline pass:
   - [x] Focus states visible
@@ -504,7 +504,7 @@ npm run dev
 
 **Acceptance criteria**
 - [x] Core flows look consistent and use shared components
-- [ ] No mixed styling patterns remain on core routes (remaining admin/reviews outliers moved to Milestone 4.1)
+- [x] No mixed styling patterns remain on core routes (completed in Milestone 4.1, PR #7)
 - [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
 - Completed in PR #4 (dev -> main Milestone 4 Phase 2)
 
@@ -975,7 +975,7 @@ We will follow proven patterns:
 
 ## Phase 4 — Exports + polish (Lattice-like finishing touches)
 
-- [ ] Add “Download PNG” for charts (optional, later; deferred)
+- [x] Add “Download PNG” for charts
 - [x] Add CSV exports:
   - progress summary
   - rating distribution table
@@ -992,3 +992,4 @@ We will follow proven patterns:
 - [x] Reporting is demo-ready and trustworthy for HR decision meetings
 - [x] Exports are usable for presentations and follow-up analysis
 - Completed in PR #19 (dev -> main Milestone 6 Phase 4)
+- Download PNG chart exports completed in PR #22.
