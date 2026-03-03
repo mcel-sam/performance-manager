@@ -1,6 +1,7 @@
 import {
   CycleStatus,
   CycleVisibilityPolicy,
+  PeerAssignmentMode,
   ReviewRelationship,
   ReviewSubmissionStatus,
   UserRole,
@@ -25,7 +26,13 @@ interface ReviewCycleRecord {
   selfReviewRequired: boolean;
   managerReviewRequired: boolean;
   peerReviewCount: number;
+  peerAssignmentMode: PeerAssignmentMode;
   upwardReviewCount: number;
+  upwardReviewsForManagersOnly: boolean;
+  selfReviewDueAt: Date | null;
+  managerReviewDueAt: Date | null;
+  peerReviewDueAt: Date | null;
+  upwardReviewDueAt: Date | null;
 }
 
 interface ReviewCycleListRecord {
@@ -38,7 +45,13 @@ interface ReviewCycleListRecord {
   selfReviewRequired: boolean;
   managerReviewRequired: boolean;
   peerReviewCount: number;
+  peerAssignmentMode: PeerAssignmentMode;
   upwardReviewCount: number;
+  upwardReviewsForManagersOnly: boolean;
+  selfReviewDueAt: Date | null;
+  managerReviewDueAt: Date | null;
+  peerReviewDueAt: Date | null;
+  upwardReviewDueAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +74,22 @@ interface CreateManyResult {
   count: number;
 }
 
+interface SubmissionStatusCountRecord {
+  cycleId: string;
+  status: ReviewSubmissionStatus;
+  _count: {
+    _all: number;
+  };
+}
+
+interface SubmissionRelationshipCountRecord {
+  cycleId: string;
+  relationship: ReviewRelationship;
+  _count: {
+    _all: number;
+  };
+}
+
 interface AdminCycleDb {
   reviewCycle: {
     create: (args: {
@@ -75,7 +104,13 @@ interface AdminCycleDb {
         selfReviewRequired: true;
         managerReviewRequired: true;
         peerReviewCount: true;
+        peerAssignmentMode: true;
         upwardReviewCount: true;
+        upwardReviewsForManagersOnly: true;
+        selfReviewDueAt: true;
+        managerReviewDueAt: true;
+        peerReviewDueAt: true;
+        upwardReviewDueAt: true;
       };
     }) => Promise<
       | {
@@ -85,7 +120,13 @@ interface AdminCycleDb {
           selfReviewRequired: boolean;
           managerReviewRequired: boolean;
           peerReviewCount: number;
+          peerAssignmentMode: PeerAssignmentMode;
           upwardReviewCount: number;
+          upwardReviewsForManagersOnly: boolean;
+          selfReviewDueAt: Date | null;
+          managerReviewDueAt: Date | null;
+          peerReviewDueAt: Date | null;
+          upwardReviewDueAt: Date | null;
         }
       | null
     >;
@@ -101,7 +142,13 @@ interface AdminCycleDb {
         selfReviewRequired: true;
         managerReviewRequired: true;
         peerReviewCount: true;
+        peerAssignmentMode: true;
         upwardReviewCount: true;
+        upwardReviewsForManagersOnly: true;
+        selfReviewDueAt: true;
+        managerReviewDueAt: true;
+        peerReviewDueAt: true;
+        upwardReviewDueAt: true;
         createdAt: true;
         updatedAt: true;
       };
@@ -162,9 +209,19 @@ interface AdminCycleDb {
         reviewerEmployeeId: string;
         relationship: ReviewRelationship;
         status: ReviewSubmissionStatus;
+        dueAt?: Date | null;
       }[];
       skipDuplicates: boolean;
     }) => Promise<CreateManyResult>;
+    groupBy: (args: {
+      by: ["cycleId", "status"] | ["cycleId", "relationship"];
+      where: {
+        orgId: string;
+      };
+      _count: {
+        _all: true;
+      };
+    }) => Promise<SubmissionStatusCountRecord[] | SubmissionRelationshipCountRecord[]>;
   };
   auditEvent: {
     create: (args: {
@@ -197,7 +254,13 @@ const createReviewCycleSchema = z
     selfReviewRequired: z.boolean().default(true),
     managerReviewRequired: z.boolean().default(true),
     peerReviewCount: z.number().int().min(0).max(20).default(0),
+    peerAssignmentMode: z.nativeEnum(PeerAssignmentMode).default(PeerAssignmentMode.HR_ASSIGNED),
     upwardReviewCount: z.number().int().min(0).max(20).default(0),
+    upwardReviewsForManagersOnly: z.boolean().default(true),
+    selfReviewDueAt: z.string().datetime().optional(),
+    managerReviewDueAt: z.string().datetime().optional(),
+    peerReviewDueAt: z.string().datetime().optional(),
+    upwardReviewDueAt: z.string().datetime().optional(),
     scorecardMetrics: scorecardMetricListSchema.optional(),
   })
   .superRefine((value, ctx) => {
@@ -214,6 +277,32 @@ const createReviewCycleSchema = z
         path: ["endDate"],
         message: "endDate must be later than startDate",
       });
+    }
+
+    const dueDateFields = [
+      ["selfReviewDueAt", value.selfReviewDueAt],
+      ["managerReviewDueAt", value.managerReviewDueAt],
+      ["peerReviewDueAt", value.peerReviewDueAt],
+      ["upwardReviewDueAt", value.upwardReviewDueAt],
+    ] as const;
+
+    for (const [path, dueDateValue] of dueDateFields) {
+      if (!dueDateValue) {
+        continue;
+      }
+
+      const dueDate = new Date(dueDateValue);
+      if (Number.isNaN(dueDate.getTime())) {
+        continue;
+      }
+
+      if (dueDate < startDate || dueDate > endDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [path],
+          message: `${path} must be inside the cycle window`,
+        });
+      }
     }
   });
 
@@ -244,7 +333,25 @@ export interface ReviewCycleListItem {
   selfReviewRequired: boolean;
   managerReviewRequired: boolean;
   peerReviewCount: number;
+  peerAssignmentMode: PeerAssignmentMode;
   upwardReviewCount: number;
+  upwardReviewsForManagersOnly: boolean;
+  selfReviewDueAt: string | null;
+  managerReviewDueAt: string | null;
+  peerReviewDueAt: string | null;
+  upwardReviewDueAt: string | null;
+  submissionStatusCounts: {
+    NOT_STARTED: number;
+    IN_PROGRESS: number;
+    SUBMITTED: number;
+    RETURNED: number;
+  };
+  submissionRelationshipCounts: {
+    SELF: number;
+    MANAGER: number;
+    PEER: number;
+    UPWARD: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -255,26 +362,86 @@ export async function listReviewCycles(
 ): Promise<ReviewCycleListItem[]> {
   requireHrAdmin(context);
 
-  const cycles = await db.reviewCycle.findMany({
-    where: { orgId: context.orgId },
-    select: {
-      id: true,
-      name: true,
-      startDate: true,
-      endDate: true,
-      status: true,
-      visibilityPolicy: true,
-      selfReviewRequired: true,
-      managerReviewRequired: true,
-      peerReviewCount: true,
-      upwardReviewCount: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: {
-      startDate: "desc",
-    },
-  });
+  const [cycles, statusCountsRaw, relationshipCountsRaw] = await Promise.all([
+    db.reviewCycle.findMany({
+      where: { orgId: context.orgId },
+      select: {
+        id: true,
+        name: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        visibilityPolicy: true,
+        selfReviewRequired: true,
+        managerReviewRequired: true,
+        peerReviewCount: true,
+        peerAssignmentMode: true,
+        upwardReviewCount: true,
+        upwardReviewsForManagersOnly: true,
+        selfReviewDueAt: true,
+        managerReviewDueAt: true,
+        peerReviewDueAt: true,
+        upwardReviewDueAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: {
+        startDate: "desc",
+      },
+    }),
+    db.reviewSubmission.groupBy({
+      by: ["cycleId", "status"],
+      where: { orgId: context.orgId },
+      _count: { _all: true },
+    }) as Promise<SubmissionStatusCountRecord[]>,
+    db.reviewSubmission.groupBy({
+      by: ["cycleId", "relationship"],
+      where: { orgId: context.orgId },
+      _count: { _all: true },
+    }) as Promise<SubmissionRelationshipCountRecord[]>,
+  ]);
+
+  const statusCountsByCycle = new Map<
+    string,
+    {
+      NOT_STARTED: number;
+      IN_PROGRESS: number;
+      SUBMITTED: number;
+      RETURNED: number;
+    }
+  >();
+
+  for (const count of statusCountsRaw) {
+    const current = statusCountsByCycle.get(count.cycleId) ?? {
+      NOT_STARTED: 0,
+      IN_PROGRESS: 0,
+      SUBMITTED: 0,
+      RETURNED: 0,
+    };
+    current[count.status] = count._count._all;
+    statusCountsByCycle.set(count.cycleId, current);
+  }
+
+  const relationshipCountsByCycle = new Map<
+    string,
+    {
+      SELF: number;
+      MANAGER: number;
+      PEER: number;
+      UPWARD: number;
+    }
+  >();
+
+  for (const count of relationshipCountsRaw) {
+    const current = relationshipCountsByCycle.get(count.cycleId) ?? {
+      SELF: 0,
+      MANAGER: 0,
+      PEER: 0,
+      UPWARD: 0,
+    };
+    current[count.relationship] = count._count._all;
+    relationshipCountsByCycle.set(count.cycleId, current);
+  }
 
   return cycles.map((cycle) => ({
     id: cycle.id,
@@ -286,7 +453,25 @@ export async function listReviewCycles(
     selfReviewRequired: cycle.selfReviewRequired,
     managerReviewRequired: cycle.managerReviewRequired,
     peerReviewCount: cycle.peerReviewCount,
+    peerAssignmentMode: cycle.peerAssignmentMode,
     upwardReviewCount: cycle.upwardReviewCount,
+    upwardReviewsForManagersOnly: cycle.upwardReviewsForManagersOnly,
+    selfReviewDueAt: cycle.selfReviewDueAt?.toISOString() ?? null,
+    managerReviewDueAt: cycle.managerReviewDueAt?.toISOString() ?? null,
+    peerReviewDueAt: cycle.peerReviewDueAt?.toISOString() ?? null,
+    upwardReviewDueAt: cycle.upwardReviewDueAt?.toISOString() ?? null,
+    submissionStatusCounts: statusCountsByCycle.get(cycle.id) ?? {
+      NOT_STARTED: 0,
+      IN_PROGRESS: 0,
+      SUBMITTED: 0,
+      RETURNED: 0,
+    },
+    submissionRelationshipCounts: relationshipCountsByCycle.get(cycle.id) ?? {
+      SELF: 0,
+      MANAGER: 0,
+      PEER: 0,
+      UPWARD: 0,
+    },
     createdAt: cycle.createdAt.toISOString(),
     updatedAt: cycle.updatedAt.toISOString(),
   }));
@@ -304,18 +489,29 @@ export async function createReviewCycle(
   }
 
   const scorecardMetrics = resolveScorecardMetricConfig(parsed.data.scorecardMetrics);
+  const endDate = new Date(parsed.data.endDate);
   const cycle = await db.reviewCycle.create({
     data: {
       orgId: context.orgId,
       name: parsed.data.name,
       startDate: new Date(parsed.data.startDate),
-      endDate: new Date(parsed.data.endDate),
+      endDate,
       status: CycleStatus.DRAFT,
       visibilityPolicy: parsed.data.visibilityPolicy,
       selfReviewRequired: parsed.data.selfReviewRequired,
       managerReviewRequired: parsed.data.managerReviewRequired,
       peerReviewCount: parsed.data.peerReviewCount,
+      peerAssignmentMode: parsed.data.peerAssignmentMode,
       upwardReviewCount: parsed.data.upwardReviewCount,
+      upwardReviewsForManagersOnly: parsed.data.upwardReviewsForManagersOnly,
+      selfReviewDueAt: parsed.data.selfReviewDueAt ? new Date(parsed.data.selfReviewDueAt) : endDate,
+      managerReviewDueAt: parsed.data.managerReviewDueAt
+        ? new Date(parsed.data.managerReviewDueAt)
+        : endDate,
+      peerReviewDueAt: parsed.data.peerReviewDueAt ? new Date(parsed.data.peerReviewDueAt) : endDate,
+      upwardReviewDueAt: parsed.data.upwardReviewDueAt
+        ? new Date(parsed.data.upwardReviewDueAt)
+        : endDate,
       scorecardMetrics: {
         create: scorecardMetrics.map((metric) => ({
           orgId: context.orgId,
@@ -337,6 +533,7 @@ export async function createReviewCycle(
         name: cycle.name,
         status: cycle.status,
         scorecardMetricCount: scorecardMetrics.length,
+        peerAssignmentMode: cycle.peerAssignmentMode,
       },
     },
   });
@@ -371,7 +568,13 @@ export async function generateCycleArtifacts(
       selfReviewRequired: true,
       managerReviewRequired: true,
       peerReviewCount: true,
+      peerAssignmentMode: true,
       upwardReviewCount: true,
+      upwardReviewsForManagersOnly: true,
+      selfReviewDueAt: true,
+      managerReviewDueAt: true,
+      peerReviewDueAt: true,
+      upwardReviewDueAt: true,
     },
   });
 
@@ -440,6 +643,7 @@ export async function generateCycleArtifacts(
     reviewerEmployeeId: string;
     relationship: ReviewRelationship;
     status: ReviewSubmissionStatus;
+    dueAt: Date | null;
   }[] = [];
 
   for (const subject of employees) {
@@ -449,6 +653,13 @@ export async function generateCycleArtifacts(
     }
 
     const dedupe = new Set<string>();
+    const dueAtByRelationship: Record<ReviewRelationship, Date | null> = {
+      [ReviewRelationship.SELF]: cycle.selfReviewDueAt,
+      [ReviewRelationship.MANAGER]: cycle.managerReviewDueAt,
+      [ReviewRelationship.PEER]: cycle.peerReviewDueAt,
+      [ReviewRelationship.UPWARD]: cycle.upwardReviewDueAt,
+    };
+
     const addSubmission = (reviewerEmployeeId: string, relationship: ReviewRelationship) => {
       const key = `${subject.id}:${reviewerEmployeeId}:${relationship}`;
       if (dedupe.has(key)) {
@@ -464,6 +675,7 @@ export async function generateCycleArtifacts(
         reviewerEmployeeId,
         relationship,
         status: ReviewSubmissionStatus.NOT_STARTED,
+        dueAt: dueAtByRelationship[relationship],
       });
     };
 
@@ -475,7 +687,7 @@ export async function generateCycleArtifacts(
       addSubmission(subject.managerId, ReviewRelationship.MANAGER);
     }
 
-    if (cycle.peerReviewCount > 0) {
+    if (cycle.peerReviewCount > 0 && cycle.peerAssignmentMode === PeerAssignmentMode.HR_ASSIGNED) {
       const peers = employees
         .filter((candidate) => candidate.id !== subject.id && candidate.id !== subject.managerId)
         .slice(0, cycle.peerReviewCount);
@@ -557,7 +769,13 @@ export async function transitionReviewCycleStatus(
       selfReviewRequired: true,
       managerReviewRequired: true,
       peerReviewCount: true,
+      peerAssignmentMode: true,
       upwardReviewCount: true,
+      upwardReviewsForManagersOnly: true,
+      selfReviewDueAt: true,
+      managerReviewDueAt: true,
+      peerReviewDueAt: true,
+      upwardReviewDueAt: true,
     },
   });
 
