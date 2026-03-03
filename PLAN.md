@@ -1171,7 +1171,7 @@ We will follow proven patterns:
 - [x] Required validation still works (focus first missing in a section)
 - [x] No regressions in autosave/submit/evidence attach
 - [x] Playwright: update write-review test to handle new layout
-- Completed in PR #TBD.
+- Completed in PR #27.
 
 ---
 
