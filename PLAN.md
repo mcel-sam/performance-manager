@@ -1241,24 +1241,25 @@ Feedback observed:
 ## Phase 1 — Navigation correctness + Focus layout
 
 ### 1A) Fix multi-selected nav items (active route logic)
-- [ ] Audit sidebar/nav active matching logic (route matching precedence)
-- [ ] Ensure exactly one item is active at a time for any route
-- [ ] Add unit test for nav active computation (paths -> active item)
+- [x] Audit sidebar/nav active matching logic (route matching precedence)
+- [x] Ensure exactly one item is active at a time for any route
+- [x] Add unit test for nav active computation (paths -> active item)
 
 ### 1B) Focus layout for deep-work pages (reclaim space)
-- [ ] Introduce “Focus Layout” variant for deep-work routes:
-  - [ ] write review
-  - [ ] packet view
-  - [ ] calibration session
-- [ ] Focus layout behavior:
-  - [ ] collapse sidebar by default (icon-only) OR hide and show breadcrumb/back action
-  - [ ] preserve keyboard access and nav discoverability
-- [ ] Ensure no regressions in routing, drawer behavior, or page headers
+- [x] Introduce “Focus Layout” variant for deep-work routes:
+  - [x] write review
+  - [x] packet view
+  - [x] calibration session
+- [x] Focus layout behavior:
+  - [x] collapse sidebar by default (icon-only) OR hide and show breadcrumb/back action
+  - [x] preserve keyboard access and nav discoverability
+- [x] Ensure no regressions in routing, drawer behavior, or page headers
 
 **Acceptance criteria**
-- [ ] Only one nav item is active at a time
-- [ ] Deep-work pages have noticeably more usable center width
-- [ ] `lint/typecheck/test/build/test:e2e` pass
+- [x] Only one nav item is active at a time
+- [x] Deep-work pages have noticeably more usable center width
+- [x] `lint/typecheck/test/build/test:e2e` pass
+- Completed in PR #TBD.
 
 ---
 
