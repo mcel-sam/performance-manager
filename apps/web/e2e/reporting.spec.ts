@@ -58,3 +58,18 @@ test("reporting chart drilldown filters employee table", async ({ page }) => {
   const afterDrilldown = await page.getByTestId("reporting-employee-row").count();
   expect(afterDrilldown).toBeLessThan(beforeDrilldown);
 });
+
+test("reporting charts expose png download actions", async ({ page }) => {
+  await loginAsHrAdmin(page);
+  await page.goto("/admin/performance/reporting?tab=progress");
+  await expect(page.getByTestId("reporting-download-progress-png")).toBeVisible();
+
+  await page.getByTestId("reporting-tab-results").click();
+  await expect(page.getByTestId("reporting-download-results-png")).toBeVisible();
+
+  await page.goto("/admin/performance/reporting?tab=competencies");
+  await expect(page.getByTestId("reporting-download-competency-png")).toBeVisible();
+
+  await page.goto("/admin/performance/reporting?tab=scorecard");
+  await expect(page.getByTestId("reporting-download-scorecard-png")).toBeVisible();
+});
