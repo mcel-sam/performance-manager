@@ -1388,6 +1388,7 @@ Feedback observed:
 - [x] Heatmap works and supports drilldown
 - [x] Manager gets basic insights without needing HR reporting page
 - [x] `lint/typecheck/test/build/test:e2e` pass
+- Completed in PR #34.
 
 ---
 
