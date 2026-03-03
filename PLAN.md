@@ -997,7 +997,7 @@ We will follow proven patterns:
 
 ## Milestone 7 — UX Refinement + People Admin + Progressive Reviews (Lattice-inspired)
 
-**Status:** Not started  
+**Status:** Completed in PRs #22, #23, #24, #25, #26, #27, and #28.  
 **Objective:** Improve the product’s usability and visual polish to feel modern and lively (Lattice-inspired), reduce cognitive overload (progressive disclosure), and add essential HR/Manager workflow surfaces: User Management + Team Reviews + better Cycle setup clarity.
 
 ### Scope
@@ -1179,15 +1179,16 @@ We will follow proven patterns:
 
 **Goal:** Prevent empty states that make the UI look unfinished during demos.
 
-- [ ] Ensure seeded demo dataset includes:
+- [x] Ensure seeded demo dataset includes:
   - mix of statuses (not started/in progress/completed)
   - evidence attached to some answers
   - at least one completed manager review so competency charts aren’t empty
   - at least one manager with directs for Team Reviews view
-- [ ] Ensure reporting shows meaningful distributions
+- [x] Ensure reporting shows meaningful distributions
 
 **Acceptance criteria**
-- [ ] Demo looks “alive” across HR, Manager, Employee journeys
+- [x] Demo looks “alive” across HR, Manager, Employee journeys
+- Completed in PR #28.
 
 ---
 
