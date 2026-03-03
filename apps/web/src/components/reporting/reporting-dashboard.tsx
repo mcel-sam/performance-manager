@@ -644,17 +644,33 @@ function ProgressTab({
                 Distribution across {totalPeople} employees in the current filter scope.
               </CardDescription>
             </div>
-            <a
-              href={csvHref}
-              download="reporting-progress-summary.csv"
-              className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-            >
-              Export progress CSV
-            </a>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  void downloadChartAsPng("reporting-progress-chart", "reporting-progress-chart.png")
+                }
+                className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                aria-label="Download status mix chart as PNG"
+                data-testid="reporting-download-progress-png"
+              >
+                Download PNG
+              </button>
+              <a
+                href={csvHref}
+                download="reporting-progress-summary.csv"
+                className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              >
+                Export progress CSV
+              </a>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="h-60 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
+          <div
+            className="h-60 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3"
+            data-chart-export-id="reporting-progress-chart"
+          >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 12, right: 12, left: 12, bottom: 12 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -797,17 +813,33 @@ function ResultsTab({
                 Compare final ratings against scorecard baseline by rating bucket.
               </CardDescription>
             </div>
-            <a
-              href={csvHref}
-              download="reporting-ratings-distribution.csv"
-              className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-            >
-              Export ratings CSV
-            </a>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  void downloadChartAsPng("reporting-ratings-chart", "reporting-ratings-chart.png")
+                }
+                className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                aria-label="Download rating distribution chart as PNG"
+                data-testid="reporting-download-results-png"
+              >
+                Download PNG
+              </button>
+              <a
+                href={csvHref}
+                download="reporting-ratings-distribution.csv"
+                className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              >
+                Export ratings CSV
+              </a>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="h-60 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
+          <div
+            className="h-60 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3"
+            data-chart-export-id="reporting-ratings-chart"
+          >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={ratingsData} margin={{ top: 12, right: 12, left: 6, bottom: 12 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -1049,10 +1081,28 @@ function CompetenciesTab({
       {selectedCompetency ? (
         <Card data-testid="reporting-competency-drilldown">
           <CardHeader>
-            <CardTitle>{humanizeEnumValue(selectedCompetency.dimensionKey)} drilldown</CardTitle>
-            <CardDescription>
-              Distribution and self vs manager comparison for the selected competency.
-            </CardDescription>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle>{humanizeEnumValue(selectedCompetency.dimensionKey)} drilldown</CardTitle>
+                <CardDescription>
+                  Distribution and self vs manager comparison for the selected competency.
+                </CardDescription>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  void downloadChartAsPng(
+                    "reporting-competency-drilldown-chart",
+                    `reporting-competency-${selectedCompetency.dimensionKey.toLowerCase()}.png`,
+                  )
+                }
+                className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                aria-label="Download competency drilldown chart as PNG"
+                data-testid="reporting-download-competency-png"
+              >
+                Download PNG
+              </button>
+            </div>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2 text-sm text-slate-700">
@@ -1064,7 +1114,10 @@ function CompetenciesTab({
               </p>
             </div>
 
-            <div className="h-56 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
+            <div
+              className="h-56 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3"
+              data-chart-export-id="reporting-competency-drilldown-chart"
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={[1, 2, 3, 4, 5].map((rating) => ({
@@ -1140,13 +1193,31 @@ function ScorecardTab({
     <section className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Scorecard metric comparison</CardTitle>
-          <CardDescription>
-            Self vs manager average ratings across weighted scorecard metrics.
-          </CardDescription>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Scorecard metric comparison</CardTitle>
+              <CardDescription>
+                Self vs manager average ratings across weighted scorecard metrics.
+              </CardDescription>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                void downloadChartAsPng("reporting-scorecard-chart", "reporting-scorecard-chart.png")
+              }
+              className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              aria-label="Download scorecard metric comparison chart as PNG"
+              data-testid="reporting-download-scorecard-png"
+            >
+              Download PNG
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="h-80 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
+          <div
+            className="h-80 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3"
+            data-chart-export-id="reporting-scorecard-chart"
+          >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={scorecardData} margin={{ top: 12, right: 16, left: 6, bottom: 36 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -1449,4 +1520,85 @@ function buildCompetencyHeatmapRows(
         };
       }),
     }));
+}
+
+async function downloadChartAsPng(
+  chartId: string,
+  fileName: string,
+): Promise<void> {
+  const chartContainer = document.querySelector<HTMLElement>(
+    `[data-chart-export-id=\"${chartId}\"]`,
+  );
+  const svg = chartContainer?.querySelector("svg");
+
+  if (!chartContainer || !svg) {
+    return;
+  }
+
+  const rect = chartContainer.getBoundingClientRect();
+  const width = Math.max(640, Math.ceil(rect.width));
+  const height = Math.max(240, Math.ceil(rect.height));
+
+  const svgClone = svg.cloneNode(true) as SVGSVGElement;
+  svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  svgClone.setAttribute("width", String(width));
+  svgClone.setAttribute("height", String(height));
+  if (!svgClone.getAttribute("viewBox")) {
+    svgClone.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  }
+
+  const serialized = new XMLSerializer().serializeToString(svgClone);
+  const svgBlob = new Blob([serialized], {
+    type: "image/svg+xml;charset=utf-8",
+  });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  try {
+    const image = await loadImage(svgUrl);
+    const scale = window.devicePixelRatio > 1 ? 2 : 1;
+    const canvas = document.createElement("canvas");
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return;
+    }
+
+    context.setTransform(scale, 0, 0, scale, 0, 0);
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    const pngBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/png");
+    });
+
+    if (!pngBlob) {
+      return;
+    }
+
+    const downloadUrl = URL.createObjectURL(pngBlob);
+    const downloadLink = document.createElement("a");
+    downloadLink.href = downloadUrl;
+    downloadLink.download = fileName;
+    document.body.append(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+    URL.revokeObjectURL(downloadUrl);
+  } catch {
+    // Keep export failure non-blocking for reporting workflows.
+    return;
+  } finally {
+    URL.revokeObjectURL(svgUrl);
+  }
+}
+
+function loadImage(sourceUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Unable to render chart image export."));
+    image.src = sourceUrl;
+  });
 }
