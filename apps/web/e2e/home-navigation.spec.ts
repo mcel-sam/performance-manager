@@ -47,3 +47,16 @@ test("manager team reviews page loads with direct-report rows", async ({ page })
   await expect(page.getByRole("heading", { name: "Team Reviews" })).toBeVisible();
   await expect(page.getByTestId("team-reviews-row").first()).toBeVisible();
 });
+
+test("packet route keeps one active nav item and enables focus layout collapse", async ({ page }) => {
+  await loginAsManager(page);
+  await page.goto("/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1");
+
+  await expect(page.getByTestId("app-shell-sidebar")).toHaveAttribute("data-collapsed", "true");
+  await expect(page.locator('a[aria-current="page"]')).toHaveCount(1);
+  await expect(page.getByTestId("nav-link-packets")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("nav-link-reviews")).not.toHaveAttribute("aria-current", "page");
+
+  await page.getByTestId("focus-layout-toggle-nav").click();
+  await expect(page.getByTestId("app-shell-sidebar")).toHaveAttribute("data-collapsed", "false");
+});
