@@ -58,7 +58,7 @@ export default function AppShell({ children, navItems, viewer }: AppShellProps) 
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <div
         className={cn(
-          "mx-auto grid min-h-screen w-full max-w-[1440px]",
+          "mx-auto grid min-h-screen w-full max-w-[1440px] transition-[grid-template-columns] duration-200 ease-out",
           isSidebarCollapsed
             ? "md:grid-cols-[80px_minmax(0,1fr)]"
             : "md:grid-cols-[260px_minmax(0,1fr)]",
@@ -67,7 +67,7 @@ export default function AppShell({ children, navItems, viewer }: AppShellProps) 
         <aside
           data-testid="app-shell-sidebar"
           data-collapsed={isSidebarCollapsed ? "true" : "false"}
-          className="border-r border-slate-200 bg-white"
+          className="border-r border-slate-200 bg-white transition-[width,padding] duration-200 ease-out"
         >
           <div
             className={cn(
@@ -100,7 +100,7 @@ export default function AppShell({ children, navItems, viewer }: AppShellProps) 
                   aria-label={item.label}
                   title={item.label}
                   className={cn(
-                    "block rounded-md px-3 py-2 text-sm font-medium transition",
+                    "block rounded-md px-3 py-2 text-sm font-medium transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-1",
                     isSidebarCollapsed && "text-center",
                     isActive
                       ? "bg-slate-900 text-white"
@@ -147,7 +147,7 @@ export default function AppShell({ children, navItems, viewer }: AppShellProps) 
 
         <main className={cn("p-6", focusLayout && "md:px-8 lg:px-10")}>
           {focusLayout ? (
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-4 py-2 text-sm leading-6 text-slate-700 shadow-[var(--shadow-xs)] transition-shadow duration-200">
               <span>{focusLayout.label}</span>
               <div className="flex items-center gap-2">
                 <button

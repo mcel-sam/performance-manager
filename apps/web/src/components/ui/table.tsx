@@ -10,7 +10,7 @@ export function Table({ className, ...props }: TableHTMLAttributes<HTMLTableElem
   return (
     <table
       {...props}
-      className={cn("min-w-full divide-y divide-slate-200 text-sm", className)}
+      className={cn("min-w-full divide-y divide-slate-200 text-sm text-slate-700", className)}
     />
   );
 }
@@ -19,13 +19,13 @@ export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCel
   return (
     <th
       {...props}
-      className={cn("px-4 py-3 text-left font-semibold text-slate-600", className)}
+      className={cn("px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-500", className)}
     />
   );
 }
 
 export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td {...props} className={cn("px-4 py-3 align-top", className)} />;
+  return <td {...props} className={cn("px-4 py-3 align-top text-sm leading-6", className)} />;
 }
 
 export function TableHeader({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {

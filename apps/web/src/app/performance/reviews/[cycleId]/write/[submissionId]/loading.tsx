@@ -1,10 +1,12 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { RouteLoadingState } from "@/components/ui/route-loading-state";
 
 export default function WriteReviewLoading() {
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-6 lg:grid-cols-[260px_minmax(0,1fr)]" aria-busy="true">
-      <Skeleton className="h-[420px] rounded-[var(--radius-lg)] border border-slate-200 bg-white" />
-      <Skeleton className="h-[620px] rounded-[var(--radius-lg)] border border-slate-200 bg-white" />
-    </div>
+    <RouteLoadingState
+      maxWidthClassName="max-w-7xl"
+      skeletonHeights={["h-[420px]", "h-[620px]"]}
+      className="mx-auto grid w-full gap-6 lg:grid-cols-[260px_minmax(0,1fr)]"
+      data-testid="write-review-loading"
+    />
   );
 }

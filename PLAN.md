@@ -1395,21 +1395,22 @@ Feedback observed:
 ## Phase 6 — Premium typography + spacing + interaction polish
 
 ### 6A) Typography system pass
-- [ ] Standardize:
-  - page titles/subtitles
-  - section headers
-  - table header/body sizes
-  - line-heights and content widths
-- [ ] Reduce “dense” areas and add consistent spacing rhythm
+- [x] Standardize:
+  - [x] page titles/subtitles
+  - [x] section headers
+  - [x] table header/body sizes
+  - [x] line-heights and content widths
+- [x] Reduce “dense” areas and add consistent spacing rhythm
 
 ### 6B) Microinteractions and states
-- [ ] Hover/focus states consistent across buttons, tabs, chips
-- [ ] Drawer transitions smooth, no layout jump
-- [ ] Empty/loading/error states polished and actionable
+- [x] Hover/focus states consistent across buttons, tabs, chips
+- [x] Drawer transitions smooth, no layout jump
+- [x] Empty/loading/error states polished and actionable
 
 **Acceptance criteria**
-- [ ] Core flows feel cohesive and premium (visual consistency)
-- [ ] Accessibility baseline preserved (focus rings visible, keyboard usable)
+- [x] Core flows feel cohesive and premium (visual consistency)
+- [x] Accessibility baseline preserved (focus rings visible, keyboard usable)
+- Completed in PR #35.
 
 ---
 

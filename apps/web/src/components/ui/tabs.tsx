@@ -76,7 +76,7 @@ export function Tabs({
             onClick={() => onValueChange(tab.value)}
             onKeyDown={(event) => handleTabKeyDown(event, index)}
             className={cn(
-              "rounded-[var(--radius-sm)] px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300",
+              "rounded-[var(--radius-sm)] px-3 py-1.5 text-sm font-medium leading-5 transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300",
               isActive ? "bg-white text-slate-900 shadow-[var(--shadow-xs)]" : "text-slate-600",
               "disabled:cursor-not-allowed disabled:opacity-60",
             )}

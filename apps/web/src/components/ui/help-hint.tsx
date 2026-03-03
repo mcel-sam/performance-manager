@@ -44,7 +44,7 @@ export function HelpHint({
           aria-expanded={isOpen}
           aria-controls={panelId}
           onClick={() => setIsOpen((previous) => !previous)}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-white text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-300 bg-white text-xs font-semibold text-slate-700 transition duration-150 hover:border-slate-400 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-1"
         >
           <span aria-hidden="true">?</span>
         </button>
@@ -52,8 +52,13 @@ export function HelpHint({
       <div
         id={panelId}
         role="note"
-        hidden={!isOpen}
-        className="mt-2 border-t border-slate-200 pt-2 text-xs text-slate-600"
+        aria-hidden={!isOpen}
+        className={cn(
+          "overflow-hidden border-t text-xs leading-5 text-slate-600 transition-[max-height,opacity,padding,margin] duration-200",
+          isOpen
+            ? "mt-2 max-h-40 border-slate-200 pt-2 opacity-100"
+            : "mt-0 max-h-0 border-transparent pt-0 opacity-0",
+        )}
       >
         {children}
       </div>

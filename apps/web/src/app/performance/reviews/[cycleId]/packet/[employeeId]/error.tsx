@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RouteErrorState } from "@/components/ui/route-error-state";
 
 interface ReviewPacketErrorProps {
   error: Error;
@@ -10,16 +9,13 @@ interface ReviewPacketErrorProps {
 
 export default function ReviewPacketError({ error, reset }: ReviewPacketErrorProps) {
   return (
-    <Card className="border-rose-200">
-      <CardHeader>
-        <CardTitle className="text-rose-900">Unable to load review packet</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-rose-700">{error.message}</p>
-        <Button type="button" variant="danger" onClick={reset}>
-          Try again
-        </Button>
-      </CardContent>
-    </Card>
+    <RouteErrorState
+      title="Unable to load review packet"
+      description="Packet data is unavailable right now. Retry to refresh submissions, answers, and evidence summaries."
+      error={error}
+      onRetry={reset}
+      maxWidthClassName="max-w-4xl"
+      data-testid="review-packet-error"
+    />
   );
 }
