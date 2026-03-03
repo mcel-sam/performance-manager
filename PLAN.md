@@ -1322,7 +1322,7 @@ Feedback observed:
 - [x] No broken/unused phase nav remains
 - [x] Write-review screen has clear hierarchy and breathing room
 - [x] Playwright write-review test updated if necessary and passes
-- Completed in PR #TBD.
+- Completed in PR #32.
 
 ---
 
