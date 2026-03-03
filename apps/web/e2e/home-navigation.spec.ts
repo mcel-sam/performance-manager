@@ -38,3 +38,12 @@ test("employee navigation hides admin and calibration modules", async ({ page })
   await expect(page.getByTestId("nav-link-admin-reporting")).toHaveCount(0);
   await expect(page.getByTestId("nav-link-calibration")).toHaveCount(0);
 });
+
+test("manager team reviews page loads with direct-report rows", async ({ page }) => {
+  await loginAsManager(page);
+
+  await page.getByTestId("nav-link-team-reviews").click();
+  await expect(page).toHaveURL(/\/performance\/team-reviews$/);
+  await expect(page.getByRole("heading", { name: "Team Reviews" })).toBeVisible();
+  await expect(page.getByTestId("team-reviews-row").first()).toBeVisible();
+});
