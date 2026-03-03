@@ -1,50 +1,100 @@
 import Link from "next/link";
 
+import UserManagementTable from "@/components/admin/user-management-table";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
+import { SectionContainer } from "@/components/ui/section-container";
+import { getDevRequestContext } from "@/server/auth/request-context";
+import { listOrgUsers } from "@/server/users/user-management-service";
+
+interface AdminUsersPageProps {
+  searchParams: Promise<{
+    search?: string;
+  }>;
+}
 
 export const dynamic = "force-dynamic";
 
-export default function AdminUsersPage() {
+export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
+  const context = await getDevRequestContext();
+  const { search } = await searchParams;
+  const directory = await listOrgUsers(context, { search });
+
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <PageHeader
         title="User Management"
-        description="Manage roles and reporting structure so review assignments and reporting stay accurate."
+        description="Manage roles and org structure so assignments and reporting stay aligned."
+        action={
+          <Link href="/admin/users/new">
+            <Button data-testid="admin-users-add-user">Add User</Button>
+          </Link>
+        }
       />
 
+      <section className="grid gap-4 md:grid-cols-5">
+        <SummaryCard label="Total users" value={directory.summary.totalUsers} />
+        <SummaryCard label="HR admins" value={directory.summary.hrAdmins} />
+        <SummaryCard label="Calibrators" value={directory.summary.calibrators} />
+        <SummaryCard label="Managers" value={directory.summary.managers} />
+        <SummaryCard label="Employees" value={directory.summary.employees} />
+      </section>
+
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">People admin workspace</CardTitle>
-          <CardDescription>
-            Full create and edit controls ship in Milestone 7 Phase 3. Use the current admin
-            tools below to continue setup.
-          </CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Search users</CardTitle>
+          <CardDescription>Filter by first name, last name, or email.</CardDescription>
         </CardHeader>
         <CardContent>
-          <EmptyState
-            title="User CRUD is coming next"
-            description="For now, configure cycles and calibration while the dedicated people management controls are being finalized."
-            icon={<span aria-hidden="true">🧭</span>}
-            action={
-              <div className="flex flex-wrap gap-2">
-                <Link href="/admin/performance/review-cycles">
-                  <Button size="sm" variant="outline">
-                    Open review cycles
-                  </Button>
-                </Link>
-                <Link href="/admin/performance/calibration">
-                  <Button size="sm" variant="outline">
-                    Open calibration admin
-                  </Button>
-                </Link>
-              </div>
-            }
-          />
+          <form className="flex flex-wrap items-center gap-2" method="GET">
+            <Input
+              name="search"
+              defaultValue={search ?? ""}
+              placeholder="Search name or email"
+              className="max-w-lg"
+              data-testid="admin-users-search-input"
+            />
+            <Button type="submit" variant="outline">
+              Search
+            </Button>
+            <Link href="/admin/users">
+              <Button type="button" variant="outline">
+                Clear
+              </Button>
+            </Link>
+          </form>
         </CardContent>
       </Card>
+
+      {directory.users.length === 0 ? (
+        <EmptyState
+          title="No users matched this search"
+          description="Try a broader search or create a new user profile."
+          action={
+            <Link href="/admin/users/new">
+              <Button size="sm">Add User</Button>
+            </Link>
+          }
+        />
+      ) : (
+        <SectionContainer variant="brand" className="p-3">
+          <UserManagementTable users={directory.users} />
+        </SectionContainer>
+      )}
     </div>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: number }) {
+  return (
+    <Card>
+      <CardHeader className="space-y-1">
+        <CardDescription>{label}</CardDescription>
+        <CardTitle className="text-2xl">{value}</CardTitle>
+      </CardHeader>
+    </Card>
   );
 }
