@@ -44,6 +44,7 @@ interface DemoSubmissionSeed {
   reviewerEmployeeId: string;
   relationship: ReviewRelationship;
   status: ReviewSubmissionStatus;
+  dueAt: Date | null;
   submittedAt: Date | null;
 }
 
@@ -184,6 +185,7 @@ export async function seedDemoData(): Promise<DemoSeedSummary> {
       reviewerEmployeeId: submission.reviewerEmployeeId,
       relationship: submission.relationship,
       status: submission.status,
+      dueAt: submission.dueAt,
       submittedAt: submission.submittedAt,
     })),
   });
@@ -398,6 +400,7 @@ function buildSubmissions(
       reviewerEmployeeId: subject.employeeId,
       relationship: ReviewRelationship.SELF,
       status: selfStatus,
+      dueAt: new Date("2026-11-18T23:59:59.999Z"),
       submittedAt: toSubmittedAt(selfStatus, "2026-11-18T15:00:00.000Z"),
     });
 
@@ -410,6 +413,7 @@ function buildSubmissions(
         reviewerEmployeeId: subject.managerEmployeeId,
         relationship: ReviewRelationship.MANAGER,
         status: managerStatus,
+        dueAt: new Date("2026-11-22T23:59:59.999Z"),
         submittedAt: toSubmittedAt(managerStatus, "2026-11-22T16:00:00.000Z"),
       });
     }
@@ -428,6 +432,7 @@ function buildSubmissions(
       reviewerEmployeeId: assignment.reviewerEmployeeId,
       relationship: ReviewRelationship.PEER,
       status: ReviewSubmissionStatus.SUBMITTED,
+      dueAt: new Date("2026-11-20T23:59:59.999Z"),
       submittedAt: new Date("2026-11-20T13:15:00.000Z"),
     });
   }
@@ -445,6 +450,7 @@ function buildSubmissions(
       reviewerEmployeeId: assignment.reviewerEmployeeId,
       relationship: ReviewRelationship.UPWARD,
       status: ReviewSubmissionStatus.SUBMITTED,
+      dueAt: new Date("2026-11-23T23:59:59.999Z"),
       submittedAt: new Date("2026-11-23T10:30:00.000Z"),
     });
   }
@@ -475,6 +481,10 @@ function getSelfSubmissionStatus(subjectEmployeeId: string): ReviewSubmissionSta
 function getManagerSubmissionStatus(subjectEmployeeId: string): ReviewSubmissionStatus {
   if (subjectEmployeeId === "emp_employee_1") {
     return ReviewSubmissionStatus.IN_PROGRESS;
+  }
+
+  if (subjectEmployeeId === "emp_employee_9") {
+    return ReviewSubmissionStatus.RETURNED;
   }
 
   if (subjectEmployeeId === "emp_employee_5" || subjectEmployeeId === "emp_employee_15") {
