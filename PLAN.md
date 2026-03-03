@@ -1143,7 +1143,7 @@ We will follow proven patterns:
 - [x] Manager can instantly see team progress and what to do next
 - [x] Drill-ins work and respect permissions
 - [x] Playwright: add 1 test for manager team page loads + shows direct reports
-- Completed in PR #TBD.
+- Completed in PR #26.
 
 ---
 
