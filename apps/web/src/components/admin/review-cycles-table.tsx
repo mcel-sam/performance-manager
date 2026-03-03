@@ -1,6 +1,7 @@
 "use client";
 
 import { CycleStatus } from "@prisma/client";
+import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,22 @@ interface ReviewCycleRow {
   status: CycleStatus;
   peerReviewCount: number;
   upwardReviewCount: number;
+  selfReviewDueAt: string | null;
+  managerReviewDueAt: string | null;
+  peerReviewDueAt: string | null;
+  upwardReviewDueAt: string | null;
+  submissionStatusCounts: {
+    NOT_STARTED: number;
+    IN_PROGRESS: number;
+    SUBMITTED: number;
+    RETURNED: number;
+  };
+  submissionRelationshipCounts: {
+    SELF: number;
+    MANAGER: number;
+    PEER: number;
+    UPWARD: number;
+  };
 }
 
 interface ReviewCyclesTableProps {
@@ -135,6 +152,7 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
                 <TableHead>Window</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Review Mix</TableHead>
+                <TableHead>Progress Summary</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -158,6 +176,25 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
                     </TableCell>
                     <TableCell className="text-slate-700">
                       Peer: {cycle.peerReviewCount} | Upward: {cycle.upwardReviewCount}
+                      <p className="mt-1 text-xs text-slate-500">
+                        Self due: {formatDueDate(cycle.selfReviewDueAt)}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Manager due: {formatDueDate(cycle.managerReviewDueAt)}
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-700">
+                      <p>
+                        Status: NS {cycle.submissionStatusCounts.NOT_STARTED} / IP{" "}
+                        {cycle.submissionStatusCounts.IN_PROGRESS} / SUB{" "}
+                        {cycle.submissionStatusCounts.SUBMITTED}
+                      </p>
+                      <p>
+                        Types: Self {cycle.submissionRelationshipCounts.SELF} / Manager{" "}
+                        {cycle.submissionRelationshipCounts.MANAGER} / Peer{" "}
+                        {cycle.submissionRelationshipCounts.PEER} / Upward{" "}
+                        {cycle.submissionRelationshipCounts.UPWARD}
+                      </p>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
@@ -176,6 +213,11 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
                         >
                           {nextStatus ? `Move to ${nextStatus}` : "Final"}
                         </Button>
+                        <Link href={`/admin/performance/reporting?cycleId=${cycle.id}&tab=progress`}>
+                          <Button size="sm" variant="outline">
+                            Reporting
+                          </Button>
+                        </Link>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -196,4 +238,12 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
       </CardContent>
     </Card>
   );
+}
+
+function formatDueDate(value: string | null): string {
+  if (!value) {
+    return "—";
+  }
+
+  return new Date(value).toLocaleDateString();
 }
