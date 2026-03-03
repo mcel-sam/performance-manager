@@ -1094,7 +1094,7 @@ We will follow proven patterns:
 - [x] HR can create/update users and manager relationships
 - [x] Manager/team views reflect updated structure
 - [x] Permission tests for HR-only access
-- Completed in PR #TBD.
+- Completed in PR #24.
 
 ---
 
