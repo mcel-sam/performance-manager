@@ -607,7 +607,7 @@ export default function WriteReviewForm({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_292px] 2xl:grid-cols-[minmax(0,1fr)_304px]">
       <Card>
         <CardHeader className="space-y-3">
           <SectionHeader
@@ -635,61 +635,60 @@ export default function WriteReviewForm({
             />
           ) : (
             <div className="space-y-5">
-              <Card className="border-slate-200 bg-slate-50 shadow-none">
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-900">Section progress</p>
-                    <p className="text-xs text-slate-600">
-                      Section {activeSectionIndex + 1} of {sections.length}
-                    </p>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {sections.map((section, index) => {
-                      const progress = sectionProgress.find(
-                        (entry) => entry.sectionId === section.id,
-                      );
-                      const isActiveSection = section.id === activeSection?.id;
+              <div className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-slate-900">Section progress</p>
+                  <p className="text-xs text-slate-600">
+                    Section {activeSectionIndex + 1} of {sections.length}
+                  </p>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {sections.map((section, index) => {
+                    const progress = sectionProgress.find(
+                      (entry) => entry.sectionId === section.id,
+                    );
+                    const isActiveSection = section.id === activeSection?.id;
 
-                      return (
-                        <Button
-                          key={section.id}
-                          type="button"
-                          variant={isActiveSection ? "primary" : "outline"}
-                          className="justify-between"
-                          data-testid={`write-review-section-${index + 1}`}
-                          onClick={() => goToSection(index)}
-                        >
-                          <span>{section.title}</span>
-                          <span className="text-xs">
-                            {progress?.answered ?? 0}/{progress?.total ?? 0}
-                          </span>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={goToPreviousSection}
-                      disabled={activeSectionIndex <= 0}
-                    >
-                      Previous section
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      data-testid="write-review-next-section"
-                      onClick={goToNextSection}
-                      disabled={activeSectionIndex === -1 || activeSectionIndex >= sections.length - 1}
-                    >
-                      Next section
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    return (
+                      <Button
+                        key={section.id}
+                        type="button"
+                        size="sm"
+                        variant={isActiveSection ? "primary" : "outline"}
+                        className="h-auto justify-between py-2"
+                        data-testid={`write-review-section-${index + 1}`}
+                        onClick={() => goToSection(index)}
+                      >
+                        <span>{section.title}</span>
+                        <span className="text-xs">
+                          {progress?.answered ?? 0}/{progress?.total ?? 0}
+                        </span>
+                      </Button>
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={goToPreviousSection}
+                    disabled={activeSectionIndex <= 0}
+                  >
+                    Previous section
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    data-testid="write-review-next-section"
+                    onClick={goToNextSection}
+                    disabled={activeSectionIndex === -1 || activeSectionIndex >= sections.length - 1}
+                  >
+                    Next section
+                  </Button>
+                </div>
+              </div>
 
               {missingQuestionIds.some((questionId) =>
                 activeSectionQuestionIds.includes(questionId),
@@ -910,6 +909,7 @@ export default function WriteReviewForm({
       <Drawer
         title="Evidence"
         description="Attach supporting evidence without leaving this review."
+        className="xl:sticky xl:top-6"
       >
         <Card className="border-slate-200 shadow-none">
           <CardContent className="space-y-3">

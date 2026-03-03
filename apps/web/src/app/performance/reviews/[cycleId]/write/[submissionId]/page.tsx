@@ -2,8 +2,6 @@ import Link from "next/link";
 
 import WriteReviewForm from "@/components/reviews/write-review-form";
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getWriteReviewData } from "@/server/reviews/participant-review-service";
 
@@ -29,7 +27,21 @@ export default async function WriteReviewPage({ params }: WriteReviewPageProps) 
   const data = await getWriteReviewData(cycleId, submissionId, context);
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 text-slate-900">
+    <div className="mx-auto w-full max-w-[1400px] space-y-6 text-slate-900">
+      <nav
+        aria-label="Write review breadcrumb"
+        data-testid="write-review-breadcrumb"
+        className="flex flex-wrap items-center gap-2 text-sm text-slate-600"
+      >
+        <Link href="/performance/reviews" className="font-medium text-slate-700 hover:text-slate-900">
+          Reviews
+        </Link>
+        <span aria-hidden>/</span>
+        <span>{data.submission.cycleName}</span>
+        <span aria-hidden>/</span>
+        <span>{data.submission.subjectName}</span>
+      </nav>
+
       <PageHeader
         eyebrow="Write Review"
         title={data.template.name}
@@ -42,64 +54,21 @@ export default async function WriteReviewPage({ params }: WriteReviewPageProps) 
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Phase Navigation</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <nav className="space-y-2">
-              <Link href="/performance/reviews">
-                <Button variant="outline" className="w-full justify-start">
-                  Review Tasks
-                </Button>
-              </Link>
-              <p className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-                Write Review
-              </p>
-              <Link href={`/performance/reviews/${cycleId}/packet/${data.submission.subjectEmployeeId}`}>
-                <Button variant="outline" className="w-full justify-start">
-                  Packet View
-                </Button>
-              </Link>
-              <p className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-                {relationshipLabel[data.submission.relationship]}
-              </p>
-            </nav>
-
-            <dl className="space-y-2 text-sm text-slate-700">
-              <div>
-                <dt className="font-semibold text-slate-900">Cycle</dt>
-                <dd>{data.submission.cycleName}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-900">Subject</dt>
-                <dd>{data.submission.subjectName}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-900">Reviewer</dt>
-                <dd>{data.submission.reviewerName}</dd>
-              </div>
-            </dl>
-          </CardContent>
-        </Card>
-
-        <WriteReviewForm
-          cycleId={cycleId}
-          submissionId={submissionId}
-          subjectEmployeeId={data.submission.subjectEmployeeId}
-          auth={{ userId: context.userId, orgId: context.orgId }}
-          initialStatus={data.submission.status}
-          questions={data.questions}
-          submissionContext={{
-            cycleName: data.submission.cycleName,
-            subjectName: data.submission.subjectName,
-            reviewerName: data.submission.reviewerName,
-            relationship: relationshipLabel[data.submission.relationship],
-            packetHref: `/performance/reviews/${cycleId}/packet/${data.submission.subjectEmployeeId}`,
-          }}
-        />
-      </div>
+      <WriteReviewForm
+        cycleId={cycleId}
+        submissionId={submissionId}
+        subjectEmployeeId={data.submission.subjectEmployeeId}
+        auth={{ userId: context.userId, orgId: context.orgId }}
+        initialStatus={data.submission.status}
+        questions={data.questions}
+        submissionContext={{
+          cycleName: data.submission.cycleName,
+          subjectName: data.submission.subjectName,
+          reviewerName: data.submission.reviewerName,
+          relationship: relationshipLabel[data.submission.relationship],
+          packetHref: `/performance/reviews/${cycleId}/packet/${data.submission.subjectEmployeeId}`,
+        }}
+      />
     </div>
   );
 }

@@ -23,6 +23,8 @@ test("write review autosave and submit locks the submission", async ({ page }) =
   await loginAsManager(page);
   await page.goto("/performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_manager_1");
 
+  await expect(page.getByTestId("write-review-breadcrumb")).toBeVisible();
+  await expect(page.getByText("Phase Navigation")).toHaveCount(0);
   await expect(page.getByTestId("write-review-section-1")).toBeVisible();
   await expect(page.getByTestId("write-review-context-toggle")).toHaveText("Show details");
   await page.getByTestId("write-review-context-toggle").click();

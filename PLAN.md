@@ -1305,23 +1305,24 @@ Feedback observed:
 ## Phase 3 — Review tasks/phase nav cleanup + write-review progressive UX fixes
 
 ### 3A) Remove/replace broken “Review Tasks” phase navigation
-- [ ] Identify the broken “Review Tasks” nav component (the one shown in screenshot)
-- [ ] Decide and implement:
-  - [ ] Remove if redundant, OR
-  - [ ] Replace with a simple breadcrumb: Reviews → Cycle → Subject
-- [ ] Ensure no dead UI elements remain
+- [x] Identify the broken “Review Tasks” nav component (the one shown in screenshot)
+- [x] Decide and implement:
+  - [x] Remove if redundant, OR
+  - [x] Replace with a simple breadcrumb: Reviews → Cycle → Subject
+- [x] Ensure no dead UI elements remain
 
 ### 3B) Write-review page layout cleanup
-- [ ] Remove duplicated navigation elements on write-review screen
-- [ ] Ensure the center workspace dominates:
-  - [ ] questions area readable, consistent max-width
-  - [ ] evidence drawer not overwhelming
-- [ ] Ensure progress indicator remains visible but compact
+- [x] Remove duplicated navigation elements on write-review screen
+- [x] Ensure the center workspace dominates:
+  - [x] questions area readable, consistent max-width
+  - [x] evidence drawer not overwhelming
+- [x] Ensure progress indicator remains visible but compact
 
 **Acceptance criteria**
-- [ ] No broken/unused phase nav remains
-- [ ] Write-review screen has clear hierarchy and breathing room
-- [ ] Playwright write-review test updated if necessary and passes
+- [x] No broken/unused phase nav remains
+- [x] Write-review screen has clear hierarchy and breathing room
+- [x] Playwright write-review test updated if necessary and passes
+- Completed in PR #32.
 
 ---
 
