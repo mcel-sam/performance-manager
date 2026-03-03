@@ -1200,3 +1200,246 @@ We will follow proven patterns:
   - write-review progressive sections
   - reporting still loads
 - [ ] Ensure `lint/typecheck/test/build/test:e2e` pass
+
+
+## Milestone 8 — Premium UX Hardening + Content Audit + Reporting Polish
+
+**Status:** Not started  
+**Objective:** Resolve UX regressions and premium-ize the experience: fix nav selection bugs, reclaim wasted space on work screens, simplify manager workflow into “My Team”, redesign evidence panel for readability, remove/replace broken review-task nav, improve reporting exports + add meaningful chart types, and standardize typography/spacing. Add a Playwright-driven UX audit loop to prevent regressions.
+
+### Why this milestone
+Feedback observed:
+1) Manager mode shows multiple nav items active (Reviews + Packets).
+2) Write/Review pages waste space with heavy sidebars/duplicate nav.
+3) Evidence panel is cramped and noisy; content isn’t prioritized.
+4) “Review Tasks” phase nav appears broken/redundant.
+5) Team Reviews should be “Manage my team” first, include total count, and provide drilldowns.
+6) Reporting PNG export is unreliable; charts can be more meaningful (heatmaps, etc.).
+7) Overall typography/spacing needs to feel premium and consistent.
+
+---
+
+## Scope
+
+### In scope
+- Navigation active-state correctness + role-based nav cleanup
+- Layout improvements for deep-work screens (write review, packet, calibration)
+- Evidence panel content redesign (progressive disclosure + spacing)
+- Manager “Team Reviews” redesign into “My Team” hub with drilldowns
+- Reporting export fix + add KPI-appropriate chart types (heatmap + donut where appropriate)
+- Typography/spacing/microinteraction polish across core routes
+- Playwright UX audit suite (screenshots + checks) to catch regressions
+
+### Out of scope
+- Production SSO/Entra integration
+- Notifications/email reminders
+- Org-wide directory import/sync
+- Multi-cycle trend analytics (line charts only if trend data exists)
+
+---
+
+## Phase 1 — Navigation correctness + Focus layout
+
+### 1A) Fix multi-selected nav items (active route logic)
+- [ ] Audit sidebar/nav active matching logic (route matching precedence)
+- [ ] Ensure exactly one item is active at a time for any route
+- [ ] Add unit test for nav active computation (paths -> active item)
+
+### 1B) Focus layout for deep-work pages (reclaim space)
+- [ ] Introduce “Focus Layout” variant for deep-work routes:
+  - [ ] write review
+  - [ ] packet view
+  - [ ] calibration session
+- [ ] Focus layout behavior:
+  - [ ] collapse sidebar by default (icon-only) OR hide and show breadcrumb/back action
+  - [ ] preserve keyboard access and nav discoverability
+- [ ] Ensure no regressions in routing, drawer behavior, or page headers
+
+**Acceptance criteria**
+- [ ] Only one nav item is active at a time
+- [ ] Deep-work pages have noticeably more usable center width
+- [ ] `lint/typecheck/test/build/test:e2e` pass
+
+---
+
+## Phase 2 — Content audit + Evidence panel redesign (progressive disclosure)
+
+### 2A) Content inventory and decisions (what belongs on each page)
+- [ ] Create `/docs/ux/CONTENT_AUDIT.md` containing a table for each core page:
+  - Reviews list
+  - Write review
+  - Packet view
+  - Calibration
+  - My Team (manager)
+  - Reporting
+- [ ] For each page define:
+  - [ ] primary goal
+  - [ ] primary content required
+  - [ ] secondary/supporting content
+  - [ ] content to hide behind “details”
+  - [ ] content to remove
+- [ ] Implement changes that eliminate redundant/broken UI surfaced by audit
+
+### 2B) Evidence panel redesign (less cramped, more useful)
+- [ ] Introduce two modes:
+  - [ ] Compact mode (default): only essential context + evidence tabs/counts
+  - [ ] Details mode (expandable): full cycle/subject/reviewer metadata + packet link
+- [ ] Spacing improvements:
+  - [ ] consistent vertical rhythm, headings, card grouping
+- [ ] Evidence browsing improvements:
+  - [ ] search/filter within evidence list (minimal)
+  - [ ] show preview snippet + date/source
+- [ ] Keep “Selected answer” compact (1 line + expand)
+- [ ] Ensure attach/detach flow remains simple and auditable
+
+**Acceptance criteria**
+- [ ] Evidence panel is scannable and no longer cramped
+- [ ] Non-essential metadata is hidden behind “details”
+- [ ] No regressions in evidence attach/detach
+- [ ] `lint/typecheck/test/build/test:e2e` pass
+
+---
+
+## Phase 3 — Review tasks/phase nav cleanup + write-review progressive UX fixes
+
+### 3A) Remove/replace broken “Review Tasks” phase navigation
+- [ ] Identify the broken “Review Tasks” nav component (the one shown in screenshot)
+- [ ] Decide and implement:
+  - [ ] Remove if redundant, OR
+  - [ ] Replace with a simple breadcrumb: Reviews → Cycle → Subject
+- [ ] Ensure no dead UI elements remain
+
+### 3B) Write-review page layout cleanup
+- [ ] Remove duplicated navigation elements on write-review screen
+- [ ] Ensure the center workspace dominates:
+  - [ ] questions area readable, consistent max-width
+  - [ ] evidence drawer not overwhelming
+- [ ] Ensure progress indicator remains visible but compact
+
+**Acceptance criteria**
+- [ ] No broken/unused phase nav remains
+- [ ] Write-review screen has clear hierarchy and breathing room
+- [ ] Playwright write-review test updated if necessary and passes
+
+---
+
+## Phase 4 — Manager experience redesign: Team Reviews → My Team hub
+
+### 4A) Rename and reshape manager page
+- [ ] Rename “Team Reviews” to “My Team” (or “Team”) in nav and header
+- [ ] Page structure:
+  - [ ] Header with cycle selector and team size (total direct reports)
+  - [ ] KPI cards:
+    - [ ] Total direct reports
+    - [ ] Awaiting manager review
+    - [ ] Self not started (optional)
+    - [ ] Overdue (optional if due dates exist)
+  - [ ] Direct reports table always visible:
+    - name, title, department
+    - status chips by direction (self/manager/peer/upward)
+    - primary action: “Open profile” (drawer)
+    - secondary actions: “Open review” / “Open packet”
+- [ ] Add drilldown drawer for a direct report:
+  - [ ] quick actions + snapshot of review statuses
+  - [ ] link to packet
+  - [ ] minimal “insights” if available (optional)
+
+### 4B) Progress bar simplification
+- [ ] Keep segmented progress bar, but show totals + % clearly
+- [ ] Ensure labels reflect a single goal: “manager review completion” or “cycle completion”
+
+**Acceptance criteria**
+- [ ] Manager sees team total count
+- [ ] Manager can drill into a direct report without being forced into reviews list
+- [ ] “Open review” is contextual and not the primary navigation flow
+- [ ] Add 1 Playwright test: manager My Team loads and shows direct reports
+
+---
+
+## Phase 5 — Reporting polish: reliable exports + meaningful chart types + manager mini-insights
+
+### 5A) Fix Download PNG
+- [ ] Standardize chart export pipeline:
+  - [ ] ChartContainer with stable ref and background
+  - [ ] Export works for all chart types used in reporting
+- [ ] Add Playwright test: click download PNG and assert download succeeds (non-empty)
+
+### 5B) Add meaningful chart types (not decorative)
+- [ ] Competency heatmap:
+  - [ ] Department × Competency (avg/median excluding Not Observed)
+  - [ ] click cell -> drilldown table filter
+- [ ] Donut/pie for completion status (only if it improves comprehension vs bar)
+- [ ] Add additional charts only where they clarify KPIs:
+  - distributions for ratings 1–5
+  - scorecard metric breakdowns
+
+### 5C) Manager mini-analytics (within My Team)
+- [ ] Add a small “Insights” section:
+  - [ ] rating distribution for directs (final vs baseline)
+  - [ ] top 3 lowest competencies average (optional)
+  - [ ] completion snapshot
+
+**Acceptance criteria**
+- [ ] PNG export reliable
+- [ ] Heatmap works and supports drilldown
+- [ ] Manager gets basic insights without needing HR reporting page
+- [ ] `lint/typecheck/test/build/test:e2e` pass
+
+---
+
+## Phase 6 — Premium typography + spacing + interaction polish
+
+### 6A) Typography system pass
+- [ ] Standardize:
+  - page titles/subtitles
+  - section headers
+  - table header/body sizes
+  - line-heights and content widths
+- [ ] Reduce “dense” areas and add consistent spacing rhythm
+
+### 6B) Microinteractions and states
+- [ ] Hover/focus states consistent across buttons, tabs, chips
+- [ ] Drawer transitions smooth, no layout jump
+- [ ] Empty/loading/error states polished and actionable
+
+**Acceptance criteria**
+- [ ] Core flows feel cohesive and premium (visual consistency)
+- [ ] Accessibility baseline preserved (focus rings visible, keyboard usable)
+
+---
+
+## Phase 7 — Playwright “UX Audit” loop (CDO mode)
+
+### 7A) Add a UX audit suite (non-blocking at first)
+- [ ] Add `npm run test:e2e:ux` that:
+  - [ ] navigates core routes for each role
+  - [ ] captures screenshots
+  - [ ] checks for:
+    - multiple active nav items
+    - layout overflow/clipping
+    - missing page headers
+    - broken empty states
+  - [ ] outputs `/docs/ux/UX_AUDIT_REPORT.md` or uploads artifacts in CI
+
+### 7B) Integrate into CI (optional)
+- [ ] Run on demand or nightly until stable
+- [ ] Once stable, include as PR gate for UX-related PRs
+
+**Acceptance criteria**
+- [ ] UX audit suite provides repeatable feedback and artifacts
+- [ ] Prevents regression of nav/layout issues going forward
+
+---
+
+## Definition of Done (Milestone 8)
+- [ ] All phases complete and checked off in PLAN.md
+- [ ] `lint/typecheck/test/build/test:e2e` pass
+- [ ] Key UI complaints addressed:
+  - [ ] single active nav item
+  - [ ] less wasted space on write review
+  - [ ] evidence panel readable
+  - [ ] broken phase nav removed/replaced
+  - [ ] manager “My Team” works with totals + drilldown
+  - [ ] reporting PNG export fixed + heatmap added
+  - [ ] typography/premium feel improved
+- [ ] Playwright UX audit loop added and usable
