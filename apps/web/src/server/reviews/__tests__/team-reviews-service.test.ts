@@ -12,6 +12,7 @@ describe("getManagerTeamReviewDashboard", () => {
           orgId: "org_demo_1",
           role: UserRole.EMPLOYEE,
         },
+        {},
         {
           employee: {
             findFirst: vi.fn(),
@@ -44,6 +45,8 @@ describe("getManagerTeamReviewDashboard", () => {
               id: "employee_1",
               firstName: "Ava",
               lastName: "Builder",
+              title: "Site Supervisor",
+              department: "Operations",
             },
             cycle: {
               id: "cycle_latest",
@@ -51,6 +54,7 @@ describe("getManagerTeamReviewDashboard", () => {
               status: CycleStatus.ACTIVE,
               endDate: new Date("2026-12-30T00:00:00.000Z"),
             },
+            dueAt: new Date("2026-11-30T00:00:00.000Z"),
           },
           {
             id: "submission_self_latest",
@@ -62,6 +66,8 @@ describe("getManagerTeamReviewDashboard", () => {
               id: "employee_1",
               firstName: "Ava",
               lastName: "Builder",
+              title: "Site Supervisor",
+              department: "Operations",
             },
             cycle: {
               id: "cycle_latest",
@@ -69,6 +75,7 @@ describe("getManagerTeamReviewDashboard", () => {
               status: CycleStatus.ACTIVE,
               endDate: new Date("2026-12-30T00:00:00.000Z"),
             },
+            dueAt: new Date("2026-11-28T00:00:00.000Z"),
           },
           {
             id: "submission_manager_old",
@@ -80,6 +87,8 @@ describe("getManagerTeamReviewDashboard", () => {
               id: "employee_2",
               firstName: "Ben",
               lastName: "Foreman",
+              title: "Foreman",
+              department: "Projects",
             },
             cycle: {
               id: "cycle_old",
@@ -87,6 +96,7 @@ describe("getManagerTeamReviewDashboard", () => {
               status: CycleStatus.RELEASED,
               endDate: new Date("2025-12-30T00:00:00.000Z"),
             },
+            dueAt: new Date("2025-11-30T00:00:00.000Z"),
           },
         ]),
       },
@@ -98,14 +108,17 @@ describe("getManagerTeamReviewDashboard", () => {
         orgId: "org_demo_1",
         role: UserRole.MANAGER,
       },
+      {},
       db,
     );
 
     expect(dashboard.cycle?.id).toBe("cycle_latest");
+    expect(dashboard.cycles.map((cycle) => cycle.id)).toEqual(["cycle_latest", "cycle_old"]);
     expect(dashboard.rows).toHaveLength(1);
     expect(dashboard.rows[0].employeeName).toBe("Ava Builder");
-    expect(dashboard.kpis.awaitingReview).toBe(0);
-    expect(dashboard.kpis.inProgress).toBe(1);
-    expect(dashboard.kpis.completed).toBe(0);
+    expect(dashboard.kpis.totalDirectReports).toBe(1);
+    expect(dashboard.kpis.awaitingManagerReview).toBe(0);
+    expect(dashboard.kpis.inProgressManagerReview).toBe(1);
+    expect(dashboard.kpis.completedManagerReview).toBe(0);
   });
 });
