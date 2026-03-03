@@ -926,6 +926,10 @@ We will follow proven patterns:
 - [x] Segmented bar showing Completed/In progress/Not started totals 
 - [x] Filters: Department + Position Title
 - [x] Drilldown table: employees by status (pagination)
+- [x] Interactive chart behaviors:
+  - [x] Hover tooltips with clear labels
+  - [x] Clickable legend toggles
+  - [x] Chart/segment controls that drill down into the employee table
 
 ### Results tab (overall rating)
 - [x] Rating distribution chart (1–5) with toggle:
@@ -940,6 +944,7 @@ We will follow proven patterns:
 - [x] UI uses shared primitives (PageHeader, Card, Table, EmptyState, Skeleton)
 - [x] Playwright smoke suite extended with 1 reporting test (page loads + filters apply)
 - Completed in PR #17 (dev -> main Milestone 6 Phase 2)
+- Interactive Progress/Results polish completed in PR #21.
 
 ---
 
@@ -955,12 +960,16 @@ We will follow proven patterns:
   - per metric distribution / average by dept/title
   - optional “gap” view (self vs manager)
 - [x] Show count of Not Observed per metric (data quality)
+- [x] Visual polish for competency/scorecard interactions:
+  - [x] Heatmap intensity styling for competency cells
+  - [x] Self-vs-manager chart presentation for scorecard metrics
 
 **Acceptance criteria**
 - [x] HR can see competency breakdown for all requested competencies
 - [x] HR can break down by dept/title and drill to employee list
 - [x] UI remains fast (pagination/caching where needed)
 - Completed in PR #18 (dev -> main Milestone 6 Phase 3)
+- Competency/scorecard interaction polish completed in PR #21.
 
 ---
 
