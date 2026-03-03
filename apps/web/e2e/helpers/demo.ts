@@ -14,6 +14,12 @@ export async function loginAsManager(page: Page) {
   await expect(page).toHaveURL(/\/$/);
 }
 
+export async function loginAsEmployee(page: Page) {
+  await page.goto("/login");
+  await page.getByTestId("login-role-employee").click();
+  await expect(page).toHaveURL(/\/$/);
+}
+
 export async function loginAsHrAdmin(page: Page) {
   await page.goto("/login");
   await page.getByTestId("login-role-hr-admin").click();
