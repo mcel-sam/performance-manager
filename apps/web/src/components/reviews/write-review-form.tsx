@@ -123,9 +123,91 @@ export default function WriteReviewForm({
     [activeQuestionId, questionState],
   );
 
+  const sections = useMemo(() => {
+    const chunkSize = 4;
+    const nextSections: Array<{ id: string; title: string; questionIds: string[] }> = [];
+
+    for (let index = 0; index < questionState.length; index += chunkSize) {
+      const slice = questionState.slice(index, index + chunkSize);
+      const dimensionLabels = Array.from(
+        new Set(
+          slice
+            .map((question) => question.dimensionKey)
+            .filter((dimension): dimension is string => Boolean(dimension))
+            .map((dimension) => formatDimensionKey(dimension)),
+        ),
+      );
+
+      nextSections.push({
+        id: `section-${nextSections.length + 1}`,
+        title:
+          dimensionLabels.length === 1
+            ? dimensionLabels[0]
+            : `Section ${nextSections.length + 1}`,
+        questionIds: slice.map((question) => question.id),
+      });
+    }
+
+    return nextSections;
+  }, [questionState]);
+
+  const [activeSectionId, setActiveSectionId] = useState<string>(sections[0]?.id ?? "section-1");
+
+  const activeSectionIndex = useMemo(
+    () => sections.findIndex((section) => section.id === activeSectionId),
+    [activeSectionId, sections],
+  );
+
+  const activeSection = activeSectionIndex >= 0 ? sections[activeSectionIndex] : sections[0] ?? null;
+  const activeSectionQuestionIds = useMemo(
+    () => activeSection?.questionIds ?? [],
+    [activeSection],
+  );
+  const activeSectionQuestions = useMemo(
+    () =>
+      questionState.filter((question) =>
+        activeSectionQuestionIds.includes(question.id),
+      ),
+    [activeSectionQuestionIds, questionState],
+  );
+
+  const sectionByQuestionId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const section of sections) {
+      for (const questionId of section.questionIds) {
+        map.set(questionId, section.id);
+      }
+    }
+    return map;
+  }, [sections]);
+
   const selectedEvidenceItems = useMemo(
     () => evidenceItemsByType[selectedEvidenceType] ?? [],
     [evidenceItemsByType, selectedEvidenceType],
+  );
+
+  const sectionProgress = useMemo(
+    () =>
+      sections.map((section) => {
+        const sectionQuestions = questionState.filter((question) =>
+          section.questionIds.includes(question.id),
+        );
+        const requiredQuestions = sectionQuestions.filter((question) => question.isRequired);
+        const answeredRequiredCount = requiredQuestions.filter(
+          (question) =>
+            question.questionType === ReviewQuestionType.SCALE_1_TO_5
+              ? question.responseText.trim().length > 0 &&
+                (question.notObserved || question.scaleRating != null)
+              : question.responseText.trim().length > 0,
+        ).length;
+
+        return {
+          sectionId: section.id,
+          answered: answeredRequiredCount,
+          total: requiredQuestions.length,
+        };
+      }),
+    [questionState, sections],
   );
   const requiredProgress = useMemo(() => {
     const requiredQuestions = questionState.filter((question) => question.isRequired);
@@ -182,6 +264,26 @@ export default function WriteReviewForm({
   useEffect(() => {
     void loadEvidence();
   }, [loadEvidence]);
+
+  useEffect(() => {
+    if (sections.length === 0) {
+      return;
+    }
+
+    if (!sections.some((section) => section.id === activeSectionId)) {
+      setActiveSectionId(sections[0].id);
+    }
+  }, [activeSectionId, sections]);
+
+  useEffect(() => {
+    if (activeSectionQuestionIds.length === 0) {
+      return;
+    }
+
+    if (!activeQuestionId || !activeSectionQuestionIds.includes(activeQuestionId)) {
+      setActiveQuestionId(activeSectionQuestionIds[0]);
+    }
+  }, [activeQuestionId, activeSectionQuestionIds]);
 
   useEffect(() => {
     if (!dirtyQuestionId || isReadOnly) {
@@ -307,9 +409,13 @@ export default function WriteReviewForm({
 
           const firstMissingQuestionId = missingIds[0];
           if (firstMissingQuestionId) {
+            const nextSectionId = sectionByQuestionId.get(firstMissingQuestionId);
+            if (nextSectionId) {
+              setActiveSectionId(nextSectionId);
+            }
             setActiveQuestionId(firstMissingQuestionId);
 
-            requestAnimationFrame(() => {
+            setTimeout(() => {
               const firstMissingInput = questionInputRefs.current[firstMissingQuestionId];
               if (!firstMissingInput) {
                 return;
@@ -317,7 +423,7 @@ export default function WriteReviewForm({
 
               firstMissingInput.scrollIntoView({ behavior: "smooth", block: "center" });
               firstMissingInput.focus();
-            });
+            }, 0);
           }
 
           return;
@@ -452,6 +558,31 @@ export default function WriteReviewForm({
     }
   }
 
+  function goToSection(index: number) {
+    const nextSection = sections[index];
+    if (!nextSection) {
+      return;
+    }
+
+    setActiveSectionId(nextSection.id);
+  }
+
+  function goToNextSection() {
+    if (activeSectionIndex < 0) {
+      return;
+    }
+
+    goToSection(activeSectionIndex + 1);
+  }
+
+  function goToPreviousSection() {
+    if (activeSectionIndex < 0) {
+      return;
+    }
+
+    goToSection(activeSectionIndex - 1);
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <Card>
@@ -480,8 +611,73 @@ export default function WriteReviewForm({
               description="This submission has no template questions yet."
             />
           ) : (
-            <ol className="space-y-5">
-              {questionState.map((question, index) => {
+            <div className="space-y-5">
+              <Card className="border-slate-200 bg-slate-50 shadow-none">
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-900">Section progress</p>
+                    <p className="text-xs text-slate-600">
+                      Section {activeSectionIndex + 1} of {sections.length}
+                    </p>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {sections.map((section, index) => {
+                      const progress = sectionProgress.find(
+                        (entry) => entry.sectionId === section.id,
+                      );
+                      const isActiveSection = section.id === activeSection?.id;
+
+                      return (
+                        <Button
+                          key={section.id}
+                          type="button"
+                          variant={isActiveSection ? "primary" : "outline"}
+                          className="justify-between"
+                          data-testid={`write-review-section-${index + 1}`}
+                          onClick={() => goToSection(index)}
+                        >
+                          <span>{section.title}</span>
+                          <span className="text-xs">
+                            {progress?.answered ?? 0}/{progress?.total ?? 0}
+                          </span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={goToPreviousSection}
+                      disabled={activeSectionIndex <= 0}
+                    >
+                      Previous section
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      data-testid="write-review-next-section"
+                      onClick={goToNextSection}
+                      disabled={activeSectionIndex === -1 || activeSectionIndex >= sections.length - 1}
+                    >
+                      Next section
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {missingQuestionIds.some((questionId) =>
+                activeSectionQuestionIds.includes(questionId),
+              ) ? (
+                <Toast variant="warning">
+                  This section has required questions that still need answers.
+                </Toast>
+              ) : null}
+
+              <ol className="space-y-5">
+                {activeSectionQuestions.map((question, index) => {
                 const isMissing = missingQuestionIds.includes(question.id);
                 const isActive = activeQuestionId === question.id;
 
@@ -665,8 +861,9 @@ export default function WriteReviewForm({
                     ) : null}
                   </li>
                 );
-              })}
-            </ol>
+                })}
+              </ol>
+            </div>
           )}
 
           <div className="flex flex-wrap items-center gap-3">
@@ -836,6 +1033,14 @@ function createEmptyEvidenceCounts(): Record<EvidenceType, number> {
     [EvidenceType.GOAL]: 0,
     [EvidenceType.VALUE_RECOGNITION]: 0,
   };
+}
+
+function formatDimensionKey(value: string): string {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function createEmptyEvidenceItemsByType(): Record<EvidenceType, EvidenceSummary[]> {
