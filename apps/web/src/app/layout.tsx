@@ -28,6 +28,11 @@ export default function RootLayout({
 }
 
 async function RootLayoutShell({ children }: { children: React.ReactNode }) {
+  // Build pipelines may run without DATABASE_URL; render shell without user nav in that case.
+  if (!process.env.DATABASE_URL) {
+    return <AppShell navItems={[]} viewer={null}>{children}</AppShell>;
+  }
+
   let context: Awaited<ReturnType<typeof getDevRequestContext>> | null = null;
   let navItems: ReturnType<typeof getRoleNavigation> = [];
 
