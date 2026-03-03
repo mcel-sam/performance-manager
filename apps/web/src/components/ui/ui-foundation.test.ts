@@ -91,7 +91,7 @@ describe("ui foundation primitives", () => {
     expect(html).toContain("Submit guidance");
     expect(html).toContain('aria-label="Toggle help for Submit guidance"');
     expect(html).toContain('aria-expanded="false"');
-    expect(html).toContain("hidden");
+    expect(html).toContain('aria-hidden="true"');
   });
 
   it("renders help hint content expanded when defaultOpen is true", () => {
@@ -107,6 +107,7 @@ describe("ui foundation primitives", () => {
     );
 
     expect(html).toContain('aria-expanded="true"');
+    expect(html).toContain('aria-hidden="false"');
     expect(html).toContain("Managers and HR can view in-progress packets.");
   });
 
