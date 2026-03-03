@@ -1,4 +1,10 @@
-import { CycleStatus, ReviewRelationship, ReviewSubmissionStatus, UserRole } from "@prisma/client";
+import {
+  CycleStatus,
+  FinalRatingSource,
+  ReviewRelationship,
+  ReviewSubmissionStatus,
+  UserRole,
+} from "@prisma/client";
 
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
@@ -78,6 +84,26 @@ interface TeamReviewsDb {
       }>
     >;
   };
+  reviewPacket: {
+    findMany: (args: {
+      where: {
+        orgId: string;
+        cycleId: string;
+        subjectEmployee: {
+          managerId: string;
+        };
+      };
+      select: {
+        scorecardOverallRating: true;
+        finalRatingSource: true;
+      };
+    }) => Promise<
+      Array<{
+        scorecardOverallRating: number | null;
+        finalRatingSource: FinalRatingSource | null;
+      }>
+    >;
+  };
 }
 
 export interface TeamReviewDashboard {
@@ -110,9 +136,16 @@ export interface TeamReviewDashboard {
     packetHref: string | null;
     managerReviewHref: string | null;
   }>;
+  insights: {
+    finalDistribution: RatingDistribution;
+    scorecardDistribution: RatingDistribution;
+    finalRatedCount: number;
+    scorecardRatedCount: number;
+  };
 }
 
 type TeamReviewRow = TeamReviewDashboard["rows"][number];
+type RatingDistribution = Record<"1" | "2" | "3" | "4" | "5", number>;
 
 const pendingStatuses = new Set<ReviewSubmissionStatus>([
   ReviewSubmissionStatus.NOT_STARTED,
@@ -152,6 +185,12 @@ export async function getManagerTeamReviewDashboard(
         overdueManagerReview: 0,
       },
       rows: [],
+      insights: {
+        finalDistribution: createEmptyRatingDistribution(),
+        scorecardDistribution: createEmptyRatingDistribution(),
+        finalRatedCount: 0,
+        scorecardRatedCount: 0,
+      },
     };
   }
 
@@ -203,6 +242,12 @@ export async function getManagerTeamReviewDashboard(
         overdueManagerReview: 0,
       },
       rows: [],
+      insights: {
+        finalDistribution: createEmptyRatingDistribution(),
+        scorecardDistribution: createEmptyRatingDistribution(),
+        finalRatedCount: 0,
+        scorecardRatedCount: 0,
+      },
     };
   }
 
@@ -252,6 +297,12 @@ export async function getManagerTeamReviewDashboard(
         overdueManagerReview: 0,
       },
       rows: [],
+      insights: {
+        finalDistribution: createEmptyRatingDistribution(),
+        scorecardDistribution: createEmptyRatingDistribution(),
+        finalRatedCount: 0,
+        scorecardRatedCount: 0,
+      },
     };
   }
 
@@ -324,6 +375,41 @@ export async function getManagerTeamReviewDashboard(
     }
   }
 
+  const packets = await db.reviewPacket.findMany({
+    where: {
+      orgId: context.orgId,
+      cycleId: selectedCycleId,
+      subjectEmployee: {
+        managerId: managerEmployee.id,
+      },
+    },
+    select: {
+      scorecardOverallRating: true,
+      finalRatingSource: true,
+    },
+  });
+
+  const scorecardDistribution = createEmptyRatingDistribution();
+  const finalDistribution = createEmptyRatingDistribution();
+  let finalRatedCount = 0;
+  let scorecardRatedCount = 0;
+
+  for (const packet of packets) {
+    const rating = packet.scorecardOverallRating;
+    if (typeof rating !== "number" || rating < 1 || rating > 5) {
+      continue;
+    }
+
+    const key = String(rating) as keyof RatingDistribution;
+    scorecardDistribution[key] += 1;
+    scorecardRatedCount += 1;
+
+    if (packet.finalRatingSource != null) {
+      finalDistribution[key] += 1;
+      finalRatedCount += 1;
+    }
+  }
+
   return {
     cycles,
     cycle: {
@@ -340,5 +426,21 @@ export async function getManagerTeamReviewDashboard(
       overdueManagerReview,
     },
     rows,
+    insights: {
+      finalDistribution,
+      scorecardDistribution,
+      finalRatedCount,
+      scorecardRatedCount,
+    },
+  };
+}
+
+function createEmptyRatingDistribution(): RatingDistribution {
+  return {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
   };
 }
