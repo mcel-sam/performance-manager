@@ -23,6 +23,7 @@ test("write review autosave and submit locks the submission", async ({ page }) =
   await loginAsManager(page);
   await page.goto("/performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_manager_1");
 
+  await expect(page.getByTestId("write-review-section-1")).toBeVisible();
   const firstAnswer = page.getByTestId("write-review-answer-template_q_1");
   const secondAnswer = page.getByTestId("write-review-answer-template_q_2");
   const noteSuffix = Date.now();
@@ -31,6 +32,9 @@ test("write review autosave and submit locks the submission", async ({ page }) =
   await expect(page.getByTestId("write-review-save-state")).toHaveText("Saved", {
     timeout: 10_000,
   });
+  if (!(await secondAnswer.isVisible())) {
+    await page.getByTestId("write-review-next-section").click();
+  }
   await secondAnswer.fill(`Manager growth guidance ${noteSuffix}`);
   await expect(page.getByTestId("write-review-save-state")).toHaveText("Saved", {
     timeout: 10_000,

@@ -1151,26 +1151,27 @@ We will follow proven patterns:
 
 **Goal:** Keep the same content, but present it like Lattice: sections, visuals, context.
 
-- [ ] Convert write screen to progressive sections:
+- [x] Convert write screen to progressive sections:
   - Use left-side stepper or grouped accordion sections
   - Group questions by competency category or template section
   - Show 3–5 questions at a time instead of 14 in one scroll
-- [ ] Add “section progress”:
+- [x] Add “section progress”:
   - completed vs remaining
   - show validation errors within section
   - “Next section” CTA
-- [ ] Keep evidence panel but improve readability:
+- [x] Keep evidence panel but improve readability:
   - evidence summary card at top
   - pinned “attached evidence” under each question
-- [ ] Improve “feedback summary” style:
+- [x] Improve “feedback summary” style:
   - small callouts (like Lattice side panel cards)
-- [ ] Preserve autosave behavior; show saved status per section
+- [x] Preserve autosave behavior; show saved status per section
 
 **Acceptance criteria**
-- [ ] Review writing feels structured and non-overwhelming
-- [ ] Required validation still works (focus first missing in a section)
-- [ ] No regressions in autosave/submit/evidence attach
-- [ ] Playwright: update write-review test to handle new layout
+- [x] Review writing feels structured and non-overwhelming
+- [x] Required validation still works (focus first missing in a section)
+- [x] No regressions in autosave/submit/evidence attach
+- [x] Playwright: update write-review test to handle new layout
+- Completed in PR #27.
 
 ---
 
