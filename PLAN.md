@@ -993,3 +993,204 @@ We will follow proven patterns:
 - [x] Exports are usable for presentations and follow-up analysis
 - Completed in PR #19 (dev -> main Milestone 6 Phase 4)
 - Download PNG chart exports completed in PR #21.
+
+
+## Milestone 7 — UX Refinement + People Admin + Progressive Reviews (Lattice-inspired)
+
+**Status:** Not started  
+**Objective:** Improve the product’s usability and visual polish to feel modern and lively (Lattice-inspired), reduce cognitive overload (progressive disclosure), and add essential HR/Manager workflow surfaces: User Management + Team Reviews + better Cycle setup clarity.
+
+### Scope
+
+#### In scope
+- Visual refresh (“skin”): color, hierarchy, spacing, icons, status styling
+- Role-based UI: hide irrelevant modules per role (clean nav + home)
+- HR Admin:
+  - User Management (org structure)
+  - Cycle setup/wizard improvements (assign review types/rules + due dates)
+- Manager:
+  - Team Reviews dashboard (direct reports + progress + drill-ins)
+- Review writing UX:
+  - Convert long scroll (14+ questions) into progressive sections/accordion/stepper
+  - Keep autosave + evidence context intact
+- Update seed/demo data to ensure screens aren’t empty (so UI looks real)
+- Update Playwright smoke tests for new flows/structure (stable selectors)
+
+#### Out of scope
+- Production SSO/identity integration (later)
+- Enterprise directory sync/import (later)
+- Notifications/email reminders (later)
+- New analytics beyond what Milestone 6 already shipped
+
+---
+
+### Phase 1 — Visual design refresh (skin + components + tokens)
+
+**Goal:** Make the entire product feel less “black/white” and more modern, while keeping consistency.
+
+- [x] Define/adjust **visual tokens**:
+  - accent colors (primary + secondary), success/warn/error, subtle background tints
+  - chart palette (consistent, not random per chart)
+  - card elevation, border radius, shadows, typography scale
+- [x] Update shared primitives to support a more lively UI:
+  - [x] Status chips (color-coded by state)
+  - [x] Section containers with optional tinted backgrounds
+  - [x] Icon badges for KPI cards (subtle)
+  - [x] Empty states with richer “next step” guidance and visuals
+- [x] Apply to core surfaces (minimal refactor):
+  - [x] Home
+  - [x] Reviews tasks list
+  - [x] Reporting dashboard header + filters
+  - [x] Admin cycle list
+
+**Acceptance criteria**
+- [x] Product-wide palette and hierarchy feels cohesive
+- [x] No page looks “unstyled” relative to the others
+- [x] `lint/typecheck/test/build` pass and Playwright still passes
+- Completed in PR #22.
+
+---
+
+### Phase 2 — Role-based navigation + home surfaces (clean IA)
+
+**Goal:** Employees should not see calibration/admin/reporting modules. UI becomes clean and role-relevant.
+
+- [ ] Implement nav config by role (single source of truth):
+  - EMPLOYEE: Home, Reviews, Help (optional: Improvement Plans only if visible)
+  - MANAGER: Home, Team Reviews, Reviews, Packets, Calibration (only if participant), Help
+  - HR_ADMIN: Home, Reporting, Admin Cycles, Admin Calibration, User Management, Help
+  - CALIBRATOR: Calibration (+ packets), Help
+- [ ] Home page becomes role-specific:
+  - Employee: “My tasks due soon” + “Continue draft”
+  - Manager: “Team status snapshot” + “Reviews to complete”
+  - HR: “Cycle progress snapshot” + “Reporting entry”
+- [ ] Add consistent route guarding (server-side already, but ensure UX doesn’t expose links)
+
+**Acceptance criteria**
+- [ ] UI looks “right” for each role (no irrelevant modules)
+- [ ] Protected routes are not accessible by unauthorized roles
+- [ ] Playwright: add 1 test verifying employee nav does not show admin/calibration
+
+---
+
+### Phase 3 — HR Admin: User Management + Org structure
+
+**Goal:** HR can manage people and structure (like your screenshot) so assignments and reporting make sense.
+
+- [ ] Add HR-only page: `/admin/users` (or `/admin/people`)
+  - [ ] KPI cards: total users, HR admins, calibrators, managers, employees
+  - [ ] Search by name/email
+  - [ ] Table columns: user, role, department, title, manager, #reports, actions
+- [ ] Add “Add User” + “Edit User” (modal or page)
+  - [ ] set role, department, title, manager
+  - [ ] prevent impossible org loops (manager cannot report to self)
+- [ ] Ensure changes affect:
+  - manager direct report lists
+  - cycle assignment generation (manager relationship)
+  - reporting breakdowns (department/title)
+
+**Acceptance criteria**
+- [ ] HR can create/update users and manager relationships
+- [ ] Manager/team views reflect updated structure
+- [ ] Permission tests for HR-only access
+
+---
+
+### Phase 4 — HR Admin: Cycle setup wizard improvements (assignment + due dates)
+
+**Goal:** Make it obvious how tasks are created and who is responsible (like Lattice’s multi-step setup).
+
+- [ ] Replace/upgrade cycle create page into a **wizard**:
+  - Step 1: Basics (name, cycle dates)
+  - Step 2: Review types (self/manager/peer/upward toggles)
+  - Step 3: Reviewer rules:
+    - peers: nomination vs HR assigned, count per employee
+    - upward: enabled for managers? minimum N? visibility policy (draft now)
+  - Step 4: Visibility + schedule (due dates per type if needed)
+  - Step 5: Verify (summary of what will be generated)
+- [ ] “Generate submissions” uses wizard config to create ReviewSubmissions with `dueAt`
+- [ ] Add a “Progress summary” panel per cycle:
+  - counts by status (not started / in progress / submitted)
+  - counts by type (self/manager/peer/upward)
+  - quick links to reporting
+
+**Acceptance criteria**
+- [ ] HR can explain “who owes what” from the UI
+- [ ] Generated tasks have correct due dates and types
+- [ ] UI mirrors Lattice pattern: structured steps, not a long form
+
+---
+
+### Phase 5 — Manager: Team Reviews dashboard (direct reports + progress)
+
+**Goal:** Managers need a “control panel” like Lattice’s Team Reviews.
+
+- [ ] Add manager page: `/performance/team-reviews`
+  - KPI cards: awaiting review, in progress, completed
+  - Progress bar segmented by status
+  - List of direct reports with status chips per review type:
+    - self status
+    - manager status
+    - peer/upward status (if relevant)
+  - Drill-in action: open packet or open manager review task
+- [ ] Add “Show reviewers” / “who owes what” popover (optional MVP)
+- [ ] Ensure data sources use org hierarchy (manager → directs)
+
+**Acceptance criteria**
+- [ ] Manager can instantly see team progress and what to do next
+- [ ] Drill-ins work and respect permissions
+- [ ] Playwright: add 1 test for manager team page loads + shows direct reports
+
+---
+
+### Phase 6 — Review writing UX: progressive disclosure (fix the “horrendous scroll”)
+
+**Goal:** Keep the same content, but present it like Lattice: sections, visuals, context.
+
+- [ ] Convert write screen to progressive sections:
+  - Use left-side stepper or grouped accordion sections
+  - Group questions by competency category or template section
+  - Show 3–5 questions at a time instead of 14 in one scroll
+- [ ] Add “section progress”:
+  - completed vs remaining
+  - show validation errors within section
+  - “Next section” CTA
+- [ ] Keep evidence panel but improve readability:
+  - evidence summary card at top
+  - pinned “attached evidence” under each question
+- [ ] Improve “feedback summary” style:
+  - small callouts (like Lattice side panel cards)
+- [ ] Preserve autosave behavior; show saved status per section
+
+**Acceptance criteria**
+- [ ] Review writing feels structured and non-overwhelming
+- [ ] Required validation still works (focus first missing in a section)
+- [ ] No regressions in autosave/submit/evidence attach
+- [ ] Playwright: update write-review test to handle new layout
+
+---
+
+### Phase 7 — Seed/demo data refinement for UI realism
+
+**Goal:** Prevent empty states that make the UI look unfinished during demos.
+
+- [ ] Ensure seeded demo dataset includes:
+  - mix of statuses (not started/in progress/completed)
+  - evidence attached to some answers
+  - at least one completed manager review so competency charts aren’t empty
+  - at least one manager with directs for Team Reviews view
+- [ ] Ensure reporting shows meaningful distributions
+
+**Acceptance criteria**
+- [ ] Demo looks “alive” across HR, Manager, Employee journeys
+
+---
+
+### Testing & QA (applies to all phases)
+- [ ] Update unit tests where logic changes
+- [ ] Update Playwright smoke suite for:
+  - role-based navigation
+  - manager team reviews
+  - write-review progressive sections
+  - reporting still loads
+- [ ] Ensure `lint/typecheck/test/build/test:e2e` pass
