@@ -1055,21 +1055,22 @@ We will follow proven patterns:
 
 **Goal:** Employees should not see calibration/admin/reporting modules. UI becomes clean and role-relevant.
 
-- [ ] Implement nav config by role (single source of truth):
+- [x] Implement nav config by role (single source of truth):
   - EMPLOYEE: Home, Reviews, Help (optional: Improvement Plans only if visible)
   - MANAGER: Home, Team Reviews, Reviews, Packets, Calibration (only if participant), Help
   - HR_ADMIN: Home, Reporting, Admin Cycles, Admin Calibration, User Management, Help
   - CALIBRATOR: Calibration (+ packets), Help
-- [ ] Home page becomes role-specific:
+- [x] Home page becomes role-specific:
   - Employee: “My tasks due soon” + “Continue draft”
   - Manager: “Team status snapshot” + “Reviews to complete”
   - HR: “Cycle progress snapshot” + “Reporting entry”
-- [ ] Add consistent route guarding (server-side already, but ensure UX doesn’t expose links)
+- [x] Add consistent route guarding (server-side already, but ensure UX doesn’t expose links)
 
 **Acceptance criteria**
-- [ ] UI looks “right” for each role (no irrelevant modules)
-- [ ] Protected routes are not accessible by unauthorized roles
-- [ ] Playwright: add 1 test verifying employee nav does not show admin/calibration
+- [x] UI looks “right” for each role (no irrelevant modules)
+- [x] Protected routes are not accessible by unauthorized roles
+- [x] Playwright: add 1 test verifying employee nav does not show admin/calibration
+- Completed in PR #TBD.
 
 ---
 
