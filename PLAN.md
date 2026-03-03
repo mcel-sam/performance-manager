@@ -1298,7 +1298,7 @@ Feedback observed:
 - [x] Non-essential metadata is hidden behind “details”
 - [x] No regressions in evidence attach/detach
 - [x] `lint/typecheck/test/build/test:e2e` pass
-- Completed in PR #TBD.
+- Completed in PR #31.
 
 ---
 
