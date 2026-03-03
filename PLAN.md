@@ -1070,7 +1070,7 @@ We will follow proven patterns:
 - [x] UI looks “right” for each role (no irrelevant modules)
 - [x] Protected routes are not accessible by unauthorized roles
 - [x] Playwright: add 1 test verifying employee nav does not show admin/calibration
-- Completed in PR #TBD.
+- Completed in PR #23.
 
 ---
 
