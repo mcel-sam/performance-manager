@@ -1266,38 +1266,39 @@ Feedback observed:
 ## Phase 2 — Content audit + Evidence panel redesign (progressive disclosure)
 
 ### 2A) Content inventory and decisions (what belongs on each page)
-- [ ] Create `/docs/ux/CONTENT_AUDIT.md` containing a table for each core page:
+- [x] Create `/docs/ux/CONTENT_AUDIT.md` containing a table for each core page:
   - Reviews list
   - Write review
   - Packet view
   - Calibration
   - My Team (manager)
   - Reporting
-- [ ] For each page define:
-  - [ ] primary goal
-  - [ ] primary content required
-  - [ ] secondary/supporting content
-  - [ ] content to hide behind “details”
-  - [ ] content to remove
-- [ ] Implement changes that eliminate redundant/broken UI surfaced by audit
+- [x] For each page define:
+  - [x] primary goal
+  - [x] primary content required
+  - [x] secondary/supporting content
+  - [x] content to hide behind “details”
+  - [x] content to remove
+- [x] Implement changes that eliminate redundant/broken UI surfaced by audit
 
 ### 2B) Evidence panel redesign (less cramped, more useful)
-- [ ] Introduce two modes:
-  - [ ] Compact mode (default): only essential context + evidence tabs/counts
-  - [ ] Details mode (expandable): full cycle/subject/reviewer metadata + packet link
-- [ ] Spacing improvements:
-  - [ ] consistent vertical rhythm, headings, card grouping
-- [ ] Evidence browsing improvements:
-  - [ ] search/filter within evidence list (minimal)
-  - [ ] show preview snippet + date/source
-- [ ] Keep “Selected answer” compact (1 line + expand)
-- [ ] Ensure attach/detach flow remains simple and auditable
+- [x] Introduce two modes:
+  - [x] Compact mode (default): only essential context + evidence tabs/counts
+  - [x] Details mode (expandable): full cycle/subject/reviewer metadata + packet link
+- [x] Spacing improvements:
+  - [x] consistent vertical rhythm, headings, card grouping
+- [x] Evidence browsing improvements:
+  - [x] search/filter within evidence list (minimal)
+  - [x] show preview snippet + date/source
+- [x] Keep “Selected answer” compact (1 line + expand)
+- [x] Ensure attach/detach flow remains simple and auditable
 
 **Acceptance criteria**
-- [ ] Evidence panel is scannable and no longer cramped
-- [ ] Non-essential metadata is hidden behind “details”
-- [ ] No regressions in evidence attach/detach
-- [ ] `lint/typecheck/test/build/test:e2e` pass
+- [x] Evidence panel is scannable and no longer cramped
+- [x] Non-essential metadata is hidden behind “details”
+- [x] No regressions in evidence attach/detach
+- [x] `lint/typecheck/test/build/test:e2e` pass
+- Completed in PR #TBD.
 
 ---
 
