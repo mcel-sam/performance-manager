@@ -1363,31 +1363,31 @@ Feedback observed:
 ## Phase 5 — Reporting polish: reliable exports + meaningful chart types + manager mini-insights
 
 ### 5A) Fix Download PNG
-- [ ] Standardize chart export pipeline:
-  - [ ] ChartContainer with stable ref and background
-  - [ ] Export works for all chart types used in reporting
-- [ ] Add Playwright test: click download PNG and assert download succeeds (non-empty)
+- [x] Standardize chart export pipeline:
+  - [x] ChartContainer with stable ref and background
+  - [x] Export works for all chart types used in reporting
+- [x] Add Playwright test: click download PNG and assert download succeeds (non-empty)
 
 ### 5B) Add meaningful chart types (not decorative)
-- [ ] Competency heatmap:
-  - [ ] Department × Competency (avg/median excluding Not Observed)
-  - [ ] click cell -> drilldown table filter
-- [ ] Donut/pie for completion status (only if it improves comprehension vs bar)
-- [ ] Add additional charts only where they clarify KPIs:
-  - distributions for ratings 1–5
-  - scorecard metric breakdowns
+- [x] Competency heatmap:
+  - [x] Department × Competency (avg/median excluding Not Observed)
+  - [x] click cell -> drilldown table filter
+- [x] Donut/pie for completion status (only if it improves comprehension vs bar)
+- [x] Add additional charts only where they clarify KPIs:
+  - [x] distributions for ratings 1–5
+  - [x] scorecard metric breakdowns
 
 ### 5C) Manager mini-analytics (within My Team)
-- [ ] Add a small “Insights” section:
-  - [ ] rating distribution for directs (final vs baseline)
+- [x] Add a small “Insights” section:
+  - [x] rating distribution for directs (final vs baseline)
   - [ ] top 3 lowest competencies average (optional)
-  - [ ] completion snapshot
+  - [x] completion snapshot
 
 **Acceptance criteria**
-- [ ] PNG export reliable
-- [ ] Heatmap works and supports drilldown
-- [ ] Manager gets basic insights without needing HR reporting page
-- [ ] `lint/typecheck/test/build/test:e2e` pass
+- [x] PNG export reliable
+- [x] Heatmap works and supports drilldown
+- [x] Manager gets basic insights without needing HR reporting page
+- [x] `lint/typecheck/test/build/test:e2e` pass
 
 ---
 
