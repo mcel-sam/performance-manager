@@ -1410,6 +1410,7 @@ Feedback observed:
 **Acceptance criteria**
 - [x] Core flows feel cohesive and premium (visual consistency)
 - [x] Accessibility baseline preserved (focus rings visible, keyboard usable)
+- Completed in PR #35.
 
 ---
 
