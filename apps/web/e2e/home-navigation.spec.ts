@@ -45,6 +45,7 @@ test("manager team reviews page loads with direct-report rows", async ({ page })
   await page.getByTestId("nav-link-team-reviews").click();
   await expect(page).toHaveURL(/\/performance\/team-reviews$/);
   await expect(page.getByRole("heading", { name: "My Team" })).toBeVisible();
+  await expect(page.getByTestId("my-team-insights")).toBeVisible();
   await expect(page.getByTestId("team-reviews-row").first()).toBeVisible();
   await page.getByTestId("my-team-open-profile-emp_employee_1").click();
   await expect(page.getByTestId("my-team-profile-drawer")).toBeVisible();

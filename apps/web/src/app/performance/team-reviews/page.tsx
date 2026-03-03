@@ -170,6 +170,37 @@ export default async function TeamReviewsPage({
             </CardContent>
           </Card>
 
+          <Card data-testid="my-team-insights">
+            <CardHeader>
+              <CardTitle className="text-lg">Insights</CardTitle>
+              <CardDescription>
+                Snapshot of completion and rating spread for your direct reports in this cycle.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Completion snapshot
+                </p>
+                <p>Awaiting manager review: {dashboard.kpis.awaitingManagerReview}</p>
+                <p>In progress: {dashboard.kpis.inProgressManagerReview}</p>
+                <p>Completed: {dashboard.kpis.completedManagerReview}</p>
+              </div>
+              <div className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+                <RatingDistribution
+                  title="Final rating"
+                  total={dashboard.insights.finalRatedCount}
+                  distribution={dashboard.insights.finalDistribution}
+                />
+                <RatingDistribution
+                  title="Scorecard baseline"
+                  total={dashboard.insights.scorecardRatedCount}
+                  distribution={dashboard.insights.scorecardDistribution}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
             <Card>
               <CardContent className="p-0">
@@ -359,4 +390,33 @@ function toMyTeamHref(cycleId: string | null, employeeId: string): string {
   }
   params.set("employeeId", employeeId);
   return `/performance/team-reviews?${params.toString()}`;
+}
+
+function RatingDistribution({
+  title,
+  total,
+  distribution,
+}: {
+  title: string;
+  total: number;
+  distribution: Record<"1" | "2" | "3" | "4" | "5", number>;
+}) {
+  return (
+    <div className="space-y-2 text-sm text-slate-700">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+        {title} ({total})
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {(["1", "2", "3", "4", "5"] as const).map((rating) => (
+          <span
+            key={`${title}-${rating}`}
+            className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-slate-200 bg-white px-2 py-1 text-xs"
+          >
+            <span className="font-semibold">{rating}</span>
+            <span>{distribution[rating]}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }

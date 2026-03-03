@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import type { ReviewSubmissionStatus } from "@prisma/client";
 import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -593,6 +596,11 @@ function ProgressTab({
       COMPLETED: hiddenSeries.COMPLETED ? 0 : progress.totals.completed,
     },
   ];
+  const completionDonutData = [
+    { name: "Not started", value: progress.totals.notStarted, color: reportingChartTheme.progress.notStarted },
+    { name: "In progress", value: progress.totals.inProgress, color: reportingChartTheme.progress.inProgress },
+    { name: "Completed", value: progress.totals.completed, color: reportingChartTheme.progress.completed },
+  ].filter((entry) => entry.value > 0);
 
   return (
     <>
@@ -666,54 +674,76 @@ function ProgressTab({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div
-            className="h-60 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3"
-            data-chart-export-id="reporting-progress-chart"
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 12, right: 12, left: 12, bottom: 12 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                <Tooltip
-                  cursor={{ fill: "rgba(148, 163, 184, 0.16)" }}
-                  formatter={(value: number | undefined, name: string | undefined) => [
-                    value ?? 0,
-                    progressStatusLabel[(name ?? "NOT_STARTED") as ProgressStatusFilter],
-                  ]}
-                  labelFormatter={() => "Current filter scope"}
-                />
-                <Legend
-                  formatter={(value) => progressStatusLabel[value as ProgressStatusFilter]}
-                  wrapperStyle={{ fontSize: 12 }}
-                />
-                <Bar
-                  dataKey="NOT_STARTED"
-                  stackId="status"
-                  fill={reportingChartTheme.progress.notStarted}
-                  radius={[0, 0, 0, 0]}
-                  onClick={() => onDrilldown("NOT_STARTED")}
-                  animationDuration={450}
-                />
-                <Bar
-                  dataKey="IN_PROGRESS"
-                  stackId="status"
-                  fill={reportingChartTheme.progress.inProgress}
-                  radius={[0, 0, 0, 0]}
-                  onClick={() => onDrilldown("IN_PROGRESS")}
-                  animationDuration={450}
-                />
-                <Bar
-                  dataKey="COMPLETED"
-                  stackId="status"
-                  fill={reportingChartTheme.progress.completed}
-                  radius={[8, 8, 0, 0]}
-                  onClick={() => onDrilldown("COMPLETED")}
-                  animationDuration={450}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <ChartExportContainer chartId="reporting-progress-chart" className="space-y-3 p-3">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
+              <div className="h-56 rounded-[var(--radius-sm)] border border-slate-200 bg-white p-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 12, right: 12, left: 12, bottom: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="name" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                    <Tooltip
+                      cursor={{ fill: "rgba(148, 163, 184, 0.16)" }}
+                      formatter={(value: number | undefined, name: string | undefined) => [
+                        value ?? 0,
+                        progressStatusLabel[(name ?? "NOT_STARTED") as ProgressStatusFilter],
+                      ]}
+                      labelFormatter={() => "Current filter scope"}
+                    />
+                    <Legend
+                      formatter={(value) => progressStatusLabel[value as ProgressStatusFilter]}
+                      wrapperStyle={{ fontSize: 12 }}
+                    />
+                    <Bar
+                      dataKey="NOT_STARTED"
+                      stackId="status"
+                      fill={reportingChartTheme.progress.notStarted}
+                      radius={[0, 0, 0, 0]}
+                      onClick={() => onDrilldown("NOT_STARTED")}
+                      animationDuration={450}
+                    />
+                    <Bar
+                      dataKey="IN_PROGRESS"
+                      stackId="status"
+                      fill={reportingChartTheme.progress.inProgress}
+                      radius={[0, 0, 0, 0]}
+                      onClick={() => onDrilldown("IN_PROGRESS")}
+                      animationDuration={450}
+                    />
+                    <Bar
+                      dataKey="COMPLETED"
+                      stackId="status"
+                      fill={reportingChartTheme.progress.completed}
+                      radius={[8, 8, 0, 0]}
+                      onClick={() => onDrilldown("COMPLETED")}
+                      animationDuration={450}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="h-56 rounded-[var(--radius-sm)] border border-slate-200 bg-white p-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={completionDonutData}
+                      innerRadius={52}
+                      outerRadius={86}
+                      dataKey="value"
+                      nameKey="name"
+                      paddingAngle={2}
+                      animationDuration={450}
+                    >
+                      {completionDonutData.map((entry) => (
+                        <Cell key={`progress-donut-${entry.name}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number | undefined) => value ?? 0} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </ChartExportContainer>
 
           <div className="flex flex-wrap gap-2">
             {(Object.keys(progressStatusLabel) as ProgressStatusFilter[]).map((status) => (
@@ -835,55 +865,54 @@ function ResultsTab({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div
-            className="h-60 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3"
-            data-chart-export-id="reporting-ratings-chart"
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={ratingsData} margin={{ top: 12, right: 12, left: 6, bottom: 12 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                <Tooltip
-                  formatter={(value: number | undefined, name: string | undefined) => [
-                    value ?? 0,
-                    name === "FINAL" ? "Final" : "Scorecard baseline",
-                  ]}
-                  labelFormatter={(value) => `Rating ${value}`}
-                />
-                <Legend
-                  formatter={(value) =>
-                    value === "FINAL" ? "Final" : "Scorecard baseline"
-                  }
-                  wrapperStyle={{ fontSize: 12 }}
-                />
-                <Bar
-                  dataKey="FINAL"
-                  fill={reportingChartTheme.ratingSource.FINAL}
-                  hide={hiddenSeries.FINAL}
-                  animationDuration={450}
-                  onClick={(entry) => {
-                    const payload = entry?.payload as { rating?: number } | undefined;
-                    if (typeof payload?.rating === "number") {
-                      onDrilldown(payload.rating);
+          <ChartExportContainer chartId="reporting-ratings-chart" className="p-3">
+            <div className="h-60">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={ratingsData} margin={{ top: 12, right: 12, left: 6, bottom: 12 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                  <Tooltip
+                    formatter={(value: number | undefined, name: string | undefined) => [
+                      value ?? 0,
+                      name === "FINAL" ? "Final" : "Scorecard baseline",
+                    ]}
+                    labelFormatter={(value) => `Rating ${value}`}
+                  />
+                  <Legend
+                    formatter={(value) =>
+                      value === "FINAL" ? "Final" : "Scorecard baseline"
                     }
-                  }}
-                />
-                <Bar
-                  dataKey="SCORECARD"
-                  fill={reportingChartTheme.ratingSource.SCORECARD}
-                  hide={hiddenSeries.SCORECARD}
-                  animationDuration={450}
-                  onClick={(entry) => {
-                    const payload = entry?.payload as { rating?: number } | undefined;
-                    if (typeof payload?.rating === "number") {
-                      onDrilldown(payload.rating);
-                    }
-                  }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+                    wrapperStyle={{ fontSize: 12 }}
+                  />
+                  <Bar
+                    dataKey="FINAL"
+                    fill={reportingChartTheme.ratingSource.FINAL}
+                    hide={hiddenSeries.FINAL}
+                    animationDuration={450}
+                    onClick={(entry) => {
+                      const payload = entry?.payload as { rating?: number } | undefined;
+                      if (typeof payload?.rating === "number") {
+                        onDrilldown(payload.rating);
+                      }
+                    }}
+                  />
+                  <Bar
+                    dataKey="SCORECARD"
+                    fill={reportingChartTheme.ratingSource.SCORECARD}
+                    hide={hiddenSeries.SCORECARD}
+                    animationDuration={450}
+                    onClick={(entry) => {
+                      const payload = entry?.payload as { rating?: number } | undefined;
+                      if (typeof payload?.rating === "number") {
+                        onDrilldown(payload.rating);
+                      }
+                    }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartExportContainer>
 
           <div className="flex flex-wrap gap-2">
             {(["FINAL", "SCORECARD"] as RatingSourceFilter[]).map((source) => (
@@ -1113,34 +1142,33 @@ function CompetenciesTab({
               </p>
             </div>
 
-            <div
-              className="h-56 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3"
-              data-chart-export-id="reporting-competency-drilldown-chart"
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={[1, 2, 3, 4, 5].map((rating) => ({
-                    rating,
-                    Self: selectedCompetency.selfDistribution[
-                      String(rating) as keyof typeof selectedCompetency.selfDistribution
-                    ],
-                    Manager:
-                      selectedCompetency.managerDistribution[
-                        String(rating) as keyof typeof selectedCompetency.managerDistribution
+            <ChartExportContainer chartId="reporting-competency-drilldown-chart" className="p-3">
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[1, 2, 3, 4, 5].map((rating) => ({
+                      rating,
+                      Self: selectedCompetency.selfDistribution[
+                        String(rating) as keyof typeof selectedCompetency.selfDistribution
                       ],
-                  }))}
-                  margin={{ top: 12, right: 12, left: 6, bottom: 12 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                  <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                  <Tooltip labelFormatter={(value) => `Rating ${value}`} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Self" fill="#38bdf8" animationDuration={450} />
-                  <Bar dataKey="Manager" fill="#22c55e" animationDuration={450} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                      Manager:
+                        selectedCompetency.managerDistribution[
+                          String(rating) as keyof typeof selectedCompetency.managerDistribution
+                        ],
+                    }))}
+                    margin={{ top: 12, right: 12, left: 6, bottom: 12 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                    <Tooltip labelFormatter={(value) => `Rating ${value}`} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Bar dataKey="Self" fill="#38bdf8" animationDuration={450} />
+                    <Bar dataKey="Manager" fill="#22c55e" animationDuration={450} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </ChartExportContainer>
 
             <HelpHint label="How Not Observed is handled" className="md:col-span-2">
               Not Observed responses are stored and reported separately. They are excluded from
@@ -1213,40 +1241,39 @@ function ScorecardTab({
           </div>
         </CardHeader>
         <CardContent>
-          <div
-            className="h-80 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3"
-            data-chart-export-id="reporting-scorecard-chart"
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={scorecardData} margin={{ top: 12, right: 16, left: 6, bottom: 36 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={{ stroke: "#cbd5e1" }}
-                  angle={-25}
-                  textAnchor="end"
-                  interval={0}
-                  height={60}
-                />
-                <YAxis domain={[0, 5]} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                <Tooltip
-                  formatter={(value: number | undefined, name: string | undefined) => [
-                    typeof value === "number" ? value.toFixed(2) : "0.00",
-                    name ?? "Value",
-                  ]}
-                />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="self" name="Self avg" fill={reportingChartTheme.metricSeries.self} animationDuration={450} />
-                <Bar
-                  dataKey="manager"
-                  name="Manager avg"
-                  fill={reportingChartTheme.metricSeries.manager}
-                  animationDuration={450}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <ChartExportContainer chartId="reporting-scorecard-chart" className="p-3">
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={scorecardData} margin={{ top: 12, right: 16, left: 6, bottom: 36 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={{ stroke: "#cbd5e1" }}
+                    angle={-25}
+                    textAnchor="end"
+                    interval={0}
+                    height={60}
+                  />
+                  <YAxis domain={[0, 5]} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                  <Tooltip
+                    formatter={(value: number | undefined, name: string | undefined) => [
+                      typeof value === "number" ? value.toFixed(2) : "0.00",
+                      name ?? "Value",
+                    ]}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="self" name="Self avg" fill={reportingChartTheme.metricSeries.self} animationDuration={450} />
+                  <Bar
+                    dataKey="manager"
+                    name="Manager avg"
+                    fill={reportingChartTheme.metricSeries.manager}
+                    animationDuration={450}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartExportContainer>
         </CardContent>
       </Card>
 
@@ -1345,6 +1372,25 @@ function SourceSummaryRow({
         {label}
       </span>
       <span className="font-semibold text-slate-900">{value}</span>
+    </div>
+  );
+}
+
+function ChartExportContainer({
+  chartId,
+  className,
+  children,
+}: {
+  chartId: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`rounded-[var(--radius-md)] border border-slate-200 bg-white ${className ?? ""}`.trim()}
+      data-chart-export-id={chartId}
+    >
+      {children}
     </div>
   );
 }
@@ -1528,9 +1574,11 @@ async function downloadChartAsPng(
   const chartContainer = document.querySelector<HTMLElement>(
     `[data-chart-export-id=\"${chartId}\"]`,
   );
-  const svg = chartContainer?.querySelector("svg");
+  const svgNodes = chartContainer
+    ? Array.from(chartContainer.querySelectorAll<SVGSVGElement>("svg"))
+    : [];
 
-  if (!chartContainer || !svg) {
+  if (!chartContainer || svgNodes.length === 0) {
     return;
   }
 
@@ -1538,22 +1586,7 @@ async function downloadChartAsPng(
   const width = Math.max(640, Math.ceil(rect.width));
   const height = Math.max(240, Math.ceil(rect.height));
 
-  const svgClone = svg.cloneNode(true) as SVGSVGElement;
-  svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  svgClone.setAttribute("width", String(width));
-  svgClone.setAttribute("height", String(height));
-  if (!svgClone.getAttribute("viewBox")) {
-    svgClone.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  }
-
-  const serialized = new XMLSerializer().serializeToString(svgClone);
-  const svgBlob = new Blob([serialized], {
-    type: "image/svg+xml;charset=utf-8",
-  });
-  const svgUrl = URL.createObjectURL(svgBlob);
-
   try {
-    const image = await loadImage(svgUrl);
     const scale = window.devicePixelRatio > 1 ? 2 : 1;
     const canvas = document.createElement("canvas");
     canvas.width = width * scale;
@@ -1567,7 +1600,43 @@ async function downloadChartAsPng(
     context.setTransform(scale, 0, 0, scale, 0, 0);
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, width, height);
-    context.drawImage(image, 0, 0, width, height);
+
+    for (const svgNode of svgNodes) {
+      const svgRect = svgNode.getBoundingClientRect();
+      if (svgRect.width === 0 || svgRect.height === 0) {
+        continue;
+      }
+
+      const svgClone = svgNode.cloneNode(true) as SVGSVGElement;
+      svgClone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      svgClone.setAttribute("width", String(Math.ceil(svgRect.width)));
+      svgClone.setAttribute("height", String(Math.ceil(svgRect.height)));
+      if (!svgClone.getAttribute("viewBox")) {
+        svgClone.setAttribute(
+          "viewBox",
+          `0 0 ${Math.ceil(svgRect.width)} ${Math.ceil(svgRect.height)}`,
+        );
+      }
+
+      const serialized = new XMLSerializer().serializeToString(svgClone);
+      const svgBlob = new Blob([serialized], {
+        type: "image/svg+xml;charset=utf-8",
+      });
+      const svgUrl = URL.createObjectURL(svgBlob);
+
+      try {
+        const image = await loadImage(svgUrl);
+        context.drawImage(
+          image,
+          Math.max(0, svgRect.left - rect.left),
+          Math.max(0, svgRect.top - rect.top),
+          svgRect.width,
+          svgRect.height,
+        );
+      } finally {
+        URL.revokeObjectURL(svgUrl);
+      }
+    }
 
     const pngBlob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, "image/png");
@@ -1588,8 +1657,6 @@ async function downloadChartAsPng(
   } catch {
     // Keep export failure non-blocking for reporting workflows.
     return;
-  } finally {
-    URL.revokeObjectURL(svgUrl);
   }
 }
 
