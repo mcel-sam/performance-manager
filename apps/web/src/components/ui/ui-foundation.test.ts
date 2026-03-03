@@ -6,6 +6,8 @@ import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
 import { HelpHint } from "@/components/ui/help-hint";
 import { Modal } from "@/components/ui/modal";
+import { SectionContainer } from "@/components/ui/section-container";
+import { StatusChip } from "@/components/ui/status-chip";
 import { Tabs } from "@/components/ui/tabs";
 import { Toast } from "@/components/ui/toast";
 
@@ -20,6 +22,24 @@ describe("ui foundation primitives", () => {
 
     expect(html).toContain("No data");
     expect(html).toContain("Create an item to continue.");
+  });
+
+  it("renders status chip with marker and label", () => {
+    const html = renderToStaticMarkup(
+      createElement(StatusChip, { tone: "success" }, "Submitted"),
+    );
+
+    expect(html).toContain("Submitted");
+    expect(html).toContain("rounded-full");
+  });
+
+  it("renders section container with children", () => {
+    const html = renderToStaticMarkup(
+      createElement(SectionContainer, null, "Section content"),
+    );
+
+    expect(html).toContain("Section content");
+    expect(html).toContain("rounded-[var(--radius-lg)]");
   });
 
   it("renders tabs with the selected tab marked", () => {
