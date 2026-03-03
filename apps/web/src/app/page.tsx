@@ -14,6 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { IconBadge } from "@/components/ui/icon-badge";
+import { SectionContainer } from "@/components/ui/section-container";
 import { appEnv } from "@/config/env";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { listImprovementPlans } from "@/server/improvement-plans/improvement-plan-service";
@@ -133,9 +135,14 @@ export default async function HomePage() {
           description="In-app reminders for work items closing in the next 14 days."
         />
         <div className="grid gap-4 md:grid-cols-2">
-          <Card>
+          <Card className="border-teal-200">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-base">Review tasks</CardTitle>
+              <div className="flex items-center gap-2">
+                <IconBadge tone="brand" aria-label="Review tasks icon">
+                  RT
+                </IconBadge>
+                <CardTitle className="text-base">Review tasks</CardTitle>
+              </div>
               <CardDescription>Assigned submissions that are not yet submitted.</CardDescription>
             </CardHeader>
             <CardFooter className="flex items-center justify-between">
@@ -148,9 +155,14 @@ export default async function HomePage() {
             </CardFooter>
           </Card>
 
-          <Card>
+          <Card className="border-amber-200">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-base">Plan check-ins</CardTitle>
+              <div className="flex items-center gap-2">
+                <IconBadge tone="warm" aria-label="Plan check-ins icon">
+                  PC
+                </IconBadge>
+                <CardTitle className="text-base">Plan check-ins</CardTitle>
+              </div>
               <CardDescription>Active plan timelines ending in the next 14 days.</CardDescription>
             </CardHeader>
             <CardFooter className="flex items-center justify-between">
@@ -166,7 +178,7 @@ export default async function HomePage() {
       </section>
 
       {!appEnv.presentationMode ? (
-        <section className="space-y-4">
+        <SectionContainer variant="brand" className="space-y-4">
           <SectionHeader
             title="Workflow Modules"
             description="Open one of the active modules below to continue work."
@@ -196,7 +208,7 @@ export default async function HomePage() {
               </Card>
             ))}
           </div>
-        </section>
+        </SectionContainer>
       ) : null}
     </div>
   );

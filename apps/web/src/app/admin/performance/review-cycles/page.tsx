@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SectionContainer } from "@/components/ui/section-container";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { listReviewCycles } from "@/server/reviews/admin-cycle-service";
 
@@ -58,6 +59,11 @@ export default async function AdminReviewCyclesPage() {
         <EmptyState
           title="No review cycles yet"
           description="Start by creating your first cycle for this organization."
+          icon={<span aria-hidden="true">📆</span>}
+          nextSteps={[
+            "Define the cycle window and required review types.",
+            "Generate submissions after setup to create participant tasks.",
+          ]}
           action={
             <Link href="/admin/performance/review-cycles/new">
               <Button>Create first cycle</Button>
@@ -65,7 +71,9 @@ export default async function AdminReviewCyclesPage() {
           }
         />
       ) : (
-        <ReviewCyclesTable cycles={cycles} auth={{ userId: context.userId, orgId: context.orgId }} />
+        <SectionContainer variant="warm" className="p-3">
+          <ReviewCyclesTable cycles={cycles} auth={{ userId: context.userId, orgId: context.orgId }} />
+        </SectionContainer>
       )}
     </div>
   );

@@ -28,6 +28,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { HelpHint } from "@/components/ui/help-hint";
 import { Select } from "@/components/ui/select";
+import { SectionContainer } from "@/components/ui/section-container";
 import {
   Table,
   TableBody,
@@ -199,15 +200,14 @@ export function ReportingDashboard({
         }
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>
+      <SectionContainer variant="brand" className="space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold text-slate-900">Filters</h2>
+          <p className="text-sm text-slate-600">
             Select a cycle, then refine by department and title. Choose which rating source to focus.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-6" method="get" data-testid="reporting-filter-bar">
+          </p>
+        </div>
+        <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-6" method="get" data-testid="reporting-filter-bar">
             <input type="hidden" name="tab" value={selectedTab} />
             <input type="hidden" name="page" value="1" />
             {selectedDimensionKey ? (
@@ -299,9 +299,8 @@ export function ReportingDashboard({
                 Apply filters
               </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+        </form>
+      </SectionContainer>
 
       <section className="flex items-center justify-between gap-4">
         <div className="inline-flex rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-1">

@@ -3,9 +3,9 @@
 import { CycleStatus } from "@prisma/client";
 import { useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { StatusChip } from "@/components/ui/status-chip";
 import {
   Table,
   TableBody,
@@ -35,7 +35,7 @@ interface ReviewCyclesTableProps {
   };
 }
 
-const statusBadgeVariant: Record<CycleStatus, "neutral" | "info" | "warning" | "success"> = {
+const statusChipTone: Record<CycleStatus, "neutral" | "info" | "warning" | "success"> = {
   DRAFT: "neutral",
   ACTIVE: "info",
   LOCKED: "warning",
@@ -154,7 +154,7 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
                       {new Date(cycle.endDate).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusBadgeVariant[cycle.status]}>{cycle.status}</Badge>
+                      <StatusChip tone={statusChipTone[cycle.status]}>{cycle.status}</StatusChip>
                     </TableCell>
                     <TableCell className="text-slate-700">
                       Peer: {cycle.peerReviewCount} | Upward: {cycle.upwardReviewCount}
