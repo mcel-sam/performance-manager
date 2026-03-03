@@ -1078,22 +1078,23 @@ We will follow proven patterns:
 
 **Goal:** HR can manage people and structure (like your screenshot) so assignments and reporting make sense.
 
-- [ ] Add HR-only page: `/admin/users` (or `/admin/people`)
-  - [ ] KPI cards: total users, HR admins, calibrators, managers, employees
-  - [ ] Search by name/email
-  - [ ] Table columns: user, role, department, title, manager, #reports, actions
-- [ ] Add “Add User” + “Edit User” (modal or page)
-  - [ ] set role, department, title, manager
-  - [ ] prevent impossible org loops (manager cannot report to self)
-- [ ] Ensure changes affect:
+- [x] Add HR-only page: `/admin/users` (or `/admin/people`)
+  - [x] KPI cards: total users, HR admins, calibrators, managers, employees
+  - [x] Search by name/email
+  - [x] Table columns: user, role, department, title, manager, #reports, actions
+- [x] Add “Add User” + “Edit User” (modal or page)
+  - [x] set role, department, title, manager
+  - [x] prevent impossible org loops (manager cannot report to self)
+- [x] Ensure changes affect:
   - manager direct report lists
   - cycle assignment generation (manager relationship)
   - reporting breakdowns (department/title)
 
 **Acceptance criteria**
-- [ ] HR can create/update users and manager relationships
-- [ ] Manager/team views reflect updated structure
-- [ ] Permission tests for HR-only access
+- [x] HR can create/update users and manager relationships
+- [x] Manager/team views reflect updated structure
+- [x] Permission tests for HR-only access
+- Completed in PR #24.
 
 ---
 
