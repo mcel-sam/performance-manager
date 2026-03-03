@@ -1356,7 +1356,7 @@ Feedback observed:
 - [x] Manager can drill into a direct report without being forced into reviews list
 - [x] “Open review” is contextual and not the primary navigation flow
 - [x] Add 1 Playwright test: manager My Team loads and shows direct reports
-- Completed in PR #TBD.
+- Completed in PR #33.
 
 ---
 
