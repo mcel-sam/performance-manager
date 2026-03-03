@@ -1102,7 +1102,7 @@ We will follow proven patterns:
 
 **Goal:** Make it obvious how tasks are created and who is responsible (like Lattice’s multi-step setup).
 
-- [ ] Replace/upgrade cycle create page into a **wizard**:
+- [x] Replace/upgrade cycle create page into a **wizard**:
   - Step 1: Basics (name, cycle dates)
   - Step 2: Review types (self/manager/peer/upward toggles)
   - Step 3: Reviewer rules:
@@ -1110,16 +1110,17 @@ We will follow proven patterns:
     - upward: enabled for managers? minimum N? visibility policy (draft now)
   - Step 4: Visibility + schedule (due dates per type if needed)
   - Step 5: Verify (summary of what will be generated)
-- [ ] “Generate submissions” uses wizard config to create ReviewSubmissions with `dueAt`
-- [ ] Add a “Progress summary” panel per cycle:
+- [x] “Generate submissions” uses wizard config to create ReviewSubmissions with `dueAt`
+- [x] Add a “Progress summary” panel per cycle:
   - counts by status (not started / in progress / submitted)
   - counts by type (self/manager/peer/upward)
   - quick links to reporting
 
 **Acceptance criteria**
-- [ ] HR can explain “who owes what” from the UI
-- [ ] Generated tasks have correct due dates and types
-- [ ] UI mirrors Lattice pattern: structured steps, not a long form
+- [x] HR can explain “who owes what” from the UI
+- [x] Generated tasks have correct due dates and types
+- [x] UI mirrors Lattice pattern: structured steps, not a long form
+- Completed in PR #TBD.
 
 ---
 
