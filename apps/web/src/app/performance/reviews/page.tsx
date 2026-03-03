@@ -49,11 +49,6 @@ export default async function PerformanceReviewsPage() {
       <PageHeader
         title="Performance Reviews"
         description="Track review cycles and complete your assigned submissions."
-        metadata={
-          <>
-            Viewing as {context.role} (<code>{context.userId}</code>)
-          </>
-        }
       />
 
       {tasks.length === 0 ? (
