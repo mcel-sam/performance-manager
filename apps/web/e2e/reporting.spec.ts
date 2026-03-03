@@ -8,7 +8,7 @@ test.beforeAll(async ({ request }) => {
 
 test("reporting page loads and applies filters", async ({ page }) => {
   await loginAsHrAdmin(page);
-  await page.goto("/admin/performance/reporting");
+  await page.goto("/admin/performance/reporting?tab=progress");
 
   await expect(
     page.getByRole("heading", {
@@ -18,23 +18,19 @@ test("reporting page loads and applies filters", async ({ page }) => {
 
   await expect(page.getByTestId("reporting-cycle-select")).toBeVisible();
 
-  await page.getByTestId("reporting-tab-results").click();
-  await expect(page).toHaveURL(/tab=results/);
+  const initialRows = await page.getByTestId("reporting-employee-row").count();
 
   await page
     .getByTestId("reporting-filter-department")
-    .selectOption({ label: "Safety" });
+    .selectOption({ label: "Operations" });
   await page.getByTestId("reporting-apply-filters").click();
 
-  await expect(page).toHaveURL(/department=Safety/);
+  await expect(page).toHaveURL(/department=Operations/);
   await expect(page.getByTestId("reporting-current-department")).toHaveText(
-    "Safety",
+    "Operations",
   );
-  await expect(
-    page.getByRole("heading", {
-      name: "Insufficient data for selected filters",
-    }),
-  ).toBeVisible();
+  const filteredRows = await page.getByTestId("reporting-employee-row").count();
+  expect(filteredRows).toBeLessThan(initialRows);
 });
 
 test("reporting competency drilldown opens from summary table", async ({ page }) => {
@@ -42,8 +38,38 @@ test("reporting competency drilldown opens from summary table", async ({ page })
   await page.goto("/admin/performance/reporting?tab=competencies");
 
   await expect(page.getByRole("heading", { name: "Competency summary" })).toBeVisible();
-  await page.getByRole("link", { name: "View details" }).first().click();
+  await page.locator('[data-testid^="reporting-competency-cell-"]').first().click();
 
   await expect(page).toHaveURL(/tab=competencies/);
   await expect(page.getByTestId("reporting-competency-drilldown")).toBeVisible();
+});
+
+test("reporting chart drilldown filters employee table", async ({ page }) => {
+  await loginAsHrAdmin(page);
+  await page.goto("/admin/performance/reporting?tab=progress");
+
+  const beforeDrilldown = await page.getByTestId("reporting-employee-row").count();
+  await page.getByTestId("reporting-progress-drilldown-IN_PROGRESS").click();
+
+  await expect(page.getByTestId("reporting-active-drilldowns")).toContainText(
+    "In progress",
+  );
+
+  const afterDrilldown = await page.getByTestId("reporting-employee-row").count();
+  expect(afterDrilldown).toBeLessThan(beforeDrilldown);
+});
+
+test("reporting charts expose png download actions", async ({ page }) => {
+  await loginAsHrAdmin(page);
+  await page.goto("/admin/performance/reporting?tab=progress");
+  await expect(page.getByTestId("reporting-download-progress-png")).toBeVisible();
+
+  await page.getByTestId("reporting-tab-results").click();
+  await expect(page.getByTestId("reporting-download-results-png")).toBeVisible();
+
+  await page.goto("/admin/performance/reporting?tab=competencies");
+  await expect(page.getByTestId("reporting-download-competency-png")).toBeVisible();
+
+  await page.goto("/admin/performance/reporting?tab=scorecard");
+  await expect(page.getByTestId("reporting-download-scorecard-png")).toBeVisible();
 });

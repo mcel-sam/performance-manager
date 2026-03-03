@@ -495,7 +495,7 @@ npm run dev
   - [x] Calibration session view
   - [x] Improvement plans detail
   - [x] Admin review cycles new/create page (if still inconsistent)
-- [ ] Standardize loading/empty/error states using shared components (remaining outliers moved to Milestone 4.1)
+- [x] Standardize loading/empty/error states using shared components (completed in Milestone 4.1, PR #7)
 - [x] Add Skeleton loaders on packet/calibration/improvement plan detail where data fetches occur
 - [x] Accessibility baseline pass:
   - [x] Focus states visible
@@ -504,7 +504,7 @@ npm run dev
 
 **Acceptance criteria**
 - [x] Core flows look consistent and use shared components
-- [ ] No mixed styling patterns remain on core routes (remaining admin/reviews outliers moved to Milestone 4.1)
+- [x] No mixed styling patterns remain on core routes (completed in Milestone 4.1, PR #7)
 - [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
 - Completed in PR #4 (dev -> main Milestone 4 Phase 2)
 
@@ -926,6 +926,10 @@ We will follow proven patterns:
 - [x] Segmented bar showing Completed/In progress/Not started totals 
 - [x] Filters: Department + Position Title
 - [x] Drilldown table: employees by status (pagination)
+- [x] Interactive chart behaviors:
+  - [x] Hover tooltips with clear labels
+  - [x] Clickable legend toggles
+  - [x] Chart/segment controls that drill down into the employee table
 
 ### Results tab (overall rating)
 - [x] Rating distribution chart (1–5) with toggle:
@@ -940,6 +944,7 @@ We will follow proven patterns:
 - [x] UI uses shared primitives (PageHeader, Card, Table, EmptyState, Skeleton)
 - [x] Playwright smoke suite extended with 1 reporting test (page loads + filters apply)
 - Completed in PR #17 (dev -> main Milestone 6 Phase 2)
+- Interactive Progress/Results polish completed in PR #21.
 
 ---
 
@@ -955,18 +960,22 @@ We will follow proven patterns:
   - per metric distribution / average by dept/title
   - optional “gap” view (self vs manager)
 - [x] Show count of Not Observed per metric (data quality)
+- [x] Visual polish for competency/scorecard interactions:
+  - [x] Heatmap intensity styling for competency cells
+  - [x] Self-vs-manager chart presentation for scorecard metrics
 
 **Acceptance criteria**
 - [x] HR can see competency breakdown for all requested competencies
 - [x] HR can break down by dept/title and drill to employee list
 - [x] UI remains fast (pagination/caching where needed)
 - Completed in PR #18 (dev -> main Milestone 6 Phase 3)
+- Competency/scorecard interaction polish completed in PR #21.
 
 ---
 
 ## Phase 4 — Exports + polish (Lattice-like finishing touches)
 
-- [ ] Add “Download PNG” for charts (optional, later; deferred)
+- [x] Add “Download PNG” for charts
 - [x] Add CSV exports:
   - progress summary
   - rating distribution table
@@ -983,3 +992,4 @@ We will follow proven patterns:
 - [x] Reporting is demo-ready and trustworthy for HR decision meetings
 - [x] Exports are usable for presentations and follow-up analysis
 - Completed in PR #19 (dev -> main Milestone 6 Phase 4)
+- Download PNG chart exports completed in PR #21.
