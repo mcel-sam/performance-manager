@@ -2,8 +2,8 @@ import Link from "next/link";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HelpHint } from "@/components/ui/help-hint";
+import { getCycleStatusTone, StatusChip } from "@/components/ui/status-chip";
 import ReviewPacketView from "@/components/reviews/review-packet-view";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getReviewPacket } from "@/server/reviews/review-packet-service";
@@ -43,25 +43,19 @@ export default async function ReviewPacketPage({ params }: ReviewPacketPageProps
         release when cycle policy allows.
       </HelpHint>
 
-      <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Navigation</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Link href="/performance/reviews">
-              <Button variant="outline" className="w-full justify-start">
-                Review Tasks
-              </Button>
-            </Link>
-            <p className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-              Packet View
-            </p>
-          </CardContent>
-        </Card>
-
-        <ReviewPacketView data={packet} />
+      <div className="flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3 shadow-[var(--shadow-xs)]">
+        <Link href="/performance/reviews">
+          <Button variant="outline" size="sm">
+            Back to Reviews
+          </Button>
+        </Link>
+        <StatusChip tone={getCycleStatusTone(packet.packet.cycleStatus)}>
+          Cycle {packet.packet.cycleStatus}
+        </StatusChip>
+        <span className="text-xs text-slate-500">Packet focus view</span>
       </div>
+
+      <ReviewPacketView data={packet} />
     </div>
   );
 }

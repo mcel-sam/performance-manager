@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import WriteReviewForm from "@/components/reviews/write-review-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { getDevRequestContext } from "@/server/auth/request-context";
@@ -28,20 +26,6 @@ export default async function WriteReviewPage({ params }: WriteReviewPageProps) 
 
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6 text-slate-900">
-      <nav
-        aria-label="Write review breadcrumb"
-        data-testid="write-review-breadcrumb"
-        className="flex flex-wrap items-center gap-2 text-sm text-slate-600"
-      >
-        <Link href="/performance/reviews" className="font-medium text-slate-700 hover:text-slate-900">
-          Reviews
-        </Link>
-        <span aria-hidden>/</span>
-        <span>{data.submission.cycleName}</span>
-        <span aria-hidden>/</span>
-        <span>{data.submission.subjectName}</span>
-      </nav>
-
       <PageHeader
         eyebrow="Write Review"
         title={data.template.name}

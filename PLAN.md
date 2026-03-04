@@ -1586,31 +1586,32 @@ Feedback observed:
 ## Phase 3 — Content audit + Focus layout (stop wasting space)
 
 ### 1) Content audit doc
-- [ ] Create `/docs/ux/CONTENT_AUDIT.md` for:
-  - [ ] Reviews list
-  - [ ] Write review
-  - [ ] Packet view
-  - [ ] Calibration
-  - [ ] My Team
-  - [ ] Reporting
-- [ ] For each page define:
-  - [ ] Primary goal
-  - [ ] Primary content
-  - [ ] Secondary/supporting content
-  - [ ] Hide behind “details”
-  - [ ] Remove
+- [x] Create `/docs/ux/CONTENT_AUDIT.md` for:
+  - [x] Reviews list
+  - [x] Write review
+  - [x] Packet view
+  - [x] Calibration
+  - [x] My Team
+  - [x] Reporting
+- [x] For each page define:
+  - [x] Primary goal
+  - [x] Primary content
+  - [x] Secondary/supporting content
+  - [x] Hide behind “details”
+  - [x] Remove
 
 ### 2) Focus layout for deep work pages
-- [ ] Implement “focus layout” on:
-  - [ ] Write review
-  - [ ] Packet view
-  - [ ] Calibration session
-- [ ] Reduce redundant navigation blocks; keep breadcrumb/compact controls
+- [x] Implement “focus layout” on:
+  - [x] Write review
+  - [x] Packet view
+  - [x] Calibration session
+- [x] Reduce redundant navigation blocks; keep breadcrumb/compact controls
 
 #### Acceptance criteria
-- [ ] Deep work pages have more usable center width
-- [ ] No redundant nav blocks remain
-- [ ] Content audit exists and matches implemented decisions
+- [x] Deep work pages have more usable center width
+- [x] No redundant nav blocks remain
+- [x] Content audit exists and matches implemented decisions
+- Completed in PR #39 (dev -> main Milestone 9 Phase 3).
 
 ---
 
