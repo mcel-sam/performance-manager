@@ -8,7 +8,8 @@ type ButtonSize = "sm" | "md";
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
     "bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-strong)] active:translate-y-px",
-  secondary: "bg-teal-700 text-white hover:bg-teal-600 active:translate-y-px",
+  secondary:
+    "bg-[var(--brand-secondary)] text-white hover:brightness-95 active:translate-y-px",
   outline:
     "border border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50 active:translate-y-px",
   danger: "bg-rose-700 text-white hover:bg-rose-600 active:translate-y-px",
