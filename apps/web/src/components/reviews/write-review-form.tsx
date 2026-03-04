@@ -65,6 +65,21 @@ interface EvidenceResponse {
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 type EvidenceLoadState = "loading" | "loaded" | "error";
+type ReviewSectionKind =
+  | "impact-results"
+  | "competencies"
+  | "growth-development"
+  | "goals"
+  | "additional"
+  | "final-summary";
+
+interface ReviewSection {
+  id: string;
+  title: string;
+  subtitle: string;
+  questionIds: string[];
+  kind: ReviewSectionKind;
+}
 
 const evidenceTypeOrder: EvidenceType[] = [
   EvidenceType.FEEDBACK,
@@ -126,34 +141,12 @@ export default function WriteReviewForm({
     () => questionState.find((question) => question.id === activeQuestionId) ?? null,
     [activeQuestionId, questionState],
   );
+  const questionById = useMemo(
+    () => new Map(questionState.map((question) => [question.id, question])),
+    [questionState],
+  );
 
-  const sections = useMemo(() => {
-    const chunkSize = 4;
-    const nextSections: Array<{ id: string; title: string; questionIds: string[] }> = [];
-
-    for (let index = 0; index < questionState.length; index += chunkSize) {
-      const slice = questionState.slice(index, index + chunkSize);
-      const dimensionLabels = Array.from(
-        new Set(
-          slice
-            .map((question) => question.dimensionKey)
-            .filter((dimension): dimension is string => Boolean(dimension))
-            .map((dimension) => formatDimensionKey(dimension)),
-        ),
-      );
-
-      nextSections.push({
-        id: `section-${nextSections.length + 1}`,
-        title:
-          dimensionLabels.length === 1
-            ? dimensionLabels[0]
-            : `Section ${nextSections.length + 1}`,
-        questionIds: slice.map((question) => question.id),
-      });
-    }
-
-    return nextSections;
-  }, [questionState]);
+  const sections = useMemo(() => buildReviewSections(questionState), [questionState]);
 
   const [activeSectionId, setActiveSectionId] = useState<string>(sections[0]?.id ?? "section-1");
 
@@ -168,11 +161,8 @@ export default function WriteReviewForm({
     [activeSection],
   );
   const activeSectionQuestions = useMemo(
-    () =>
-      questionState.filter((question) =>
-        activeSectionQuestionIds.includes(question.id),
-      ),
-    [activeSectionQuestionIds, questionState],
+    () => activeSectionQuestionIds.map((questionId) => questionById.get(questionId)).filter(isPresent),
+    [activeSectionQuestionIds, questionById],
   );
 
   const sectionByQuestionId = useMemo(() => {
@@ -184,6 +174,7 @@ export default function WriteReviewForm({
     }
     return map;
   }, [sections]);
+  const [sectionMessage, setSectionMessage] = useState<string | null>(null);
 
   const selectedEvidenceItems = useMemo(
     () => evidenceItemsByType[selectedEvidenceType] ?? [],
@@ -200,39 +191,30 @@ export default function WriteReviewForm({
       return haystack.includes(normalizedQuery);
     });
   }, [evidenceSearch, selectedEvidenceItems]);
+  const evidenceTotalCount = useMemo(
+    () => evidenceTypeOrder.reduce((sum, type) => sum + (evidenceCounts[type] ?? 0), 0),
+    [evidenceCounts],
+  );
 
   const sectionProgress = useMemo(
     () =>
       sections.map((section) => {
-        const sectionQuestions = questionState.filter((question) =>
-          section.questionIds.includes(question.id),
-        );
+        const sectionQuestions = section.questionIds.map((questionId) => questionById.get(questionId)).filter(isPresent);
         const requiredQuestions = sectionQuestions.filter((question) => question.isRequired);
-        const answeredRequiredCount = requiredQuestions.filter(
-          (question) =>
-            question.questionType === ReviewQuestionType.SCALE_1_TO_5
-              ? question.responseText.trim().length > 0 &&
-                (question.notObserved || question.scaleRating != null)
-              : question.responseText.trim().length > 0,
-        ).length;
+        const answeredRequiredCount = requiredQuestions.filter((question) => isQuestionAnswered(question)).length;
 
         return {
           sectionId: section.id,
           answered: answeredRequiredCount,
           total: requiredQuestions.length,
+          remaining: requiredQuestions.length - answeredRequiredCount,
         };
       }),
-    [questionState, sections],
+    [questionById, sections],
   );
   const requiredProgress = useMemo(() => {
     const requiredQuestions = questionState.filter((question) => question.isRequired);
-    const answeredRequiredCount = requiredQuestions.filter(
-      (question) =>
-        question.questionType === ReviewQuestionType.SCALE_1_TO_5
-          ? question.responseText.trim().length > 0 &&
-            (question.notObserved || question.scaleRating != null)
-          : question.responseText.trim().length > 0,
-    ).length;
+    const answeredRequiredCount = requiredQuestions.filter((question) => isQuestionAnswered(question)).length;
 
     return {
       answered: answeredRequiredCount,
@@ -307,6 +289,17 @@ export default function WriteReviewForm({
   useEffect(() => {
     setShowSelectedAnswerDetails(false);
   }, [activeQuestionId]);
+
+  useEffect(() => {
+    if (!sectionMessage || !activeSection) {
+      return;
+    }
+
+    const progress = sectionProgress.find((entry) => entry.sectionId === activeSection.id);
+    if ((progress?.remaining ?? 0) === 0) {
+      setSectionMessage(null);
+    }
+  }, [activeSection, sectionMessage, sectionProgress]);
 
   useEffect(() => {
     if (!dirtyQuestionId || isReadOnly) {
@@ -428,6 +421,7 @@ export default function WriteReviewForm({
               typeof questionId === "string" && questionId.length > 0,
           );
           setMissingQuestionIds(missingIds);
+          setSectionMessage(null);
           setSubmitMessage("Please complete all required questions before submitting.");
 
           const firstMissingQuestionId = missingIds[0];
@@ -436,17 +430,7 @@ export default function WriteReviewForm({
             if (nextSectionId) {
               setActiveSectionId(nextSectionId);
             }
-            setActiveQuestionId(firstMissingQuestionId);
-
-            setTimeout(() => {
-              const firstMissingInput = questionInputRefs.current[firstMissingQuestionId];
-              if (!firstMissingInput) {
-                return;
-              }
-
-              firstMissingInput.scrollIntoView({ behavior: "smooth", block: "center" });
-              firstMissingInput.focus();
-            }, 0);
+            focusQuestionInput(firstMissingQuestionId);
           }
 
           return;
@@ -457,6 +441,7 @@ export default function WriteReviewForm({
 
       setStatus(payload.status as ReviewSubmissionStatus);
       setMissingQuestionIds([]);
+      setSectionMessage(null);
       setSubmitMessage("Review submitted successfully. This submission is now read-only.");
       setSaveState("saved");
     } catch (error) {
@@ -581,18 +566,54 @@ export default function WriteReviewForm({
     }
   }
 
+  function focusQuestionInput(questionId: string) {
+    setActiveQuestionId(questionId);
+
+    setTimeout(() => {
+      const input = questionInputRefs.current[questionId];
+      if (!input) {
+        return;
+      }
+
+      input.scrollIntoView({ behavior: "smooth", block: "center" });
+      input.focus();
+    }, 0);
+  }
+
   function goToSection(index: number) {
     const nextSection = sections[index];
     if (!nextSection) {
       return;
     }
 
+    setSectionMessage(null);
     setActiveSectionId(nextSection.id);
   }
 
   function goToNextSection() {
     if (activeSectionIndex < 0) {
       return;
+    }
+
+    if (!isReadOnly) {
+      const currentSection = sections[activeSectionIndex];
+      if (currentSection) {
+        const missingRequiredIds = currentSection.questionIds.filter((questionId) => {
+          const question = questionById.get(questionId);
+          return question?.isRequired ? !isQuestionAnswered(question) : false;
+        });
+
+        if (missingRequiredIds.length > 0) {
+          setMissingQuestionIds((previous) =>
+            Array.from(new Set([...previous, ...missingRequiredIds])),
+          );
+          setSectionMessage(
+            `${missingRequiredIds.length} required response${missingRequiredIds.length === 1 ? "" : "s"} remaining in ${currentSection.title}.`,
+          );
+          focusQuestionInput(missingRequiredIds[0]);
+          return;
+        }
+      }
     }
 
     goToSection(activeSectionIndex + 1);
@@ -638,8 +659,8 @@ export default function WriteReviewForm({
               <div className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-slate-900">Section progress</p>
-                  <p className="text-xs text-slate-600">
-                    Section {activeSectionIndex + 1} of {sections.length}
+                  <p className="text-xs text-slate-600" data-testid="write-review-active-section-label">
+                    {activeSection ? `Current: ${activeSection.title}` : ""}
                   </p>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -648,6 +669,16 @@ export default function WriteReviewForm({
                       (entry) => entry.sectionId === section.id,
                     );
                     const isActiveSection = section.id === activeSection?.id;
+                    const hasRequiredQuestions = (progress?.total ?? 0) > 0;
+                    const remainingCount = Math.max(progress?.remaining ?? 0, 0);
+                    const isComplete = hasRequiredQuestions && remainingCount === 0;
+                    const progressLabel = hasRequiredQuestions
+                      ? remainingCount === 0
+                        ? "Complete"
+                        : `${remainingCount} remaining`
+                      : section.kind === "final-summary"
+                        ? "Final step"
+                        : "Optional only";
 
                     return (
                       <Button
@@ -655,13 +686,19 @@ export default function WriteReviewForm({
                         type="button"
                         size="sm"
                         variant={isActiveSection ? "primary" : "outline"}
-                        className="h-auto justify-between py-2"
+                        className="inline-flex h-auto w-full items-center justify-between gap-3 py-2 text-left"
                         data-testid={`write-review-section-${index + 1}`}
                         onClick={() => goToSection(index)}
                       >
-                        <span>{section.title}</span>
-                        <span className="text-xs">
-                          {progress?.answered ?? 0}/{progress?.total ?? 0}
+                        <span className="space-y-0.5 text-left">
+                          <span className="block truncate">{section.title}</span>
+                          <span className="block text-[11px] opacity-75">{section.subtitle}</span>
+                        </span>
+                        <span className="text-right text-xs opacity-90">
+                          <span className="block" data-testid={`write-review-section-remaining-${index + 1}`}>
+                            {progressLabel}
+                          </span>
+                          {isComplete ? <span className="block text-[11px]">Complete</span> : null}
                         </span>
                       </Button>
                     );
@@ -672,6 +709,7 @@ export default function WriteReviewForm({
                     type="button"
                     variant="outline"
                     size="sm"
+                    data-testid="write-review-previous-section"
                     onClick={goToPreviousSection}
                     disabled={activeSectionIndex <= 0}
                   >
@@ -690,12 +728,42 @@ export default function WriteReviewForm({
                 </div>
               </div>
 
+              {sectionMessage ? <Toast variant="warning">{sectionMessage}</Toast> : null}
+
               {missingQuestionIds.some((questionId) =>
                 activeSectionQuestionIds.includes(questionId),
               ) ? (
                 <Toast variant="warning">
                   This section has required questions that still need answers.
                 </Toast>
+              ) : null}
+
+              {activeSection?.kind === "final-summary" ? (
+                <div
+                  className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4"
+                  data-testid="write-review-final-summary"
+                >
+                  <h3 className="text-sm font-semibold text-slate-900">Final summary</h3>
+                  <p className="text-sm text-slate-700">
+                    Confirm each section before submitting this review.
+                  </p>
+                  <ul className="space-y-1 text-xs text-slate-600">
+                    {sectionProgress
+                      .filter((entry) => entry.sectionId !== activeSection.id)
+                      .map((entry) => {
+                        const section = sections.find((candidate) => candidate.id === entry.sectionId);
+                        if (!section || entry.total === 0) {
+                          return null;
+                        }
+
+                        return (
+                          <li key={entry.sectionId}>
+                            {section.title}: {entry.remaining > 0 ? `${entry.remaining} required remaining` : "complete"}
+                          </li>
+                        );
+                      })}
+                  </ul>
+                </div>
               ) : null}
 
               <ol className="space-y-5">
@@ -913,12 +981,13 @@ export default function WriteReviewForm({
       >
         <Card className="border-slate-200 shadow-none">
           <CardContent className="space-y-3">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Context</p>
+            <div className="space-y-1" data-testid="write-review-evidence-compact-summary">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Evidence summary</p>
               <p className="text-sm font-medium text-slate-900">{submissionContext.subjectName}</p>
               <p className="text-xs text-slate-600">
                 {submissionContext.relationship} · {submissionContext.cycleName}
               </p>
+              <p className="text-xs text-slate-500">{evidenceTotalCount} total evidence items available</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
@@ -940,11 +1009,14 @@ export default function WriteReviewForm({
               data-testid="write-review-context-toggle"
               onClick={() => setShowContextDetails((value) => !value)}
             >
-              {showContextDetails ? "Hide details" : "Show details"}
+              {showContextDetails ? "Hide context details" : "Show context details"}
             </Button>
 
             {showContextDetails ? (
-              <div className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+              <div
+                className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3"
+                data-testid="write-review-context-details"
+              >
                 <dl className="space-y-1 text-sm text-slate-700">
                   <div>
                     <dt className="font-semibold text-slate-900">Cycle</dt>
@@ -1122,6 +1194,130 @@ export default function WriteReviewForm({
   );
 }
 
+function buildReviewSections(questions: WriteReviewQuestion[]): ReviewSection[] {
+  const buckets: Record<ReviewSectionKind, WriteReviewQuestion[]> = {
+    "impact-results": [],
+    competencies: [],
+    "growth-development": [],
+    goals: [],
+    additional: [],
+    "final-summary": [],
+  };
+
+  for (const question of questions) {
+    buckets[classifyQuestion(question)].push(question);
+  }
+
+  const sections: ReviewSection[] = [];
+  const pushSection = (kind: ReviewSectionKind, title: string, sectionQuestions: WriteReviewQuestion[]) => {
+    if (sectionQuestions.length === 0) {
+      return;
+    }
+
+    sections.push({
+      id: `section-${kind}-${sections.length + 1}`,
+      title,
+      subtitle: `${sectionQuestions.length} prompt${sectionQuestions.length === 1 ? "" : "s"}`,
+      questionIds: sectionQuestions.map((question) => question.id),
+      kind,
+    });
+  };
+
+  pushSection("impact-results", "Impact / Results", buckets["impact-results"]);
+
+  chunkQuestions(buckets.competencies, 4).forEach((chunk, index, allChunks) => {
+    sections.push({
+      id: `section-competencies-${index + 1}`,
+      title: allChunks.length === 1 ? "Competencies" : `Competencies · Part ${index + 1}`,
+      subtitle: `${chunk.length} prompt${chunk.length === 1 ? "" : "s"}`,
+      questionIds: chunk.map((question) => question.id),
+      kind: "competencies",
+    });
+  });
+
+  pushSection("growth-development", "Growth / Development", buckets["growth-development"]);
+  pushSection("goals", "Goals", buckets.goals);
+
+  chunkQuestions(buckets.additional, 4).forEach((chunk, index) => {
+    sections.push({
+      id: `section-additional-${index + 1}`,
+      title: `Additional prompts ${index + 1}`,
+      subtitle: `${chunk.length} prompt${chunk.length === 1 ? "" : "s"}`,
+      questionIds: chunk.map((question) => question.id),
+      kind: "additional",
+    });
+  });
+
+  sections.push({
+    id: "section-final-summary",
+    title: "Final summary",
+    subtitle:
+      buckets["final-summary"].length > 0
+        ? `${buckets["final-summary"].length} prompt${buckets["final-summary"].length === 1 ? "" : "s"}`
+        : "Review completion before submit",
+    questionIds: buckets["final-summary"].map((question) => question.id),
+    kind: "final-summary",
+  });
+
+  return sections;
+}
+
+function classifyQuestion(question: WriteReviewQuestion): ReviewSectionKind {
+  if (question.questionType === ReviewQuestionType.SCALE_1_TO_5 || question.dimensionKey) {
+    return "competencies";
+  }
+
+  const normalizedPrompt = question.prompt.toLowerCase();
+
+  if (includesAny(normalizedPrompt, ["overall summary", "final summary", "overall assessment", "final assessment"])) {
+    return "final-summary";
+  }
+
+  if (includesAny(normalizedPrompt, ["impact", "result", "outcome", "delivered"])) {
+    return "impact-results";
+  }
+
+  if (includesAny(normalizedPrompt, ["growth", "develop", "coaching", "improve", "priority"])) {
+    return "growth-development";
+  }
+
+  if (includesAny(normalizedPrompt, ["goal", "objective", "target", "milestone"])) {
+    return "goals";
+  }
+
+  return "additional";
+}
+
+function includesAny(value: string, keywords: string[]): boolean {
+  return keywords.some((keyword) => value.includes(keyword));
+}
+
+function chunkQuestions<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
+function isPresent<T>(value: T | null | undefined): value is T {
+  return value != null;
+}
+
+function isQuestionAnswered(question: WriteReviewQuestion): boolean {
+  if (question.responseText.trim().length === 0) {
+    return false;
+  }
+
+  if (question.questionType !== ReviewQuestionType.SCALE_1_TO_5) {
+    return true;
+  }
+
+  return question.notObserved || question.scaleRating != null;
+}
+
 function createEmptyEvidenceCounts(): Record<EvidenceType, number> {
   return {
     [EvidenceType.FEEDBACK]: 0,
@@ -1138,14 +1334,6 @@ function truncateText(value: string, maxLength: number): string {
   }
 
   return `${value.slice(0, maxLength - 3)}...`;
-}
-
-function formatDimensionKey(value: string): string {
-  return value
-    .toLowerCase()
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
 }
 
 function createEmptyEvidenceItemsByType(): Record<EvidenceType, EvidenceSummary[]> {

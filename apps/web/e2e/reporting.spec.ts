@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Download, type Page } from "@playwright/test";
 
 import { ensureDemoSetup, loginAsHrAdmin } from "./helpers/demo";
 
@@ -89,10 +89,29 @@ test("reporting charts expose png download actions", async ({ page }) => {
 });
 
 async function expectPngDownload(page: Page, testId: string) {
-  const [download] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByTestId(testId).click(),
-  ]);
+  const downloadButton = page.getByTestId(testId);
+  await expect(downloadButton).toBeEnabled();
+
+  let download: Download | undefined;
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      [download] = await Promise.all([
+        page.waitForEvent("download", { timeout: 20_000 }),
+        downloadButton.click(),
+      ]);
+      break;
+    } catch (error) {
+      lastError =
+        error instanceof Error ? error : new Error("PNG download did not start.");
+      await page.waitForTimeout(750 * attempt);
+    }
+  }
+
+  if (!download) {
+    throw lastError ?? new Error("PNG download did not start.");
+  }
 
   expect(download.suggestedFilename()).toMatch(/\.png$/);
 

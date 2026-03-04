@@ -26,10 +26,11 @@ test("write review autosave and submit locks the submission", async ({ page }) =
   await expect(page.getByText("Focus mode: review writing")).toBeVisible();
   await expect(page.getByRole("link", { name: "Back to Reviews" })).toBeVisible();
   await expect(page.getByText("Phase Navigation")).toHaveCount(0);
-  await expect(page.getByTestId("write-review-section-1")).toBeVisible();
-  await expect(page.getByTestId("write-review-context-toggle")).toHaveText("Show details");
+  await expect(page.getByTestId("write-review-section-1")).toContainText("Impact / Results");
+  await expect(page.getByTestId("write-review-context-toggle")).toHaveText("Show context details");
   await page.getByTestId("write-review-context-toggle").click();
-  await expect(page.getByTestId("write-review-context-toggle")).toHaveText("Hide details");
+  await expect(page.getByTestId("write-review-context-toggle")).toHaveText("Hide context details");
+  await expect(page.getByTestId("write-review-context-details")).toBeVisible();
   await page.getByTestId("write-review-selected-answer-toggle").click();
   await expect(page.getByTestId("write-review-selected-answer-toggle")).toHaveText(
     "Hide full prompt",
@@ -42,17 +43,26 @@ test("write review autosave and submit locks the submission", async ({ page }) =
   const secondAnswer = page.getByTestId("write-review-answer-template_q_2");
   const noteSuffix = Date.now();
 
+  await firstAnswer.fill("");
+  await page.getByTestId("write-review-next-section").click();
+  await expect(page.getByText("1 required response remaining in Impact / Results.")).toBeVisible();
+  await expect(firstAnswer).toBeFocused();
+
   await firstAnswer.fill(`Manager impact summary ${noteSuffix}`);
   await expect(page.getByTestId("write-review-save-state")).toHaveText("Saved", {
     timeout: 10_000,
   });
-  if (!(await secondAnswer.isVisible())) {
-    await page.getByTestId("write-review-next-section").click();
-  }
+  await page.getByRole("button", { name: /Growth \/ Development/i }).click();
+  await expect(page.getByTestId("write-review-active-section-label")).toContainText(
+    "Growth / Development",
+  );
   await secondAnswer.fill(`Manager growth guidance ${noteSuffix}`);
   await expect(page.getByTestId("write-review-save-state")).toHaveText("Saved", {
     timeout: 10_000,
   });
+
+  await page.getByRole("button", { name: /Final summary/i }).click();
+  await expect(page.getByTestId("write-review-final-summary")).toBeVisible();
 
   await page.getByTestId("write-review-submit").click();
   await expect(page.getByText("now read-only")).toBeVisible();
