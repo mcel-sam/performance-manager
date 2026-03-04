@@ -1618,29 +1618,29 @@ Feedback observed:
 ## Phase 4 — Review Writing modernization (Progressive disclosure done right)
 
 ### 1) Replace “giant scroll” with structured sections
-- [ ] Group questions into sections (3–5 prompts visible at a time):
-  - [ ] Impact/Results
-  - [ ] Competencies (grouped)
-  - [ ] Growth/Development
-  - [ ] Goals (if present)
-  - [ ] Final summary
-- [ ] UI pattern:
-  - [ ] Left stepper **OR** accordion sections with per-section progress
-  - [ ] Next/previous navigation
-- [ ] Per-section validation:
-  - [ ] Focus first missing required within section
-  - [ ] Show “X remaining” and completion indicators
+- [x] Group questions into sections (3–5 prompts visible at a time):
+  - [x] Impact/Results
+  - [x] Competencies (grouped)
+  - [x] Growth/Development
+  - [x] Goals (if present)
+  - [x] Final summary
+- [x] UI pattern:
+  - [x] Left stepper **OR** accordion sections with per-section progress
+  - [x] Next/previous navigation
+- [x] Per-section validation:
+  - [x] Focus first missing required within section
+  - [x] Show “X remaining” and completion indicators
 
 ### 2) Evidence panel redesign (compact + details)
-- [ ] Evidence becomes drawer-driven:
-  - [ ] Compact summary (counts + tabs)
-  - [ ] Details expandable (cycle/subject/reviewer)
-- [ ] Improve spacing and readability
+- [x] Evidence becomes drawer-driven:
+  - [x] Compact summary (counts + tabs)
+  - [x] Details expandable (cycle/subject/reviewer)
+- [x] Improve spacing and readability
 
 #### Acceptance criteria
-- [ ] Review writing feels structured, not overwhelming
-- [ ] Autosave + submit + evidence attach still work
-- [ ] Playwright write-review test updated and passing
+- [x] Review writing feels structured, not overwhelming
+- [x] Autosave + submit + evidence attach still work
+- [x] Playwright write-review test updated and passing
 
 ---
 
