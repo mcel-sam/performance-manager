@@ -1663,6 +1663,7 @@ Feedback observed:
 - [x] Manager can manage team without being forced into reviews list
 - [x] Drilldown is useful and fast
 - [x] Playwright: My Team loads, drilldown opens, action works
+- Completed in PR #41 (dev -> main Milestone 9 Phase 5).
 
 ---
 
