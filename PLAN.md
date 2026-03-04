@@ -1670,20 +1670,20 @@ Feedback observed:
 ## Phase 6 — Reporting polish (exports + heatmaps + interaction)
 
 ### 1) Fix Download PNG
-- [ ] Standardize chart export container and reliably export PNG
-- [ ] Add Playwright download test (file exists and >0 bytes)
+- [x] Standardize chart export container and reliably export PNG
+- [x] Add Playwright download test (file exists and >0 bytes)
 
 ### 2) Add meaningful charts (only where they improve comprehension)
-- [ ] Competency heatmap (dept × competency)
-- [ ] Rating distribution bars (1–5) with tooltips and drilldown to employee table
-- [ ] Donut/pie for status only if it clarifies faster than bars
-- [ ] Scorecard metric breakdown charts (8 metrics)
-- [ ] Click interactions filter employee table and/or open drilldown drawer
+- [x] Competency heatmap (dept × competency)
+- [x] Rating distribution bars (1–5) with tooltips and drilldown to employee table
+- [x] Donut/pie for status only if it clarifies faster than bars
+- [x] Scorecard metric breakdown charts (8 metrics)
+- [x] Click interactions filter employee table and/or open drilldown drawer
 
 #### Acceptance criteria
-- [ ] Exports are reliable
-- [ ] Heatmap exists and drills down
-- [ ] Charts are interactive and useful (not decorative)
+- [x] Exports are reliable
+- [x] Heatmap exists and drills down
+- [x] Charts are interactive and useful (not decorative)
 
 ---
 
