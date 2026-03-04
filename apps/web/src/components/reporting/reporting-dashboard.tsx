@@ -1703,24 +1703,19 @@ async function downloadChartAsPng(
   const chartContainer = document.querySelector<HTMLElement>(
     `[data-chart-export-id=\"${chartId}\"]`,
   );
-  const svgNodes = chartContainer
-    ? Array.from(chartContainer.querySelectorAll<SVGSVGElement>("svg"))
-    : [];
-
-  if (!chartContainer || svgNodes.length === 0) {
+  if (!chartContainer) {
     return;
   }
 
   const rect = chartContainer.getBoundingClientRect();
   const width = Math.max(640, Math.ceil(rect.width));
   const height = Math.max(240, Math.ceil(rect.height));
+  const scale = window.devicePixelRatio > 1 ? 2 : 1;
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
 
   try {
-    const scale = window.devicePixelRatio > 1 ? 2 : 1;
-    const canvas = document.createElement("canvas");
-    canvas.width = width * scale;
-    canvas.height = height * scale;
-
     const context = canvas.getContext("2d");
     if (!context) {
       return;
@@ -1729,6 +1724,11 @@ async function downloadChartAsPng(
     context.setTransform(scale, 0, 0, scale, 0, 0);
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, width, height);
+
+    const svgNodes = await waitForChartSvgNodes(chartContainer, 3_000);
+    if (svgNodes.length === 0) {
+      drawExportFallback(context, width, height, chartId);
+    }
 
     for (const svgNode of svgNodes) {
       const svgRect = svgNode.getBoundingClientRect();
@@ -1767,26 +1767,89 @@ async function downloadChartAsPng(
       }
     }
 
-    const pngBlob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, "image/png");
-    });
+    const pngBlob = await canvasToPngBlob(canvas);
 
     if (!pngBlob) {
       return;
     }
 
-    const downloadUrl = URL.createObjectURL(pngBlob);
-    const downloadLink = document.createElement("a");
-    downloadLink.href = downloadUrl;
-    downloadLink.download = fileName;
-    document.body.append(downloadLink);
-    downloadLink.click();
-    downloadLink.remove();
-    URL.revokeObjectURL(downloadUrl);
+    triggerPngDownload(pngBlob, fileName);
   } catch {
-    // Keep export failure non-blocking for reporting workflows.
+    const fallbackContext = canvas.getContext("2d");
+    if (!fallbackContext) {
+      return;
+    }
+
+    fallbackContext.setTransform(scale, 0, 0, scale, 0, 0);
+    fallbackContext.fillStyle = "#ffffff";
+    fallbackContext.fillRect(0, 0, width, height);
+    drawExportFallback(fallbackContext, width, height, chartId);
+
+    const fallbackBlob = await canvasToPngBlob(canvas);
+    if (fallbackBlob) {
+      triggerPngDownload(fallbackBlob, fileName);
+    }
+
+    // Keep export failures non-blocking for reporting workflows.
     return;
   }
+}
+
+async function waitForChartSvgNodes(
+  chartContainer: HTMLElement,
+  timeoutMs: number,
+): Promise<SVGSVGElement[]> {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < timeoutMs) {
+    const nodes = Array.from(chartContainer.querySelectorAll<SVGSVGElement>("svg")).filter((node) => {
+      const rect = node.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    });
+
+    if (nodes.length > 0) {
+      return nodes;
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 120));
+  }
+
+  return [];
+}
+
+async function canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
+  return await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, "image/png");
+  });
+}
+
+function triggerPngDownload(pngBlob: Blob, fileName: string): void {
+  const downloadUrl = URL.createObjectURL(pngBlob);
+  const downloadLink = document.createElement("a");
+  downloadLink.href = downloadUrl;
+  downloadLink.download = fileName;
+  document.body.append(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+  URL.revokeObjectURL(downloadUrl);
+}
+
+function drawExportFallback(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  chartId: string,
+): void {
+  context.fillStyle = "#0f172a";
+  context.font = "600 14px ui-sans-serif, system-ui";
+  context.fillText("Chart export fallback", 20, 36);
+  context.fillStyle = "#475569";
+  context.font = "12px ui-sans-serif, system-ui";
+  context.fillText(`Source: ${chartId}`, 20, 58);
+  context.fillText("The chart rendered without SVG nodes at export time.", 20, 80);
+  context.fillText("Retry export if this fallback appears unexpectedly.", 20, 98);
+  context.strokeStyle = "#cbd5e1";
+  context.strokeRect(12, 12, width - 24, height - 24);
 }
 
 function loadImage(sourceUrl: string): Promise<HTMLImageElement> {
