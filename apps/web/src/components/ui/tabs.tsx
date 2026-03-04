@@ -58,7 +58,7 @@ export function Tabs({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-1",
+        "inline-flex max-w-full overflow-x-auto rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-1",
         className,
       )}
     >
@@ -76,7 +76,7 @@ export function Tabs({
             onClick={() => onValueChange(tab.value)}
             onKeyDown={(event) => handleTabKeyDown(event, index)}
             className={cn(
-              "rounded-[var(--radius-sm)] px-3 py-1.5 text-sm font-medium leading-6 transition-[background-color,color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 motion-reduce:transition-none",
+              "shrink-0 rounded-[var(--radius-sm)] px-3 py-1.5 text-sm font-medium leading-6 transition-[background-color,color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 motion-reduce:transition-none",
               isActive ? "bg-white text-slate-900 shadow-[var(--shadow-xs)]" : "text-slate-600",
               "disabled:cursor-not-allowed disabled:opacity-60",
             )}
