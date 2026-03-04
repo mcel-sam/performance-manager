@@ -1641,6 +1641,7 @@ Feedback observed:
 - [x] Review writing feels structured, not overwhelming
 - [x] Autosave + submit + evidence attach still work
 - [x] Playwright write-review test updated and passing
+- Completed in PR #40 (dev -> main Milestone 9 Phase 4).
 
 ---
 
