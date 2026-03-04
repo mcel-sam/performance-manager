@@ -1,21 +1,21 @@
 export const reportingChartTheme = {
   progress: {
-    notStarted: "#fda4af",
-    inProgress: "#fbbf24",
-    completed: "#34d399",
+    notStarted: "var(--chart-progress-not-started)",
+    inProgress: "var(--chart-progress-in-progress)",
+    completed: "var(--chart-progress-completed)",
   },
   ratingSource: {
-    FINAL: "#334155",
-    SCORECARD: "#0ea5e9",
+    FINAL: "var(--chart-rating-final)",
+    SCORECARD: "var(--chart-rating-scorecard)",
   },
   competency: {
-    low: "#fee2e2",
-    medium: "#fde68a",
-    high: "#86efac",
+    low: "var(--chart-competency-low)",
+    medium: "var(--chart-competency-medium)",
+    high: "var(--chart-competency-high)",
   },
   metricSeries: {
-    self: "#38bdf8",
-    manager: "#22c55e",
-    gap: "#f97316",
+    self: "var(--chart-metric-self)",
+    manager: "var(--chart-metric-manager)",
+    gap: "var(--chart-metric-gap)",
   },
 } as const;

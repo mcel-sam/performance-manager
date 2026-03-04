@@ -18,6 +18,7 @@ function parseBooleanEnv(value: string | undefined, defaultValue = false): boole
 
 const nodeEnv = process.env.NODE_ENV ?? "development";
 const demoModeFlag = parseBooleanEnv(process.env.DEMO_MODE, false);
+const databaseUrl = process.env.DATABASE_URL ?? "";
 
 export const appEnv = {
   nodeEnv,
@@ -25,6 +26,11 @@ export const appEnv = {
   demoModeEnabled: demoModeFlag && nodeEnv === "development",
   nextPublicDemoMode: parseBooleanEnv(process.env.NEXT_PUBLIC_DEMO_MODE, false),
   presentationMode: parseBooleanEnv(process.env.PRESENTATION_MODE, false),
+  databaseConfigured: databaseUrl.length > 0,
 } as const;
+
+export function isDatabaseConfigured(): boolean {
+  return appEnv.databaseConfigured;
+}
 
 export { parseBooleanEnv };

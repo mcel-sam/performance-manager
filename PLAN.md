@@ -1451,3 +1451,283 @@ Feedback observed:
   - [x] typography/premium feel improved
 - [x] Playwright UX audit loop added and usable
 - Milestone 8 completed in PR #36.
+
+
+# Milestone 9 — Premium Shell + Lattice-style UI Patterns + UX Rationalization
+
+**Status:** Not started  
+**Objective:** Upgrade the product to feel premium and modern with cohesive UI patterns inspired by Lattice-style interaction (without copying branding): global header with org + profile, collapsible sidebar, standardized right context drawer with tabs, filter chips, avatars stack, status chips, and a content-first information architecture. Fix page density, remove redundant UI, improve manager and HR workflows, and harden reporting exports/visualizations. Add a Playwright UX audit loop to prevent regressions.
+
+---
+
+## Why this milestone
+
+**Current pain points (from feedback + screenshots):**
+- Nav glitches (multiple items active), cramped layouts, wasted space on work pages
+- Evidence panel is dense/noisy; too much metadata up front
+- Review writing still feels heavy; progressive disclosure needs to be “product-grade”
+- Manager experience should be “manage my team” first; reviews are drilldowns
+- Reporting should feel premium: interactive charts, heatmaps, reliable PNG exports
+- Product lacks enterprise polish elements: org/profile in header, avatars, chips, filters
+- Need a “CDO/UX audit loop” using Playwright + screenshots to catch regressions
+
+---
+
+## Scope
+
+### In scope
+
+#### Global premium shell
+- AppHeader with org pill + user profile menu
+- Collapsible sidebar (expanded + icon-only mode)
+- Consistent PageHeader + actions layout
+
+#### Reusable UI patterns
+- RightDrawer with tabs (Overview / Timeline / Audit Log)
+- FilterBar + FilterChips + Group-by controls
+- StatusChip system (review statuses + cycle statuses)
+- AvatarsStack component
+- Segmented progress bar component
+
+#### UX rationalization
+- Content audit per page and removal of redundant blocks
+- Focus layout for deep work screens
+- Evidence panel redesign (compact vs details)
+- Progressive disclosure review writing (sections/stepper)
+- Manager “My Team” hub with drilldowns + mini analytics
+
+#### Reporting polish
+- Fix PNG export reliably
+- Add heatmaps + appropriate chart variety (only where helpful)
+- Typography + spacing + microinteraction polish
+
+#### Quality guardrails
+- Playwright UX audit suite (screenshots + checks)
+
+### Out of scope
+- Production SSO (Entra)
+- Org directory import/sync
+- Notifications/worker jobs
+- New modules beyond existing (Goals, Engagement) — UI patterns should be reusable for future modules
+
+---
+
+## Phase 1 — Design tokens + Premium Shell (Header + Org/Profile + Collapsible Nav)
+
+### 1) Tokens & theme foundation
+- [x] Define/confirm design tokens in one place:
+  - [x] Brand accents (primary/secondary)
+  - [x] Success/warn/error/neutral
+  - [x] Background tints
+  - [x] Typography scale + line-height
+  - [x] Radii + shadows
+  - [x] Chart palette constants (semantic mapping)
+- [x] Ensure tokens are consumed via shared primitives (avoid scattered styles)
+
+### 2) AppHeader (top bar)
+- [x] Add a global header on authenticated routes:
+  - [x] Left: collapse/expand sidebar button
+  - [x] Center: global search input (UI-only stub OK)
+  - [x] Right: org pill + user profile menu
+- [x] Org pill/switcher:
+  - [x] Show current org name
+  - [x] If multi-org not supported, keep as disabled dropdown stub (still visible)
+- [x] Profile menu:
+  - [x] Avatar + name/initials
+  - [x] Items: Profile (stub route OK), Sign out
+  - [x] **DEMO_MODE only:** “Switch role”
+
+### 3) Collapsible sidebar
+- [x] Sidebar supports expanded + icon-only collapsed mode
+- [x] Tooltips appear when collapsed
+- [x] Fix active-state route matching (single active item always)
+
+#### Acceptance criteria
+- [x] Header shows org + profile on all authenticated pages
+- [x] Sidebar collapses/expands smoothly; only one active item
+- [x] `lint/typecheck/test/build/test:e2e` pass
+- [x] Playwright: verify profile menu opens and org pill visible
+- Completed in PR #37 (dev -> main Milestone 9 Phase 1).
+
+---
+
+## Phase 2 — Shared UI patterns (RightDrawer + FilterBar + Chips + Avatars + Progress)
+
+### 1) RightDrawer standard (context panel)
+- [ ] Create reusable RightDrawer:
+  - [ ] Sticky header (title/subtitle + actions)
+  - [ ] Tabs: Overview / Timeline / Audit Log
+  - [ ] Close + expand controls
+- [ ] Apply to at least 2 surfaces:
+  - [ ] My Team drilldown
+  - [ ] Reporting drilldown **OR** Write Review evidence/context
+
+### 2) FilterBar + FilterChips + Group-by
+- [ ] Add FilterChip component (pill with clear “x”)
+- [ ] Add FilterBar component (cycle selector + dept/title + group-by)
+- [ ] Standardize across Reporting views
+
+### 3) AvatarsStack + StatusChip + SegmentedProgress
+- [ ] AvatarsStack: show N avatars + “+X”
+- [ ] StatusChip: consistent colors for statuses
+  - Review statuses: Not started / In progress / Submitted
+  - Cycle statuses: Draft / Active / Locked / Released
+- [ ] SegmentedProgress bar component + legend
+
+#### Acceptance criteria
+- [ ] RightDrawer used consistently and is accessible (keyboard/focus)
+- [ ] Reporting filter UX uses chips + consistent layout
+- [ ] Components are used on at least 2 pages (not just built)
+- [ ] Playwright: drawer open/close and filter apply/clear
+
+---
+
+## Phase 3 — Content audit + Focus layout (stop wasting space)
+
+### 1) Content audit doc
+- [ ] Create `/docs/ux/CONTENT_AUDIT.md` for:
+  - [ ] Reviews list
+  - [ ] Write review
+  - [ ] Packet view
+  - [ ] Calibration
+  - [ ] My Team
+  - [ ] Reporting
+- [ ] For each page define:
+  - [ ] Primary goal
+  - [ ] Primary content
+  - [ ] Secondary/supporting content
+  - [ ] Hide behind “details”
+  - [ ] Remove
+
+### 2) Focus layout for deep work pages
+- [ ] Implement “focus layout” on:
+  - [ ] Write review
+  - [ ] Packet view
+  - [ ] Calibration session
+- [ ] Reduce redundant navigation blocks; keep breadcrumb/compact controls
+
+#### Acceptance criteria
+- [ ] Deep work pages have more usable center width
+- [ ] No redundant nav blocks remain
+- [ ] Content audit exists and matches implemented decisions
+
+---
+
+## Phase 4 — Review Writing modernization (Progressive disclosure done right)
+
+### 1) Replace “giant scroll” with structured sections
+- [ ] Group questions into sections (3–5 prompts visible at a time):
+  - [ ] Impact/Results
+  - [ ] Competencies (grouped)
+  - [ ] Growth/Development
+  - [ ] Goals (if present)
+  - [ ] Final summary
+- [ ] UI pattern:
+  - [ ] Left stepper **OR** accordion sections with per-section progress
+  - [ ] Next/previous navigation
+- [ ] Per-section validation:
+  - [ ] Focus first missing required within section
+  - [ ] Show “X remaining” and completion indicators
+
+### 2) Evidence panel redesign (compact + details)
+- [ ] Evidence becomes drawer-driven:
+  - [ ] Compact summary (counts + tabs)
+  - [ ] Details expandable (cycle/subject/reviewer)
+- [ ] Improve spacing and readability
+
+#### Acceptance criteria
+- [ ] Review writing feels structured, not overwhelming
+- [ ] Autosave + submit + evidence attach still work
+- [ ] Playwright write-review test updated and passing
+
+---
+
+## Phase 5 — Manager experience: “My Team” hub (drilldowns + mini insights)
+
+### 1) My Team page (manager cockpit)
+- [ ] Primary view: direct reports list (always visible)
+- [ ] Team size shown prominently
+- [ ] KPI cards: awaiting manager review, self not started, in progress, completed (as appropriate)
+- [ ] Drilldown drawer per employee:
+  - [ ] Quick actions: open review, open packet
+  - [ ] Status summary by direction
+  - [ ] Mini insights (rating distribution + top gaps optional)
+
+### 2) Simplify manager navigation
+- [ ] Managers start from My Team; Reviews becomes secondary utility
+
+#### Acceptance criteria
+- [ ] Manager can manage team without being forced into reviews list
+- [ ] Drilldown is useful and fast
+- [ ] Playwright: My Team loads, drilldown opens, action works
+
+---
+
+## Phase 6 — Reporting polish (exports + heatmaps + interaction)
+
+### 1) Fix Download PNG
+- [ ] Standardize chart export container and reliably export PNG
+- [ ] Add Playwright download test (file exists and >0 bytes)
+
+### 2) Add meaningful charts (only where they improve comprehension)
+- [ ] Competency heatmap (dept × competency)
+- [ ] Rating distribution bars (1–5) with tooltips and drilldown to employee table
+- [ ] Donut/pie for status only if it clarifies faster than bars
+- [ ] Scorecard metric breakdown charts (8 metrics)
+- [ ] Click interactions filter employee table and/or open drilldown drawer
+
+#### Acceptance criteria
+- [ ] Exports are reliable
+- [ ] Heatmap exists and drills down
+- [ ] Charts are interactive and useful (not decorative)
+
+---
+
+## Phase 7 — Typography + spacing + microinteractions (premium feel)
+
+- [ ] Standardize typography:
+  - [ ] PageHeader size, subtitle, section headers, table headers/body
+- [ ] Spacing rhythm:
+  - [ ] Consistent padding/margins, less cramped panels
+- [ ] Microinteractions:
+  - [ ] Hover/focus states consistent
+  - [ ] Drawer transitions smooth
+  - [ ] Button hierarchy consistent
+
+#### Acceptance criteria
+- [ ] Core pages feel cohesive and premium visually
+- [ ] Accessibility baseline preserved
+
+---
+
+## Phase 8 — Playwright UX audit loop (CDO mode)
+
+- [ ] Add `npm run test:e2e:ux`:
+  - [ ] Navigates core routes for each role
+  - [ ] Captures screenshots
+  - [ ] Checks:
+    - [ ] Only one active nav item
+    - [ ] No overflow/clipping
+    - [ ] Key headers present
+    - [ ] Drawer open/close works
+  - [ ] Outputs `docs/ux/UX_AUDIT_REPORT.md` or CI artifacts
+- [ ] Integrate as nightly or optional PR step until stable
+
+#### Acceptance criteria
+- [ ] Repeatable UX audit artifacts exist
+- [ ] Prevents regression of nav/layout issues going forward
+
+---
+
+## Definition of Done (Milestone 9)
+
+- [ ] All phase checkboxes completed and updated in `PLAN.md`
+- [ ] `lint/typecheck/test/build/test:e2e` pass for each phase PR
+- [ ] UX issues resolved:
+  - [ ] Nav active state correct
+  - [ ] Deep-work screens not cramped
+  - [ ] Evidence panel readable
+  - [ ] Manager “My Team” is primary and useful
+  - [ ] Reporting exports + heatmaps work
+  - [ ] Typography/spacing premium and consistent
+  - [ ] Playwright UX audit loop added

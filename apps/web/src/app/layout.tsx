@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 
 import AppShell from "@/components/layout/app-shell";
+import { appEnv, isDatabaseConfigured } from "@/config/env";
 import { getRoleNavigation } from "@/config/navigation";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { AppError } from "@/server/http/errors";
+import { resolveShellViewer } from "@/server/layout/shell-context-service";
 import { resolveRoleNavOptions } from "@/server/navigation/nav-visibility-service";
 
 import "./globals.css";
@@ -29,8 +31,16 @@ export default function RootLayout({
 
 async function RootLayoutShell({ children }: { children: React.ReactNode }) {
   // Build pipelines may run without DATABASE_URL; render shell without user nav in that case.
-  if (!process.env.DATABASE_URL) {
-    return <AppShell navItems={[]} viewer={null}>{children}</AppShell>;
+  if (!isDatabaseConfigured()) {
+    return (
+      <AppShell
+        navItems={[]}
+        viewer={null}
+        demoModeEnabled={appEnv.nextPublicDemoMode}
+      >
+        {children}
+      </AppShell>
+    );
   }
 
   let context: Awaited<ReturnType<typeof getDevRequestContext>> | null = null;
@@ -46,10 +56,13 @@ async function RootLayoutShell({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const viewer = context ? await resolveShellViewer(context) : null;
+
   return (
     <AppShell
       navItems={navItems}
-      viewer={context ? { role: context.role, userId: context.userId } : null}
+      viewer={viewer}
+      demoModeEnabled={appEnv.nextPublicDemoMode}
     >
       {children}
     </AppShell>
