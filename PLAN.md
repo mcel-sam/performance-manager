@@ -1702,6 +1702,7 @@ Feedback observed:
 #### Acceptance criteria
 - [x] Core pages feel cohesive and premium visually
 - [x] Accessibility baseline preserved
+- Completed in PR #43 (dev -> main Milestone 9 Phase 7).
 
 ---
 
