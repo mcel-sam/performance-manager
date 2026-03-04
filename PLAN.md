@@ -1204,7 +1204,7 @@ We will follow proven patterns:
 
 ## Milestone 8 — Premium UX Hardening + Content Audit + Reporting Polish
 
-**Status:** Not started  
+**Status:** Completed (Phases 1–7 via PRs #30–#36)  
 **Objective:** Resolve UX regressions and premium-ize the experience: fix nav selection bugs, reclaim wasted space on work screens, simplify manager workflow into “My Team”, redesign evidence panel for readability, remove/replace broken review-task nav, improve reporting exports + add meaningful chart types, and standardize typography/spacing. Add a Playwright-driven UX audit loop to prevent regressions.
 
 ### Why this milestone
@@ -1434,6 +1434,7 @@ Feedback observed:
 **Acceptance criteria**
 - [x] UX audit suite provides repeatable feedback and artifacts
 - [x] Prevents regression of nav/layout issues going forward
+- Completed in PR #36.
 
 ---
 
@@ -1449,3 +1450,4 @@ Feedback observed:
   - [x] reporting PNG export fixed + heatmap added
   - [x] typography/premium feel improved
 - [x] Playwright UX audit loop added and usable
+- Milestone 8 completed in PR #36.
