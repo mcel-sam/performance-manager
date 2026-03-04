@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { StatusChip } from "@/components/ui/status-chip";
+import { getCycleStatusTone, StatusChip } from "@/components/ui/status-chip";
 import {
   Table,
   TableBody,
@@ -51,13 +51,6 @@ interface ReviewCyclesTableProps {
     orgId: string;
   };
 }
-
-const statusChipTone: Record<CycleStatus, "neutral" | "info" | "warning" | "success"> = {
-  DRAFT: "neutral",
-  ACTIVE: "info",
-  LOCKED: "warning",
-  RELEASED: "success",
-};
 
 const transitionByStatus: Partial<Record<CycleStatus, CycleStatus>> = {
   DRAFT: CycleStatus.ACTIVE,
@@ -172,7 +165,7 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
                       {new Date(cycle.endDate).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <StatusChip tone={statusChipTone[cycle.status]}>{cycle.status}</StatusChip>
+                      <StatusChip tone={getCycleStatusTone(cycle.status)}>{cycle.status}</StatusChip>
                     </TableCell>
                     <TableCell className="text-slate-700">
                       Peer: {cycle.peerReviewCount} | Upward: {cycle.upwardReviewCount}

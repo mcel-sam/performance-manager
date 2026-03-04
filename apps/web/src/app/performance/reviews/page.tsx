@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { StatusChip } from "@/components/ui/status-chip";
+import { getReviewStatusTone, StatusChip } from "@/components/ui/status-chip";
 import {
   Table,
   TableBody,
@@ -31,13 +31,6 @@ const statusLabel = {
   IN_PROGRESS: "In progress",
   SUBMITTED: "Submitted",
   RETURNED: "Returned",
-} as const;
-
-const statusTone = {
-  NOT_STARTED: "neutral",
-  IN_PROGRESS: "info",
-  SUBMITTED: "success",
-  RETURNED: "warning",
 } as const;
 
 export default async function PerformanceReviewsPage() {
@@ -93,7 +86,7 @@ export default async function PerformanceReviewsPage() {
                         {relationshipLabel[task.relationship]}
                       </TableCell>
                       <TableCell>
-                        <StatusChip tone={statusTone[task.status]}>{statusLabel[task.status]}</StatusChip>
+                        <StatusChip tone={getReviewStatusTone(task.status)}>{statusLabel[task.status]}</StatusChip>
                       </TableCell>
                       <TableCell className="text-slate-700">
                         {new Date(task.cycleEndDate).toLocaleDateString()}

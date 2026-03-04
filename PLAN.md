@@ -1554,31 +1554,32 @@ Feedback observed:
 ## Phase 2 — Shared UI patterns (RightDrawer + FilterBar + Chips + Avatars + Progress)
 
 ### 1) RightDrawer standard (context panel)
-- [ ] Create reusable RightDrawer:
-  - [ ] Sticky header (title/subtitle + actions)
-  - [ ] Tabs: Overview / Timeline / Audit Log
-  - [ ] Close + expand controls
-- [ ] Apply to at least 2 surfaces:
-  - [ ] My Team drilldown
-  - [ ] Reporting drilldown **OR** Write Review evidence/context
+- [x] Create reusable RightDrawer:
+  - [x] Sticky header (title/subtitle + actions)
+  - [x] Tabs: Overview / Timeline / Audit Log
+  - [x] Close + expand controls
+- [x] Apply to at least 2 surfaces:
+  - [x] My Team drilldown
+  - [x] Reporting drilldown **OR** Write Review evidence/context
 
 ### 2) FilterBar + FilterChips + Group-by
-- [ ] Add FilterChip component (pill with clear “x”)
-- [ ] Add FilterBar component (cycle selector + dept/title + group-by)
-- [ ] Standardize across Reporting views
+- [x] Add FilterChip component (pill with clear “x”)
+- [x] Add FilterBar component (cycle selector + dept/title + group-by)
+- [x] Standardize across Reporting views
 
 ### 3) AvatarsStack + StatusChip + SegmentedProgress
-- [ ] AvatarsStack: show N avatars + “+X”
-- [ ] StatusChip: consistent colors for statuses
-  - Review statuses: Not started / In progress / Submitted
-  - Cycle statuses: Draft / Active / Locked / Released
-- [ ] SegmentedProgress bar component + legend
+- [x] AvatarsStack: show N avatars + “+X”
+- [x] StatusChip: consistent colors for statuses
+  - [x] Review statuses: Not started / In progress / Submitted
+  - [x] Cycle statuses: Draft / Active / Locked / Released
+- [x] SegmentedProgress bar component + legend
 
 #### Acceptance criteria
-- [ ] RightDrawer used consistently and is accessible (keyboard/focus)
-- [ ] Reporting filter UX uses chips + consistent layout
-- [ ] Components are used on at least 2 pages (not just built)
-- [ ] Playwright: drawer open/close and filter apply/clear
+- [x] RightDrawer used consistently and is accessible (keyboard/focus)
+- [x] Reporting filter UX uses chips + consistent layout
+- [x] Components are used on at least 2 pages (not just built)
+- [x] Playwright: drawer open/close and filter apply/clear
+- Completed in PR #38 (dev -> main Milestone 9 Phase 2).
 
 ---
 

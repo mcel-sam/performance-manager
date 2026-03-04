@@ -3,12 +3,15 @@ import { ReviewRelationship, ReviewSubmissionStatus, UserRole } from "@prisma/cl
 import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { AvatarsStack } from "@/components/ui/avatars-stack";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { RightDrawer } from "@/components/ui/right-drawer";
+import { SegmentedProgress } from "@/components/ui/segmented-progress";
 import { Select } from "@/components/ui/select";
-import { StatusChip } from "@/components/ui/status-chip";
+import { getReviewStatusTone, StatusChip } from "@/components/ui/status-chip";
 import {
   Table,
   TableBody,
@@ -20,13 +23,6 @@ import {
 } from "@/components/ui/table";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getManagerTeamReviewDashboard } from "@/server/reviews/team-reviews-service";
-
-const statusTone = {
-  NOT_STARTED: "neutral",
-  IN_PROGRESS: "info",
-  SUBMITTED: "success",
-  RETURNED: "warning",
-} as const;
 
 const statusLabel = {
   NOT_STARTED: "Not started",
@@ -62,12 +58,26 @@ export default async function TeamReviewsPage({
       ? dashboard.rows.find((row) => row.employeeId === selectedEmployeeId) ?? null
       : null;
 
-  const total = dashboard.kpis.totalDirectReports;
-  const completedPct =
-    total > 0 ? Math.round((dashboard.kpis.completedManagerReview / total) * 100) : 0;
-  const inProgressPct =
-    total > 0 ? Math.round((dashboard.kpis.inProgressManagerReview / total) * 100) : 0;
-  const awaitingPct = total > 0 ? Math.max(0, 100 - completedPct - inProgressPct) : 0;
+  const completionSegments = [
+    {
+      key: "awaiting",
+      label: "Awaiting",
+      value: dashboard.kpis.awaitingManagerReview,
+      color: "#94a3b8",
+    },
+    {
+      key: "in-progress",
+      label: "In progress",
+      value: dashboard.kpis.inProgressManagerReview,
+      color: "#0ea5e9",
+    },
+    {
+      key: "completed",
+      label: "Completed",
+      value: dashboard.kpis.completedManagerReview,
+      color: "#10b981",
+    },
+  ];
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -124,25 +134,15 @@ export default async function TeamReviewsPage({
           </Card>
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <KpiCard
-              label="Total direct reports"
-              value={dashboard.kpis.totalDirectReports}
-              tone="info"
-            />
+            <KpiCard label="Total direct reports" value={dashboard.kpis.totalDirectReports} />
             <KpiCard
               label="Awaiting manager review"
               value={dashboard.kpis.awaitingManagerReview}
-              tone="neutral"
             />
-            <KpiCard
-              label="Self not started"
-              value={dashboard.kpis.selfNotStarted}
-              tone="warning"
-            />
+            <KpiCard label="Self not started" value={dashboard.kpis.selfNotStarted} />
             <KpiCard
               label="Overdue manager reviews"
               value={dashboard.kpis.overdueManagerReview}
-              tone="warning"
             />
           </section>
 
@@ -154,19 +154,11 @@ export default async function TeamReviewsPage({
                 reviews submitted.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="h-4 w-full overflow-hidden rounded-full bg-slate-100">
-                <div className="flex h-full w-full">
-                  <div className="bg-slate-400" style={{ width: `${awaitingPct}%` }} />
-                  <div className="bg-sky-500" style={{ width: `${inProgressPct}%` }} />
-                  <div className="bg-emerald-500" style={{ width: `${completedPct}%` }} />
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-3 text-xs text-slate-700">
-                <span>Awaiting {awaitingPct}%</span>
-                <span>In progress {inProgressPct}%</span>
-                <span>Completed {completedPct}%</span>
-              </div>
+            <CardContent>
+              <SegmentedProgress
+                segments={completionSegments}
+                data-testid="my-team-segmented-progress"
+              />
             </CardContent>
           </Card>
 
@@ -201,7 +193,7 @@ export default async function TeamReviewsPage({
             </CardContent>
           </Card>
 
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_332px]">
             <Card>
               <CardContent className="p-0">
                 <TableWrapper>
@@ -219,110 +211,172 @@ export default async function TeamReviewsPage({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {dashboard.rows.map((row) => (
-                        <TableRow key={row.employeeId} data-testid="team-reviews-row">
-                          <TableCell className="font-semibold text-slate-900">{row.employeeName}</TableCell>
-                          <TableCell className="text-slate-700">{row.title ?? "—"}</TableCell>
-                          <TableCell className="text-slate-700">{row.department ?? "—"}</TableCell>
-                          <TableCell>{renderStatus(row.statuses[ReviewRelationship.SELF])}</TableCell>
-                          <TableCell>{renderStatus(row.statuses[ReviewRelationship.MANAGER])}</TableCell>
-                          <TableCell>{renderStatus(row.statuses[ReviewRelationship.PEER])}</TableCell>
-                          <TableCell>{renderStatus(row.statuses[ReviewRelationship.UPWARD])}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-2">
-                              <Link href={toMyTeamHref(dashboard.cycle?.id ?? null, row.employeeId)}>
-                                <Button size="sm" data-testid={`my-team-open-profile-${row.employeeId}`}>
-                                  Open profile
-                                </Button>
+                      {dashboard.rows.map((row) => {
+                        const isSelected = row.employeeId === selectedRow?.employeeId;
+
+                        return (
+                          <TableRow
+                            key={row.employeeId}
+                            data-testid="team-reviews-row"
+                            className={isSelected ? "bg-teal-50/40 ring-1 ring-inset ring-teal-200" : undefined}
+                          >
+                            <TableCell>
+                              <Link
+                                href={toMyTeamHref(dashboard.cycle?.id ?? null, row.employeeId)}
+                                scroll={false}
+                                data-testid={`my-team-open-profile-${row.employeeId}`}
+                                className="inline-flex flex-col rounded-[var(--radius-sm)] px-2 py-1 text-left transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                              >
+                                <span className="font-semibold text-slate-900">{row.employeeName}</span>
+                                <span className="text-xs text-slate-500">
+                                  {isSelected ? "Selected profile" : "Open profile"}
+                                </span>
                               </Link>
-                              {row.managerReviewHref ? (
-                                <Link href={row.managerReviewHref}>
-                                  <Button size="sm" variant="outline">
-                                    Open review
-                                  </Button>
-                                </Link>
-                              ) : (
-                                <Badge variant="info">No manager task</Badge>
-                              )}
-                              {row.packetHref ? (
-                                <Link href={row.packetHref}>
-                                  <Button size="sm" variant="outline">
-                                    Open packet
-                                  </Button>
-                                </Link>
-                              ) : null}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                            <TableCell className="text-slate-700">{row.title ?? "—"}</TableCell>
+                            <TableCell className="text-slate-700">{row.department ?? "—"}</TableCell>
+                            <TableCell>{renderStatus(row.statuses[ReviewRelationship.SELF])}</TableCell>
+                            <TableCell>{renderStatus(row.statuses[ReviewRelationship.MANAGER])}</TableCell>
+                            <TableCell>{renderStatus(row.statuses[ReviewRelationship.PEER])}</TableCell>
+                            <TableCell>{renderStatus(row.statuses[ReviewRelationship.UPWARD])}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-2">
+                                {row.managerReviewHref ? (
+                                  <Link href={row.managerReviewHref}>
+                                    <Button size="sm" variant="outline">
+                                      Open review
+                                    </Button>
+                                  </Link>
+                                ) : (
+                                  <Badge variant="info">No manager task</Badge>
+                                )}
+                                {row.packetHref ? (
+                                  <Link href={row.packetHref}>
+                                    <Button size="sm" variant="outline">
+                                      Open packet
+                                    </Button>
+                                  </Link>
+                                ) : null}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableWrapper>
               </CardContent>
             </Card>
 
-            <Card data-testid="my-team-profile-drawer">
-              <CardHeader>
-                <CardTitle className="text-lg">Direct report profile</CardTitle>
-                <CardDescription>
-                  {selectedRow
-                    ? "Status snapshot and quick actions for this direct report."
-                    : "Select Open profile from the table to view details."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {selectedRow ? (
-                  <>
-                    <div className="space-y-1">
-                      <p className="text-base font-semibold text-slate-900">{selectedRow.employeeName}</p>
-                      <p className="text-sm text-slate-600">
-                        {selectedRow.title ?? "No title"} · {selectedRow.department ?? "No department"}
-                      </p>
-                    </div>
+            {selectedRow ? (
+              <RightDrawer
+                testId="my-team-profile-drawer"
+                title={selectedRow.employeeName}
+                subtitle="Direct report profile"
+                closeHref={toMyTeamBaseHref(dashboard.cycle?.id ?? null)}
+                tabs={[
+                  {
+                    id: "overview",
+                    label: "Overview",
+                    content: (
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <p className="text-sm text-slate-600">
+                            {selectedRow.title ?? "No title"} · {selectedRow.department ?? "No department"}
+                          </p>
+                          <AvatarsStack
+                            items={createReviewerAvatarItems(selectedRow.employeeName)}
+                            data-testid="my-team-reviewers-stack"
+                          />
+                        </div>
 
-                    <div className="space-y-2">
-                      <StatusLine
-                        label="Self"
-                        status={selectedRow.statuses[ReviewRelationship.SELF]}
-                      />
-                      <StatusLine
-                        label="Manager"
-                        status={selectedRow.statuses[ReviewRelationship.MANAGER]}
-                      />
-                      <StatusLine
-                        label="Peer"
-                        status={selectedRow.statuses[ReviewRelationship.PEER]}
-                      />
-                      <StatusLine
-                        label="Upward"
-                        status={selectedRow.statuses[ReviewRelationship.UPWARD]}
-                      />
-                    </div>
+                        <div className="space-y-2">
+                          <StatusLine
+                            label="Self"
+                            status={selectedRow.statuses[ReviewRelationship.SELF]}
+                          />
+                          <StatusLine
+                            label="Manager"
+                            status={selectedRow.statuses[ReviewRelationship.MANAGER]}
+                          />
+                          <StatusLine
+                            label="Peer"
+                            status={selectedRow.statuses[ReviewRelationship.PEER]}
+                          />
+                          <StatusLine
+                            label="Upward"
+                            status={selectedRow.statuses[ReviewRelationship.UPWARD]}
+                          />
+                        </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      {selectedRow.managerReviewHref ? (
-                        <Link href={selectedRow.managerReviewHref}>
-                          <Button size="sm">Open review</Button>
-                        </Link>
-                      ) : null}
-                      {selectedRow.packetHref ? (
-                        <Link href={selectedRow.packetHref}>
-                          <Button size="sm" variant="outline">
-                            Open packet
-                          </Button>
-                        </Link>
-                      ) : null}
-                    </div>
-                  </>
-                ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedRow.managerReviewHref ? (
+                            <Link href={selectedRow.managerReviewHref}>
+                              <Button size="sm">Open review</Button>
+                            </Link>
+                          ) : null}
+                          {selectedRow.packetHref ? (
+                            <Link href={selectedRow.packetHref}>
+                              <Button size="sm" variant="outline">
+                                Open packet
+                              </Button>
+                            </Link>
+                          ) : null}
+                        </div>
+                      </div>
+                    ),
+                  },
+                  {
+                    id: "timeline",
+                    label: "Timeline",
+                    content: (
+                      <ol className="space-y-2 text-sm text-slate-700">
+                        {createStatusTimelineEntries(selectedRow).map((entry) => (
+                          <li
+                            key={entry.key}
+                            className="rounded-[var(--radius-sm)] border border-slate-200 bg-slate-50 px-3 py-2"
+                          >
+                            <p className="font-medium text-slate-900">{entry.title}</p>
+                            <p className="text-xs text-slate-600">{entry.description}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    ),
+                  },
+                  {
+                    id: "audit",
+                    label: "Audit Log",
+                    content: (
+                      <div className="space-y-3 text-sm text-slate-700">
+                        <p>
+                          Audit timeline for manager-facing actions will appear here as workflow
+                          events are expanded.
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Current surface includes profile status snapshots and review/packet actions.
+                        </p>
+                      </div>
+                    ),
+                  },
+                ]}
+              />
+            ) : (
+              <Card data-testid="my-team-profile-drawer-empty">
+                <CardHeader>
+                  <CardTitle className="text-lg">Direct report profile</CardTitle>
+                  <CardDescription>
+                    Select a direct report to open overview, timeline, and audit context.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <EmptyState
                     title="No profile selected"
-                    description="Pick a direct report to view review status and actions."
+                    description="Choose a row from the direct reports table to open the right drawer."
                     className="p-4"
                   />
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </>
       )}
@@ -335,26 +389,21 @@ function renderStatus(status: ReviewSubmissionStatus | undefined) {
     return <Badge variant="info">N/A</Badge>;
   }
 
-  return <StatusChip tone={statusTone[status]}>{statusLabel[status]}</StatusChip>;
+  return <StatusChip tone={getReviewStatusTone(status)}>{statusLabel[status]}</StatusChip>;
 }
 
 function KpiCard({
   label,
   value,
-  tone,
 }: {
   label: string;
   value: number;
-  tone: "neutral" | "info" | "success" | "warning";
 }) {
   return (
     <Card>
       <CardHeader className="space-y-1">
         <CardDescription>{label}</CardDescription>
-        <div className="flex items-center gap-2">
-          <CardTitle className="text-2xl">{value}</CardTitle>
-          <StatusChip tone={tone}>{label}</StatusChip>
-        </div>
+        <CardTitle className="text-2xl">{value}</CardTitle>
       </CardHeader>
     </Card>
   );
@@ -390,6 +439,42 @@ function toMyTeamHref(cycleId: string | null, employeeId: string): string {
   }
   params.set("employeeId", employeeId);
   return `/performance/team-reviews?${params.toString()}`;
+}
+
+function toMyTeamBaseHref(cycleId: string | null): string {
+  if (!cycleId) {
+    return "/performance/team-reviews";
+  }
+
+  const params = new URLSearchParams();
+  params.set("cycleId", cycleId);
+  return `/performance/team-reviews?${params.toString()}`;
+}
+
+function createReviewerAvatarItems(employeeName: string): Array<{ id: string; label: string }> {
+  return [
+    { id: `${employeeName}-self`, label: `${employeeName} Self` },
+    { id: `${employeeName}-manager`, label: `${employeeName} Manager Review` },
+    { id: `${employeeName}-peer`, label: `${employeeName} Peer Input` },
+    { id: `${employeeName}-upward`, label: `${employeeName} Upward Input` },
+  ];
+}
+
+function createStatusTimelineEntries(row: {
+  statuses: Partial<Record<ReviewRelationship, ReviewSubmissionStatus>>;
+}): Array<{ key: string; title: string; description: string }> {
+  const relationships: Array<{ key: ReviewRelationship; label: string }> = [
+    { key: ReviewRelationship.SELF, label: "Self" },
+    { key: ReviewRelationship.MANAGER, label: "Manager" },
+    { key: ReviewRelationship.PEER, label: "Peer" },
+    { key: ReviewRelationship.UPWARD, label: "Upward" },
+  ];
+
+  return relationships.map((entry) => ({
+    key: entry.key,
+    title: `${entry.label} review status`,
+    description: row.statuses[entry.key] ? statusLabel[row.statuses[entry.key] as ReviewSubmissionStatus] : "No submission assigned",
+  }));
 }
 
 function RatingDistribution({

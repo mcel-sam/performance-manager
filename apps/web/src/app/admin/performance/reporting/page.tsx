@@ -39,6 +39,7 @@ type SearchParamsShape = Record<string, QueryValue>;
 type ProgressStatusFilter = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 type RatingSourceFilter = "FINAL" | "SCORECARD";
 type ReportingTab = "progress" | "results" | "competencies" | "scorecard";
+type GroupByFilter = "department" | "title";
 
 const competencyOrder = Object.values(CompetencyDimensionKey);
 const scorecardOrder = Object.values(ScorecardMetricKey);
@@ -98,6 +99,7 @@ export default async function AdminReportingPage({
   const selectedTitle = getSingleValue(query.title);
   const selectedRatingSource: RatingSourceFilter =
     getSingleValue(query.ratingSource) === "SCORECARD" ? "SCORECARD" : "FINAL";
+  const selectedGroupBy = parseGroupBy(getSingleValue(query.groupBy));
   const selectedStatus = parseProgressStatus(getSingleValue(query.status));
   const selectedPage = parsePositiveInt(getSingleValue(query.page), 1);
   const requestedDimensionKey = parseDimensionKey(getSingleValue(query.dimensionKey));
@@ -185,16 +187,18 @@ export default async function AdminReportingPage({
   const departmentOptions = filterCatalog.filters.departments;
   const titleOptions = filterCatalog.filters.titles;
 
-  const selectedCompetency =
-    competencies.competencies.find((item) => item.dimensionKey === requestedDimensionKey) ??
-    competencies.competencies.find((item) => item.observedCount > 0) ??
-    competencies.competencies[0] ??
-    null;
+  const selectedCompetency = requestedDimensionKey
+    ? competencies.competencies.find((item) => item.dimensionKey === requestedDimensionKey) ??
+      competencies.competencies.find((item) => item.observedCount > 0) ??
+      competencies.competencies[0] ??
+      null
+    : null;
 
   const baseQuery = {
     cycleId: selectedCycleId,
     department: selectedDepartment,
     title: selectedTitle,
+    groupBy: selectedGroupBy,
   };
 
   const tabHrefs = {
@@ -263,6 +267,7 @@ export default async function AdminReportingPage({
       selectedTitle={selectedTitle}
       selectedStatus={selectedStatus}
       selectedRatingSource={selectedRatingSource}
+      selectedGroupBy={selectedGroupBy}
       selectedDimensionKey={selectedCompetency?.dimensionKey}
       cycleOptions={cycleOptions}
       departmentOptions={departmentOptions}
@@ -357,6 +362,14 @@ function parseTab(value: string | undefined): ReportingTab {
   }
 
   return "progress";
+}
+
+function parseGroupBy(value: string | undefined): GroupByFilter {
+  if (value === "title") {
+    return "title";
+  }
+
+  return "department";
 }
 
 function parseDimensionKey(value: string | undefined): CompetencyDimensionKey | undefined {

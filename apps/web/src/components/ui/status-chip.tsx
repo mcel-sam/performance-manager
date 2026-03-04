@@ -1,3 +1,4 @@
+import type { CycleStatus, ReviewSubmissionStatus } from "@prisma/client";
 import type { CSSProperties, HTMLAttributes } from "react";
 
 import { cn } from "@/components/ui/cn";
@@ -53,4 +54,32 @@ export function StatusChip({ tone = "neutral", className, style, ...props }: Sta
       <span>{props.children}</span>
     </span>
   );
+}
+
+export function getReviewStatusTone(status: ReviewSubmissionStatus): StatusTone {
+  switch (status) {
+    case "SUBMITTED":
+      return "success";
+    case "IN_PROGRESS":
+      return "info";
+    case "RETURNED":
+      return "warning";
+    case "NOT_STARTED":
+    default:
+      return "neutral";
+  }
+}
+
+export function getCycleStatusTone(status: CycleStatus): StatusTone {
+  switch (status) {
+    case "RELEASED":
+      return "success";
+    case "ACTIVE":
+      return "info";
+    case "LOCKED":
+      return "warning";
+    case "DRAFT":
+    default:
+      return "neutral";
+  }
 }
