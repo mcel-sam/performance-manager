@@ -29,9 +29,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { FilterChip } from "@/components/ui/filter-chip";
 import { HelpHint } from "@/components/ui/help-hint";
+import { RightDrawer } from "@/components/ui/right-drawer";
 import { Select } from "@/components/ui/select";
-import { SectionContainer } from "@/components/ui/section-container";
 import {
   Table,
   TableBody,
@@ -63,6 +65,7 @@ interface ReportingDashboardProps {
   selectedTitle?: string;
   selectedStatus?: ProgressStatusFilter;
   selectedRatingSource: RatingSourceFilter;
+  selectedGroupBy?: "department" | "title";
   selectedDimensionKey?: string;
   cycleOptions: Array<{ value: string; label: string }>;
   departmentOptions: string[];
@@ -122,6 +125,7 @@ export function ReportingDashboard({
   selectedTitle,
   selectedStatus,
   selectedRatingSource,
+  selectedGroupBy = "department",
   selectedDimensionKey,
   cycleOptions,
   departmentOptions,
@@ -188,6 +192,59 @@ export function ReportingDashboard({
   const employeeCsvHref = useMemo(() => buildEmployeeCsvHref(activeRows), [activeRows]);
 
   const hasActiveDrilldown = statusDrilldown !== null || ratingDrilldown !== null;
+  const baseFilterQuery = useMemo(
+    () => ({
+      cycleId: selectedCycleId,
+      tab: selectedTab,
+      status: selectedStatus,
+      ratingSource: selectedRatingSource,
+      groupBy: selectedGroupBy,
+      dimensionKey: selectedDimensionKey,
+      page: "1",
+    }),
+    [selectedCycleId, selectedTab, selectedStatus, selectedRatingSource, selectedGroupBy, selectedDimensionKey],
+  );
+
+  const filterChips = useMemo(
+    () =>
+      [
+        selectedDepartment
+          ? {
+              key: "department",
+              label: `Department: ${selectedDepartment}`,
+              clearHref: toQueryString({
+                ...baseFilterQuery,
+                department: undefined,
+                title: selectedTitle,
+              }),
+            }
+          : null,
+        selectedTitle
+          ? {
+              key: "title",
+              label: `Title: ${selectedTitle}`,
+              clearHref: toQueryString({
+                ...baseFilterQuery,
+                department: selectedDepartment,
+                title: undefined,
+              }),
+            }
+          : null,
+        selectedStatus
+          ? {
+              key: "status",
+              label: `Status: ${progressStatusLabel[selectedStatus]}`,
+              clearHref: toQueryString({
+                ...baseFilterQuery,
+                department: selectedDepartment,
+                title: selectedTitle,
+                status: undefined,
+              }),
+            }
+          : null,
+      ].filter((chip): chip is { key: string; label: string; clearHref: string } => chip !== null),
+    [baseFilterQuery, selectedDepartment, selectedStatus, selectedTitle],
+  );
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6" data-testid="reporting-dashboard">
@@ -203,107 +260,128 @@ export function ReportingDashboard({
         }
       />
 
-      <SectionContainer variant="brand" className="space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold text-slate-900">Filters</h2>
-          <p className="text-sm text-slate-600">
-            Select a cycle, then refine by department and title. Choose which rating source to focus.
-          </p>
+      <FilterBar
+        method="get"
+        data-testid="reporting-filter-bar"
+        description="Select a cycle, then refine by department, title, and status. Group by controls table and chart slices."
+        chips={
+          filterChips.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2" data-testid="reporting-filter-chips">
+              {filterChips.map((chip) => (
+                <FilterChip
+                  key={chip.key}
+                  data-testid={`reporting-filter-chip-${chip.key}`}
+                  clearHref={chip.clearHref}
+                  clearTestId={`reporting-filter-chip-clear-${chip.key}`}
+                  clearLabel={`Clear ${chip.key} filter`}
+                >
+                  {chip.label}
+                </FilterChip>
+              ))}
+            </div>
+          ) : null
+        }
+      >
+        <input type="hidden" name="tab" value={selectedTab} />
+        <input type="hidden" name="page" value="1" />
+        {selectedDimensionKey ? (
+          <input type="hidden" name="dimensionKey" value={selectedDimensionKey} />
+        ) : null}
+
+        <label className="flex flex-col gap-2 text-sm text-slate-700">
+          Cycle
+          <Select name="cycleId" defaultValue={selectedCycleId} data-testid="reporting-cycle-select">
+            {cycleOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm text-slate-700">
+          Department
+          <Select
+            name="department"
+            defaultValue={selectedDepartment ?? ""}
+            data-testid="reporting-filter-department"
+          >
+            <option value="">All departments</option>
+            {departmentOptions.map((department) => (
+              <option key={department} value={department}>
+                {department}
+              </option>
+            ))}
+          </Select>
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm text-slate-700">
+          Title
+          <Select name="title" defaultValue={selectedTitle ?? ""} data-testid="reporting-filter-title">
+            <option value="">All titles</option>
+            {titleOptions.map((title) => (
+              <option key={title} value={title}>
+                {title}
+              </option>
+            ))}
+          </Select>
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm text-slate-700">
+          Status
+          <Select name="status" defaultValue={selectedStatus ?? ""} data-testid="reporting-status-filter">
+            <option value="">All statuses</option>
+            <option value="NOT_STARTED">Not started</option>
+            <option value="IN_PROGRESS">In progress</option>
+            <option value="COMPLETED">Completed</option>
+          </Select>
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm text-slate-700">
+          Group by
+          <Select name="groupBy" defaultValue={selectedGroupBy} data-testid="reporting-group-by">
+            <option value="department">Department</option>
+            <option value="title">Title</option>
+          </Select>
+        </label>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm text-slate-700">Rating source</span>
+          <div
+            className="inline-flex h-10 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-1"
+            role="group"
+            aria-label="Rating source toggle"
+            data-testid="reporting-rating-source-toggle"
+          >
+            <button
+              type="submit"
+              name="ratingSource"
+              value="FINAL"
+              aria-label="Use final ratings"
+              data-testid="reporting-rating-toggle-final"
+              className={toggleClassName(selectedRatingSource === "FINAL")}
+            >
+              Final
+            </button>
+            <button
+              type="submit"
+              name="ratingSource"
+              value="SCORECARD"
+              aria-label="Use scorecard baseline ratings"
+              data-testid="reporting-rating-toggle-scorecard"
+              className={toggleClassName(selectedRatingSource === "SCORECARD")}
+            >
+              Scorecard baseline
+            </button>
+          </div>
         </div>
-        <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-6" method="get" data-testid="reporting-filter-bar">
-            <input type="hidden" name="tab" value={selectedTab} />
-            <input type="hidden" name="page" value="1" />
-            {selectedDimensionKey ? (
-              <input type="hidden" name="dimensionKey" value={selectedDimensionKey} />
-            ) : null}
 
-            <label className="flex flex-col gap-2 text-sm text-slate-700">
-              Cycle
-              <Select name="cycleId" defaultValue={selectedCycleId} data-testid="reporting-cycle-select">
-                {cycleOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </label>
-
-            <label className="flex flex-col gap-2 text-sm text-slate-700">
-              Department
-              <Select
-                name="department"
-                defaultValue={selectedDepartment ?? ""}
-                data-testid="reporting-filter-department"
-              >
-                <option value="">All departments</option>
-                {departmentOptions.map((department) => (
-                  <option key={department} value={department}>
-                    {department}
-                  </option>
-                ))}
-              </Select>
-            </label>
-
-            <label className="flex flex-col gap-2 text-sm text-slate-700">
-              Title
-              <Select name="title" defaultValue={selectedTitle ?? ""} data-testid="reporting-filter-title">
-                <option value="">All titles</option>
-                {titleOptions.map((title) => (
-                  <option key={title} value={title}>
-                    {title}
-                  </option>
-                ))}
-              </Select>
-            </label>
-
-            <label className="flex flex-col gap-2 text-sm text-slate-700">
-              Status
-              <Select name="status" defaultValue={selectedStatus ?? ""} data-testid="reporting-status-filter">
-                <option value="">All statuses</option>
-                <option value="NOT_STARTED">Not started</option>
-                <option value="IN_PROGRESS">In progress</option>
-                <option value="COMPLETED">Completed</option>
-              </Select>
-            </label>
-
-            <div className="flex flex-col gap-2">
-              <span className="text-sm text-slate-700">Rating source</span>
-              <div
-                className="inline-flex h-10 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-1"
-                role="group"
-                aria-label="Rating source toggle"
-                data-testid="reporting-rating-source-toggle"
-              >
-                <button
-                  type="submit"
-                  name="ratingSource"
-                  value="FINAL"
-                  aria-label="Use final ratings"
-                  data-testid="reporting-rating-toggle-final"
-                  className={toggleClassName(selectedRatingSource === "FINAL")}
-                >
-                  Final
-                </button>
-                <button
-                  type="submit"
-                  name="ratingSource"
-                  value="SCORECARD"
-                  aria-label="Use scorecard baseline ratings"
-                  data-testid="reporting-rating-toggle-scorecard"
-                  className={toggleClassName(selectedRatingSource === "SCORECARD")}
-                >
-                  Scorecard baseline
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-end">
-              <Button type="submit" className="w-full" data-testid="reporting-apply-filters">
-                Apply filters
-              </Button>
-            </div>
-        </form>
-      </SectionContainer>
+        <div className="flex items-end">
+          <Button type="submit" className="w-full" data-testid="reporting-apply-filters">
+            Apply filters
+          </Button>
+        </div>
+      </FilterBar>
 
       <section className="flex items-center justify-between gap-4">
         <div className="inline-flex rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-1">
@@ -341,6 +419,10 @@ export function ReportingDashboard({
           Showing <span data-testid="reporting-current-department">{selectedDepartment ?? "All departments"}</span>
           {" • "}
           <span data-testid="reporting-current-title">{selectedTitle ?? "All titles"}</span>
+          {" • "}
+          <span data-testid="reporting-current-group-by">
+            Group by {selectedGroupBy === "title" ? "Title" : "Department"}
+          </span>
         </div>
       </section>
 
@@ -388,6 +470,9 @@ export function ReportingDashboard({
           cycleId={selectedCycleId}
           selectedDepartment={selectedDepartment}
           selectedTitle={selectedTitle}
+          selectedStatus={selectedStatus}
+          selectedRatingSource={selectedRatingSource}
+          selectedGroupBy={selectedGroupBy}
           csvHref={csvHrefs.competencies}
         />
       ) : null}
@@ -1010,6 +1095,9 @@ function CompetenciesTab({
   cycleId,
   selectedDepartment,
   selectedTitle,
+  selectedStatus,
+  selectedRatingSource,
+  selectedGroupBy,
   csvHref,
 }: {
   competencies: ReportingCompetenciesResponse;
@@ -1018,6 +1106,9 @@ function CompetenciesTab({
   cycleId: string;
   selectedDepartment?: string;
   selectedTitle?: string;
+  selectedStatus?: ProgressStatusFilter;
+  selectedRatingSource: RatingSourceFilter;
+  selectedGroupBy: "department" | "title";
   csvHref: string;
 }) {
   if (competencies.suppression.suppressed) {
@@ -1107,75 +1198,113 @@ function CompetenciesTab({
       </Card>
 
       {selectedCompetency ? (
-        <Card data-testid="reporting-competency-drilldown">
-          <CardHeader>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <CardTitle>{humanizeEnumValue(selectedCompetency.dimensionKey)} drilldown</CardTitle>
-                <CardDescription>
-                  Distribution and self vs manager comparison for the selected competency.
-                </CardDescription>
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  void downloadChartAsPng(
-                    "reporting-competency-drilldown-chart",
-                    `reporting-competency-${selectedCompetency.dimensionKey.toLowerCase()}.png`,
-                  )
-                }
-                className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-                aria-label="Download competency drilldown chart as PNG"
-                data-testid="reporting-download-competency-png"
-              >
-                Download PNG
-              </button>
-            </div>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2 text-sm text-slate-700">
-              <p>Overall average: {formatNumber(selectedCompetency.averageRating)}</p>
-              <p>Self average: {formatNumber(selectedCompetency.self.averageRating)}</p>
-              <p>Manager average: {formatNumber(selectedCompetency.manager.averageRating)}</p>
-              <p>
-                Average gap (manager - self): {formatNumber(selectedCompetency.selfManagerGap.averageGap)}
-              </p>
-            </div>
-
-            <ChartExportContainer chartId="reporting-competency-drilldown-chart" className="p-3">
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={[1, 2, 3, 4, 5].map((rating) => ({
-                      rating,
-                      Self: selectedCompetency.selfDistribution[
-                        String(rating) as keyof typeof selectedCompetency.selfDistribution
-                      ],
-                      Manager:
-                        selectedCompetency.managerDistribution[
-                          String(rating) as keyof typeof selectedCompetency.managerDistribution
-                        ],
-                    }))}
-                    margin={{ top: 12, right: 12, left: 6, bottom: 12 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                    <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                    <Tooltip labelFormatter={(value) => `Rating ${value}`} />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="Self" fill="#38bdf8" animationDuration={450} />
-                    <Bar dataKey="Manager" fill="#22c55e" animationDuration={450} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </ChartExportContainer>
-
-            <HelpHint label="How Not Observed is handled" className="md:col-span-2">
-              Not Observed responses are stored and reported separately. They are excluded from
-              average calculations and self-vs-manager gap math.
-            </HelpHint>
-          </CardContent>
-        </Card>
+        <RightDrawer
+          testId="reporting-competency-drilldown"
+          title={`${humanizeEnumValue(selectedCompetency.dimensionKey)} drilldown`}
+          subtitle="Distribution and self vs manager comparison for the selected competency."
+          closeHref={toQueryString({
+            cycleId,
+            department: selectedDepartment,
+            title: selectedTitle,
+            status: selectedStatus,
+            ratingSource: selectedRatingSource,
+            groupBy: selectedGroupBy,
+            tab: "competencies",
+            page: "1",
+          })}
+          actions={
+            <button
+              type="button"
+              onClick={() =>
+                void downloadChartAsPng(
+                  "reporting-competency-drilldown-chart",
+                  `reporting-competency-${selectedCompetency.dimensionKey.toLowerCase()}.png`,
+                )
+              }
+              className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              aria-label="Download competency drilldown chart as PNG"
+              data-testid="reporting-download-competency-png"
+            >
+              Download PNG
+            </button>
+          }
+          tabs={[
+            {
+              id: "overview",
+              label: "Overview",
+              content: (
+                <div className="space-y-4">
+                  <div className="space-y-2 text-sm text-slate-700">
+                    <p>Overall average: {formatNumber(selectedCompetency.averageRating)}</p>
+                    <p>Self average: {formatNumber(selectedCompetency.self.averageRating)}</p>
+                    <p>Manager average: {formatNumber(selectedCompetency.manager.averageRating)}</p>
+                    <p>
+                      Average gap (manager - self):{" "}
+                      {formatNumber(selectedCompetency.selfManagerGap.averageGap)}
+                    </p>
+                  </div>
+                  <ChartExportContainer chartId="reporting-competency-drilldown-chart" className="p-3">
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={[1, 2, 3, 4, 5].map((rating) => ({
+                            rating,
+                            Self: selectedCompetency.selfDistribution[
+                              String(rating) as keyof typeof selectedCompetency.selfDistribution
+                            ],
+                            Manager:
+                              selectedCompetency.managerDistribution[
+                                String(rating) as keyof typeof selectedCompetency.managerDistribution
+                              ],
+                          }))}
+                          margin={{ top: 12, right: 12, left: 6, bottom: 12 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                          <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                          <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                          <Tooltip labelFormatter={(value) => `Rating ${value}`} />
+                          <Legend wrapperStyle={{ fontSize: 12 }} />
+                          <Bar dataKey="Self" fill="#38bdf8" animationDuration={450} />
+                          <Bar dataKey="Manager" fill="#22c55e" animationDuration={450} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </ChartExportContainer>
+                </div>
+              ),
+            },
+            {
+              id: "timeline",
+              label: "Timeline",
+              content: (
+                <ol className="space-y-2 text-sm text-slate-700">
+                  <li className="rounded-[var(--radius-sm)] border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="font-medium text-slate-900">Observed responses</p>
+                    <p className="text-xs text-slate-600">
+                      {selectedCompetency.observedCount} rated responses included.
+                    </p>
+                  </li>
+                  <li className="rounded-[var(--radius-sm)] border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="font-medium text-slate-900">Not observed responses</p>
+                    <p className="text-xs text-slate-600">
+                      {selectedCompetency.notObservedCount} responses excluded from averages.
+                    </p>
+                  </li>
+                </ol>
+              ),
+            },
+            {
+              id: "audit",
+              label: "Audit Log",
+              content: (
+                <HelpHint label="How Not Observed is handled">
+                  Not Observed responses are stored and reported separately. They are excluded from
+                  average calculations and self-vs-manager gap math.
+                </HelpHint>
+              ),
+            },
+          ]}
+        />
       ) : null}
     </section>
   );
