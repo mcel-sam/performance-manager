@@ -134,12 +134,12 @@ export default function AppShell({
               isSidebarCollapsed ? "px-2 py-4" : "px-5 py-5",
             )}
           >
-            <p className={cn("text-xs font-semibold uppercase tracking-[0.16em] text-slate-500", isSidebarCollapsed && "sr-only")}>
+            <p className={cn("text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500", isSidebarCollapsed && "sr-only")}>
               Performance Manager
             </p>
-            {!isSidebarCollapsed ? <h1 className="mt-1 text-lg font-semibold text-slate-900">Workspace</h1> : null}
+            {!isSidebarCollapsed ? <h1 className="mt-1.5 text-lg font-semibold tracking-tight text-slate-900">Workspace</h1> : null}
             {viewer && !isSidebarCollapsed ? (
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-[11px] text-slate-500">
                 {viewer.roleLabel} <span className="text-slate-400">({viewer.userId})</span>
               </p>
             ) : null}
@@ -158,7 +158,7 @@ export default function AppShell({
                   aria-label={item.label}
                   title={item.label}
                   className={cn(
-                    "group relative flex rounded-md px-3 py-2 text-sm font-medium transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-1",
+                    "group relative flex rounded-[var(--radius-md)] px-3 py-2 text-sm font-medium transition-[background-color,color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-1 motion-reduce:transition-none",
                     isSidebarCollapsed ? "justify-center px-2" : "items-center gap-3",
                     isActive
                       ? "bg-slate-900 text-white"
@@ -191,9 +191,9 @@ export default function AppShell({
           </nav>
         </aside>
 
-        <main className={cn("p-4 sm:p-6", focusLayout && "lg:px-8")}>
+        <main className={cn("p-5 sm:p-7", focusLayout && "lg:px-8")}>
           <header
-            className="mb-4 flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] border border-slate-200 bg-white px-3 py-2.5 shadow-[var(--shadow-xs)] sm:px-4"
+            className="mb-5 flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] border border-slate-200 bg-white px-4 py-3 shadow-[var(--shadow-xs)] sm:px-5"
             data-testid="app-shell-header"
           >
             <button
@@ -202,7 +202,7 @@ export default function AppShell({
               onClick={() => setIsSidebarCollapsed((value) => !value)}
               aria-label={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
               title={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
             >
               <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
                 <path
@@ -220,7 +220,7 @@ export default function AppShell({
                 type="search"
                 data-testid="app-header-search"
                 placeholder="Search people, cycles, or reviews"
-                className="h-9 w-full rounded-[var(--radius-sm)] border border-slate-300 bg-slate-50 px-3 text-sm text-slate-800 placeholder:text-slate-500 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200"
+                className="h-9 w-full rounded-[var(--radius-sm)] border border-slate-300 bg-slate-50 px-3 text-sm text-slate-800 placeholder:text-slate-500 transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200"
               />
             </label>
 
@@ -246,7 +246,7 @@ export default function AppShell({
                   onClick={() => setIsProfileMenuOpen((value) => !value)}
                   aria-expanded={isProfileMenuOpen}
                   aria-haspopup="menu"
-                  className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-300 bg-white px-2.5 text-left text-sm text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                  className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-300 bg-white px-2.5 text-left text-sm text-slate-800 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-50 hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                 >
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold uppercase text-white">
                     {viewer?.initials ?? "U"}
@@ -266,7 +266,7 @@ export default function AppShell({
                     <Link
                       href="/profile"
                       role="menuitem"
-                      className="block rounded-[var(--radius-sm)] px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                      className="block rounded-[var(--radius-sm)] px-3 py-2 text-sm text-slate-700 transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       Profile
@@ -277,7 +277,7 @@ export default function AppShell({
                       data-testid="profile-menu-sign-out"
                       onClick={() => void logoutToLogin("signOut")}
                       disabled={pendingProfileAction !== null}
-                      className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-slate-700 transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {pendingProfileAction === "signOut" ? "Signing out..." : "Sign out"}
                     </button>
@@ -288,7 +288,7 @@ export default function AppShell({
                         data-testid="profile-menu-switch-role"
                         onClick={() => void logoutToLogin("switchRole")}
                         disabled={pendingProfileAction !== null}
-                        className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-slate-700 transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {pendingProfileAction === "switchRole" ? "Switching role..." : "Switch role"}
                       </button>
@@ -300,12 +300,12 @@ export default function AppShell({
           </header>
 
           {focusLayout ? (
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-4 py-2 text-sm leading-6 text-slate-700 shadow-[var(--shadow-xs)] transition-shadow duration-200">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-4 py-2.5 text-sm leading-6 text-slate-700 shadow-[var(--shadow-xs)] transition-[box-shadow,border-color] duration-[var(--transition-base)] ease-[var(--ease-standard)]">
               <span>{focusLayout.label}</span>
               <div className="flex items-center gap-2">
                 <Link
                   href={focusLayout.backHref}
-                  className="rounded-[var(--radius-sm)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                  className="rounded-[var(--radius-sm)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:shadow-[var(--shadow-xs)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                 >
                   {focusLayout.backLabel}
                 </Link>

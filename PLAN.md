@@ -1690,18 +1690,19 @@ Feedback observed:
 
 ## Phase 7 — Typography + spacing + microinteractions (premium feel)
 
-- [ ] Standardize typography:
-  - [ ] PageHeader size, subtitle, section headers, table headers/body
-- [ ] Spacing rhythm:
-  - [ ] Consistent padding/margins, less cramped panels
-- [ ] Microinteractions:
-  - [ ] Hover/focus states consistent
-  - [ ] Drawer transitions smooth
-  - [ ] Button hierarchy consistent
+- [x] Standardize typography:
+  - [x] PageHeader size, subtitle, section headers, table headers/body
+- [x] Spacing rhythm:
+  - [x] Consistent padding/margins, less cramped panels
+- [x] Microinteractions:
+  - [x] Hover/focus states consistent
+  - [x] Drawer transitions smooth
+  - [x] Button hierarchy consistent
 
 #### Acceptance criteria
-- [ ] Core pages feel cohesive and premium visually
-- [ ] Accessibility baseline preserved
+- [x] Core pages feel cohesive and premium visually
+- [x] Accessibility baseline preserved
+- Completed in PR #43 (dev -> main Milestone 9 Phase 7).
 
 ---
 

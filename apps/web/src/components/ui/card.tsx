@@ -7,7 +7,7 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
     <div
       {...props}
       className={cn(
-        "rounded-[var(--radius-lg)] border border-slate-200 bg-[var(--surface)] shadow-[var(--shadow-sm)] transition-shadow duration-200",
+        "rounded-[var(--radius-lg)] border border-slate-200 bg-[var(--surface)] shadow-[var(--shadow-sm)] transition-[box-shadow,border-color] duration-[var(--transition-base)] ease-[var(--ease-standard)]",
         className,
       )}
     />
@@ -18,7 +18,7 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
   return (
     <div
       {...props}
-      className={cn("border-b border-slate-100 bg-slate-50/55 p-4 sm:p-5", className)}
+      className={cn("border-b border-slate-100 bg-slate-50/55 p-5 sm:p-6", className)}
     />
   );
 }
@@ -32,14 +32,14 @@ export function CardDescription({ className, ...props }: HTMLAttributes<HTMLPara
 }
 
 export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div {...props} className={cn("p-4 sm:p-5", className)} />;
+  return <div {...props} className={cn("p-5 sm:p-6", className)} />;
 }
 
 export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       {...props}
-      className={cn("border-t border-slate-100 bg-slate-50/40 p-4 sm:p-5", className)}
+      className={cn("border-t border-slate-100 bg-slate-50/40 p-5 sm:p-6", className)}
     />
   );
 }

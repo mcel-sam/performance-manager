@@ -47,23 +47,23 @@ export function RightDrawer({
   return (
     <aside
       className={cn(
-        "rounded-[var(--radius-lg)] border border-slate-200 bg-white shadow-[var(--shadow-sm)] transition-all duration-200",
+        "rounded-[var(--radius-lg)] border border-slate-200 bg-white shadow-[var(--shadow-sm)] transition-[width,box-shadow,border-color,transform] duration-[var(--transition-slow)] ease-[var(--ease-emphasized)] motion-reduce:transition-none",
         isExpanded ? "xl:w-[420px]" : "xl:w-[332px]",
       )}
       data-testid={testId}
     >
-      <div className="sticky top-0 z-10 space-y-3 rounded-t-[var(--radius-lg)] border-b border-slate-200 bg-white p-4">
+      <div className="sticky top-0 z-10 space-y-3 rounded-t-[var(--radius-lg)] border-b border-slate-200 bg-white p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-            {subtitle ? <p className="text-sm text-slate-600">{subtitle}</p> : null}
+            <h2 className="text-lg font-semibold tracking-tight text-slate-900">{title}</h2>
+            {subtitle ? <p className="text-sm leading-6 text-slate-600">{subtitle}</p> : null}
           </div>
           <div className="flex items-center gap-1">
             <button
               type="button"
               data-testid={`${testId}-expand`}
               onClick={() => setIsExpanded((value) => !value)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:shadow-[var(--shadow-xs)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
               aria-label={isExpanded ? "Collapse drawer" : "Expand drawer"}
             >
               {isExpanded ? "−" : "+"}
@@ -72,7 +72,7 @@ export function RightDrawer({
               <Link
                 href={closeHref}
                 data-testid={`${testId}-close`}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:shadow-[var(--shadow-xs)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                 aria-label="Close drawer"
               >
                 ×
@@ -92,7 +92,7 @@ export function RightDrawer({
         />
       </div>
 
-      <div className="p-4">{activeTab ? activeTab.content : null}</div>
+      <div className="p-5">{activeTab ? activeTab.content : null}</div>
     </aside>
   );
 }
