@@ -6,7 +6,7 @@ test.beforeAll(async ({ request }) => {
   await ensureDemoSetup(request);
 });
 
-test("reporting page loads and applies filters", async ({ page }) => {
+test("reporting page applies filters and clears chips", async ({ page }) => {
   await loginAsHrAdmin(page);
   await page.goto("/admin/performance/reporting?tab=progress");
 
@@ -29,8 +29,15 @@ test("reporting page loads and applies filters", async ({ page }) => {
   await expect(page.getByTestId("reporting-current-department")).toHaveText(
     "Operations",
   );
+  await expect(page.getByTestId("reporting-filter-chip-department")).toContainText(
+    "Department: Operations",
+  );
   const filteredRows = await page.getByTestId("reporting-employee-row").count();
   expect(filteredRows).toBeLessThan(initialRows);
+
+  await page.getByTestId("reporting-filter-chip-clear-department").click();
+  await expect(page).not.toHaveURL(/department=Operations/);
+  await expect(page.getByTestId("reporting-filter-chip-department")).toHaveCount(0);
 });
 
 test("reporting competency drilldown opens from summary table", async ({ page }) => {
@@ -42,6 +49,8 @@ test("reporting competency drilldown opens from summary table", async ({ page })
 
   await expect(page).toHaveURL(/tab=competencies/);
   await expect(page.getByTestId("reporting-competency-drilldown")).toBeVisible();
+  await page.getByTestId("reporting-competency-drilldown-close").click();
+  await expect(page.getByTestId("reporting-competency-drilldown")).toHaveCount(0);
 });
 
 test("reporting chart drilldown filters employee table", async ({ page }) => {
