@@ -1648,21 +1648,21 @@ Feedback observed:
 ## Phase 5 — Manager experience: “My Team” hub (drilldowns + mini insights)
 
 ### 1) My Team page (manager cockpit)
-- [ ] Primary view: direct reports list (always visible)
-- [ ] Team size shown prominently
-- [ ] KPI cards: awaiting manager review, self not started, in progress, completed (as appropriate)
-- [ ] Drilldown drawer per employee:
-  - [ ] Quick actions: open review, open packet
-  - [ ] Status summary by direction
-  - [ ] Mini insights (rating distribution + top gaps optional)
+- [x] Primary view: direct reports list (always visible)
+- [x] Team size shown prominently
+- [x] KPI cards: awaiting manager review, self not started, in progress, completed (as appropriate)
+- [x] Drilldown drawer per employee:
+  - [x] Quick actions: open review, open packet
+  - [x] Status summary by direction
+  - [x] Mini insights (rating distribution + top gaps optional)
 
 ### 2) Simplify manager navigation
-- [ ] Managers start from My Team; Reviews becomes secondary utility
+- [x] Managers start from My Team; Reviews becomes secondary utility
 
 #### Acceptance criteria
-- [ ] Manager can manage team without being forced into reviews list
-- [ ] Drilldown is useful and fast
-- [ ] Playwright: My Team loads, drilldown opens, action works
+- [x] Manager can manage team without being forced into reviews list
+- [x] Drilldown is useful and fast
+- [x] Playwright: My Team loads, drilldown opens, action works
 
 ---
 
