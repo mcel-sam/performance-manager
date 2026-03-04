@@ -45,13 +45,20 @@ test("manager team reviews page loads with direct-report rows", async ({ page })
   await page.getByTestId("nav-link-team-reviews").click();
   await expect(page).toHaveURL(/\/performance\/team-reviews$/);
   await expect(page.getByRole("heading", { name: "My Team" })).toBeVisible();
+  await expect(page.getByTestId("my-team-team-size-pill")).toBeVisible();
+  await expect(page.getByTestId("my-team-secondary-reviews-link")).toBeVisible();
   await expect(page.getByTestId("my-team-insights")).toBeVisible();
   await expect(page.getByTestId("team-reviews-row").first()).toBeVisible();
   await page.getByTestId("my-team-open-profile-emp_employee_1").click();
   await expect(page.getByTestId("my-team-profile-drawer")).toBeVisible();
+  await expect(page.getByTestId("my-team-drawer-mini-insights")).toBeVisible();
   await page.getByTestId("my-team-profile-drawer-close").click();
   await expect(page.getByTestId("my-team-profile-drawer")).toHaveCount(0);
   await expect(page.getByTestId("my-team-profile-drawer-empty")).toBeVisible();
+
+  await page.getByTestId("my-team-open-profile-emp_employee_1").click();
+  await page.getByTestId("my-team-drawer-open-review").click();
+  await expect(page).toHaveURL(/\/performance\/reviews\/[^/]+\/write\/[^/]+$/);
 });
 
 test("packet route keeps one active nav item and enables focus layout collapse", async ({ page }) => {

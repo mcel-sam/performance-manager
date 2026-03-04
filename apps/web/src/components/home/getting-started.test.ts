@@ -16,6 +16,7 @@ describe("getGettingStartedContent", () => {
   it("returns manager coaching links", () => {
     const content = getGettingStartedContent(UserRole.MANAGER);
 
+    expect(content.links[0]?.href).toBe("/performance/team-reviews");
     expect(content.links.some((link) => link.href.includes("/performance/calibration"))).toBe(
       true,
     );
