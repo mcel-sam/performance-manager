@@ -16,7 +16,7 @@ export default async function CalibrationSessionPage({ params }: CalibrationSess
   const data = await getCalibrationSessionData(sessionId, context);
 
   return (
-    <div className="mx-auto w-full max-w-[1320px]">
+    <div className="mx-auto w-full max-w-[1440px]">
       <CalibrationSessionView
         sessionId={sessionId}
         auth={{ userId: context.userId, orgId: context.orgId }}
