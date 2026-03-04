@@ -1722,6 +1722,7 @@ Feedback observed:
 #### Acceptance criteria
 - [x] Repeatable UX audit artifacts exist
 - [x] Prevents regression of nav/layout issues going forward
+- Completed in PR #44 (dev -> main Milestone 9 Phase 8).
 
 ---
 
