@@ -1684,6 +1684,7 @@ Feedback observed:
 - [x] Exports are reliable
 - [x] Heatmap exists and drills down
 - [x] Charts are interactive and useful (not decorative)
+- Completed in PR #42 (dev -> main Milestone 9 Phase 6).
 
 ---
 
