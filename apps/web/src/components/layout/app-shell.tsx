@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { UserRole } from "@prisma/client";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/components/ui/cn";
-import { getActiveNavKey, type ShellNavItem } from "@/config/navigation";
+import { getActiveNavKey, type ShellNavItem, type ShellNavKey } from "@/config/navigation";
 
 interface AppShellProps {
   children: ReactNode;
@@ -15,16 +15,43 @@ interface AppShellProps {
   viewer: {
     role: UserRole;
     userId: string;
+    roleLabel: string;
+    orgName: string;
+    displayName: string;
+    initials: string;
   } | null;
+  demoModeEnabled: boolean;
 }
 
-export default function AppShell({ children, navItems, viewer }: AppShellProps) {
+type ProfileAction = "signOut" | "switchRole";
+
+const navGlyph: Record<ShellNavKey, string> = {
+  home: "H",
+  reviews: "R",
+  packets: "P",
+  teamReviews: "T",
+  calibration: "C",
+  adminCalibration: "AC",
+  adminReporting: "RP",
+  adminCycles: "CY",
+  adminUsers: "U",
+  improvementPlans: "IP",
+  help: "?",
+};
+
+export default function AppShell({
+  children,
+  navItems,
+  viewer,
+  demoModeEnabled,
+}: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isSwitchingUser, setIsSwitchingUser] = useState(false);
+  const [pendingProfileAction, setPendingProfileAction] = useState<ProfileAction | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const isPublicRoute = pathname === "/login";
-  const demoLoginEnabled = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const isPublicRoute = pathname === "/login" || pathname.startsWith("/demo/login");
   const focusLayout = useMemo(() => getFocusLayoutConfig(pathname), [pathname]);
   const activeNavKey = useMemo(() => getActiveNavKey(pathname, navItems), [pathname, navItems]);
 
@@ -32,15 +59,44 @@ export default function AppShell({ children, navItems, viewer }: AppShellProps) 
     setIsSidebarCollapsed(Boolean(focusLayout));
   }, [focusLayout]);
 
-  async function handleSwitchUser() {
-    setIsSwitchingUser(true);
+  useEffect(() => {
+    if (!isProfileMenuOpen) {
+      return;
+    }
+
+    function handleClickOutside(event: MouseEvent) {
+      if (!profileMenuRef.current?.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isProfileMenuOpen]);
+
+  async function logoutToLogin(action: ProfileAction) {
+    setPendingProfileAction(action);
 
     try {
-      await fetch("/api/demo/logout", {
-        method: "POST",
-      });
+      if (demoModeEnabled) {
+        await fetch("/api/demo/logout", {
+          method: "POST",
+        });
+      }
     } finally {
-      setIsSwitchingUser(false);
+      setPendingProfileAction(null);
+      setIsProfileMenuOpen(false);
       router.push("/login");
       router.refresh();
     }
@@ -58,38 +114,40 @@ export default function AppShell({ children, navItems, viewer }: AppShellProps) 
     <div className="min-h-screen bg-slate-100 text-slate-900">
       <div
         className={cn(
-          "mx-auto grid min-h-screen w-full max-w-[1440px] transition-[grid-template-columns] duration-200 ease-out",
+          "mx-auto grid min-h-screen w-full max-w-[1520px] transition-[grid-template-columns] duration-200 ease-out",
           isSidebarCollapsed
-            ? "md:grid-cols-[80px_minmax(0,1fr)]"
-            : "md:grid-cols-[260px_minmax(0,1fr)]",
+            ? "md:grid-cols-[84px_minmax(0,1fr)]"
+            : "md:grid-cols-[272px_minmax(0,1fr)]",
         )}
       >
         <aside
           data-testid="app-shell-sidebar"
           data-collapsed={isSidebarCollapsed ? "true" : "false"}
-          className="border-r border-slate-200 bg-white transition-[width,padding] duration-200 ease-out"
+          className={cn(
+            "overflow-hidden border-r border-slate-200 bg-white transition-[width,padding,border-color] duration-200 ease-out",
+            isSidebarCollapsed && "border-slate-100",
+          )}
         >
           <div
             className={cn(
               "border-b border-slate-100",
-              isSidebarCollapsed ? "px-3 py-4" : "px-5 py-5",
+              isSidebarCollapsed ? "px-2 py-4" : "px-5 py-5",
             )}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-              {isSidebarCollapsed ? "PM" : "Performance Manager"}
+            <p className={cn("text-xs font-semibold uppercase tracking-[0.16em] text-slate-500", isSidebarCollapsed && "sr-only")}>
+              Performance Manager
             </p>
             {!isSidebarCollapsed ? <h1 className="mt-1 text-lg font-semibold text-slate-900">Workspace</h1> : null}
             {viewer && !isSidebarCollapsed ? (
               <p className="mt-2 text-xs text-slate-500">
-                {viewer.role} <span className="text-slate-400">({viewer.userId})</span>
+                {viewer.roleLabel} <span className="text-slate-400">({viewer.userId})</span>
               </p>
             ) : null}
           </div>
 
-          <nav className="space-y-1 p-3">
+          <nav className={cn("space-y-1 p-3", isSidebarCollapsed && "px-2")}>
             {navItems.map((item) => {
               const isActive = activeNavKey === item.key;
-              const collapsedLabel = item.label.charAt(0).toUpperCase();
 
               return (
                 <Link
@@ -100,64 +158,151 @@ export default function AppShell({ children, navItems, viewer }: AppShellProps) 
                   aria-label={item.label}
                   title={item.label}
                   className={cn(
-                    "block rounded-md px-3 py-2 text-sm font-medium transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-1",
-                    isSidebarCollapsed && "text-center",
+                    "group relative flex rounded-md px-3 py-2 text-sm font-medium transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-1",
+                    isSidebarCollapsed ? "justify-center px-2" : "items-center gap-3",
                     isActive
                       ? "bg-slate-900 text-white"
                       : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
                   )}
                 >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "inline-flex h-7 min-w-7 items-center justify-center rounded-[var(--radius-sm)] text-[11px] font-semibold uppercase leading-none",
+                      isActive
+                        ? "bg-white/15 text-white"
+                        : "bg-slate-200 text-slate-700 group-hover:bg-slate-300",
+                    )}
+                  >
+                    {navGlyph[item.key]}
+                  </span>
+                  {!isSidebarCollapsed ? <span className="truncate">{item.label}</span> : <span className="sr-only">{item.label}</span>}
                   {isSidebarCollapsed ? (
-                    <>
-                      <span aria-hidden>{collapsedLabel}</span>
-                      <span className="sr-only">{item.label}</span>
-                    </>
-                  ) : (
-                    item.label
-                  )}
+                    <span
+                      role="tooltip"
+                      className="pointer-events-none absolute left-full top-1/2 z-20 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-sm)] bg-slate-900 px-2 py-1 text-xs text-white opacity-0 shadow-[var(--shadow-sm)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+                    >
+                      {item.label}
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}
           </nav>
-
-          {demoLoginEnabled ? (
-            <div className="border-t border-slate-100 p-3">
-              <button
-                type="button"
-                onClick={() => void handleSwitchUser()}
-                disabled={isSwitchingUser}
-                data-testid="nav-switch-user"
-                className={cn(
-                  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60",
-                  isSidebarCollapsed && "text-center",
-                )}
-                aria-label={isSwitchingUser ? "Switching user" : "Switch user"}
-              >
-                {isSidebarCollapsed
-                  ? isSwitchingUser
-                    ? "..."
-                    : "↻"
-                  : isSwitchingUser
-                    ? "Switching..."
-                    : "Switch user"}
-              </button>
-            </div>
-          ) : null}
         </aside>
 
-        <main className={cn("p-6", focusLayout && "md:px-8 lg:px-10")}>
+        <main className={cn("p-4 sm:p-6", focusLayout && "lg:px-8")}>
+          <header
+            className="mb-4 flex flex-wrap items-center gap-3 rounded-[var(--radius-lg)] border border-slate-200 bg-white px-3 py-2.5 shadow-[var(--shadow-xs)] sm:px-4"
+            data-testid="app-shell-header"
+          >
+            <button
+              type="button"
+              data-testid="focus-layout-toggle-nav"
+              onClick={() => setIsSidebarCollapsed((value) => !value)}
+              aria-label={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
+              title={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+            >
+              <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path
+                  d="M3.5 5.5H16.5M3.5 10H16.5M3.5 14.5H12.5"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+
+            <label className="min-w-[180px] flex-1">
+              <span className="sr-only">Search workspace</span>
+              <input
+                type="search"
+                data-testid="app-header-search"
+                placeholder="Search people, cycles, or reviews"
+                className="h-9 w-full rounded-[var(--radius-sm)] border border-slate-300 bg-slate-50 px-3 text-sm text-slate-800 placeholder:text-slate-500 focus:border-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-200"
+              />
+            </label>
+
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                type="button"
+                data-testid="app-header-org-pill"
+                disabled
+                aria-label="Current organization"
+                title="Organization switching is not enabled in this build"
+                className="inline-flex h-9 max-w-[220px] items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700 opacity-90"
+              >
+                <span className="truncate">{viewer?.orgName ?? "Organization"}</span>
+                <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+                  <path d="M6.5 8.5L10 12L13.5 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  type="button"
+                  data-testid="app-header-profile-button"
+                  onClick={() => setIsProfileMenuOpen((value) => !value)}
+                  aria-expanded={isProfileMenuOpen}
+                  aria-haspopup="menu"
+                  className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-300 bg-white px-2.5 text-left text-sm text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                >
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold uppercase text-white">
+                    {viewer?.initials ?? "U"}
+                  </span>
+                  <span className="hidden max-w-[150px] flex-col sm:flex">
+                    <span className="truncate text-xs font-semibold text-slate-900">{viewer?.displayName ?? "User"}</span>
+                    <span className="truncate text-[11px] text-slate-500">{viewer?.roleLabel ?? "Member"}</span>
+                  </span>
+                </button>
+
+                {isProfileMenuOpen ? (
+                  <div
+                    role="menu"
+                    data-testid="app-header-profile-menu"
+                    className="absolute right-0 top-11 z-30 min-w-[200px] space-y-1 rounded-[var(--radius-md)] border border-slate-200 bg-white p-2 shadow-[var(--shadow-sm)]"
+                  >
+                    <Link
+                      href="/profile"
+                      role="menuitem"
+                      className="block rounded-[var(--radius-sm)] px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      data-testid="profile-menu-sign-out"
+                      onClick={() => void logoutToLogin("signOut")}
+                      disabled={pendingProfileAction !== null}
+                      className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {pendingProfileAction === "signOut" ? "Signing out..." : "Sign out"}
+                    </button>
+                    {demoModeEnabled ? (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        data-testid="profile-menu-switch-role"
+                        onClick={() => void logoutToLogin("switchRole")}
+                        disabled={pendingProfileAction !== null}
+                        className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {pendingProfileAction === "switchRole" ? "Switching role..." : "Switch role"}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </header>
+
           {focusLayout ? (
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-4 py-2 text-sm leading-6 text-slate-700 shadow-[var(--shadow-xs)] transition-shadow duration-200">
               <span>{focusLayout.label}</span>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  data-testid="focus-layout-toggle-nav"
-                  onClick={() => setIsSidebarCollapsed((value) => !value)}
-                  className="rounded-[var(--radius-sm)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-                >
-                  {isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
-                </button>
                 <Link
                   href={focusLayout.backHref}
                   className="rounded-[var(--radius-sm)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
