@@ -83,7 +83,7 @@ export default async function TeamReviewsPage({
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <PageHeader
         title="My Team"
-        description="Manage direct-report reviews with profile drilldowns and contextual actions."
+        description="Manager cockpit for direct reports. Review tasks stay available as a secondary utility."
         metadata={
           dashboard.cycle ? (
             <span>
@@ -92,6 +92,18 @@ export default async function TeamReviewsPage({
           ) : (
             "No cycle submissions found yet"
           )
+        }
+        action={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <StatusChip tone="info" data-testid="my-team-team-size-pill">
+              Team size {dashboard.kpis.totalDirectReports}
+            </StatusChip>
+            <Link href="/performance/reviews">
+              <Button variant="outline" size="sm" data-testid="my-team-secondary-reviews-link">
+                Open review tasks
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -129,20 +141,19 @@ export default async function TeamReviewsPage({
                   Load cycle
                 </Button>
               </form>
-              <StatusChip tone="info">Team size {dashboard.kpis.totalDirectReports}</StatusChip>
             </CardContent>
           </Card>
 
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <KpiCard label="Total direct reports" value={dashboard.kpis.totalDirectReports} />
             <KpiCard
               label="Awaiting manager review"
               value={dashboard.kpis.awaitingManagerReview}
             />
             <KpiCard label="Self not started" value={dashboard.kpis.selfNotStarted} />
+            <KpiCard label="In progress" value={dashboard.kpis.inProgressManagerReview} />
             <KpiCard
-              label="Overdue manager reviews"
-              value={dashboard.kpis.overdueManagerReview}
+              label="Completed"
+              value={dashboard.kpis.completedManagerReview}
             />
           </section>
 
@@ -243,7 +254,11 @@ export default async function TeamReviewsPage({
                               <div className="flex flex-wrap gap-2">
                                 {row.managerReviewHref ? (
                                   <Link href={row.managerReviewHref}>
-                                    <Button size="sm" variant="outline">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      data-testid={`my-team-open-review-${row.employeeId}`}
+                                    >
                                       Open review
                                     </Button>
                                   </Link>
@@ -252,7 +267,11 @@ export default async function TeamReviewsPage({
                                 )}
                                 {row.packetHref ? (
                                   <Link href={row.packetHref}>
-                                    <Button size="sm" variant="outline">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      data-testid={`my-team-open-packet-${row.employeeId}`}
+                                    >
                                       Open packet
                                     </Button>
                                   </Link>
@@ -309,15 +328,40 @@ export default async function TeamReviewsPage({
                           />
                         </div>
 
+                        <div
+                          className="space-y-2 rounded-[var(--radius-sm)] border border-slate-200 bg-slate-50 p-3"
+                          data-testid="my-team-drawer-mini-insights"
+                        >
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Mini insights
+                          </p>
+                          {createMiniInsights(selectedRow).map((insight) => (
+                            <p key={insight} className="text-sm text-slate-700">
+                              {insight}
+                            </p>
+                          ))}
+                          <RatingDistribution
+                            title="Team final rating context"
+                            total={dashboard.insights.finalRatedCount}
+                            distribution={dashboard.insights.finalDistribution}
+                          />
+                        </div>
+
                         <div className="flex flex-wrap gap-2">
                           {selectedRow.managerReviewHref ? (
                             <Link href={selectedRow.managerReviewHref}>
-                              <Button size="sm">Open review</Button>
+                              <Button size="sm" data-testid="my-team-drawer-open-review">
+                                Open review
+                              </Button>
                             </Link>
                           ) : null}
                           {selectedRow.packetHref ? (
                             <Link href={selectedRow.packetHref}>
-                              <Button size="sm" variant="outline">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                data-testid="my-team-drawer-open-packet"
+                              >
                                 Open packet
                               </Button>
                             </Link>
@@ -475,6 +519,46 @@ function createStatusTimelineEntries(row: {
     title: `${entry.label} review status`,
     description: row.statuses[entry.key] ? statusLabel[row.statuses[entry.key] as ReviewSubmissionStatus] : "No submission assigned",
   }));
+}
+
+function createMiniInsights(row: {
+  statuses: Partial<Record<ReviewRelationship, ReviewSubmissionStatus>>;
+  managerDueAt: Date | null;
+}): string[] {
+  const statuses = Object.values(ReviewRelationship).map(
+    (relationship) => row.statuses[relationship] ?? null,
+  );
+
+  const submittedCount = statuses.filter((status) => status === ReviewSubmissionStatus.SUBMITTED).length;
+  const inProgressCount = statuses.filter((status) => status === ReviewSubmissionStatus.IN_PROGRESS).length;
+  const pendingCount = statuses.filter(
+    (status) =>
+      status === null ||
+      status === ReviewSubmissionStatus.NOT_STARTED ||
+      status === ReviewSubmissionStatus.RETURNED,
+  ).length;
+
+  const insights = [
+    `Direction completion: ${submittedCount}/4 submitted.`,
+    `Active threads: ${inProgressCount} in progress, ${pendingCount} pending.`,
+  ];
+
+  const managerStatus = row.statuses[ReviewRelationship.MANAGER] ?? null;
+  if (
+    row.managerDueAt &&
+    row.managerDueAt.getTime() < Date.now() &&
+    managerStatus !== ReviewSubmissionStatus.SUBMITTED
+  ) {
+    insights.push("Top gap: manager review is overdue.");
+  } else if (managerStatus !== ReviewSubmissionStatus.SUBMITTED) {
+    insights.push("Top gap: manager review still requires completion.");
+  } else if ((row.statuses[ReviewRelationship.SELF] ?? null) !== ReviewSubmissionStatus.SUBMITTED) {
+    insights.push("Top gap: self review follow-through remains open.");
+  } else {
+    insights.push("Top gap: peer/upward feedback still drives calibration quality.");
+  }
+
+  return insights;
 }
 
 function RatingDistribution({

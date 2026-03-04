@@ -26,10 +26,11 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
       };
     case UserRole.MANAGER:
       return {
-        title: "Focus on reviews and coaching workflows",
+        title: "Start from My Team and move into review tasks",
         description:
-          "Complete manager reviews, align calibration placements, and track improvement plans.",
+          "Manage direct reports from My Team first, then complete review tasks, calibration, and coaching follow-through.",
         links: [
+          { label: "Open My Team", href: "/performance/team-reviews" },
           { label: "Open review tasks", href: "/performance/reviews" },
           { label: "Open calibration", href: "/performance/calibration/calibration_session_seed_1" },
           { label: "Open improvement plans", href: "/performance/improvement-plans" },
