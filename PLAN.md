@@ -1708,32 +1708,32 @@ Feedback observed:
 
 ## Phase 8 — Playwright UX audit loop (CDO mode)
 
-- [ ] Add `npm run test:e2e:ux`:
-  - [ ] Navigates core routes for each role
-  - [ ] Captures screenshots
-  - [ ] Checks:
-    - [ ] Only one active nav item
-    - [ ] No overflow/clipping
-    - [ ] Key headers present
-    - [ ] Drawer open/close works
-  - [ ] Outputs `docs/ux/UX_AUDIT_REPORT.md` or CI artifacts
-- [ ] Integrate as nightly or optional PR step until stable
+- [x] Add `npm run test:e2e:ux`:
+  - [x] Navigates core routes for each role
+  - [x] Captures screenshots
+  - [x] Checks:
+    - [x] Only one active nav item
+    - [x] No overflow/clipping
+    - [x] Key headers present
+    - [x] Drawer open/close works
+  - [x] Outputs `docs/ux/UX_AUDIT_REPORT.md` or CI artifacts
+- [x] Integrate as nightly or optional PR step until stable
 
 #### Acceptance criteria
-- [ ] Repeatable UX audit artifacts exist
-- [ ] Prevents regression of nav/layout issues going forward
+- [x] Repeatable UX audit artifacts exist
+- [x] Prevents regression of nav/layout issues going forward
 
 ---
 
 ## Definition of Done (Milestone 9)
 
-- [ ] All phase checkboxes completed and updated in `PLAN.md`
-- [ ] `lint/typecheck/test/build/test:e2e` pass for each phase PR
-- [ ] UX issues resolved:
-  - [ ] Nav active state correct
-  - [ ] Deep-work screens not cramped
-  - [ ] Evidence panel readable
-  - [ ] Manager “My Team” is primary and useful
-  - [ ] Reporting exports + heatmaps work
-  - [ ] Typography/spacing premium and consistent
-  - [ ] Playwright UX audit loop added
+- [x] All phase checkboxes completed and updated in `PLAN.md`
+- [x] `lint/typecheck/test/build/test:e2e` pass for each phase PR
+- [x] UX issues resolved:
+  - [x] Nav active state correct
+  - [x] Deep-work screens not cramped
+  - [x] Evidence panel readable
+  - [x] Manager “My Team” is primary and useful
+  - [x] Reporting exports + heatmaps work
+  - [x] Typography/spacing premium and consistent
+  - [x] Playwright UX audit loop added
