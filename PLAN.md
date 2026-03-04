@@ -1204,7 +1204,7 @@ We will follow proven patterns:
 
 ## Milestone 8 — Premium UX Hardening + Content Audit + Reporting Polish
 
-**Status:** Not started  
+**Status:** Completed (Phases 1–7 via PRs #30–#36)  
 **Objective:** Resolve UX regressions and premium-ize the experience: fix nav selection bugs, reclaim wasted space on work screens, simplify manager workflow into “My Team”, redesign evidence panel for readability, remove/replace broken review-task nav, improve reporting exports + add meaningful chart types, and standardize typography/spacing. Add a Playwright-driven UX audit loop to prevent regressions.
 
 ### Why this milestone
@@ -1417,35 +1417,37 @@ Feedback observed:
 ## Phase 7 — Playwright “UX Audit” loop (CDO mode)
 
 ### 7A) Add a UX audit suite (non-blocking at first)
-- [ ] Add `npm run test:e2e:ux` that:
-  - [ ] navigates core routes for each role
-  - [ ] captures screenshots
-  - [ ] checks for:
+- [x] Add `npm run test:e2e:ux` that:
+  - [x] navigates core routes for each role
+  - [x] captures screenshots
+  - [x] checks for:
     - multiple active nav items
     - layout overflow/clipping
     - missing page headers
     - broken empty states
-  - [ ] outputs `/docs/ux/UX_AUDIT_REPORT.md` or uploads artifacts in CI
+  - [x] outputs `/docs/ux/UX_AUDIT_REPORT.md` or uploads artifacts in CI
 
 ### 7B) Integrate into CI (optional)
-- [ ] Run on demand or nightly until stable
-- [ ] Once stable, include as PR gate for UX-related PRs
+- [x] Run on demand or nightly until stable
+- [x] Once stable, include as PR gate for UX-related PRs
 
 **Acceptance criteria**
-- [ ] UX audit suite provides repeatable feedback and artifacts
-- [ ] Prevents regression of nav/layout issues going forward
+- [x] UX audit suite provides repeatable feedback and artifacts
+- [x] Prevents regression of nav/layout issues going forward
+- Completed in PR #36.
 
 ---
 
 ## Definition of Done (Milestone 8)
-- [ ] All phases complete and checked off in PLAN.md
-- [ ] `lint/typecheck/test/build/test:e2e` pass
-- [ ] Key UI complaints addressed:
-  - [ ] single active nav item
-  - [ ] less wasted space on write review
-  - [ ] evidence panel readable
-  - [ ] broken phase nav removed/replaced
-  - [ ] manager “My Team” works with totals + drilldown
-  - [ ] reporting PNG export fixed + heatmap added
-  - [ ] typography/premium feel improved
-- [ ] Playwright UX audit loop added and usable
+- [x] All phases complete and checked off in PLAN.md
+- [x] `lint/typecheck/test/build/test:e2e` pass
+- [x] Key UI complaints addressed:
+  - [x] single active nav item
+  - [x] less wasted space on write review
+  - [x] evidence panel readable
+  - [x] broken phase nav removed/replaced
+  - [x] manager “My Team” works with totals + drilldown
+  - [x] reporting PNG export fixed + heatmap added
+  - [x] typography/premium feel improved
+- [x] Playwright UX audit loop added and usable
+- Milestone 8 completed in PR #36.
