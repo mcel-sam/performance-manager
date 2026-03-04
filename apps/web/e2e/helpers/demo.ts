@@ -25,3 +25,9 @@ export async function loginAsHrAdmin(page: Page) {
   await page.getByTestId("login-role-hr-admin").click();
   await expect(page).toHaveURL(/\/$/);
 }
+
+export async function loginAsCalibrator(page: Page) {
+  await page.goto("/login");
+  await page.getByTestId("login-role-calibrator").click();
+  await expect(page).toHaveURL(/\/$/);
+}
