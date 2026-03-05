@@ -32,7 +32,7 @@ export async function resolveRoleNavOptions(
     includeImprovementPlans,
     includeTeamReviews: context.role === UserRole.MANAGER,
     includeUserManagement: context.role === UserRole.HR_ADMIN,
-    includePackets: context.role === UserRole.MANAGER || context.role === UserRole.CALIBRATOR,
+    includePackets: false,
   };
 }
 

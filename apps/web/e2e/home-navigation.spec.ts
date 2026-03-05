@@ -14,10 +14,12 @@ test("home loads and primary navigation opens reviews", async ({ page }) => {
       name: "Performance workflows by role",
     }),
   ).toBeVisible();
+  await expect(page.getByTestId("home-getting-started-link-0")).toBeVisible();
+  await expect(page.getByTestId("app-shell-sidebar")).toHaveAttribute("data-collapsed", "true");
+
+  await openMenu(page);
   await expect(page.getByTestId("nav-link-help")).toBeVisible();
   await expect(page.getByTestId("nav-link-reviews")).toBeVisible();
-  await expect(page.getByTestId("home-getting-started-link-0")).toBeVisible();
-
   await page.getByTestId("nav-link-reviews").click();
   await expect(page).toHaveURL(/\/performance\/reviews$/);
   await expect(
@@ -30,6 +32,7 @@ test("home loads and primary navigation opens reviews", async ({ page }) => {
 test("employee navigation hides admin and calibration modules", async ({ page }) => {
   await loginAsEmployee(page);
 
+  await openMenu(page);
   await expect(page.getByTestId("nav-link-home")).toBeVisible();
   await expect(page.getByTestId("nav-link-reviews")).toBeVisible();
   await expect(page.getByTestId("nav-link-help")).toBeVisible();
@@ -42,6 +45,7 @@ test("employee navigation hides admin and calibration modules", async ({ page })
 test("manager team reviews page loads with direct-report rows", async ({ page }) => {
   await loginAsManager(page);
 
+  await openMenu(page);
   await page.getByTestId("nav-link-team-reviews").click();
   await expect(page).toHaveURL(/\/performance\/team-reviews$/);
   await expect(page.getByRole("heading", { name: "My Team" })).toBeVisible();
@@ -67,9 +71,53 @@ test("packet route keeps one active nav item and enables focus layout collapse",
 
   await expect(page.getByTestId("app-shell-sidebar")).toHaveAttribute("data-collapsed", "true");
   await expect(page.locator('a[aria-current="page"]')).toHaveCount(1);
-  await expect(page.getByTestId("nav-link-packets")).toHaveAttribute("aria-current", "page");
-  await expect(page.getByTestId("nav-link-reviews")).not.toHaveAttribute("aria-current", "page");
 
-  await page.getByTestId("focus-layout-toggle-nav").click();
+  await page.getByTestId("app-shell-sidebar-toggle").click();
   await expect(page.getByTestId("app-shell-sidebar")).toHaveAttribute("data-collapsed", "false");
+  await expect(page.getByTestId("nav-link-packets")).toHaveCount(0);
+  await expect(page.getByTestId("nav-link-reviews")).toHaveAttribute("aria-current", "page");
 });
+
+test("sidebar toggle keeps header position stable and shows tooltips when collapsed", async ({
+  page,
+}) => {
+  await loginAsManager(page);
+
+  const sidebar = page.getByTestId("app-shell-sidebar");
+  const toggle = page.getByTestId("app-shell-sidebar-toggle");
+  const header = page.getByTestId("app-shell-header");
+
+  await expect(sidebar).toHaveAttribute("data-collapsed", "true");
+  const collapsedBox = await header.boundingBox();
+  expect(collapsedBox).not.toBeNull();
+  const collapsedX = collapsedBox?.x ?? 0;
+
+  await toggle.click();
+  await expect(sidebar).toHaveAttribute("data-collapsed", "false");
+  await page.waitForTimeout(350);
+  const expandedBox = await header.boundingBox();
+  expect(expandedBox).not.toBeNull();
+  const expandedX = expandedBox?.x ?? 0;
+  expect(Math.abs(expandedX - collapsedX)).toBeGreaterThanOrEqual(180);
+  expect(Math.abs(expandedX - collapsedX)).toBeLessThanOrEqual(196);
+
+  await toggle.click();
+  await expect(sidebar).toHaveAttribute("data-collapsed", "true");
+  await page.waitForTimeout(350);
+  const collapsedAgainBox = await header.boundingBox();
+  expect(collapsedAgainBox).not.toBeNull();
+  const collapsedAgainX = collapsedAgainBox?.x ?? 0;
+  expect(Math.abs(collapsedAgainX - collapsedX)).toBeLessThanOrEqual(4);
+
+  const reviewsNavLink = page.getByTestId("nav-link-reviews");
+  await reviewsNavLink.hover();
+  await expect(page.getByTestId("app-shell-sidebar-tooltip-reviews")).toBeVisible();
+});
+
+async function openMenu(page: import("@playwright/test").Page) {
+  const sidebar = page.getByTestId("app-shell-sidebar");
+  if ((await sidebar.getAttribute("data-collapsed")) === "true") {
+    await page.getByTestId("app-shell-sidebar-toggle").click();
+  }
+  await expect(page.getByTestId("app-shell-sidebar")).toHaveAttribute("data-collapsed", "false");
+}

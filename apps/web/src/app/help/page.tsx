@@ -29,9 +29,9 @@ const employeeLinks: HelpLinkItem[] = [
     href: "/performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_self_1",
   },
   {
-    label: "View packet",
-    description: "Review packet visibility after release.",
-    href: "/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1",
+    label: "Track progress",
+    description: "Check submission progress and status updates.",
+    href: "/performance/reviews",
   },
 ];
 

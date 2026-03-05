@@ -27,7 +27,7 @@ describe("resolveRoleNavOptions", () => {
     expect(options.canAccessCalibration).toBe(true);
     expect(options.includeTeamReviews).toBe(true);
     expect(options.includeImprovementPlans).toBe(true);
-    expect(options.includePackets).toBe(true);
+    expect(options.includePackets).toBe(false);
   });
 
   it("hides calibration for managers without session participation", async () => {

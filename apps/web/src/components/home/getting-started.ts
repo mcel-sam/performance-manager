@@ -17,7 +17,7 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
       return {
         title: "Start with cycle and calibration setup",
         description:
-          "Create a review cycle, generate packets, and prepare calibration sessions before launch.",
+          "Create a review cycle, generate assignments, and prepare calibration sessions before launch.",
         links: [
           { label: "Manage review cycles", href: "/admin/performance/review-cycles" },
           { label: "Manage calibration sessions", href: "/admin/performance/calibration" },

@@ -308,7 +308,7 @@ export default function CalibrationSessionView({
         label="What finalized/locked means"
         buttonLabel="Toggle finalized and locked guidance"
       >
-        Finalizing captures an immutable snapshot and locks placement controls. Packet links remain
+        Finalizing captures an immutable snapshot and locks placement controls. Context links remain
         viewable after lock.
       </HelpHint>
 
@@ -358,7 +358,7 @@ export default function CalibrationSessionView({
               <CardHeader>
                 <SectionHeader
                   title="9-box matrix"
-                  description="Select a cohort member to view packet context and adjust placement."
+                  description="Select a cohort member to view context and adjust placement."
                 />
               </CardHeader>
               <CardContent className="pt-0">
@@ -438,7 +438,7 @@ export default function CalibrationSessionView({
             </Card>
           </section>
 
-          <Drawer title="Participant Context" description="Open packet context and adjust placement.">
+          <Drawer title="Participant Context" description="Review participant context and adjust placement.">
             {!selectedPlacement ? (
               <EmptyState
                 title="No participant selected"
@@ -470,19 +470,13 @@ export default function CalibrationSessionView({
                   <div className="space-y-4">
                     <Card>
                       <CardHeader className="space-y-1">
-                        <CardTitle className="text-base">Packet summary</CardTitle>
+                        <CardTitle className="text-base">Submission summary</CardTitle>
                         <CardDescription>
                           {selectedPlacement.packetSummary.submittedCount} of{" "}
                           {selectedPlacement.packetSummary.totalSubmissions} submissions completed.
                         </CardDescription>
                       </CardHeader>
-                      <CardContent className="pt-0">
-                        <Link href={`/performance/reviews/${session.cycleId}/packet/${selectedPlacement.employeeId}`}>
-                          <Button variant="outline" size="sm">
-                            Open review packet
-                          </Button>
-                        </Link>
-                      </CardContent>
+                      <CardContent className="pt-0" />
                     </Card>
 
                     <Card>

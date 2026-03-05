@@ -265,17 +265,6 @@ export default async function TeamReviewsPage({
                                 ) : (
                                   <Badge variant="info">No manager task</Badge>
                                 )}
-                                {row.packetHref ? (
-                                  <Link href={row.packetHref}>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      data-testid={`my-team-open-packet-${row.employeeId}`}
-                                    >
-                                      Open packet
-                                    </Button>
-                                  </Link>
-                                ) : null}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -355,17 +344,6 @@ export default async function TeamReviewsPage({
                               </Button>
                             </Link>
                           ) : null}
-                          {selectedRow.packetHref ? (
-                            <Link href={selectedRow.packetHref}>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                data-testid="my-team-drawer-open-packet"
-                              >
-                                Open packet
-                              </Button>
-                            </Link>
-                          ) : null}
                         </div>
                       </div>
                     ),
@@ -397,7 +375,7 @@ export default async function TeamReviewsPage({
                           events are expanded.
                         </p>
                         <p className="text-xs text-slate-500">
-                          Current surface includes profile status snapshots and review/packet actions.
+                          Current surface includes profile status snapshots and review actions.
                         </p>
                       </div>
                     ),
