@@ -50,7 +50,6 @@ export default async function WriteReviewPage({ params }: WriteReviewPageProps) 
           subjectName: data.submission.subjectName,
           reviewerName: data.submission.reviewerName,
           relationship: relationshipLabel[data.submission.relationship],
-          packetHref: `/performance/reviews/${cycleId}/packet/${data.submission.subjectEmployeeId}`,
         }}
       />
     </div>

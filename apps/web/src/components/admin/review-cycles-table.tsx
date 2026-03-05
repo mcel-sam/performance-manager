@@ -81,7 +81,11 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
         throw new Error(payload?.message ?? "Unable to generate cycle artifacts");
       }
 
-      setMessage(`Generated ${payload.packetCount ?? 0} packets and ${payload.submissionCount ?? 0} submissions.`);
+      setMessage(
+        `Generated ${payload.submissionCount ?? 0} submissions for ${
+          payload.packetCount ?? 0
+        } review bundles.`,
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to generate cycle artifacts");
     } finally {

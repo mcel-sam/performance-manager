@@ -579,12 +579,6 @@ export function ReportingDashboard({
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-2">
-                          <Link
-                            href={row.links.packet}
-                            className="text-xs font-medium text-slate-700 underline underline-offset-2"
-                          >
-                            Packet
-                          </Link>
                           {row.links.calibrationSession ? (
                             <Link
                               href={row.links.calibrationSession}
@@ -600,6 +594,9 @@ export function ReportingDashboard({
                             >
                               Plan
                             </Link>
+                          ) : null}
+                          {!row.links.calibrationSession && !row.links.improvementPlan ? (
+                            <span className="text-xs text-slate-400">-</span>
                           ) : null}
                         </div>
                       </TableCell>
@@ -1053,7 +1050,7 @@ function ResultsTab({
         <CardHeader>
           <CardTitle>Source breakdown</CardTitle>
           <CardDescription>
-            Final vs scorecard baseline source counts across included packets.
+            Final vs scorecard baseline source counts across included reviews.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-slate-700">
@@ -1132,7 +1129,8 @@ function CompetenciesTab({
             <div>
               <CardTitle>Competency summary</CardTitle>
               <CardDescription>
-                Heatmap intensity represents average observed ratings by department.
+                Heatmap intensity represents average observed ratings by department. Hover a cell
+                for exact values.
               </CardDescription>
             </div>
             <a
@@ -1180,11 +1178,16 @@ function CompetenciesTab({
                               dimensionKey: cell.dimensionKey,
                               page: "1",
                             })}
-                            className="block rounded-[var(--radius-sm)] border border-slate-200 px-2 py-1 text-center text-xs text-slate-800 transition hover:border-slate-400"
+                            className="group relative block rounded-[var(--radius-sm)] border border-slate-200 p-1.5 transition hover:border-slate-400"
                             style={heatmapCellStyle(cell.averageRating)}
                             data-testid={`reporting-competency-cell-${cell.dimensionKey}`}
+                            aria-label={`${row.department} ${humanizeEnumValue(cell.dimensionKey)} average ${formatNumber(cell.averageRating)} from ${cell.observedCount} observations`}
                           >
-                            {formatNumber(cell.averageRating)}
+                            <span className="block h-7 rounded-[var(--radius-sm)] border border-white/65 bg-white/20" />
+                            <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 w-max -translate-x-1/2 rounded-[var(--radius-sm)] border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 opacity-0 shadow-[var(--shadow-sm)] transition-opacity duration-150 group-hover:opacity-100">
+                              {humanizeEnumValue(cell.dimensionKey)} · {row.department}:{" "}
+                              {formatNumber(cell.averageRating)} ({cell.observedCount} obs)
+                            </span>
                           </Link>
                         </TableCell>
                       ))}
@@ -1629,20 +1632,26 @@ function formatNumber(value: number | null): string {
   return value.toFixed(2);
 }
 
-function heatmapCellStyle(value: number | null): { backgroundColor: string } {
+function heatmapCellStyle(value: number | null): { background: string } {
   if (typeof value !== "number") {
-    return { backgroundColor: "#f8fafc" };
+    return { background: "linear-gradient(135deg, #f8fafc, #f1f5f9)" };
   }
 
   if (value < 2.5) {
-    return { backgroundColor: reportingChartTheme.competency.low };
+    return {
+      background: `linear-gradient(135deg, ${reportingChartTheme.competency.low}, #fca5a5)`,
+    };
   }
 
   if (value < 3.75) {
-    return { backgroundColor: reportingChartTheme.competency.medium };
+    return {
+      background: `linear-gradient(135deg, ${reportingChartTheme.competency.medium}, #fcd34d)`,
+    };
   }
 
-  return { backgroundColor: reportingChartTheme.competency.high };
+  return {
+    background: `linear-gradient(135deg, ${reportingChartTheme.competency.high}, #4ade80)`,
+  };
 }
 
 function toQueryString(values: Record<string, string | undefined>): string {
@@ -1663,7 +1672,7 @@ function buildCompetencyHeatmapRows(
   competencyOrder: string[],
 ): Array<{
   department: string;
-  cells: Array<{ dimensionKey: string; averageRating: number | null }>;
+  cells: Array<{ dimensionKey: string; averageRating: number | null; observedCount: number }>;
 }> {
   const departments = new Set<string>();
   const byDimension = new Map(
@@ -1691,6 +1700,7 @@ function buildCompetencyHeatmapRows(
         return {
           dimensionKey,
           averageRating: departmentCell?.averageRating ?? null,
+          observedCount: departmentCell?.observedCount ?? 0,
         };
       }),
     }));

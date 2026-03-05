@@ -1,7 +1,6 @@
 "use client";
 
 import { EvidenceType, ReviewQuestionType, ReviewSubmissionStatus } from "@prisma/client";
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { SectionHeader } from "@/components/layout/section-header";
@@ -53,7 +52,6 @@ interface WriteReviewFormProps {
     subjectName: string;
     reviewerName: string;
     relationship: string;
-    packetHref: string;
   };
 }
 
@@ -644,7 +642,7 @@ export default function WriteReviewForm({
             }
           />
           <HelpHint label="Submit guidance" buttonLabel="Toggle submit guidance">
-            Submit is final for this phase. After submit, answers become read-only and packet
+            Submit is final for this phase. After submit, answers become read-only and any follow-up
             visibility follows cycle policy.
           </HelpHint>
         </CardHeader>
@@ -1035,11 +1033,6 @@ export default function WriteReviewForm({
                     <dd>{submissionContext.relationship}</dd>
                   </div>
                 </dl>
-                <Link href={submissionContext.packetHref}>
-                  <Button variant="outline" size="sm">
-                    Open packet view
-                  </Button>
-                </Link>
               </div>
             ) : null}
           </CardContent>
