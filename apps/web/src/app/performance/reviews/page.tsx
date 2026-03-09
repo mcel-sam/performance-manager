@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ReviewRelationship, ReviewSubmissionStatus } from "@prisma/client";
 
-import { AvatarsStack } from "@/components/ui/avatars-stack";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FilterBar } from "@/components/ui/filter-bar";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { RightDrawer } from "@/components/ui/right-drawer";
-import { SegmentedProgress } from "@/components/ui/segmented-progress";
 import { Select } from "@/components/ui/select";
 import { getReviewStatusTone, StatusChip } from "@/components/ui/status-chip";
 import {
@@ -54,13 +52,6 @@ const statusLabel = {
   RETURNED: "Returned",
 } as const;
 
-const statusProgressValue: Record<StatusFilter, number> = {
-  NOT_STARTED: 5,
-  IN_PROGRESS: 45,
-  SUBMITTED: 100,
-  RETURNED: 35,
-};
-
 const statusFilterOptions: StatusFilter[] = ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED", "RETURNED"];
 const relationshipFilterOptions: RelationshipFilter[] = ["SELF", "MANAGER", "PEER", "UPWARD"];
 
@@ -84,12 +75,12 @@ export default async function PerformanceReviewsPage({
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 text-slate-900">
       <PageHeader
         title="Performance Reviews"
-        description="Track review goals, apply filters, and open task details in the side panel."
+        description="Review the submissions assigned to you, filter the queue, and continue the next task that needs attention."
       />
 
       <FilterBar
         method="get"
-        description="Use search + filters to quickly narrow the task queue. Select a row to load richer context in the right drawer."
+        description="Search by subject or cycle, then filter by status or relationship to narrow the queue."
         chips={
           filterChips.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2" data-testid="reviews-filter-chips">
@@ -210,11 +201,11 @@ export default async function PerformanceReviewsPage({
         />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <Card aria-label="Assigned review tasks" className="overflow-hidden">
+          <Card aria-label="My review tasks" className="overflow-hidden">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-lg">Assigned goals-style task queue</CardTitle>
+              <CardTitle className="text-lg">My review tasks</CardTitle>
               <CardDescription>
-                Click a subject row to load details in the panel, then launch the full review when ready.
+                Assigned submissions stay in one queue. Open a row for task details or launch the review directly.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -222,18 +213,16 @@ export default async function PerformanceReviewsPage({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Task</TableHead>
-                      <TableHead>Priority</TableHead>
-                      <TableHead>Owner</TableHead>
+                      <TableHead>Cycle</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Relationship</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Progress</TableHead>
+                      <TableHead>Due</TableHead>
                       <TableHead>Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredTasks.map((task) => {
-                      const progressValue = statusProgressValue[task.status];
-                      const priority = getTaskPriority(task.cycleEndDate);
                       const isSelected = task.id === selectedTask?.id;
                       return (
                         <TableRow
@@ -245,6 +234,9 @@ export default async function PerformanceReviewsPage({
                               : "transition-colors hover:bg-slate-50"
                           }
                         >
+                          <TableCell className="font-semibold text-slate-900">
+                            {task.cycleName}
+                          </TableCell>
                           <TableCell>
                             <Link
                               href={toReviewsHref({
@@ -258,25 +250,13 @@ export default async function PerformanceReviewsPage({
                               className="inline-flex flex-col rounded-[var(--radius-sm)] px-2 py-1 text-left transition hover:bg-white"
                             >
                               <span className="text-sm font-semibold text-slate-900">{task.subjectName}</span>
-                              <span className="text-xs text-slate-500">
-                                {task.cycleName} • Due {formatDate(task.cycleEndDate)} •{" "}
-                                {relationshipLabel[task.relationship]}
-                              </span>
+                              <span className="text-xs text-slate-500">Open details</span>
                             </Link>
                           </TableCell>
                           <TableCell>
-                            <span className={priorityClassName(priority)}>
-                              {priority}
+                            <span className="text-sm text-slate-700">
+                              {relationshipLabel[task.relationship]}
                             </span>
-                          </TableCell>
-                          <TableCell>
-                            <AvatarsStack
-                              items={[
-                                { id: `${task.id}-subject`, label: task.subjectName },
-                                { id: `${task.id}-reviewer`, label: "You" },
-                              ]}
-                              maxVisible={2}
-                            />
                           </TableCell>
                           <TableCell>
                             <StatusChip tone={getReviewStatusTone(task.status)}>
@@ -284,15 +264,9 @@ export default async function PerformanceReviewsPage({
                             </StatusChip>
                           </TableCell>
                           <TableCell>
-                            <div className="min-w-[110px] space-y-1">
-                              <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                                <div
-                                  className="h-full rounded-full bg-gradient-to-r from-teal-400 via-emerald-400 to-green-500"
-                                  style={{ width: `${progressValue}%` }}
-                                />
-                              </div>
-                              <p className="text-xs text-slate-600">{progressValue}%</p>
-                            </div>
+                            <span className="text-sm text-slate-700">
+                              {formatDate(task.cycleEndDate)}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <Link href={`/performance/reviews/${task.cycleId}/write/${task.id}`}>
@@ -311,8 +285,8 @@ export default async function PerformanceReviewsPage({
           {selectedTask ? (
             <RightDrawer
               testId="reviews-task-drawer"
-              title="Objective"
-              subtitle={`${selectedTask.subjectName} · ${selectedTask.cycleName}`}
+              title="Task details"
+              subtitle={`${selectedTask.subjectName} · ${relationshipLabel[selectedTask.relationship]}`}
               closeHref={toReviewsHref({
                 query: filters.query,
                 status: filters.status,
@@ -332,67 +306,33 @@ export default async function PerformanceReviewsPage({
                     <div className="space-y-4 text-sm text-slate-700">
                       <div className="space-y-2 rounded-[var(--radius-md)] border border-violet-200 bg-gradient-to-br from-white via-violet-50/45 to-cyan-50/45 p-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                          Review goal
+                          Task summary
                         </p>
                         <p className="text-xl font-semibold leading-tight text-slate-900">
-                          Complete review for {selectedTask.subjectName}
+                          {relationshipLabel[selectedTask.relationship]} review for {selectedTask.subjectName}
                         </p>
                         <p className="text-xs text-slate-600">
-                          {relationshipLabel[selectedTask.relationship]} review in{" "}
                           {selectedTask.cycleName}
                         </p>
                       </div>
 
                       <div className="space-y-2 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
-                        <div className="flex items-center justify-between text-xs text-slate-500">
-                          <span>Progress</span>
-                          <span>{statusProgressValue[selectedTask.status]}%</span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500"
-                            style={{ width: `${statusProgressValue[selectedTask.status]}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-slate-500">
-                          <span>Start: 0%</span>
-                          <span>Target: 100%</span>
-                        </div>
-                      </div>
-
-                      <SegmentedProgress
-                        segments={[
-                          {
-                            key: "completed",
-                            label: "Completed",
-                            value: selectedTask.status === "SUBMITTED" ? 1 : 0,
-                            color: "#34d399",
-                          },
-                          {
-                            key: "active",
-                            label: "Active",
-                            value: selectedTask.status === "IN_PROGRESS" ? 1 : 0,
-                            color: "#38bdf8",
-                          },
-                          {
-                            key: "remaining",
-                            label: "Remaining",
-                            value: selectedTask.status === "NOT_STARTED" || selectedTask.status === "RETURNED" ? 1 : 0,
-                            color: "#e2e8f0",
-                          },
-                        ]}
-                        className="space-y-1"
-                      />
-
-                      <div className="space-y-1 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3 text-xs">
-                        <p>
-                          <span className="font-semibold text-slate-900">Due:</span>{" "}
-                          {formatDate(selectedTask.cycleEndDate)}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-slate-900">Cycle status:</span>{" "}
-                          {selectedTask.cycleStatus}
-                        </p>
+                        <TaskDrawerDetailRow
+                          label="Relationship"
+                          value={relationshipLabel[selectedTask.relationship]}
+                        />
+                        <TaskDrawerDetailRow
+                          label="Status"
+                          value={statusLabel[selectedTask.status]}
+                        />
+                        <TaskDrawerDetailRow
+                          label="Due"
+                          value={formatDate(selectedTask.cycleEndDate)}
+                        />
+                        <TaskDrawerDetailRow
+                          label="Cycle status"
+                          value={selectedTask.cycleStatus}
+                        />
                       </div>
 
                       <Link href={`/performance/reviews/${selectedTask.cycleId}/write/${selectedTask.id}`}>
@@ -445,9 +385,9 @@ export default async function PerformanceReviewsPage({
           ) : (
             <Card data-testid="reviews-task-drawer-empty" className="border-violet-100 bg-white/90">
               <CardHeader className="space-y-2">
-                <CardTitle className="text-lg">Task details panel</CardTitle>
+                <CardTitle className="text-lg">Task details</CardTitle>
                 <CardDescription>
-                  Pick a task row from the list to open the drawer with objective progress and timeline.
+                  Select a task from the queue to review its status, due date, and next action.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -608,33 +548,6 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(value));
 }
 
-function getTaskPriority(cycleEndDate: string): "P1" | "P2" | "P3" {
-  const dueInMs = new Date(cycleEndDate).getTime() - Date.now();
-  const day = 24 * 60 * 60 * 1000;
-
-  if (dueInMs <= day * 5) {
-    return "P1";
-  }
-
-  if (dueInMs <= day * 14) {
-    return "P2";
-  }
-
-  return "P3";
-}
-
-function priorityClassName(priority: "P1" | "P2" | "P3"): string {
-  if (priority === "P1") {
-    return "inline-flex rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700";
-  }
-
-  if (priority === "P2") {
-    return "inline-flex rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700";
-  }
-
-  return "inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700";
-}
-
 function buildTaskTimeline(task: ReviewTaskListItem): Array<{ label: string; time: string }> {
   const entries: Array<{ label: string; time: string }> = [
     {
@@ -665,4 +578,21 @@ function buildTaskTimeline(task: ReviewTaskListItem): Array<{ label: string; tim
   }
 
   return entries;
+}
+
+function TaskDrawerDetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] border border-slate-200 bg-white px-3 py-2">
+      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+        {label}
+      </span>
+      <span className="text-sm font-medium text-slate-900">{value}</span>
+    </div>
+  );
 }

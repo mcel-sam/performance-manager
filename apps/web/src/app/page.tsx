@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { ReviewSubmissionStatus, UserRole } from "@prisma/client";
+import { ReviewRelationship, ReviewSubmissionStatus, UserRole } from "@prisma/client";
 
 import {
   getGettingStartedContent,
@@ -30,6 +30,17 @@ interface SnapshotRow {
   value: string;
 }
 
+interface HomeSummaryContent {
+  title: string;
+  rows: SnapshotRow[];
+}
+
+const actionableHomeTaskStatuses = new Set<ReviewSubmissionStatus>([
+  ReviewSubmissionStatus.NOT_STARTED,
+  ReviewSubmissionStatus.IN_PROGRESS,
+  ReviewSubmissionStatus.RETURNED,
+]);
+
 export default async function HomePage() {
   const context = await getDevRequestContext();
   const gettingStarted = getGettingStartedContent(context.role);
@@ -58,7 +69,7 @@ export default async function HomePage() {
 
   const secondaryTab = getSecondaryTab(context.role);
   const taskRows = getHomeTaskRows(tasks, gettingStarted.links);
-  const snapshotRows = getSnapshotRows({
+  const summaryContent = getHomeSummaryContent({
     role: context.role,
     managerSnapshot,
     hrSnapshot,
@@ -105,7 +116,7 @@ export default async function HomePage() {
         <div className="grid gap-4 p-5 sm:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] sm:p-6">
           <section className="rounded-[var(--radius-lg)] border border-slate-200 bg-slate-50/55 p-4 sm:p-5">
             <h3 className="text-sm font-semibold uppercase tracking-[0.11em] text-slate-600">
-              Tasks
+              {getHomeTaskSectionTitle(context.role)}
             </h3>
             <div className="mt-3 space-y-2.5">
               {taskRows.map((task, index) => (
@@ -130,13 +141,19 @@ export default async function HomePage() {
             </div>
           </section>
 
-          <aside className="rounded-[var(--radius-lg)] border border-slate-200 bg-white p-4 sm:p-5">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.11em] text-slate-600">
-              Org chart
+          <aside
+            data-testid="home-summary-panel"
+            className="rounded-[var(--radius-lg)] border border-slate-200 bg-white p-4 sm:p-5"
+          >
+            <h3
+              data-testid="home-summary-title"
+              className="text-sm font-semibold uppercase tracking-[0.11em] text-slate-600"
+            >
+              {summaryContent.title}
             </h3>
 
             <div className="mt-3 space-y-2.5">
-              {snapshotRows.map((row) => (
+              {summaryContent.rows.map((row) => (
                 <div
                   key={row.label}
                   className="flex items-center justify-between rounded-[var(--radius-sm)] border border-slate-200 bg-slate-50 px-3 py-2"
@@ -220,15 +237,29 @@ function getSecondaryTab(role: UserRole): { label: string; href: string } {
   }
 }
 
+function getHomeTaskSectionTitle(role: UserRole): string {
+  switch (role) {
+    case UserRole.EMPLOYEE:
+    case UserRole.MANAGER:
+      return "Review tasks";
+    default:
+      return "Tasks";
+  }
+}
+
 function getHomeTaskRows(
   tasks: ReviewTaskListItem[],
   links: GettingStartedLink[],
 ): HomeTaskRow[] {
-  if (tasks.length > 0) {
-    return tasks.slice(0, 4).map((task) => ({
+  const actionableTasks = tasks
+    .filter((task) => actionableHomeTaskStatuses.has(task.status))
+    .sort((left, right) => compareHomeTasks(left, right));
+
+  if (actionableTasks.length > 0) {
+    return actionableTasks.slice(0, 4).map((task) => ({
       href: `/performance/reviews/${task.cycleId}/write/${task.id}`,
       label: task.subjectName,
-      detail: `${task.cycleName} · ${formatSubmissionStatus(task.status)} · due ${formatShortDate(task.cycleEndDate)}`,
+      detail: `${formatRelationshipLabel(task.relationship)} review · ${task.cycleName} · ${formatSubmissionStatus(task.status)} · due ${formatShortDate(task.cycleEndDate)}`,
     }));
   }
 
@@ -239,79 +270,135 @@ function getHomeTaskRows(
   }));
 }
 
-function getSnapshotRows(input: {
+function getHomeSummaryContent(input: {
   role: UserRole;
   managerSnapshot: Awaited<ReturnType<typeof getManagerHomeSnapshot>> | null;
   hrSnapshot: Awaited<ReturnType<typeof getHrHomeSnapshot>> | null;
   dueSoonReviewCount: number;
   draftTask: ReviewTaskListItem | undefined;
   tasks: ReviewTaskListItem[];
-}): SnapshotRow[] {
+}): HomeSummaryContent {
   const submittedCount = input.tasks.filter(
     (task) => task.status === ReviewSubmissionStatus.SUBMITTED,
   ).length;
 
   switch (input.role) {
     case UserRole.MANAGER:
-      return [
-        {
-          label: "My team",
-          value: `${input.managerSnapshot?.directReportCount ?? 0} reports`,
-        },
-        {
-          label: "Pending reviews",
-          value: `${input.managerSnapshot?.reviewsToComplete ?? 0}`,
-        },
-        {
-          label: "Submitted",
-          value: `${input.managerSnapshot?.submittedManagerReviews ?? 0}`,
-        },
-      ];
+      return {
+        title: "My team",
+        rows: [
+          {
+            label: "Direct reports",
+            value: `${input.managerSnapshot?.directReportCount ?? 0}`,
+          },
+          {
+            label: "Awaiting manager review",
+            value: `${input.managerSnapshot?.awaitingManagerReviewCount ?? 0}`,
+          },
+          {
+            label: "Self reviews not started",
+            value: `${input.managerSnapshot?.selfReviewNotStartedCount ?? 0}`,
+          },
+        ],
+      };
     case UserRole.HR_ADMIN:
-      return [
-        {
-          label: "Active cycles",
-          value: `${input.hrSnapshot?.activeCycleCount ?? 0}`,
-        },
-        {
-          label: "Draft cycles",
-          value: `${input.hrSnapshot?.draftCycleCount ?? 0}`,
-        },
-        {
-          label: "Open submissions",
-          value: `${input.hrSnapshot?.openSubmissionCount ?? 0}`,
-        },
-      ];
+      return {
+        title: "Cycle overview",
+        rows: [
+          {
+            label: "Live cycles",
+            value: `${input.hrSnapshot?.activeCycleCount ?? 0}`,
+          },
+          {
+            label: "Cycles in draft",
+            value: `${input.hrSnapshot?.draftCycleCount ?? 0}`,
+          },
+          {
+            label: "Open submissions",
+            value: `${input.hrSnapshot?.openSubmissionCount ?? 0}`,
+          },
+        ],
+      };
     case UserRole.CALIBRATOR:
-      return [
-        {
-          label: "Assigned tasks",
-          value: `${input.tasks.length}`,
-        },
-        {
-          label: "Submitted",
-          value: `${submittedCount}`,
-        },
-        {
-          label: "Session",
-          value: "Calibration 9-box",
-        },
-      ];
+      return {
+        title: "Calibration snapshot",
+        rows: [
+          {
+            label: "Assigned tasks",
+            value: `${input.tasks.length}`,
+          },
+          {
+            label: "Submitted",
+            value: `${submittedCount}`,
+          },
+          {
+            label: "Session",
+            value: "Calibration 9-box",
+          },
+        ],
+      };
     default:
-      return [
-        {
-          label: "Due soon",
-          value: `${input.dueSoonReviewCount}`,
-        },
-        {
-          label: "Open draft",
-          value: input.draftTask?.subjectName ?? "None",
-        },
-        {
-          label: "Submitted",
-          value: `${submittedCount}`,
-        },
-      ];
+      return {
+        title: "At a glance",
+        rows: [
+          {
+            label: "Due soon",
+            value: `${input.dueSoonReviewCount}`,
+          },
+          {
+            label: "Open draft",
+            value: input.draftTask?.subjectName ?? "None",
+          },
+          {
+            label: "Submitted",
+            value: `${submittedCount}`,
+          },
+        ],
+      };
+  }
+}
+
+function formatRelationshipLabel(relationship: ReviewRelationship): string {
+  switch (relationship) {
+    case ReviewRelationship.SELF:
+      return "Self";
+    case ReviewRelationship.MANAGER:
+      return "Manager";
+    case ReviewRelationship.PEER:
+      return "Peer";
+    case ReviewRelationship.UPWARD:
+      return "Upward";
+    default:
+      return relationship;
+  }
+}
+
+function compareHomeTasks(left: ReviewTaskListItem, right: ReviewTaskListItem): number {
+  const statusDifference =
+    getHomeTaskPriority(left.status) - getHomeTaskPriority(right.status);
+  if (statusDifference !== 0) {
+    return statusDifference;
+  }
+
+  const dueDifference =
+    new Date(left.cycleEndDate).getTime() - new Date(right.cycleEndDate).getTime();
+  if (dueDifference !== 0) {
+    return dueDifference;
+  }
+
+  return left.subjectName.localeCompare(right.subjectName);
+}
+
+function getHomeTaskPriority(status: ReviewSubmissionStatus): number {
+  switch (status) {
+    case ReviewSubmissionStatus.RETURNED:
+      return 0;
+    case ReviewSubmissionStatus.IN_PROGRESS:
+      return 1;
+    case ReviewSubmissionStatus.NOT_STARTED:
+      return 2;
+    default:
+      return 3;
   }
 }
 

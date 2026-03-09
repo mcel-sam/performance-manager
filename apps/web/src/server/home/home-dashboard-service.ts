@@ -18,6 +18,9 @@ interface HomeDashboardDb {
         relationship?: ReviewRelationship;
         reviewerEmployeeId?: string;
         status?: ReviewSubmissionStatus | { in: readonly ReviewSubmissionStatus[] };
+        subjectEmployee?: {
+          managerId: string;
+        };
         cycle?: {
           status?: {
             in: readonly CycleStatus[];
@@ -38,8 +41,8 @@ interface HomeDashboardDb {
 
 export interface ManagerHomeSnapshot {
   directReportCount: number;
-  reviewsToComplete: number;
-  submittedManagerReviews: number;
+  awaitingManagerReviewCount: number;
+  selfReviewNotStartedCount: number;
 }
 
 export interface HrHomeSnapshot {
@@ -50,6 +53,10 @@ export interface HrHomeSnapshot {
 }
 
 const activeStatuses = [CycleStatus.ACTIVE, CycleStatus.LOCKED] as const;
+const awaitingManagerReviewStatuses = [
+  ReviewSubmissionStatus.NOT_STARTED,
+  ReviewSubmissionStatus.RETURNED,
+] as const;
 const pendingReviewStatuses = [
   ReviewSubmissionStatus.NOT_STARTED,
   ReviewSubmissionStatus.IN_PROGRESS,
@@ -63,8 +70,8 @@ export async function getManagerHomeSnapshot(
   if (context.role !== UserRole.MANAGER) {
     return {
       directReportCount: 0,
-      reviewsToComplete: 0,
-      submittedManagerReviews: 0,
+      awaitingManagerReviewCount: 0,
+      selfReviewNotStartedCount: 0,
     };
   }
 
@@ -79,49 +86,52 @@ export async function getManagerHomeSnapshot(
   if (!managerEmployee) {
     return {
       directReportCount: 0,
-      reviewsToComplete: 0,
-      submittedManagerReviews: 0,
+      awaitingManagerReviewCount: 0,
+      selfReviewNotStartedCount: 0,
     };
   }
 
-  const [directReportCount, reviewsToComplete, submittedManagerReviews] = await Promise.all([
-    db.employee.count({
-      where: { orgId: context.orgId, managerId: managerEmployee.id },
-    }),
-    db.reviewSubmission.count({
-      where: {
-        orgId: context.orgId,
-        reviewerEmployeeId: managerEmployee.id,
-        relationship: ReviewRelationship.MANAGER,
-        status: {
-          in: pendingReviewStatuses,
-        },
-        cycle: {
+  const [directReportCount, awaitingManagerReviewCount, selfReviewNotStartedCount] =
+    await Promise.all([
+      db.employee.count({
+        where: { orgId: context.orgId, managerId: managerEmployee.id },
+      }),
+      db.reviewSubmission.count({
+        where: {
+          orgId: context.orgId,
+          reviewerEmployeeId: managerEmployee.id,
+          relationship: ReviewRelationship.MANAGER,
           status: {
-            in: activeStatuses,
+            in: awaitingManagerReviewStatuses,
+          },
+          cycle: {
+            status: {
+              in: activeStatuses,
+            },
           },
         },
-      },
-    }),
-    db.reviewSubmission.count({
-      where: {
-        orgId: context.orgId,
-        reviewerEmployeeId: managerEmployee.id,
-        relationship: ReviewRelationship.MANAGER,
-        status: ReviewSubmissionStatus.SUBMITTED,
-        cycle: {
-          status: {
-            in: activeStatuses,
+      }),
+      db.reviewSubmission.count({
+        where: {
+          orgId: context.orgId,
+          relationship: ReviewRelationship.SELF,
+          status: ReviewSubmissionStatus.NOT_STARTED,
+          subjectEmployee: {
+            managerId: managerEmployee.id,
+          },
+          cycle: {
+            status: {
+              in: activeStatuses,
+            },
           },
         },
-      },
-    }),
-  ]);
+      }),
+    ]);
 
   return {
     directReportCount,
-    reviewsToComplete,
-    submittedManagerReviews,
+    awaitingManagerReviewCount,
+    selfReviewNotStartedCount,
   };
 }
 
