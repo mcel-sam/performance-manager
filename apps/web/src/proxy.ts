@@ -15,7 +15,7 @@ function parseBooleanEnv(value: string | undefined): boolean {
 const demoModeEnabled =
   parseBooleanEnv(process.env.DEMO_MODE) && (process.env.NODE_ENV ?? "development") === "development";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   if (!demoModeEnabled) {
     return NextResponse.next();
   }

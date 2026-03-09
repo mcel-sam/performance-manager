@@ -123,7 +123,7 @@ export default function AppShell({
       <div
         data-testid="app-shell-layout"
         data-sidebar-state={isSidebarCollapsed ? "collapsed" : "expanded"}
-        className="mx-auto grid min-h-screen w-full max-w-[1520px] transition-[grid-template-columns] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none"
+        className="mx-auto grid min-h-screen w-full max-w-[1520px] items-start transition-[grid-template-columns] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none"
         style={{
           gridTemplateColumns: `${isSidebarCollapsed ? 84 : 272}px minmax(0, 1fr)`,
         }}
@@ -133,107 +133,114 @@ export default function AppShell({
           data-testid="app-shell-sidebar"
           data-collapsed={isSidebarCollapsed ? "true" : "false"}
           data-state={isSidebarCollapsed ? "collapsed" : "expanded"}
-          className={cn(
-            "sticky top-0 z-40 h-screen overflow-hidden border-r border-slate-200 bg-white transition-[box-shadow] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none",
-            isSidebarCollapsed ? "shadow-[var(--shadow-xs)]" : "shadow-[var(--shadow-lg)]",
-          )}
+          className="sticky top-4 z-40 self-start px-3 pb-4 pt-4"
         >
           <div
             className={cn(
-              "border-b border-slate-100",
-              isSidebarCollapsed ? "px-2 py-4" : "px-5 py-5",
+              "rounded-[28px] border border-slate-200 bg-white transition-[box-shadow] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none",
+              isSidebarCollapsed ? "shadow-[var(--shadow-sm)]" : "shadow-[var(--shadow-lg)]",
             )}
           >
             <div
               className={cn(
-                "flex items-center",
-                isSidebarCollapsed ? "justify-center" : "justify-between gap-3",
+                "border-b border-slate-100",
+                isSidebarCollapsed ? "px-2 py-4" : "px-5 py-5",
               )}
             >
-              {isSidebarCollapsed ? (
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold tracking-[0.12em] text-white">
-                  PM
-                </span>
-              ) : (
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Performance Manager
-                  </p>
-                  <h1 className="mt-1.5 text-lg font-semibold tracking-tight text-slate-900">
-                    Workspace
-                  </h1>
-                  {viewer ? (
-                    <p className="mt-2 text-[11px] text-slate-500">
-                      {viewer.roleLabel} <span className="text-slate-400">({viewer.userId})</span>
+              <div
+                className={cn(
+                  "flex items-center",
+                  isSidebarCollapsed ? "justify-center" : "justify-between gap-3",
+                )}
+              >
+                {isSidebarCollapsed ? (
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold tracking-[0.12em] text-white">
+                    PM
+                  </span>
+                ) : (
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Performance Manager
                     </p>
-                  ) : null}
-                </div>
-              )}
+                    <h1 className="mt-1.5 text-lg font-semibold tracking-tight text-slate-900">
+                      Workspace
+                    </h1>
+                    {viewer ? (
+                      <p className="mt-2 text-[11px] text-slate-500">
+                        {viewer.roleLabel} <span className="text-slate-400">({viewer.userId})</span>
+                      </p>
+                    ) : null}
+                  </div>
+                )}
 
-              {!isSidebarCollapsed ? (
-                <button
-                  type="button"
-                  data-testid="app-shell-sidebar-collapse"
-                  onClick={() => setIsSidebarCollapsed(true)}
-                  aria-label="Collapse navigation"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 motion-reduce:transition-none"
-                >
-                  ×
-                </button>
-              ) : null}
+                {!isSidebarCollapsed ? (
+                  <button
+                    type="button"
+                    data-testid="app-shell-sidebar-collapse"
+                    onClick={() => setIsSidebarCollapsed(true)}
+                    aria-label="Collapse navigation"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 motion-reduce:transition-none"
+                  >
+                    ×
+                  </button>
+                ) : null}
+              </div>
             </div>
-          </div>
 
-          <nav className={cn("space-y-1 p-3", isSidebarCollapsed && "px-2")} data-testid="app-shell-nav">
-            {navItems.map((item) => {
-              const isActive = activeNavKey === item.key;
+            <nav
+              className={cn("space-y-1 p-3", isSidebarCollapsed && "px-2")}
+              data-testid="app-shell-nav"
+            >
+              {navItems.map((item) => {
+                const isActive = activeNavKey === item.key;
 
-              return (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  data-testid={item.testId}
-                  aria-current={isActive ? "page" : undefined}
-                  aria-label={item.label}
-                  title={isSidebarCollapsed ? item.label : undefined}
-                  className={cn(
-                    "group relative flex rounded-[var(--radius-md)] py-2 text-sm font-medium transition-[background-color,color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-1 motion-reduce:transition-none",
-                    isSidebarCollapsed ? "justify-center px-2" : "items-center gap-3 px-3",
-                    isActive
-                      ? "bg-slate-900 text-white"
-                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
-                  )}
-                >
-                  <span
-                    aria-hidden="true"
+                return (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    data-testid={item.testId}
+                    aria-current={isActive ? "page" : undefined}
+                    aria-label={item.label}
+                    title={isSidebarCollapsed ? item.label : undefined}
                     className={cn(
-                      "inline-flex h-7 min-w-7 items-center justify-center rounded-[var(--radius-sm)] leading-none",
+                      "group relative flex rounded-[var(--radius-md)] py-2 text-sm font-medium transition-[background-color,color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-1 motion-reduce:transition-none",
+                      isSidebarCollapsed ? "justify-center px-2" : "items-center gap-3 px-3",
                       isActive
-                        ? "bg-white/15 text-white"
-                        : "bg-slate-200 text-slate-700 group-hover:bg-slate-300",
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
                     )}
                   >
-                    <NavItemIcon navKey={item.key} className="h-3.5 w-3.5" />
-                  </span>
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "inline-flex h-7 min-w-7 items-center justify-center rounded-[var(--radius-sm)] leading-none",
+                        isActive
+                          ? "bg-white/15 text-white"
+                          : "bg-slate-200 text-slate-700 group-hover:bg-slate-300",
+                      )}
+                    >
+                      <NavItemIcon navKey={item.key} className="h-3.5 w-3.5" />
+                    </span>
 
-                  {isSidebarCollapsed ? (
-                    <>
-                      <span className="sr-only">{item.label}</span>
-                      <span
-                        data-testid={`app-shell-sidebar-tooltip-${item.key}`}
-                        role="tooltip"
-                        className="pointer-events-none absolute left-full top-1/2 z-20 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-sm)] border border-slate-200 bg-slate-900 px-2 py-1 text-xs text-white opacity-0 shadow-[var(--shadow-sm)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
-                      >
-                        {item.label}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="truncate">{item.label}</span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
+                    {isSidebarCollapsed ? (
+                      <>
+                        <span className="sr-only">{item.label}</span>
+                        <span
+                          data-testid={`app-shell-sidebar-tooltip-${item.key}`}
+                          role="tooltip"
+                          className="pointer-events-none absolute left-full top-1/2 z-20 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-sm)] border border-slate-200 bg-slate-900 px-2 py-1 text-xs text-white opacity-0 shadow-[var(--shadow-sm)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
+                        >
+                          {item.label}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="truncate">{item.label}</span>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
         </aside>
 
         <main className={cn("p-5 sm:p-7", focusLayout && "lg:px-8")}>

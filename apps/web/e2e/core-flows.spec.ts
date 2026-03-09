@@ -16,6 +16,15 @@ test("reviews tasks list loads", async ({ page }) => {
     }),
   ).toBeVisible();
   await expect(page.getByRole("table")).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Cycle" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Subject" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Relationship" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Status" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Due" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Action" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Priority" })).toHaveCount(0);
+  await expect(page.getByRole("columnheader", { name: "Owner" })).toHaveCount(0);
+  await expect(page.getByRole("columnheader", { name: "Progress" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Open Review" }).first()).toBeVisible();
 });
 
