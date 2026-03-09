@@ -115,31 +115,66 @@ enum ImprovementPlanOutcome {
   UNSUCCESSFUL
 }
 
+enum PositionStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum SuccessionVisibilityScope {
+  HR_ONLY
+  MANAGERS_IN_SCOPE
+}
+
+enum SuccessionReadiness {
+  READY_NOW
+  ONE_TO_TWO_YEARS
+  THREE_TO_FIVE_YEARS
+  FUTURE
+}
+
+enum SuccessionAssessmentLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum SuccessionNoteVisibility {
+  HR_ONLY
+  PLAN_VIEWERS
+}
+
 model Org {
-  id                      String                          @id @default(cuid())
-  name                    String
-  createdAt               DateTime                        @default(now())
-  updatedAt               DateTime                        @updatedAt
-  users                   User[]
-  employees               Employee[]
-  reviewTemplates         ReviewTemplate[]
-  reviewTemplateQuestions ReviewTemplateQuestion[]
-  reviewCycles            ReviewCycle[]
-  reviewPackets           ReviewPacket[]
-  reviewSubmissions       ReviewSubmission[]
-  reviewAnswers           ReviewAnswer[]
-  reviewCycleMetrics      ReviewCycleScorecardMetric[]
-  scorecardMetricResults  ScorecardMetricResult[]
-  evidenceItems           EvidenceItem[]
-  answerEvidenceLinks     AnswerEvidenceLink[]
-  calibrationSessions     CalibrationSession[]
-  calibrationPlacements   CalibrationPlacement[]
-  calibrationParticipants CalibrationSessionParticipant[]
-  calibrationSnapshots    CalibrationSnapshot[]
-  improvementPlans        ImprovementPlan[]
-  improvementPlanGoals    ImprovementPlanGoal[]
-  improvementPlanCheckIns ImprovementPlanCheckIn[]
-  auditEvents             AuditEvent[]
+  id                            String                          @id @default(cuid())
+  name                          String
+  createdAt                     DateTime                        @default(now())
+  updatedAt                     DateTime                        @updatedAt
+  users                         User[]
+  employees                     Employee[]
+  reviewTemplates               ReviewTemplate[]
+  reviewTemplateQuestions       ReviewTemplateQuestion[]
+  reviewCycles                  ReviewCycle[]
+  reviewPackets                 ReviewPacket[]
+  reviewSubmissions             ReviewSubmission[]
+  reviewAnswers                 ReviewAnswer[]
+  reviewCycleMetrics            ReviewCycleScorecardMetric[]
+  scorecardMetricResults        ScorecardMetricResult[]
+  evidenceItems                 EvidenceItem[]
+  answerEvidenceLinks           AnswerEvidenceLink[]
+  calibrationSessions           CalibrationSession[]
+  calibrationPlacements         CalibrationPlacement[]
+  calibrationParticipants       CalibrationSessionParticipant[]
+  calibrationSnapshots          CalibrationSnapshot[]
+  improvementPlans              ImprovementPlan[]
+  improvementPlanGoals          ImprovementPlanGoal[]
+  improvementPlanCheckIns       ImprovementPlanCheckIn[]
+  positions                     Position[]
+  successionPlans               SuccessionPlan[]
+  successionPlanCollaborators   SuccessionPlanCollaborator[]
+  successionPlanAllowedManagers SuccessionPlanAllowedManager[]
+  successionCandidates          SuccessionCandidate[]
+  successionNotes               SuccessionNote[]
+  successionCandidateSnapshots  SuccessionCandidateSnapshot[]
+  auditEvents                   AuditEvent[]
 }
 
 model User {
@@ -161,30 +196,37 @@ model User {
 }
 
 model Employee {
-  id                          String                 @id @default(cuid())
-  orgId                       String
-  userId                      String                 @unique
-  firstName                   String
-  lastName                    String
-  department                  String?
-  title                       String?
-  avatarUrl                   String?
-  managerId                   String?
-  createdAt                   DateTime               @default(now())
-  updatedAt                   DateTime               @updatedAt
-  org                         Org                    @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  user                        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  manager                     Employee?              @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
-  directReports               Employee[]             @relation("EmployeeManager")
-  reviewPacketsAsSubject      ReviewPacket[]         @relation("ReviewPacketSubjectEmployee")
-  reviewSubmissionsAsSubject  ReviewSubmission[]     @relation("ReviewSubmissionSubjectEmployee")
-  reviewSubmissionsAsReviewer ReviewSubmission[]     @relation("ReviewSubmissionReviewerEmployee")
-  evidenceAsSubject           EvidenceItem[]         @relation("EvidenceSubjectEmployee")
-  evidenceAuthored            EvidenceItem[]         @relation("EvidenceAuthorEmployee")
-  calibrationPlacements       CalibrationPlacement[]
-  improvementPlansAsSubject   ImprovementPlan[]      @relation("ImprovementPlanSubjectEmployee")
-  improvementPlansAsManager   ImprovementPlan[]      @relation("ImprovementPlanManagerEmployee")
-  improvementPlansAsHrOwner   ImprovementPlan[]      @relation("ImprovementPlanHrOwnerEmployee")
+  id                           String                         @id @default(cuid())
+  orgId                        String
+  userId                       String                         @unique
+  firstName                    String
+  lastName                     String
+  department                   String?
+  title                        String?
+  avatarUrl                    String?
+  managerId                    String?
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @updatedAt
+  org                          Org                            @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  user                         User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manager                      Employee?                      @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports                Employee[]                     @relation("EmployeeManager")
+  incumbentPositions           Position[]                     @relation("PositionIncumbentEmployee")
+  reviewPacketsAsSubject       ReviewPacket[]                 @relation("ReviewPacketSubjectEmployee")
+  reviewSubmissionsAsSubject   ReviewSubmission[]             @relation("ReviewSubmissionSubjectEmployee")
+  reviewSubmissionsAsReviewer  ReviewSubmission[]             @relation("ReviewSubmissionReviewerEmployee")
+  evidenceAsSubject            EvidenceItem[]                 @relation("EvidenceSubjectEmployee")
+  evidenceAuthored             EvidenceItem[]                 @relation("EvidenceAuthorEmployee")
+  calibrationPlacements        CalibrationPlacement[]
+  improvementPlansAsSubject    ImprovementPlan[]              @relation("ImprovementPlanSubjectEmployee")
+  improvementPlansAsManager    ImprovementPlan[]              @relation("ImprovementPlanManagerEmployee")
+  improvementPlansAsHrOwner    ImprovementPlan[]              @relation("ImprovementPlanHrOwnerEmployee")
+  successionPlansOwned         SuccessionPlan[]               @relation("SuccessionPlanOwnerEmployee")
+  successionPlanCollaborations SuccessionPlanCollaborator[]   @relation("SuccessionPlanCollaboratorEmployee")
+  successionPlanManagerScopes  SuccessionPlanAllowedManager[] @relation("SuccessionPlanAllowedManagerEmployee")
+  successionCandidateRoles     SuccessionCandidate[]          @relation("SuccessionCandidateEmployee")
+  successionCandidateProposals SuccessionCandidate[]          @relation("SuccessionCandidateProposedByEmployee")
+  successionNotesAuthored      SuccessionNote[]               @relation("SuccessionNoteAuthorEmployee")
 
   @@unique([orgId, userId])
   @@index([orgId])
@@ -208,19 +250,19 @@ model ReviewTemplate {
 }
 
 model ReviewTemplateQuestion {
-  id         String         @id @default(cuid())
-  orgId      String
-  templateId String
-  prompt     String
-  questionType ReviewQuestionType @default(TEXT)
+  id           String                  @id @default(cuid())
+  orgId        String
+  templateId   String
+  prompt       String
+  questionType ReviewQuestionType      @default(TEXT)
   dimensionKey CompetencyDimensionKey?
-  isRequired Boolean        @default(true)
-  sortOrder  Int            @default(0)
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
-  org        Org            @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  template   ReviewTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  answers    ReviewAnswer[]
+  isRequired   Boolean                 @default(true)
+  sortOrder    Int                     @default(0)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  org          Org                     @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  template     ReviewTemplate          @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  answers      ReviewAnswer[]
 
   @@index([orgId])
   @@index([templateId, sortOrder])
@@ -228,56 +270,201 @@ model ReviewTemplateQuestion {
 }
 
 model ReviewCycle {
-  id                    String                @id @default(cuid())
-  orgId                 String
-  name                  String
-  startDate             DateTime
-  endDate               DateTime
-  status                CycleStatus           @default(DRAFT)
-  visibilityPolicy      CycleVisibilityPolicy @default(EMPLOYEE_AFTER_RELEASE)
-  selfReviewRequired    Boolean               @default(true)
-  managerReviewRequired Boolean               @default(true)
-  peerReviewCount       Int                   @default(0)
-  peerAssignmentMode    PeerAssignmentMode    @default(HR_ASSIGNED)
-  upwardReviewCount     Int                   @default(0)
-  upwardReviewsForManagersOnly Boolean        @default(true)
-  selfReviewDueAt       DateTime?
-  managerReviewDueAt    DateTime?
-  peerReviewDueAt       DateTime?
-  upwardReviewDueAt     DateTime?
-  templateId            String?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-  org                   Org                   @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  template              ReviewTemplate?       @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  packets               ReviewPacket[]
-  submissions           ReviewSubmission[]
-  calibrationSessions   CalibrationSession[]
-  scorecardMetrics      ReviewCycleScorecardMetric[]
+  id                           String                        @id @default(cuid())
+  orgId                        String
+  name                         String
+  startDate                    DateTime
+  endDate                      DateTime
+  status                       CycleStatus                   @default(DRAFT)
+  visibilityPolicy             CycleVisibilityPolicy         @default(EMPLOYEE_AFTER_RELEASE)
+  selfReviewRequired           Boolean                       @default(true)
+  managerReviewRequired        Boolean                       @default(true)
+  peerReviewCount              Int                           @default(0)
+  peerAssignmentMode           PeerAssignmentMode            @default(HR_ASSIGNED)
+  upwardReviewCount            Int                           @default(0)
+  upwardReviewsForManagersOnly Boolean                       @default(true)
+  selfReviewDueAt              DateTime?
+  managerReviewDueAt           DateTime?
+  peerReviewDueAt              DateTime?
+  upwardReviewDueAt            DateTime?
+  templateId                   String?
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  org                          Org                           @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  template                     ReviewTemplate?               @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  packets                      ReviewPacket[]
+  submissions                  ReviewSubmission[]
+  calibrationSessions          CalibrationSession[]
+  successionCandidateSnapshots SuccessionCandidateSnapshot[]
+  scorecardMetrics             ReviewCycleScorecardMetric[]
 
   @@index([orgId])
   @@index([orgId, status])
 }
 
-model ReviewPacket {
-  id                String             @id @default(cuid())
+model Position {
+  id                  String          @id @default(cuid())
+  orgId               String
+  title               String
+  department          String
+  location            String?
+  incumbentEmployeeId String?
+  isCritical          Boolean         @default(false)
+  status              PositionStatus  @default(ACTIVE)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  org                 Org             @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  incumbentEmployee   Employee?       @relation("PositionIncumbentEmployee", fields: [incumbentEmployeeId], references: [id], onDelete: SetNull)
+  plan                SuccessionPlan?
+
+  @@index([orgId])
+  @@index([orgId, department])
+  @@index([orgId, status])
+  @@index([incumbentEmployeeId])
+}
+
+model SuccessionPlan {
+  id              String                         @id @default(cuid())
+  orgId           String
+  positionId      String                         @unique
+  ownerEmployeeId String
+  visibilityScope SuccessionVisibilityScope      @default(MANAGERS_IN_SCOPE)
+  reviewCadence   String?
+  notes           String?
+  createdAt       DateTime                       @default(now())
+  updatedAt       DateTime                       @updatedAt
+  org             Org                            @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  position        Position                       @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  ownerEmployee   Employee                       @relation("SuccessionPlanOwnerEmployee", fields: [ownerEmployeeId], references: [id], onDelete: Restrict)
+  collaborators   SuccessionPlanCollaborator[]
+  allowedManagers SuccessionPlanAllowedManager[]
+  candidates      SuccessionCandidate[]
+
+  @@index([orgId])
+  @@index([ownerEmployeeId])
+  @@index([orgId, visibilityScope])
+}
+
+model SuccessionPlanCollaborator {
+  id         String         @id @default(cuid())
+  orgId      String
+  planId     String
+  employeeId String
+  createdAt  DateTime       @default(now())
+  org        Org            @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  plan       SuccessionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  employee   Employee       @relation("SuccessionPlanCollaboratorEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, employeeId])
+  @@index([orgId])
+  @@index([employeeId])
+}
+
+model SuccessionPlanAllowedManager {
+  id                String         @id @default(cuid())
   orgId             String
-  cycleId           String
-  subjectEmployeeId String
-  snapshotDepartment String?
-  snapshotTitle      String?
+  planId            String
+  managerEmployeeId String
+  createdAt         DateTime       @default(now())
+  org               Org            @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  plan              SuccessionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  managerEmployee   Employee       @relation("SuccessionPlanAllowedManagerEmployee", fields: [managerEmployeeId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, managerEmployeeId])
+  @@index([orgId])
+  @@index([managerEmployeeId])
+}
+
+model SuccessionCandidate {
+  id                   String                        @id @default(cuid())
+  orgId                String
+  planId               String
+  candidateEmployeeId  String
+  readiness            SuccessionReadiness
+  riskOfLoss           SuccessionAssessmentLevel?
+  confidence           SuccessionAssessmentLevel?
+  proposedByRole       UserRole
+  proposedByEmployeeId String
+  sortOrder            Int                           @default(0)
+  createdAt            DateTime                      @default(now())
+  updatedAt            DateTime                      @updatedAt
+  org                  Org                           @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  plan                 SuccessionPlan                @relation(fields: [planId], references: [id], onDelete: Cascade)
+  candidateEmployee    Employee                      @relation("SuccessionCandidateEmployee", fields: [candidateEmployeeId], references: [id], onDelete: Cascade)
+  proposedByEmployee   Employee                      @relation("SuccessionCandidateProposedByEmployee", fields: [proposedByEmployeeId], references: [id], onDelete: Restrict)
+  notes                SuccessionNote[]
+  snapshots            SuccessionCandidateSnapshot[]
+
+  @@unique([planId, candidateEmployeeId])
+  @@index([orgId])
+  @@index([planId, sortOrder])
+  @@index([candidateEmployeeId])
+}
+
+model SuccessionNote {
+  id               String                   @id @default(cuid())
+  orgId            String
+  candidateId      String
+  authorEmployeeId String
+  authorRole       UserRole
+  visibility       SuccessionNoteVisibility @default(PLAN_VIEWERS)
+  body             String
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  org              Org                      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  candidate        SuccessionCandidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  authorEmployee   Employee                 @relation("SuccessionNoteAuthorEmployee", fields: [authorEmployeeId], references: [id], onDelete: Restrict)
+
+  @@index([orgId])
+  @@index([candidateId, createdAt])
+  @@index([authorEmployeeId])
+}
+
+model SuccessionCandidateSnapshot {
+  id                           String              @id @default(cuid())
+  orgId                        String
+  candidateId                  String
+  cycleId                      String?
+  scorecardOverallRating       Int?
+  scorecardPercent             Float?
+  finalRatingSource            FinalRatingSource?
+  calibrationPerformanceBucket CalibrationBucket?
+  calibrationPotentialBucket   CalibrationBucket?
+  snapshotDepartment           String?
+  snapshotTitle                String?
+  snapshotManagerEmployeeId    String?
+  snapshotManagerName          String?
+  createdAt                    DateTime            @default(now())
+  updatedAt                    DateTime            @updatedAt
+  org                          Org                 @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  candidate                    SuccessionCandidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  cycle                        ReviewCycle?        @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+
+  @@unique([candidateId, cycleId])
+  @@index([orgId])
+  @@index([candidateId])
+  @@index([cycleId])
+}
+
+model ReviewPacket {
+  id                        String                  @id @default(cuid())
+  orgId                     String
+  cycleId                   String
+  subjectEmployeeId         String
+  snapshotDepartment        String?
+  snapshotTitle             String?
   snapshotManagerEmployeeId String?
-  snapshotManagerName String?
-  totalScorecardPercent Float?
-  scorecardOverallRating Int?
-  finalRatingSource FinalRatingSource?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  org               Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  cycle             ReviewCycle        @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  subjectEmployee   Employee           @relation("ReviewPacketSubjectEmployee", fields: [subjectEmployeeId], references: [id], onDelete: Cascade)
-  submissions       ReviewSubmission[]
-  scorecardMetricResults ScorecardMetricResult[]
+  snapshotManagerName       String?
+  totalScorecardPercent     Float?
+  scorecardOverallRating    Int?
+  finalRatingSource         FinalRatingSource?
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
+  org                       Org                     @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  cycle                     ReviewCycle             @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  subjectEmployee           Employee                @relation("ReviewPacketSubjectEmployee", fields: [subjectEmployeeId], references: [id], onDelete: Cascade)
+  submissions               ReviewSubmission[]
+  scorecardMetricResults    ScorecardMetricResult[]
 
   @@unique([cycleId, subjectEmployeeId])
   @@index([orgId])
@@ -338,15 +525,15 @@ model ReviewAnswer {
 }
 
 model ReviewCycleScorecardMetric {
-  id           String            @id @default(cuid())
-  orgId        String
-  cycleId      String
-  metricKey    ScorecardMetricKey
+  id            String             @id @default(cuid())
+  orgId         String
+  cycleId       String
+  metricKey     ScorecardMetricKey
   weightPercent Float
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  org          Org               @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  cycle        ReviewCycle       @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  org           Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  cycle         ReviewCycle        @relation(fields: [cycleId], references: [id], onDelete: Cascade)
 
   @@unique([cycleId, metricKey])
   @@index([orgId])
@@ -354,21 +541,21 @@ model ReviewCycleScorecardMetric {
 }
 
 model ScorecardMetricResult {
-  id               String            @id @default(cuid())
-  orgId            String
-  packetId         String
-  metricKey        ScorecardMetricKey
-  selfRating       Int?
-  managerRating    Int?
-  selfNotObserved  Boolean           @default(false)
-  managerNotObserved Boolean         @default(false)
-  blendedRating    Float?
-  weightPercent    Float
-  weightedPercent  Float?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  org              Org               @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  packet           ReviewPacket      @relation(fields: [packetId], references: [id], onDelete: Cascade)
+  id                 String             @id @default(cuid())
+  orgId              String
+  packetId           String
+  metricKey          ScorecardMetricKey
+  selfRating         Int?
+  managerRating      Int?
+  selfNotObserved    Boolean            @default(false)
+  managerNotObserved Boolean            @default(false)
+  blendedRating      Float?
+  weightPercent      Float
+  weightedPercent    Float?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  org                Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  packet             ReviewPacket       @relation(fields: [packetId], references: [id], onDelete: Cascade)
 
   @@unique([packetId, metricKey])
   @@index([orgId])
