@@ -1743,7 +1743,7 @@ Feedback observed:
 
 ## Milestone 10 — Succession Planning (MVP)
 
-**Status:** Phase 0 completed in PR #46. Phase 1 is next.  
+**Status:** Phase 1 completed in PR #47. Phase 2 is next.  
 **Objective:** Add a permissioned succession planning module for HR Admins and scoped Managers with premium UX, audit logging, reporting, and demo-ready data.
 
 ### Scope
@@ -1773,14 +1773,16 @@ Feedback observed:
 Completed in PR #46.
 
 ### Phase 1 — Data model + migrations (DB foundation)
-- [ ] Add Prisma models for `Position`, `SuccessionPlan`, `SuccessionCandidate`, `SuccessionNote`
-- [ ] Add `SuccessionCandidateSnapshot` for performance/calibration snapshotting
-- [ ] Add indexes for org, position, candidate, incumbent, and department list queries
-- [ ] Commit Prisma migration(s) for the succession schema
+- [x] Add Prisma models for `Position`, `SuccessionPlan`, `SuccessionCandidate`, `SuccessionNote`
+- [x] Add `SuccessionCandidateSnapshot` for performance/calibration snapshotting
+- [x] Add indexes for org, position, candidate, incumbent, and department list queries
+- [x] Commit Prisma migration(s) for the succession schema
 
 #### Acceptance criteria
-- [ ] Migrations apply cleanly
-- [ ] Model supports manager proposals and HR-only sensitive fields
+- [x] Migrations apply cleanly
+- [x] Model supports manager proposals and HR-only sensitive fields
+
+Completed in PR #47.
 
 ### Phase 2 — Server services + APIs + tests (secure CRUD)
 - [ ] Add `apps/web/src/server/succession/*` domain services and permission helpers
