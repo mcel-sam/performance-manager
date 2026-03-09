@@ -1738,3 +1738,97 @@ Feedback observed:
   - [x] Reporting exports + heatmaps work
   - [x] Typography/spacing premium and consistent
   - [x] Playwright UX audit loop added
+
+---
+
+## Milestone 10 — Succession Planning (MVP)
+
+**Status:** Phase 0 in progress.  
+**Objective:** Add a permissioned succession planning module for HR Admins and scoped Managers with premium UX, audit logging, reporting, and demo-ready data.
+
+### Scope
+
+#### In scope
+- Succession positions, plans, candidates, notes, and candidate performance snapshots
+- Strict server-side scope enforcement for HR Admin and Manager access
+- HR-only sensitive fields by default (`risk_of_loss`, `confidence`)
+- Succession reporting and CSV export for HR
+- Demo seed data and walkthrough coverage
+
+#### Out of scope
+- Employee or Calibrator self-service access
+- Org-wide succession configuration beyond the MVP feature flag for manager risk visibility
+- Advanced forecasting or AI-based talent recommendations
+
+### Phase 0 — Docs, planning, and architecture alignment
+- [ ] Add Succession Planning MVP milestone and phase breakdown to `PLAN.md`
+- [ ] Update `docs/product/PRD.md` with succession concepts, access model, sensitive fields, and audit expectations
+- [ ] Update `docs/architecture/ARCHITECTURE.md` with `server/succession/*` and permission-scoping notes
+- [ ] Run applicable local quality gates for the docs-only PR
+
+#### Acceptance criteria
+- [ ] The locked access model is documented in both product and architecture docs
+- [ ] Future phases are sequenced as one phase per PR
+
+### Phase 1 — Data model + migrations (DB foundation)
+- [ ] Add Prisma models for `Position`, `SuccessionPlan`, `SuccessionCandidate`, `SuccessionNote`
+- [ ] Add `SuccessionCandidateSnapshot` for performance/calibration snapshotting
+- [ ] Add indexes for org, position, candidate, incumbent, and department list queries
+- [ ] Commit Prisma migration(s) for the succession schema
+
+#### Acceptance criteria
+- [ ] Migrations apply cleanly
+- [ ] Model supports manager proposals and HR-only sensitive fields
+
+### Phase 2 — Server services + APIs + tests (secure CRUD)
+- [ ] Add `apps/web/src/server/succession/*` domain services and permission helpers
+- [ ] Add thin Route Handlers for HR admin succession management endpoints
+- [ ] Add thin Route Handlers for scoped manager succession endpoints
+- [ ] Validate all succession inputs with Zod
+- [ ] Add audit events for all sensitive succession mutations
+- [ ] Add permission and audit coverage tests for HR, Manager, and Employee access
+
+#### Acceptance criteria
+- [ ] HR can manage all succession data in-org
+- [ ] Managers can only view scoped plans and propose successors within scope
+- [ ] Managers cannot view risk/confidence unless `ALLOW_MANAGER_RISK_VIEW=true`
+- [ ] Employees and Calibrators have no succession access in MVP
+
+### Phase 3 — UI: HR Dashboard + Manager “My Area” view
+- [ ] Add HR routes:
+  - [ ] `/admin/talent/succession`
+  - [ ] `/admin/talent/succession/positions`
+  - [ ] `/admin/talent/succession/positions/new`
+  - [ ] `/admin/talent/succession/positions/:id`
+- [ ] Add Manager routes:
+  - [ ] `/talent/succession`
+  - [ ] `/talent/succession/positions/:id`
+- [ ] Build HR dashboard KPI cards, filters, coverage table, and plan detail workspace
+- [ ] Build Manager “My Area” scoped view with candidate slate and propose-successor flow
+- [ ] Hide risk/confidence in manager UI unless feature flag is enabled
+- [ ] Add Playwright coverage for HR create/add-candidate and Manager scoped proposal flows
+
+#### Acceptance criteria
+- [ ] HR sees org-wide succession dashboard and plan management UX
+- [ ] Managers see only in-scope positions and can propose candidates where allowed
+- [ ] Plan detail uses drawer-driven progressive disclosure for candidate context
+
+### Phase 4 — Performance signals + exports + reporting
+- [ ] Add candidate performance signal snapshots from reviews and calibration
+- [ ] Add HR CSV export for positions and candidate slates
+- [ ] Add reporting views for department coverage, critical-role gaps, and manager proposals awaiting HR review
+- [ ] Apply small-N suppression to grouped reporting views
+
+#### Acceptance criteria
+- [ ] HR can export succession coverage data
+- [ ] Reporting views honor privacy rules and reuse reporting conventions
+
+### Phase 5 — Demo data + walkthrough
+- [ ] Seed 5–10 critical positions with incumbents and varied candidate slates
+- [ ] Include at least one manager-proposed candidate and one role with no successor
+- [ ] Align seeded performance signals with reviews and calibration demo data
+- [ ] Update `docs/demo/WALKTHROUGH.md` with HR and Manager succession walkthrough steps
+
+#### Acceptance criteria
+- [ ] Demo mode showcases both HR and Manager succession journeys realistically
+- [ ] Walkthrough documentation is sufficient for local demo and Playwright setup

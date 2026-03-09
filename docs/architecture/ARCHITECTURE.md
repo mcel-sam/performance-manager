@@ -144,6 +144,7 @@ This system is a greenfield Performance Management product built for an Azure-na
 - `server/evidence/*`
 - `server/calibration/*`
 - `server/improvement-plans/*`
+- `server/succession/*`
 
 **Rule:** API routes call server services; server services call repositories (Prisma queries).
 
@@ -226,6 +227,12 @@ For local demos and E2E tests, the system supports a development-only demo mode:
 - Never trust client-supplied identifiers without verifying access.
 - Relationship-based checks are required (self, manager-of, reviewer-of, calibrator participant, HR admin).
 - Visibility policies apply to packets and submissions based on cycle settings.
+- Succession access is scoped separately from review access:
+  - HR admin has org-wide succession access
+  - managers can only access plans in their area or plans where they are an owner/collaborator/allowed manager
+  - managers can see direct reports as candidates only within permitted plan reads
+  - employees and calibrators have no succession access in MVP
+- Succession sensitive fields (`risk_of_loss`, `confidence`) are hidden from managers unless `ALLOW_MANAGER_RISK_VIEW=true`
 
 ### Evidence visibility
 Evidence items have a visibility level (private, manager-only, shared-with-subject, org-visible).
@@ -307,7 +314,42 @@ Evidence can be seeded or come from initial internal modules later:
 
 ---
 
-## 12) Observability & reliability
+## 12) Succession planning architecture
+
+### Objects
+- Position (succession target role + incumbent context)
+- SuccessionPlan (ownership, scope, cadence, planning notes)
+- SuccessionCandidate (candidate slate + readiness + sensitive planning fields)
+- SuccessionNote (permissioned notes on a candidate)
+- SuccessionCandidateSnapshot (read-only performance/calibration snapshot data for succession review)
+
+### Service boundaries
+- `server/succession/permissions/*` for scope resolution and field-level visibility
+- `server/succession/*` services for position management, plan management, candidate proposals, notes, reporting, and exports
+- Route Handlers under `app/api/admin/succession/*` and `app/api/succession/*` remain thin and delegate to server services
+
+### Scope resolution
+- All succession queries are org-scoped and must resolve viewer scope before returning rows
+- Manager-visible plans are derived from plan ownership/collaboration plus area-based scope rules
+- Candidate data must be filtered so managers only see:
+  - candidates on plans they can already access
+  - direct reports when surfaced within a permitted succession view
+
+### Sensitive data handling
+- `risk_of_loss` and `confidence` are stored for planning completeness but are HR-only by default
+- Services should strip or null these fields for manager responses unless `ALLOW_MANAGER_RISK_VIEW=true`
+- Exports and reporting endpoints must reuse the same field-visibility rules as the UI APIs
+
+### Audit expectations
+- Succession mutations emit immutable audit events for:
+  - position create/update/archive
+  - plan create/update
+  - candidate add/remove/reorder
+  - readiness changes
+  - sensitive field changes
+  - note creation
+
+## 13) Observability & reliability
 
 ### Logging
 - Structured logs
@@ -324,7 +366,7 @@ Evidence can be seeded or come from initial internal modules later:
 
 ---
 
-## 13) Future evolution (planned)
+## 14) Future evolution (planned)
 
 ### Likely next services
 - Background worker for:
@@ -343,7 +385,7 @@ If the system grows:
 
 ---
 
-## 14) Operational runbook (starter)
+## 15) Operational runbook (starter)
 
 ### Local run
 - `apps/web`: `npm run dev`
@@ -359,7 +401,7 @@ If the system grows:
 
 ---
 
-## 15) Open questions
+## 16) Open questions
 - Auth source: Entra ID only, or additional identity providers later?
 - Small-N privacy threshold (analytics and counts)?
 - Rating model (numeric scale vs buckets first)?

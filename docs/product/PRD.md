@@ -107,6 +107,10 @@ To reduce training/support burden, the product must include:
 - **Evidence Item:** A piece of contextual data (feedback, update, 1:1 note, goal status, values recognition) used to support review answers. 
 - **Calibration Session:** Group decision workspace to align ratings (e.g., 9-box).
 - **Improvement Plan:** Structured plan with goals + check-ins + outcomes + auditability. 
+- **Succession Position:** A critical or monitored role for which the organization wants an identified successor slate.
+- **Succession Plan:** The plan attached to a position that defines ownership, visibility scope, cadence, and candidate slate.
+- **Succession Candidate:** An employee proposed as a future successor for a position, with readiness and sensitive planning fields.
+- **Succession Readiness:** The expected timeline for a candidate to be prepared for the role (`READY_NOW`, `1_2_YEARS`, `3_5_YEARS`, `FUTURE`).
 ## 8) Permissions and visibility model (MVP)
 
 ### Roles
@@ -138,6 +142,47 @@ Evidence items carry visibility flags, and must be enforced server-side:
 - Manager-only
 - Shared with subject
 - Org-visible
+
+### Succession planning access (MVP)
+Succession planning is a restricted module with locked access rules for the MVP.
+
+**Roles**
+- HR_ADMIN
+- MANAGER
+- EMPLOYEE
+- CALIBRATOR
+
+**HR Admin**
+- Full read/write access to all succession data within the org
+- Can manage positions, plans, candidates, sensitive fields, notes, exports, and reporting
+
+**Manager**
+- Read access only to succession plans for positions in their scope, where scope is defined by:
+  - positions in their area, or
+  - plans where they are an owner or collaborator, or
+  - explicitly allowed manager scope when configured in the plan
+- Read access to candidate data for:
+  - their direct reports, even when those directs appear as candidates on other visible plans
+  - any succession plan they are already allowed to view
+- Limited write access:
+  - can propose successors for positions they can access, creating candidates with `proposed_by_role=MANAGER`
+  - can add manager notes as a distinct note type visible to HR and managers who can already view the plan
+- Cannot archive positions or manage org-wide succession configuration
+
+**Employee**
+- No access to succession planning in MVP
+
+**Calibrator**
+- No succession planning access in MVP unless explicitly added in a later release
+
+**Sensitive succession fields**
+- Candidate `risk_of_loss` and `confidence` are stored in the data model but are HR-only by default
+- Managers can see readiness
+- Managers cannot see `risk_of_loss` or `confidence` unless `ALLOW_MANAGER_RISK_VIEW=true`
+
+**Privacy requirement**
+- Managers must never see succession plans outside their scope
+- Sensitive candidate fields must never be exposed through API payloads, UI rendering, counts, or exports when the viewer lacks permission
 
 ## 9) MVP scope by module
 
@@ -320,6 +365,88 @@ The reference UI shows a plan detail page with status (successful), time period,
 
 ---
 
+# F) Succession Planning (MVP)
+
+The succession module extends the performance product into talent continuity planning for critical roles.
+
+## F1. HR Admin — Position and plan management
+**User story:** As an HR Admin, I can define succession target positions, assign plan ownership, and maintain successor slates across the org.
+
+**Requirements**
+- Create and update positions with:
+  - title
+  - department
+  - location (optional)
+  - incumbent employee (optional)
+  - `is_critical`
+  - status (`active` or `archived`)
+- Create and update succession plans with:
+  - position
+  - owner employee
+  - visibility scope (`HR_ONLY` or `MANAGERS_IN_SCOPE`)
+  - optional manager-scoping rules
+  - review cadence
+  - planning notes
+- HR can archive positions and maintain all successor records
+
+**Acceptance criteria**
+- HR can manage positions and plans without exposing data outside the org
+- Archived positions are excluded from active planning views by default
+
+## F2. Candidate slate and readiness
+**User story:** As an HR Admin or scoped Manager, I can see a ranked candidate slate for a position and understand each person’s readiness.
+
+**Requirements**
+- Candidate records include:
+  - readiness (`READY_NOW`, `1_2_YEARS`, `3_5_YEARS`, `FUTURE`)
+  - `risk_of_loss` and `confidence` (stored for HR-led planning)
+  - `proposed_by_role`
+  - `proposed_by_employee_id`
+  - sort order
+- Managers can propose candidates only for plans they can access
+- Managers see readiness, but risk/confidence stay hidden unless the feature flag allows manager visibility
+
+**Acceptance criteria**
+- Manager proposals are preserved distinctly from HR-created candidates
+- Sensitive fields are hidden for managers by default across UI and API responses
+
+## F3. Notes and collaboration
+**User story:** As HR or an in-scope Manager, I can leave planning notes without broadening access to the full plan.
+
+**Requirements**
+- Succession notes attach to a candidate
+- Notes store author employee and role
+- Visibility options:
+  - `HR_ONLY`
+  - `PLAN_VIEWERS`
+- Manager notes are visible to HR and managers who already have plan access
+
+**Acceptance criteria**
+- Notes never expand the audience of a plan
+- Notes are permissioned and auditable
+
+## F4. Performance signals and reporting
+**User story:** As an HR Admin, I can review successor readiness in context with performance and export org-wide planning reports.
+
+**Requirements**
+- Candidate snapshots may store:
+  - latest scorecard overall rating
+  - scorecard percent
+  - final rating source
+  - calibration placement
+  - snapshot department/title/manager
+- HR reporting includes:
+  - coverage by department
+  - critical roles without a `READY_NOW` candidate
+  - manager-proposed successors awaiting HR review
+- Grouped reporting follows small-N privacy rules
+
+**Acceptance criteria**
+- Reporting uses persisted or deterministic performance signals
+- HR exports do not leak restricted fields to unauthorized roles
+
+---
+
 ## 10) Cross-cutting requirements
 
 ### Audit logging
@@ -329,6 +456,12 @@ Must log all sensitive mutations:
 - evidence attach/detach
 - calibration movements and finalize
 - improvement plan transitions and updates
+- succession position create/update/archive
+- succession plan create/update
+- succession candidate add/remove/reorder
+- succession readiness changes
+- succession sensitive field changes (`risk_of_loss`, `confidence`)
+- succession note creation
 
 ### Notifications (MVP-lite)
 MVP can be in-app only; email reminders can come later.
@@ -455,6 +588,12 @@ The reference system includes an “Explorer” style analytics builder with mea
 ### Milestone 3 — Improvement Plans MVP
 - Create plan + timeline
 - Audit log + export placeholder
+
+### Milestone 10 — Succession Planning MVP
+- Position and succession plan management
+- Scoped manager proposals and notes
+- Candidate readiness with HR-only sensitive fields by default
+- Succession reporting, export, and demo walkthrough support
 
 ## 13) Open questions (track here as we learn)
 - Visibility policy defaults: manager-only vs employee-after-release?
