@@ -1743,7 +1743,7 @@ Feedback observed:
 
 ## Milestone 10 — Succession Planning (MVP)
 
-**Status:** Phase 0 in progress.  
+**Status:** Phase 0 completed in PR #46. Phase 1 is next.  
 **Objective:** Add a permissioned succession planning module for HR Admins and scoped Managers with premium UX, audit logging, reporting, and demo-ready data.
 
 ### Scope
@@ -1761,14 +1761,16 @@ Feedback observed:
 - Advanced forecasting or AI-based talent recommendations
 
 ### Phase 0 — Docs, planning, and architecture alignment
-- [ ] Add Succession Planning MVP milestone and phase breakdown to `PLAN.md`
-- [ ] Update `docs/product/PRD.md` with succession concepts, access model, sensitive fields, and audit expectations
-- [ ] Update `docs/architecture/ARCHITECTURE.md` with `server/succession/*` and permission-scoping notes
-- [ ] Run applicable local quality gates for the docs-only PR
+- [x] Add Succession Planning MVP milestone and phase breakdown to `PLAN.md`
+- [x] Update `docs/product/PRD.md` with succession concepts, access model, sensitive fields, and audit expectations
+- [x] Update `docs/architecture/ARCHITECTURE.md` with `server/succession/*` and permission-scoping notes
+- [x] Run applicable local quality gates for the docs-only PR
 
 #### Acceptance criteria
-- [ ] The locked access model is documented in both product and architecture docs
-- [ ] Future phases are sequenced as one phase per PR
+- [x] The locked access model is documented in both product and architecture docs
+- [x] Future phases are sequenced as one phase per PR
+
+Completed in PR #46.
 
 ### Phase 1 — Data model + migrations (DB foundation)
 - [ ] Add Prisma models for `Position`, `SuccessionPlan`, `SuccessionCandidate`, `SuccessionNote`
