@@ -5,6 +5,7 @@ import { CycleStatus } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { withReturnTo } from "@/lib/navigation/return-to";
 import type { CalibrationSessionListItem } from "@/server/calibration/calibration-admin-service";
 
 interface CalibrationSessionsTableProps {
@@ -53,7 +54,12 @@ export default function CalibrationSessionsTable({ sessions }: CalibrationSessio
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Link href={`/performance/calibration/${session.id}`}>
+                    <Link
+                      href={withReturnTo(
+                        `/performance/calibration/${session.id}`,
+                        "/admin/performance/calibration",
+                      )}
+                    >
                       <Button size="sm" variant="outline">
                         Open Workspace
                       </Button>

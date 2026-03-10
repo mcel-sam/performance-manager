@@ -1,10 +1,12 @@
 import type { HTMLAttributes } from "react";
 
 import { cn } from "@/components/ui/cn";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
 
 interface AvatarItem {
   id: string;
   label: string;
+  avatarUrl?: string | null;
 }
 
 interface AvatarsStackProps extends HTMLAttributes<HTMLDivElement> {
@@ -19,17 +21,17 @@ export function AvatarsStack({ items, maxVisible = 4, className, ...props }: Ava
   return (
     <div {...props} className={cn("inline-flex items-center", className)}>
       {visibleItems.map((item, index) => (
-        <span
+        <ProfileAvatar
           key={item.id}
+          name={item.label}
+          imageUrl={item.avatarUrl}
           title={item.label}
+          size="sm"
           className={cn(
-            "inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-200 text-[10px] font-semibold uppercase text-slate-700",
+            "border-2 border-white text-[10px]",
             index > 0 && "-ml-2",
           )}
-          aria-label={item.label}
-        >
-          {toInitials(item.label)}
-        </span>
+        />
       ))}
       {remainingCount > 0 ? (
         <span className="-ml-2 inline-flex h-7 min-w-7 items-center justify-center rounded-full border-2 border-white bg-slate-900 px-1 text-[10px] font-semibold text-white">
@@ -38,21 +40,4 @@ export function AvatarsStack({ items, maxVisible = 4, className, ...props }: Ava
       ) : null}
     </div>
   );
-}
-
-function toInitials(label: string): string {
-  const parts = label
-    .split(" ")
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  if (parts.length === 0) {
-    return "U";
-  }
-
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-
-  return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
 }

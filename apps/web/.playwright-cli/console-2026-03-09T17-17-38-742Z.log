@@ -1,0 +1,104 @@
+[     717ms] Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <section className="space-y-4">
+      <section>
+      <Card>
+        <div className="rounded-[v...">
+          <CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-5 sm:p-6...">
+              <div className="grid gap-4...">
+                <ChartExportContainer chartId="reporting-..." className="overflow-x...">
+                  <div className="rounded-[v..." data-chart-export-id="reporting-...">
+                    <CompetencyHeatmapSvg rows={[...]} competencyOrder={[...]} cycleId="cycle_seed..." ...>
+                      <svg viewBox="0 0 1508 466" className="h-auto min..." role="img" aria-label="Competency..." ...>
+                        <text>
+                        <text>
+                        <text>
+                        <text>
+                        <text>
+                        <text>
+                        <text>
+                        <text>
+                        <text>
+                        <text>
+                        <text>
+                        <text>
+                        <text>
+                        <g>
+                          <text>
+                          <a href={"?cycleId..."} data-testid="reporting-..." onFocus={function onFocus} ...>
+                            <title>
++                             Admin/Finance
+                              ...
+                            ...
+                          ...
+                        ...
+                ...
+              ...
+
+    at throwOnHydrationMismatch (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:3348:56)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6777:752)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:131)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9562:97)
+    at workLoopConcurrentByScheduler (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9558:75)
+    at renderRootConcurrent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9541:71)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9068:150)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10230:26)
+    at performWorkUntilDeadline (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2647:72)
+    at EventHandlerNonNull* (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2752:9)
+    at  (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2859:2)
+    at instantiateModule/< (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateModuleFromParent (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:830:12)
+    at commonJsRequire (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:259:12)
+    at  (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2869:44)
+    at instantiateModule/< (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateModuleFromParent (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:830:12)
+    at commonJsRequire (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:259:12)
+    at  (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:13306:43)
+    at  (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:16499:2)
+    at instantiateModule/< (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateModuleFromParent (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:830:12)
+    at commonJsRequire (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:259:12)
+    at  (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:16532:44)
+    at instantiateModule/< (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateModuleFromParent (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:830:12)
+    at commonJsRequire (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:259:12)
+    at  (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:12441:80)
+    at instantiateModule/< (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateModuleFromParent (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:830:12)
+    at commonJsRequire (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:259:12)
+    at  (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:12703:47)
+    at appBootstrap/< (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:177:16)
+    at loadScriptsInSequence (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:141:16)
+    at appBootstrap (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:170:26)
+    at  (http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:12702:32)
+    at instantiateModule/< (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateRuntimeModule (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:808:12)
+    at registerChunk (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:1626:50)
+    at async*registerChunk (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:1564:20)
+    at  (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:1853:18)
+    at  (http://localhost:3000/_next/static/chunks/turbopack-_23a915ee._.js:1857:3)

@@ -69,6 +69,32 @@ const dimensionLabel: Record<CompetencyDimensionKey, string> = {
   ADAPTABILITY: "adaptability",
 };
 
+const portrait = (group: "men" | "women", index: number) =>
+  `https://randomuser.me/api/portraits/${group}/${index}.jpg`;
+
+const demoAvatarByEmployeeId: Record<string, string> = {
+  emp_hr_admin_1: portrait("women", 68),
+  emp_calibrator_1: portrait("women", 44),
+  emp_manager_1: portrait("men", 32),
+  emp_manager_2: portrait("men", 45),
+  emp_employee_1: portrait("men", 36),
+  emp_employee_2: portrait("women", 65),
+  emp_employee_3: portrait("women", 28),
+  emp_employee_4: portrait("men", 52),
+  emp_employee_5: portrait("men", 41),
+  emp_employee_6: portrait("women", 48),
+  emp_employee_7: portrait("men", 54),
+  emp_employee_8: portrait("women", 33),
+  emp_employee_9: portrait("men", 57),
+  emp_employee_10: portrait("women", 62),
+  emp_employee_11: portrait("men", 67),
+  emp_employee_12: portrait("women", 71),
+  emp_employee_13: portrait("women", 58),
+  emp_employee_14: portrait("men", 71),
+  emp_employee_15: portrait("women", 75),
+  emp_employee_16: portrait("men", 61),
+};
+
 export async function seedDemoData(): Promise<DemoSeedSummary> {
   const reviewedPeople = demoPeople.filter((person) => person.includeInCycle);
   const personByEmployeeId = new Map(demoPeople.map((person) => [person.employeeId, person]));
@@ -98,9 +124,21 @@ export async function seedDemoData(): Promise<DemoSeedSummary> {
       lastName: person.lastName,
       department: person.department,
       title: person.title,
-      managerId: person.managerEmployeeId,
+      avatarUrl: demoAvatarByEmployeeId[person.employeeId] ?? null,
+      managerId: null,
     })),
   });
+
+  for (const person of demoPeople) {
+    if (!person.managerEmployeeId) {
+      continue;
+    }
+
+    await prisma.employee.update({
+      where: { id: person.employeeId },
+      data: { managerId: person.managerEmployeeId },
+    });
+  }
 
   await prisma.reviewTemplate.create({
     data: {

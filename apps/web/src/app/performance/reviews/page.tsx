@@ -10,6 +10,11 @@ import { FilterChip } from "@/components/ui/filter-chip";
 import { RightDrawer } from "@/components/ui/right-drawer";
 import { Select } from "@/components/ui/select";
 import { getReviewStatusTone, StatusChip } from "@/components/ui/status-chip";
+import { withReturnTo } from "@/lib/navigation/return-to";
+import {
+  getReviewRelationshipAudienceLabel,
+  getReviewRelationshipHelpText,
+} from "@/lib/reviews/review-copy";
 import {
   Table,
   TableBody,
@@ -37,13 +42,6 @@ interface ReviewTaskFilters {
   status: StatusFilter | null;
   relationship: RelationshipFilter | null;
 }
-
-const relationshipLabel = {
-  SELF: "Self",
-  MANAGER: "Manager",
-  PEER: "Peer",
-  UPWARD: "Upward",
-} as const;
 
 const statusLabel = {
   NOT_STARTED: "Not started",
@@ -80,7 +78,7 @@ export default async function PerformanceReviewsPage({
 
       <FilterBar
         method="get"
-        description="Search by subject or cycle, then filter by status or relationship to narrow the queue."
+        description="Search by subject or cycle, then narrow the queue by status or who you're reviewing."
         chips={
           filterChips.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2" data-testid="reviews-filter-chips">
@@ -123,16 +121,16 @@ export default async function PerformanceReviewsPage({
         </label>
 
         <label className="flex flex-col gap-2 text-sm text-slate-700">
-          Relationship
+          Who you&apos;re reviewing
           <Select
             name="relationship"
             defaultValue={filters.relationship ?? ""}
             data-testid="reviews-filter-relationship"
           >
-            <option value="">All relationships</option>
+            <option value="">All review types</option>
             {relationshipFilterOptions.map((relationship) => (
               <option key={relationship} value={relationship}>
-                {relationshipLabel[relationship]}
+                {getReviewRelationshipAudienceLabel(relationship)}
               </option>
             ))}
           </Select>
@@ -215,7 +213,7 @@ export default async function PerformanceReviewsPage({
                     <TableRow>
                       <TableHead>Cycle</TableHead>
                       <TableHead>Subject</TableHead>
-                      <TableHead>Relationship</TableHead>
+                      <TableHead>Who you&apos;re reviewing</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Due</TableHead>
                       <TableHead>Action</TableHead>
@@ -255,7 +253,7 @@ export default async function PerformanceReviewsPage({
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-slate-700">
-                              {relationshipLabel[task.relationship]}
+                              {getReviewRelationshipAudienceLabel(task.relationship)}
                             </span>
                           </TableCell>
                           <TableCell>
@@ -269,7 +267,17 @@ export default async function PerformanceReviewsPage({
                             </span>
                           </TableCell>
                           <TableCell>
-                            <Link href={`/performance/reviews/${task.cycleId}/write/${task.id}`}>
+                            <Link
+                              href={withReturnTo(
+                                `/performance/reviews/${task.cycleId}/write/${task.id}`,
+                                toReviewsHref({
+                                  taskId: task.id,
+                                  query: filters.query,
+                                  status: filters.status,
+                                  relationship: filters.relationship,
+                                }),
+                              )}
+                            >
                               <Button size="sm">Open Review</Button>
                             </Link>
                           </TableCell>
@@ -286,7 +294,7 @@ export default async function PerformanceReviewsPage({
             <RightDrawer
               testId="reviews-task-drawer"
               title="Task details"
-              subtitle={`${selectedTask.subjectName} · ${relationshipLabel[selectedTask.relationship]}`}
+              subtitle={`${selectedTask.subjectName} · ${getReviewRelationshipAudienceLabel(selectedTask.relationship)}`}
               closeHref={toReviewsHref({
                 query: filters.query,
                 status: filters.status,
@@ -309,17 +317,17 @@ export default async function PerformanceReviewsPage({
                           Task summary
                         </p>
                         <p className="text-xl font-semibold leading-tight text-slate-900">
-                          {relationshipLabel[selectedTask.relationship]} review for {selectedTask.subjectName}
+                          Review for {selectedTask.subjectName}
                         </p>
                         <p className="text-xs text-slate-600">
-                          {selectedTask.cycleName}
+                          {getReviewRelationshipAudienceLabel(selectedTask.relationship)} · {selectedTask.cycleName}
                         </p>
                       </div>
 
                       <div className="space-y-2 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
                         <TaskDrawerDetailRow
-                          label="Relationship"
-                          value={relationshipLabel[selectedTask.relationship]}
+                          label="Who you're reviewing"
+                          value={getReviewRelationshipAudienceLabel(selectedTask.relationship)}
                         />
                         <TaskDrawerDetailRow
                           label="Status"
@@ -335,7 +343,17 @@ export default async function PerformanceReviewsPage({
                         />
                       </div>
 
-                      <Link href={`/performance/reviews/${selectedTask.cycleId}/write/${selectedTask.id}`}>
+                      <Link
+                        href={withReturnTo(
+                          `/performance/reviews/${selectedTask.cycleId}/write/${selectedTask.id}`,
+                          toReviewsHref({
+                            taskId: selectedTask.id,
+                            query: filters.query,
+                            status: filters.status,
+                            relationship: filters.relationship,
+                          }),
+                        )}
+                      >
                         <Button size="sm" className="w-full" data-testid="reviews-drawer-open-review">
                           Open Review
                         </Button>
@@ -372,9 +390,9 @@ export default async function PerformanceReviewsPage({
                         </p>
                       </div>
                       <div className="rounded-[var(--radius-sm)] border border-slate-200 bg-slate-50 px-3 py-2">
-                        <p className="font-medium text-slate-900">Visibility</p>
+                        <p className="font-medium text-slate-900">Review context</p>
                         <p className="text-xs text-slate-600">
-                          You can update only your assigned submission for this task.
+                          {getReviewRelationshipHelpText(selectedTask.relationship)}
                         </p>
                       </div>
                     </div>
@@ -493,7 +511,7 @@ function buildFilterChips(filters: ReviewTaskFilters): Array<{
   if (filters.relationship) {
     chips.push({
       key: "relationship",
-      label: `Relationship: ${relationshipLabel[filters.relationship]}`,
+      label: `Review type: ${getReviewRelationshipAudienceLabel(filters.relationship)}`,
       clearHref: toReviewsHref({
         taskId: filters.taskId,
         query: filters.query,

@@ -7,7 +7,7 @@ describe("getGettingStartedContent", () => {
   it("returns HR admin setup links", () => {
     const content = getGettingStartedContent(UserRole.HR_ADMIN);
 
-    expect(content.title).toContain("cycle");
+    expect(content.title.toLowerCase()).toContain("cycle");
     expect(content.links.some((link) => link.href === "/admin/performance/review-cycles")).toBe(
       true,
     );
@@ -30,5 +30,15 @@ describe("getGettingStartedContent", () => {
 
     expect(content.links.some((link) => link.href === "/performance/reviews")).toBe(true);
     expect(content.links.some((link) => link.href === "/help")).toBe(true);
+  });
+
+  it("uses concise workspace labels instead of repeated open verbs", () => {
+    const roles = [UserRole.HR_ADMIN, UserRole.MANAGER, UserRole.EMPLOYEE];
+
+    for (const role of roles) {
+      const content = getGettingStartedContent(role);
+      expect(content.links.every((link) => !link.label.startsWith("Open "))).toBe(true);
+      expect(content.links.every((link) => link.description.length > 0)).toBe(true);
+    }
   });
 });

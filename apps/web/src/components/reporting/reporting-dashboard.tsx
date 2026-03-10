@@ -1,17 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type { ReviewSubmissionStatus } from "@prisma/client";
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -32,17 +29,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { HelpHint } from "@/components/ui/help-hint";
-import { RightDrawer } from "@/components/ui/right-drawer";
 import { Select } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableWrapper,
-} from "@/components/ui/table";
+import { withReturnTo } from "@/lib/navigation/return-to";
 import { reportingChartTheme } from "@/components/reporting/chart-theme";
 import type {
   ReportingCompetenciesResponse,
@@ -117,6 +105,46 @@ const ratingBucketColor: Record<number, string> = {
   5: "#0ea5e9",
 };
 
+interface CompetencyHeatmapCell {
+  dimensionKey: string;
+  averageRating: number | null;
+  observedCount: number;
+}
+
+interface CompetencyHeatmapRow {
+  department: string;
+  cells: CompetencyHeatmapCell[];
+}
+
+interface CompetencyHeatmapHover {
+  department: string;
+  dimensionLabel: string;
+  averageRating: number | null;
+  observedCount: number;
+}
+
+interface ScorecardMatrixRow {
+  metricKey: string;
+  label: string;
+  self: number | null;
+  manager: number | null;
+  average: number | null;
+  gap: number | null;
+  absoluteGap: number | null;
+  comparedCount: number;
+  observedCount: number;
+  notObservedCount: number;
+}
+
+interface ScorecardHeatmapHover {
+  metricLabel: string;
+  columnLabel: string;
+  displayValue: string;
+  observedCount: number;
+  notObservedCount: number;
+  comparedCount: number;
+}
+
 export function ReportingDashboard({
   cycleName,
   selectedTab,
@@ -143,13 +171,6 @@ export function ReportingDashboard({
   scorecardOrder,
   csvHrefs,
 }: ReportingDashboardProps) {
-  const [hiddenProgressSeries, setHiddenProgressSeries] = useState<
-    Record<ProgressStatusFilter, boolean>
-  >({
-    NOT_STARTED: false,
-    IN_PROGRESS: false,
-    COMPLETED: false,
-  });
   const [hiddenRatingSeries, setHiddenRatingSeries] = useState<
     Record<RatingSourceFilter, boolean>
   >({
@@ -157,7 +178,6 @@ export function ReportingDashboard({
     SCORECARD: false,
   });
   const [statusDrilldown, setStatusDrilldown] = useState<ProgressStatusFilter | null>(null);
-  const [ratingDrilldown, setRatingDrilldown] = useState<number | null>(null);
 
   const totalPeople =
     progress.totals.notStarted + progress.totals.inProgress + progress.totals.completed;
@@ -181,17 +201,12 @@ export function ReportingDashboard({
         return false;
       }
 
-      if (ratingDrilldown && row.finalRating !== ratingDrilldown) {
-        return false;
-      }
-
       return true;
     });
-  }, [people.rows, ratingDrilldown, statusDrilldown]);
+  }, [people.rows, statusDrilldown]);
 
   const employeeCsvHref = useMemo(() => buildEmployeeCsvHref(activeRows), [activeRows]);
 
-  const hasActiveDrilldown = statusDrilldown !== null || ratingDrilldown !== null;
   const baseFilterQuery = useMemo(
     () => ({
       cycleId: selectedCycleId,
@@ -245,6 +260,15 @@ export function ReportingDashboard({
       ].filter((chip): chip is { key: string; label: string; clearHref: string } => chip !== null),
     [baseFilterQuery, selectedDepartment, selectedStatus, selectedTitle],
   );
+  const currentReportingHref = useMemo(
+    () =>
+      toQueryString({
+        ...baseFilterQuery,
+        department: selectedDepartment,
+        title: selectedTitle,
+      }),
+    [baseFilterQuery, selectedDepartment, selectedTitle],
+  );
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6" data-testid="reporting-dashboard">
@@ -263,7 +287,7 @@ export function ReportingDashboard({
       <FilterBar
         method="get"
         data-testid="reporting-filter-bar"
-        description="Select a cycle, then refine by department, title, and status. Group by controls table and chart slices."
+        description="Refine the cycle scope, then move between progress, results, competencies, and scorecard views without carrying a full employee table across every tab."
         chips={
           filterChips.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2" data-testid="reporting-filter-chips">
@@ -284,6 +308,7 @@ export function ReportingDashboard({
       >
         <input type="hidden" name="tab" value={selectedTab} />
         <input type="hidden" name="page" value="1" />
+        <input type="hidden" name="groupBy" value={selectedGroupBy} />
         {selectedDimensionKey ? (
           <input type="hidden" name="dimensionKey" value={selectedDimensionKey} />
         ) : null}
@@ -334,14 +359,6 @@ export function ReportingDashboard({
             <option value="NOT_STARTED">Not started</option>
             <option value="IN_PROGRESS">In progress</option>
             <option value="COMPLETED">Completed</option>
-          </Select>
-        </label>
-
-        <label className="flex flex-col gap-2 text-sm text-slate-700">
-          Group by
-          <Select name="groupBy" defaultValue={selectedGroupBy} data-testid="reporting-group-by">
-            <option value="department">Department</option>
-            <option value="title">Title</option>
           </Select>
         </label>
 
@@ -415,14 +432,11 @@ export function ReportingDashboard({
           </Link>
         </div>
 
-        <div className="text-sm text-slate-600">
-          Showing <span data-testid="reporting-current-department">{selectedDepartment ?? "All departments"}</span>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+          <span className="text-slate-500">Scope</span>
+          <span data-testid="reporting-current-department">{selectedDepartment ?? "All departments"}</span>
           {" • "}
           <span data-testid="reporting-current-title">{selectedTitle ?? "All titles"}</span>
-          {" • "}
-          <span data-testid="reporting-current-group-by">
-            Group by {selectedGroupBy === "title" ? "Title" : "Department"}
-          </span>
         </div>
       </section>
 
@@ -431,15 +445,14 @@ export function ReportingDashboard({
           progress={progress}
           totalPeople={totalPeople}
           csvHref={csvHrefs.progress}
-          hiddenSeries={hiddenProgressSeries}
-          onToggleSeries={(status) =>
-            setHiddenProgressSeries((previous) => ({
-              ...previous,
-              [status]: !previous[status],
-            }))
-          }
+          selectedStatus={selectedStatus}
           statusDrilldown={statusDrilldown}
           onDrilldown={setStatusDrilldown}
+          activeRows={activeRows}
+          people={people}
+          paginationHrefs={paginationHrefs}
+          employeeCsvHref={employeeCsvHref}
+          currentReportingHref={currentReportingHref}
         />
       ) : null}
 
@@ -457,8 +470,6 @@ export function ReportingDashboard({
               [source]: !previous[source],
             }))
           }
-          ratingDrilldown={ratingDrilldown}
-          onDrilldown={setRatingDrilldown}
         />
       ) : null}
 
@@ -480,163 +491,6 @@ export function ReportingDashboard({
       {selectedTab === "scorecard" ? (
         <ScorecardTab scorecard={scorecard} scorecardOrder={scorecardOrder} />
       ) : null}
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <CardTitle>Employee drilldown</CardTitle>
-              <CardDescription>
-                {selectedStatus
-                  ? `Filtered to ${progressStatusLabel[selectedStatus].toLowerCase()} employees.`
-                  : "Use chart interactions or filters to narrow this table."}
-              </CardDescription>
-            </div>
-            {activeRows.length > 0 ? (
-              <a
-                href={employeeCsvHref}
-                download={`reporting-employees-${selectedCycleId}.csv`}
-                className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-              >
-                Export CSV
-              </a>
-            ) : null}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 p-0">
-          {hasActiveDrilldown ? (
-            <div
-              className="mx-5 mt-4 rounded-[var(--radius-md)] border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900"
-              data-testid="reporting-active-drilldowns"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  Active drilldowns:
-                  {statusDrilldown ? ` status = ${progressStatusLabel[statusDrilldown]}` : ""}
-                  {ratingDrilldown ? ` • rating = ${ratingDrilldown}` : ""}
-                </span>
-                <button
-                  type="button"
-                  className="font-semibold underline underline-offset-2"
-                  data-testid="reporting-clear-drilldown"
-                  onClick={() => {
-                    setStatusDrilldown(null);
-                    setRatingDrilldown(null);
-                  }}
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {activeRows.length === 0 ? (
-            <div className="p-5">
-              <EmptyState
-                title="No employees match this filter"
-                description="Try clearing one or more filters to broaden the drilldown table."
-              />
-            </div>
-          ) : (
-            <TableWrapper>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Self</TableHead>
-                    <TableHead>Manager</TableHead>
-                    <TableHead>Overall</TableHead>
-                    <TableHead>Final rating</TableHead>
-                    <TableHead>Scorecard %</TableHead>
-                    <TableHead>Links</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {activeRows.map((row) => (
-                    <TableRow key={row.employeeId} data-testid="reporting-employee-row">
-                      <TableCell className="font-semibold text-slate-900">{row.employeeName}</TableCell>
-                      <TableCell className="text-slate-700">{row.department}</TableCell>
-                      <TableCell className="text-slate-700">{row.title}</TableCell>
-                      <TableCell>
-                        <Badge variant="neutral">{submissionStatusLabel[row.selfStatus]}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="neutral">{submissionStatusLabel[row.managerStatus]}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="info">{progressStatusLabel[row.overallStatus]}</Badge>
-                      </TableCell>
-                      <TableCell className="text-slate-700">
-                        {row.finalRating ? `${row.finalRating}` : "-"}
-                        {row.finalRatingSource ? ` (${row.finalRatingSource})` : ""}
-                      </TableCell>
-                      <TableCell className="text-slate-700">
-                        {typeof row.scorecardPercent === "number"
-                          ? `${row.scorecardPercent.toFixed(1)}%`
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-2">
-                          {row.links.calibrationSession ? (
-                            <Link
-                              href={row.links.calibrationSession}
-                              className="text-xs font-medium text-slate-700 underline underline-offset-2"
-                            >
-                              Calibration
-                            </Link>
-                          ) : null}
-                          {row.links.improvementPlan ? (
-                            <Link
-                              href={row.links.improvementPlan}
-                              className="text-xs font-medium text-slate-700 underline underline-offset-2"
-                            >
-                              Plan
-                            </Link>
-                          ) : null}
-                          {!row.links.calibrationSession && !row.links.improvementPlan ? (
-                            <span className="text-xs text-slate-400">-</span>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableWrapper>
-          )}
-
-          <div className="flex items-center justify-between px-5 pb-5 text-sm text-slate-600">
-            <span data-testid="reporting-table-row-count">
-              Showing {activeRows.length} of {people.rows.length} rows on this page (Page {people.pagination.page} of{" "}
-              {Math.max(people.pagination.totalPages, 1)}; {people.pagination.totalRows} employees total)
-            </span>
-            <div className="flex items-center gap-2">
-              {paginationHrefs.previous ? (
-                <Link
-                  href={paginationHrefs.previous}
-                  className="text-xs font-medium text-slate-700 underline underline-offset-2"
-                >
-                  Previous
-                </Link>
-              ) : (
-                <span className="text-xs text-slate-400">Previous</span>
-              )}
-              {paginationHrefs.next ? (
-                <Link
-                  href={paginationHrefs.next}
-                  className="text-xs font-medium text-slate-700 underline underline-offset-2"
-                >
-                  Next
-                </Link>
-              ) : (
-                <span className="text-xs text-slate-400">Next</span>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
@@ -645,18 +499,29 @@ function ProgressTab({
   progress,
   totalPeople,
   csvHref,
-  hiddenSeries,
-  onToggleSeries,
+  selectedStatus,
   statusDrilldown,
   onDrilldown,
+  activeRows,
+  people,
+  paginationHrefs,
+  employeeCsvHref,
+  currentReportingHref,
 }: {
   progress: ReportingProgressResult;
   totalPeople: number;
   csvHref: string;
-  hiddenSeries: Record<ProgressStatusFilter, boolean>;
-  onToggleSeries: (status: ProgressStatusFilter) => void;
+  selectedStatus?: ProgressStatusFilter;
   statusDrilldown: ProgressStatusFilter | null;
   onDrilldown: (status: ProgressStatusFilter | null) => void;
+  activeRows: ReportingPeopleResult["rows"];
+  people: ReportingPeopleResult;
+  paginationHrefs: {
+    previous: string | null;
+    next: string | null;
+  };
+  employeeCsvHref: string;
+  currentReportingHref: string;
 }) {
   if (progress.suppression.suppressed) {
     return (
@@ -670,22 +535,22 @@ function ProgressTab({
     );
   }
 
-  const chartData = [
-    {
-      name: "Employees",
-      NOT_STARTED: hiddenSeries.NOT_STARTED ? 0 : progress.totals.notStarted,
-      IN_PROGRESS: hiddenSeries.IN_PROGRESS ? 0 : progress.totals.inProgress,
-      COMPLETED: hiddenSeries.COMPLETED ? 0 : progress.totals.completed,
-    },
-  ];
-  const completionDonutData = [
-    { name: "Not started", value: progress.totals.notStarted, color: reportingChartTheme.progress.notStarted },
-    { name: "In progress", value: progress.totals.inProgress, color: reportingChartTheme.progress.inProgress },
-    { name: "Completed", value: progress.totals.completed, color: reportingChartTheme.progress.completed },
-  ].filter((entry) => entry.value > 0);
+  const statusMix = (Object.keys(progressStatusLabel) as ProgressStatusFilter[]).map((status) => ({
+    status,
+    label: progressStatusLabel[status],
+    value: progress.totals[toProgressKey(status)],
+    color:
+      status === "NOT_STARTED"
+        ? reportingChartTheme.progress.notStarted
+        : status === "IN_PROGRESS"
+          ? reportingChartTheme.progress.inProgress
+          : reportingChartTheme.progress.completed,
+  }));
+  const completionRate = totalPeople > 0 ? Math.round((progress.totals.completed / totalPeople) * 100) : 0;
+  const queueLabel = statusDrilldown ?? selectedStatus ?? null;
 
   return (
-    <>
+    <section className="space-y-4">
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard
           title="Not started"
@@ -728,9 +593,10 @@ function ProgressTab({
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle>Status mix</CardTitle>
+              <CardTitle>Completion overview</CardTitle>
               <CardDescription>
-                Distribution across {totalPeople} employees in the current filter scope.
+                One view for the current cycle scope. The people queue stays here instead of
+                following every analytics tab.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -756,117 +622,70 @@ function ProgressTab({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <ChartExportContainer chartId="reporting-progress-chart" className="space-y-3 p-3">
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
-              <div className="h-56 rounded-[var(--radius-sm)] border border-slate-200 bg-white p-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 12, right: 12, left: 12, bottom: 12 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="name" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                    <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                    <Tooltip
-                      cursor={{ fill: "rgba(148, 163, 184, 0.16)" }}
-                      formatter={(value: number | undefined, name: string | undefined) => [
-                        value ?? 0,
-                        progressStatusLabel[(name ?? "NOT_STARTED") as ProgressStatusFilter],
-                      ]}
-                      labelFormatter={() => "Current filter scope"}
-                    />
-                    <Legend
-                      formatter={(value) => progressStatusLabel[value as ProgressStatusFilter]}
-                      wrapperStyle={{ fontSize: 12 }}
-                    />
-                    <Bar
-                      dataKey="NOT_STARTED"
-                      stackId="status"
-                      fill={reportingChartTheme.progress.notStarted}
-                      radius={[0, 0, 0, 0]}
-                      onClick={() => onDrilldown("NOT_STARTED")}
-                      animationDuration={450}
-                    />
-                    <Bar
-                      dataKey="IN_PROGRESS"
-                      stackId="status"
-                      fill={reportingChartTheme.progress.inProgress}
-                      radius={[0, 0, 0, 0]}
-                      onClick={() => onDrilldown("IN_PROGRESS")}
-                      animationDuration={450}
-                    />
-                    <Bar
-                      dataKey="COMPLETED"
-                      stackId="status"
-                      fill={reportingChartTheme.progress.completed}
-                      radius={[8, 8, 0, 0]}
-                      onClick={() => onDrilldown("COMPLETED")}
-                      animationDuration={450}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+          <ChartExportContainer chartId="reporting-progress-chart" className="space-y-4 p-4">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_320px]">
+              <div className="space-y-4">
+                <ProgressMixSvg totalPeople={totalPeople} segments={statusMix} />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {statusMix.map((segment) => {
+                    const segmentPercent =
+                      totalPeople > 0 ? Math.round((segment.value / totalPeople) * 100) : 0;
+
+                    return (
+                      <button
+                        key={`progress-drill-${segment.status}`}
+                        type="button"
+                        aria-label={`Filter employee queue by ${segment.label}`}
+                        data-testid={`reporting-progress-drilldown-${segment.status}`}
+                        onClick={() =>
+                          onDrilldown(statusDrilldown === segment.status ? null : segment.status)
+                        }
+                        className={[
+                          "rounded-[var(--radius-md)] border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300",
+                          statusDrilldown === segment.status
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white",
+                        ].join(" ")}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                            <span
+                              className="inline-block h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: segment.color }}
+                            />
+                            {segment.label}
+                          </span>
+                          <span className="text-xs">{segmentPercent}%</span>
+                        </div>
+                        <p className="mt-3 text-2xl font-semibold">{segment.value}</p>
+                        <p className="mt-1 text-xs opacity-80">
+                          {segment.value === 1 ? "employee" : "employees"}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="h-56 rounded-[var(--radius-sm)] border border-slate-200 bg-white p-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={completionDonutData}
-                      innerRadius={52}
-                      outerRadius={86}
-                      dataKey="value"
-                      nameKey="name"
-                      paddingAngle={2}
-                      animationDuration={450}
-                    >
-                      {completionDonutData.map((entry) => (
-                        <Cell key={`progress-donut-${entry.name}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value: number | undefined) => value ?? 0} />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
+
+              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                <MiniInsightCard
+                  title="Completion rate"
+                  value={`${completionRate}%`}
+                  subtitle={`${progress.totals.completed} of ${totalPeople} employees completed both reviews.`}
+                />
+                <MiniInsightCard
+                  title="Employee draft activity"
+                  value={String(progress.self.inProgress)}
+                  subtitle="Self reviews started but not yet completed."
+                />
+                <MiniInsightCard
+                  title="Manager draft activity"
+                  value={String(progress.manager.inProgress)}
+                  subtitle="Manager reviews currently in motion."
+                />
               </div>
             </div>
           </ChartExportContainer>
-
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(progressStatusLabel) as ProgressStatusFilter[]).map((status) => (
-              <button
-                key={`progress-legend-${status}`}
-                type="button"
-                aria-label={`Toggle ${progressStatusLabel[status]} segment visibility`}
-                data-testid={`reporting-progress-legend-${status}`}
-                onClick={() => onToggleSeries(status)}
-                className={legendButtonClassName(!hiddenSeries[status])}
-              >
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-full"
-                  style={{
-                    backgroundColor:
-                      status === "NOT_STARTED"
-                        ? reportingChartTheme.progress.notStarted
-                        : status === "IN_PROGRESS"
-                          ? reportingChartTheme.progress.inProgress
-                          : reportingChartTheme.progress.completed,
-                  }}
-                />
-                {progressStatusLabel[status]}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(progressStatusLabel) as ProgressStatusFilter[]).map((status) => (
-              <button
-                key={`progress-drill-${status}`}
-                type="button"
-                aria-label={`Filter employee table by ${progressStatusLabel[status]}`}
-                data-testid={`reporting-progress-drilldown-${status}`}
-                onClick={() => onDrilldown(statusDrilldown === status ? null : status)}
-                className={drilldownButtonClassName(statusDrilldown === status)}
-              >
-                {progressStatusLabel[status]} ({progress.totals[toProgressKey(status)]})
-              </button>
-            ))}
-          </div>
 
           <HelpHint label="What counts as In progress?">
             In progress means either the self review or manager review has started, but both are not
@@ -874,7 +693,153 @@ function ProgressTab({
           </HelpHint>
         </CardContent>
       </Card>
-    </>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Employee queue</CardTitle>
+              <CardDescription>
+                {queueLabel
+                  ? `Focused on ${progressStatusLabel[queueLabel].toLowerCase()} employees in the current page.`
+                  : "A lighter queue view for follow-up actions and links."}
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {statusDrilldown ? (
+                <button
+                  type="button"
+                  className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                  data-testid="reporting-clear-drilldown"
+                  onClick={() => onDrilldown(null)}
+                >
+                  Clear queue filter
+                </button>
+              ) : null}
+              {activeRows.length > 0 ? (
+                <a
+                  href={employeeCsvHref}
+                  download="reporting-employee-queue.csv"
+                  className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                >
+                  Export queue CSV
+                </a>
+              ) : null}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {activeRows.length === 0 ? (
+            <EmptyState
+              title="No employees match this queue"
+              description="Try clearing the queue filter or widening the reporting scope."
+            />
+          ) : (
+            <div className="grid gap-3">
+              {activeRows.map((row) => (
+                <article
+                  key={row.employeeId}
+                  data-testid="reporting-employee-row"
+                  className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-4 shadow-[var(--shadow-xs)]"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">{row.employeeName}</h3>
+                      <p className="text-sm text-slate-600">
+                        {row.department} · {row.title}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                        Rating
+                      </p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {row.finalRating ? `Final ${row.finalRating}` : "No final rating"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {row.finalRatingSource ? humanizeEnumValue(row.finalRatingSource) : "Pending source"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge variant={overallStatusBadgeVariant(row.overallStatus)}>
+                      {progressStatusLabel[row.overallStatus]}
+                    </Badge>
+                    <Badge variant="neutral">Self {submissionStatusLabel[row.selfStatus]}</Badge>
+                    <Badge variant="neutral">Manager {submissionStatusLabel[row.managerStatus]}</Badge>
+                    <Badge variant="info">
+                      {typeof row.scorecardPercent === "number"
+                        ? `${row.scorecardPercent.toFixed(1)}% scorecard`
+                        : "No scorecard"}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                    <p className="text-xs text-slate-500">
+                      Follow-up links for the selected employee record.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-700">
+                      <Link
+                        href={withReturnTo(row.links.packet, currentReportingHref)}
+                        className="underline underline-offset-2"
+                      >
+                        Packet
+                      </Link>
+                      {row.links.calibrationSession ? (
+                        <Link
+                          href={withReturnTo(row.links.calibrationSession, currentReportingHref)}
+                          className="underline underline-offset-2"
+                        >
+                          Calibration
+                        </Link>
+                      ) : null}
+                      {row.links.improvementPlan ? (
+                        <Link
+                          href={withReturnTo(row.links.improvementPlan, currentReportingHref)}
+                          className="underline underline-offset-2"
+                        >
+                          Plan
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+            <span data-testid="reporting-table-row-count">
+              Showing {activeRows.length} of {people.rows.length} rows on this page (Page {people.pagination.page} of{" "}
+              {Math.max(people.pagination.totalPages, 1)}; {people.pagination.totalRows} employees total)
+            </span>
+            <div className="flex items-center gap-2">
+              {paginationHrefs.previous ? (
+                <Link
+                  href={paginationHrefs.previous}
+                  className="text-xs font-medium text-slate-700 underline underline-offset-2"
+                >
+                  Previous
+                </Link>
+              ) : (
+                <span className="text-xs text-slate-400">Previous</span>
+              )}
+              {paginationHrefs.next ? (
+                <Link
+                  href={paginationHrefs.next}
+                  className="text-xs font-medium text-slate-700 underline underline-offset-2"
+                >
+                  Next
+                </Link>
+              ) : (
+                <span className="text-xs text-slate-400">Next</span>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 
@@ -886,8 +851,6 @@ function ResultsTab({
   csvHref,
   hiddenSeries,
   onToggleSeries,
-  ratingDrilldown,
-  onDrilldown,
 }: {
   ratingsFinal: ReportingRatingsResult;
   ratingsScorecard: ReportingRatingsResult;
@@ -896,9 +859,17 @@ function ResultsTab({
   csvHref: string;
   hiddenSeries: Record<RatingSourceFilter, boolean>;
   onToggleSeries: (source: RatingSourceFilter) => void;
-  ratingDrilldown: number | null;
-  onDrilldown: (value: number | null) => void;
 }) {
+  const [showChart, setShowChart] = useState(false);
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      setShowChart(true);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
+
   const suppression =
     selectedRatingSource === "FINAL" ? ratingsFinal.suppression : ratingsScorecard.suppression;
 
@@ -949,50 +920,42 @@ function ResultsTab({
         <CardContent className="space-y-4">
           <ChartExportContainer chartId="reporting-ratings-chart" className="p-3">
             <div className="h-60">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ratingsData} margin={{ top: 12, right: 12, left: 6, bottom: 12 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                  <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                  <Tooltip
-                    formatter={(value: number | undefined, name: string | undefined) => [
-                      value ?? 0,
-                      name === "FINAL" ? "Final" : "Scorecard baseline",
-                    ]}
-                    labelFormatter={(value) => `Rating ${value}`}
-                  />
-                  <Legend
-                    formatter={(value) =>
-                      value === "FINAL" ? "Final" : "Scorecard baseline"
-                    }
-                    wrapperStyle={{ fontSize: 12 }}
-                  />
-                  <Bar
-                    dataKey="FINAL"
-                    fill={reportingChartTheme.ratingSource.FINAL}
-                    hide={hiddenSeries.FINAL}
-                    animationDuration={450}
-                    onClick={(entry) => {
-                      const payload = entry?.payload as { rating?: number } | undefined;
-                      if (typeof payload?.rating === "number") {
-                        onDrilldown(payload.rating);
+              {showChart ? (
+                <ResponsiveContainer width="100%" height="100%" minWidth={320} minHeight={240}>
+                  <BarChart data={ratingsData} margin={{ top: 12, right: 12, left: 6, bottom: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                    <Tooltip
+                      formatter={(value: number | undefined, name: string | undefined) => [
+                        value ?? 0,
+                        name === "FINAL" ? "Final" : "Scorecard baseline",
+                      ]}
+                      labelFormatter={(value) => `Rating ${value}`}
+                    />
+                    <Legend
+                      formatter={(value) =>
+                        value === "FINAL" ? "Final" : "Scorecard baseline"
                       }
-                    }}
-                  />
-                  <Bar
-                    dataKey="SCORECARD"
-                    fill={reportingChartTheme.ratingSource.SCORECARD}
-                    hide={hiddenSeries.SCORECARD}
-                    animationDuration={450}
-                    onClick={(entry) => {
-                      const payload = entry?.payload as { rating?: number } | undefined;
-                      if (typeof payload?.rating === "number") {
-                        onDrilldown(payload.rating);
-                      }
-                    }}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+                      wrapperStyle={{ fontSize: 12 }}
+                    />
+                    <Bar
+                      dataKey="FINAL"
+                      fill={reportingChartTheme.ratingSource.FINAL}
+                      hide={hiddenSeries.FINAL}
+                      animationDuration={450}
+                    />
+                    <Bar
+                      dataKey="SCORECARD"
+                      fill={reportingChartTheme.ratingSource.SCORECARD}
+                      hide={hiddenSeries.SCORECARD}
+                      animationDuration={450}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full animate-pulse rounded-[var(--radius-sm)] bg-slate-100" />
+              )}
             </div>
           </ChartExportContainer>
 
@@ -1020,22 +983,30 @@ function ResultsTab({
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2" data-testid="reporting-rating-drilldown-controls">
-            {[1, 2, 3, 4, 5].map((rating) => (
-              <button
-                key={`rating-drill-${rating}`}
-                type="button"
-                aria-label={`Filter employee table by rating ${rating}`}
-                data-testid={`reporting-rating-drilldown-${rating}`}
-                onClick={() => onDrilldown(ratingDrilldown === rating ? null : rating)}
-                className={drilldownButtonClassName(ratingDrilldown === rating)}
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {ratingsData.map((item) => (
+              <div
+                key={`rating-summary-${item.rating}`}
+                className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3"
               >
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: ratingBucketColor[rating] }}
-                />
-                Rating {rating}
-              </button>
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <span
+                    className="inline-block h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: ratingBucketColor[item.rating] }}
+                  />
+                  Rating {item.rating}
+                </div>
+                <div className="mt-3 space-y-1 text-xs text-slate-600">
+                  <p className="flex items-center justify-between gap-2">
+                    <span>Final</span>
+                    <strong className="text-slate-900">{item.FINAL}</strong>
+                  </p>
+                  <p className="flex items-center justify-between gap-2">
+                    <span>Scorecard</span>
+                    <strong className="text-slate-900">{item.SCORECARD}</strong>
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
 
@@ -1108,6 +1079,17 @@ function CompetenciesTab({
   selectedGroupBy: "department" | "title";
   csvHref: string;
 }) {
+  const [hoveredCell, setHoveredCell] = useState<CompetencyHeatmapHover | null>(null);
+  const [showDistributionChart, setShowDistributionChart] = useState(false);
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      setShowDistributionChart(true);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
+
   if (competencies.suppression.suppressed) {
     return (
       <EmptyState
@@ -1120,194 +1102,256 @@ function CompetenciesTab({
   }
 
   const rows = buildCompetencyHeatmapRows(competencies.competencies, competencyOrder);
+  const ratedCompetencies = competencies.competencies.filter((item) => item.observedCount > 0);
+  const strongestCompetency =
+    [...ratedCompetencies].sort((left, right) => (right.averageRating ?? 0) - (left.averageRating ?? 0))[0] ??
+    null;
+  const weakestCompetency =
+    [...ratedCompetencies].sort((left, right) => (left.averageRating ?? 0) - (right.averageRating ?? 0))[0] ??
+    null;
+  const widestGapCompetency =
+    [...ratedCompetencies].sort(
+      (left, right) =>
+        (right.selfManagerGap.averageAbsoluteGap ?? 0) - (left.selfManagerGap.averageAbsoluteGap ?? 0),
+    )[0] ?? null;
+  const clearFocusHref = toQueryString({
+    cycleId,
+    department: selectedDepartment,
+    title: selectedTitle,
+    status: selectedStatus,
+    ratingSource: selectedRatingSource,
+    groupBy: selectedGroupBy,
+    tab: "competencies",
+    page: "1",
+  });
 
   return (
     <section className="space-y-4">
+      <section className="grid gap-4 md:grid-cols-3">
+        <MiniInsightCard
+          title="Strongest signal"
+          value={strongestCompetency ? humanizeEnumValue(strongestCompetency.dimensionKey) : "No data"}
+          subtitle={
+            strongestCompetency
+              ? `Average ${formatNumber(strongestCompetency.averageRating)} across ${strongestCompetency.observedCount} observed responses.`
+              : "Add more completed reviews to unlock competency signal."
+          }
+        />
+        <MiniInsightCard
+          title="Lowest confidence area"
+          value={weakestCompetency ? humanizeEnumValue(weakestCompetency.dimensionKey) : "No data"}
+          subtitle={
+            weakestCompetency
+              ? `Average ${formatNumber(weakestCompetency.averageRating)} with ${weakestCompetency.notObservedCount} not observed responses.`
+              : "No competency responses in the current scope."
+          }
+        />
+        <MiniInsightCard
+          title="Largest self-manager gap"
+          value={widestGapCompetency ? humanizeEnumValue(widestGapCompetency.dimensionKey) : "No data"}
+          subtitle={
+            widestGapCompetency
+              ? `Absolute gap ${formatNumber(widestGapCompetency.selfManagerGap.averageAbsoluteGap)} across ${widestGapCompetency.selfManagerGap.comparedCount} paired reviews.`
+              : "No paired self and manager competency scores."
+          }
+        />
+      </section>
+
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle>Competency summary</CardTitle>
+              <CardTitle>Competency heatmap</CardTitle>
               <CardDescription>
-                Heatmap intensity represents average observed ratings by department. Hover a cell
-                for exact values.
+                A proper department-by-competency matrix. Hover for exact values, then click a cell
+                to focus the competency detail panel below.
               </CardDescription>
             </div>
-            <a
-              href={csvHref}
-              download="reporting-competency-breakdown.csv"
-              className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-            >
-              Export competencies CSV
-            </a>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  void downloadChartAsPng(
+                    "reporting-competency-heatmap",
+                    "reporting-competency-heatmap.png",
+                  )
+                }
+                className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                aria-label="Download competency heatmap as PNG"
+                data-testid="reporting-download-competency-png"
+              >
+                Download PNG
+              </button>
+              <a
+                href={csvHref}
+                download="reporting-competency-breakdown.csv"
+                className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              >
+                Export competencies CSV
+              </a>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="space-y-4">
           {rows.length === 0 ? (
-            <div className="p-5">
-              <EmptyState
-                title="No competency data"
-                description="Adjust filters to include departments with observed competency responses."
+            <EmptyState
+              title="No competency data"
+              description="Adjust filters to include departments with observed competency responses."
+            />
+          ) : (
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+              <ChartExportContainer chartId="reporting-competency-heatmap" className="overflow-x-auto p-4">
+                <CompetencyHeatmapSvg
+                  rows={rows}
+                  competencyOrder={competencyOrder}
+                  cycleId={cycleId}
+                  selectedDepartment={selectedDepartment}
+                  selectedTitle={selectedTitle}
+                  selectedStatus={selectedStatus}
+                  selectedRatingSource={selectedRatingSource}
+                  selectedGroupBy={selectedGroupBy}
+                  activeDimensionKey={selectedCompetency?.dimensionKey ?? null}
+                  onHoverChange={setHoveredCell}
+                />
+              </ChartExportContainer>
+              <HeatmapHoverCard
+                eyebrow="Hovered cell"
+                title={
+                  hoveredCell
+                    ? `${hoveredCell.department} · ${hoveredCell.dimensionLabel}`
+                    : "Move across the matrix"
+                }
+                description={
+                  hoveredCell
+                    ? `Average ${formatNumber(hoveredCell.averageRating)} from ${hoveredCell.observedCount} observed responses.`
+                    : "Each cell is a department/competency intersection. Click a cell to pin the competency detail below."
+                }
+                secondaryText={
+                  selectedCompetency && !hoveredCell
+                    ? `Focused competency: ${humanizeEnumValue(selectedCompetency.dimensionKey)}`
+                    : undefined
+                }
               />
             </div>
-          ) : (
-            <TableWrapper>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Department</TableHead>
-                    {competencyOrder.map((dimensionKey) => (
-                      <TableHead key={`competency-heatmap-header-${dimensionKey}`}>
-                        {shortLabel(humanizeEnumValue(dimensionKey), 12)}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((row) => (
-                    <TableRow key={`competency-heatmap-${row.department}`}>
-                      <TableCell className="font-medium text-slate-900">{row.department}</TableCell>
-                      {row.cells.map((cell) => (
-                        <TableCell key={`competency-cell-${row.department}-${cell.dimensionKey}`}>
-                          <Link
-                            href={toQueryString({
-                              cycleId,
-                              department: selectedDepartment,
-                              title: selectedTitle,
-                              tab: "competencies",
-                              dimensionKey: cell.dimensionKey,
-                              page: "1",
-                            })}
-                            className="group relative block rounded-[var(--radius-sm)] border border-slate-200 p-1.5 transition hover:border-slate-400"
-                            style={heatmapCellStyle(cell.averageRating)}
-                            data-testid={`reporting-competency-cell-${cell.dimensionKey}`}
-                            aria-label={`${row.department} ${humanizeEnumValue(cell.dimensionKey)} average ${formatNumber(cell.averageRating)} from ${cell.observedCount} observations`}
-                          >
-                            <span className="block h-7 rounded-[var(--radius-sm)] border border-white/65 bg-white/20" />
-                            <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 w-max -translate-x-1/2 rounded-[var(--radius-sm)] border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 opacity-0 shadow-[var(--shadow-sm)] transition-opacity duration-150 group-hover:opacity-100">
-                              {humanizeEnumValue(cell.dimensionKey)} · {row.department}:{" "}
-                              {formatNumber(cell.averageRating)} ({cell.observedCount} obs)
-                            </span>
-                          </Link>
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableWrapper>
           )}
+
+          <div className="flex flex-wrap gap-2">
+            <HeatmapLegend label="Low average" swatch={getAverageHeatColor(2)} />
+            <HeatmapLegend label="Mid average" swatch={getAverageHeatColor(3.25)} />
+            <HeatmapLegend label="High average" swatch={getAverageHeatColor(4.5)} />
+          </div>
         </CardContent>
       </Card>
 
       {selectedCompetency ? (
-        <RightDrawer
-          testId="reporting-competency-drilldown"
-          title={`${humanizeEnumValue(selectedCompetency.dimensionKey)} drilldown`}
-          subtitle="Distribution and self vs manager comparison for the selected competency."
-          closeHref={toQueryString({
-            cycleId,
-            department: selectedDepartment,
-            title: selectedTitle,
-            status: selectedStatus,
-            ratingSource: selectedRatingSource,
-            groupBy: selectedGroupBy,
-            tab: "competencies",
-            page: "1",
-          })}
-          actions={
-            <button
-              type="button"
-              onClick={() =>
-                void downloadChartAsPng(
-                  "reporting-competency-drilldown-chart",
-                  `reporting-competency-${selectedCompetency.dimensionKey.toLowerCase()}.png`,
-                )
-              }
-              className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-              aria-label="Download competency drilldown chart as PNG"
-              data-testid="reporting-download-competency-png"
-            >
-              Download PNG
-            </button>
-          }
-          tabs={[
-            {
-              id: "overview",
-              label: "Overview",
-              content: (
-                <div className="space-y-4">
-                  <div className="space-y-2 text-sm text-slate-700">
-                    <p>Overall average: {formatNumber(selectedCompetency.averageRating)}</p>
-                    <p>Self average: {formatNumber(selectedCompetency.self.averageRating)}</p>
-                    <p>Manager average: {formatNumber(selectedCompetency.manager.averageRating)}</p>
-                    <p>
-                      Average gap (manager - self):{" "}
-                      {formatNumber(selectedCompetency.selfManagerGap.averageGap)}
-                    </p>
-                  </div>
-                  <ChartExportContainer chartId="reporting-competency-drilldown-chart" className="p-3">
-                    <div className="h-56">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={[1, 2, 3, 4, 5].map((rating) => ({
-                            rating,
-                            Self: selectedCompetency.selfDistribution[
-                              String(rating) as keyof typeof selectedCompetency.selfDistribution
+        <Card data-testid="reporting-competency-drilldown">
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle>{humanizeEnumValue(selectedCompetency.dimensionKey)}</CardTitle>
+                <CardDescription>
+                  Simplified drilldown for the selected competency, with core averages and
+                  distribution only.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    void downloadChartAsPng(
+                      "reporting-competency-drilldown-chart",
+                      `reporting-competency-${selectedCompetency.dimensionKey.toLowerCase()}.png`,
+                    )
+                  }
+                  className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                >
+                  Download PNG
+                </button>
+                <Link
+                  href={clearFocusHref}
+                  className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                >
+                  Clear focus
+                </Link>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <MiniInsightCard
+                title="Overall average"
+                value={formatNumber(selectedCompetency.averageRating)}
+                subtitle={`${selectedCompetency.observedCount} observed responses`}
+              />
+              <MiniInsightCard
+                title="Self average"
+                value={formatNumber(selectedCompetency.self.averageRating)}
+                subtitle={`${selectedCompetency.self.observedCount} self responses`}
+              />
+              <MiniInsightCard
+                title="Manager average"
+                value={formatNumber(selectedCompetency.manager.averageRating)}
+                subtitle={`${selectedCompetency.manager.observedCount} manager responses`}
+              />
+              <MiniInsightCard
+                title="Average gap"
+                value={formatNumber(selectedCompetency.selfManagerGap.averageGap)}
+                subtitle={`${selectedCompetency.selfManagerGap.comparedCount} paired reviews`}
+              />
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_280px]">
+              <ChartExportContainer chartId="reporting-competency-drilldown-chart" className="p-3">
+                <div className="h-64">
+                  {showDistributionChart ? (
+                    <ResponsiveContainer width="100%" height="100%" minWidth={320} minHeight={240}>
+                      <BarChart
+                        data={[1, 2, 3, 4, 5].map((rating) => ({
+                          rating,
+                          Self: selectedCompetency.selfDistribution[
+                            String(rating) as keyof typeof selectedCompetency.selfDistribution
+                          ],
+                          Manager:
+                            selectedCompetency.managerDistribution[
+                              String(rating) as keyof typeof selectedCompetency.managerDistribution
                             ],
-                            Manager:
-                              selectedCompetency.managerDistribution[
-                                String(rating) as keyof typeof selectedCompetency.managerDistribution
-                              ],
-                          }))}
-                          margin={{ top: 12, right: 12, left: 6, bottom: 12 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                          <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                          <Tooltip labelFormatter={(value) => `Rating ${value}`} />
-                          <Legend wrapperStyle={{ fontSize: 12 }} />
-                          <Bar dataKey="Self" fill="#38bdf8" animationDuration={450} />
-                          <Bar dataKey="Manager" fill="#22c55e" animationDuration={450} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </ChartExportContainer>
+                        }))}
+                        margin={{ top: 12, right: 12, left: 6, bottom: 12 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                        <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                        <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                        <Tooltip labelFormatter={(value) => `Rating ${value}`} />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Bar dataKey="Self" fill="#38bdf8" animationDuration={450} />
+                        <Bar dataKey="Manager" fill="#22c55e" animationDuration={450} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full animate-pulse rounded-[var(--radius-sm)] bg-slate-100" />
+                  )}
                 </div>
-              ),
-            },
-            {
-              id: "timeline",
-              label: "Timeline",
-              content: (
-                <ol className="space-y-2 text-sm text-slate-700">
-                  <li className="rounded-[var(--radius-sm)] border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p className="font-medium text-slate-900">Observed responses</p>
-                    <p className="text-xs text-slate-600">
-                      {selectedCompetency.observedCount} rated responses included.
-                    </p>
-                  </li>
-                  <li className="rounded-[var(--radius-sm)] border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p className="font-medium text-slate-900">Not observed responses</p>
-                    <p className="text-xs text-slate-600">
-                      {selectedCompetency.notObservedCount} responses excluded from averages.
-                    </p>
-                  </li>
-                </ol>
-              ),
-            },
-            {
-              id: "audit",
-              label: "Audit Log",
-              content: (
+              </ChartExportContainer>
+
+              <div className="space-y-3">
+                <MiniInsightCard
+                  title="Not observed"
+                  value={String(selectedCompetency.notObservedCount)}
+                  subtitle="Excluded from averages and self-manager gap math."
+                />
+                <MiniInsightCard
+                  title="Departments in scope"
+                  value={String(selectedCompetency.departmentBreakdown.length)}
+                  subtitle="Departments with at least one observed competency response."
+                />
                 <HelpHint label="How Not Observed is handled">
                   Not Observed responses are stored and reported separately. They are excluded from
                   average calculations and self-vs-manager gap math.
                 </HelpHint>
-              ),
-            },
-          ]}
-        />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       ) : null}
     </section>
   );
@@ -1320,6 +1364,8 @@ function ScorecardTab({
   scorecard: ReportingScorecardResponse;
   scorecardOrder: string[];
 }) {
+  const [hoveredMetric, setHoveredMetric] = useState<ScorecardHeatmapHover | null>(null);
+
   if (scorecard.suppression.suppressed) {
     return (
       <EmptyState
@@ -1340,23 +1386,68 @@ function ScorecardTab({
 
       return {
         metricKey,
-        label: shortLabel(humanizeEnumValue(metricKey), 14),
-        self: metric.self.averageRating ?? 0,
-        manager: metric.manager.averageRating ?? 0,
-        gap: metric.selfManagerGap.averageGap ?? 0,
+        label: humanizeEnumValue(metricKey),
+        self: metric.self.averageRating,
+        manager: metric.manager.averageRating,
+        average: metric.averageRating,
+        gap: metric.selfManagerGap.averageGap,
+        absoluteGap: metric.selfManagerGap.averageAbsoluteGap,
+        comparedCount: metric.selfManagerGap.comparedCount,
+        observedCount: metric.observedCount,
+        notObservedCount: metric.notObservedCount,
       };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
+  const biggestGapMetric =
+    [...scorecardData].sort((left, right) => (right.absoluteGap ?? 0) - (left.absoluteGap ?? 0))[0] ??
+    null;
+  const strongestManagerMetric =
+    [...scorecardData].sort((left, right) => (right.manager ?? 0) - (left.manager ?? 0))[0] ??
+    null;
+  const mostIncompleteMetric =
+    [...scorecardData].sort((left, right) => right.notObservedCount - left.notObservedCount)[0] ??
+    null;
 
   return (
     <section className="space-y-4">
+      <section className="grid gap-4 md:grid-cols-3">
+        <MiniInsightCard
+          title="Biggest alignment gap"
+          value={biggestGapMetric ? biggestGapMetric.label : "No data"}
+          subtitle={
+            biggestGapMetric
+              ? `Absolute gap ${formatNumber(biggestGapMetric.absoluteGap)} across ${biggestGapMetric.comparedCount} paired ratings.`
+              : "No scorecard pairings in scope."
+          }
+        />
+        <MiniInsightCard
+          title="Highest manager average"
+          value={strongestManagerMetric ? strongestManagerMetric.label : "No data"}
+          subtitle={
+            strongestManagerMetric
+              ? `Manager average ${formatNumber(strongestManagerMetric.manager)}.`
+              : "No manager scorecard signal in scope."
+          }
+        />
+        <MiniInsightCard
+          title="Most incomplete metric"
+          value={mostIncompleteMetric ? mostIncompleteMetric.label : "No data"}
+          subtitle={
+            mostIncompleteMetric
+              ? `${mostIncompleteMetric.notObservedCount} not observed responses.`
+              : "No scorecard gaps in scope."
+          }
+        />
+      </section>
+
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle>Scorecard metric comparison</CardTitle>
+              <CardTitle>Scorecard metric matrix</CardTitle>
               <CardDescription>
-                Self vs manager average ratings across weighted scorecard metrics.
+                Metrics stay readable on the left, with self, manager, gap, and data quality in a
+                single hoverable matrix.
               </CardDescription>
             </div>
             <button
@@ -1372,82 +1463,31 @@ function ScorecardTab({
             </button>
           </div>
         </CardHeader>
-        <CardContent>
-          <ChartExportContainer chartId="reporting-scorecard-chart" className="p-3">
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={scorecardData} margin={{ top: 12, right: 16, left: 6, bottom: 36 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="label"
-                    tickLine={false}
-                    axisLine={{ stroke: "#cbd5e1" }}
-                    angle={-25}
-                    textAnchor="end"
-                    interval={0}
-                    height={60}
-                  />
-                  <YAxis domain={[0, 5]} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                  <Tooltip
-                    formatter={(value: number | undefined, name: string | undefined) => [
-                      typeof value === "number" ? value.toFixed(2) : "0.00",
-                      name ?? "Value",
-                    ]}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="self" name="Self avg" fill={reportingChartTheme.metricSeries.self} animationDuration={450} />
-                  <Bar
-                    dataKey="manager"
-                    name="Manager avg"
-                    fill={reportingChartTheme.metricSeries.manager}
-                    animationDuration={450}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </ChartExportContainer>
-        </CardContent>
-      </Card>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+            <ChartExportContainer chartId="reporting-scorecard-chart" className="overflow-x-auto p-4">
+              <ScorecardMatrixSvg rows={scorecardData} onHoverChange={setHoveredMetric} />
+            </ChartExportContainer>
+            <HeatmapHoverCard
+              eyebrow="Hovered metric"
+              title={hoveredMetric ? hoveredMetric.metricLabel : "Move across the matrix"}
+              description={
+                hoveredMetric
+                  ? `${hoveredMetric.columnLabel}: ${hoveredMetric.displayValue}. Observed ${hoveredMetric.observedCount}, not observed ${hoveredMetric.notObservedCount}.`
+                  : "Hover any self, manager, gap, or not observed cell to inspect a metric without scanning tiny bars."
+              }
+              secondaryText={
+                hoveredMetric ? `Compared pairs: ${hoveredMetric.comparedCount}` : undefined
+              }
+            />
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Gap and data quality</CardTitle>
-          <CardDescription>
-            Largest self-vs-manager differences and Not Observed counts for each metric.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <TableWrapper>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Metric</TableHead>
-                  <TableHead>Average</TableHead>
-                  <TableHead>Gap (mgr-self)</TableHead>
-                  <TableHead>Not observed</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {scorecardOrder.map((metricKey) => {
-                  const metric = scorecard.metrics.find((entry) => entry.metricKey === metricKey);
-                  if (!metric) {
-                    return null;
-                  }
-
-                  return (
-                    <TableRow key={`scorecard-row-${metricKey}`}>
-                      <TableCell className="font-medium text-slate-900">
-                        {humanizeEnumValue(metricKey)}
-                      </TableCell>
-                      <TableCell>{formatNumber(metric.averageRating)}</TableCell>
-                      <TableCell>{formatNumber(metric.selfManagerGap.averageGap)}</TableCell>
-                      <TableCell>{metric.notObservedCount}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableWrapper>
+          <div className="flex flex-wrap gap-2">
+            <HeatmapLegend label="Self avg" swatch={reportingChartTheme.metricSeries.self} />
+            <HeatmapLegend label="Manager avg" swatch={reportingChartTheme.metricSeries.manager} />
+            <HeatmapLegend label="Gap intensity" swatch={reportingChartTheme.metricSeries.gap} />
+            <HeatmapLegend label="Data quality" swatch="#cbd5e1" />
+          </div>
         </CardContent>
       </Card>
     </section>
@@ -1505,6 +1545,419 @@ function SourceSummaryRow({
       </span>
       <span className="font-semibold text-slate-900">{value}</span>
     </div>
+  );
+}
+
+function MiniInsightCard({
+  title,
+  value,
+  subtitle,
+}: {
+  title: string;
+  value: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">{title}</p>
+      <p className="mt-2 text-lg font-semibold text-slate-900">{value}</p>
+      <p className="mt-1 text-xs text-slate-600">{subtitle}</p>
+    </div>
+  );
+}
+
+function HeatmapHoverCard({
+  eyebrow,
+  title,
+  description,
+  secondaryText,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  secondaryText?: string;
+}) {
+  return (
+    <div className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">{eyebrow}</p>
+      <h3 className="mt-2 text-sm font-semibold text-slate-900">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+      {secondaryText ? <p className="mt-3 text-xs text-slate-500">{secondaryText}</p> : null}
+    </div>
+  );
+}
+
+function HeatmapLegend({
+  label,
+  swatch,
+}: {
+  label: string;
+  swatch: string;
+}) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700">
+      <span
+        className="inline-block h-2.5 w-2.5 rounded-full"
+        style={{ backgroundColor: swatch }}
+      />
+      {label}
+    </div>
+  );
+}
+
+function ProgressMixSvg({
+  totalPeople,
+  segments,
+}: {
+  totalPeople: number;
+  segments: Array<{
+    status: ProgressStatusFilter;
+    label: string;
+    value: number;
+    color: string;
+  }>;
+}) {
+  const width = 900;
+  const height = 140;
+  const barX = 24;
+  const barY = 52;
+  const barWidth = width - 48;
+  const barHeight = 44;
+  const segmentGeometry = segments.map((segment, index) => {
+    const usedWidth = segments
+      .slice(0, index)
+      .reduce(
+        (sum, current) => sum + (totalPeople > 0 ? (current.value / totalPeople) * barWidth : 0),
+        0,
+      );
+    const rawWidth = totalPeople > 0 ? (segment.value / totalPeople) * barWidth : 0;
+
+    return {
+      ...segment,
+      x: barX + usedWidth,
+      width: index === segments.length - 1 ? barWidth - usedWidth : rawWidth,
+    };
+  });
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="h-auto min-w-[720px] w-full"
+      role="img"
+      aria-label={`Completion overview for ${totalPeople} employees`}
+    >
+      <text x={barX} y={24} fill="#0f172a" fontSize="15" fontWeight="600">
+        {totalPeople} employees in scope
+      </text>
+      <text x={width - barX} y={24} fill="#475569" fontSize="13" textAnchor="end">
+        Focus the queue with the status cards below
+      </text>
+      <rect x={barX} y={barY} width={barWidth} height={barHeight} rx={20} fill="#e2e8f0" />
+      {segmentGeometry.map((segment, index) => {
+        if (segment.width <= 0) {
+          return null;
+        }
+
+        const radiusLeft = index === 0 ? 20 : 0;
+        const radiusRight = index === segments.length - 1 ? 20 : 0;
+
+        return (
+          <g key={`progress-mix-${segment.status}`}>
+            <path
+              d={roundedRectPath(segment.x, barY, segment.width, barHeight, radiusLeft, radiusRight)}
+              fill={segment.color}
+            />
+            {segment.width > 120 ? (
+              <text
+                x={segment.x + segment.width / 2}
+                y={barY + barHeight / 2 + 4}
+                fill="#0f172a"
+                fontSize="13"
+                fontWeight="600"
+                textAnchor="middle"
+              >
+                {segment.label} · {segment.value}
+              </text>
+            ) : null}
+          </g>
+        );
+      })}
+      <text x={barX} y={height - 12} fill="#64748b" fontSize="12">
+        Completed includes only employees with both self and manager reviews submitted.
+      </text>
+    </svg>
+  );
+}
+
+function CompetencyHeatmapSvg({
+  rows,
+  competencyOrder,
+  cycleId,
+  selectedDepartment,
+  selectedTitle,
+  selectedStatus,
+  selectedRatingSource,
+  selectedGroupBy,
+  activeDimensionKey,
+  onHoverChange,
+}: {
+  rows: CompetencyHeatmapRow[];
+  competencyOrder: string[];
+  cycleId: string;
+  selectedDepartment?: string;
+  selectedTitle?: string;
+  selectedStatus?: ProgressStatusFilter;
+  selectedRatingSource: RatingSourceFilter;
+  selectedGroupBy: "department" | "title";
+  activeDimensionKey: string | null;
+  onHoverChange: (value: CompetencyHeatmapHover | null) => void;
+}) {
+  const labelWidth = 188;
+  const cellWidth = 108;
+  const cellHeight = 72;
+  const headerHeight = 86;
+  const width = labelWidth + cellWidth * competencyOrder.length + 24;
+  const height = headerHeight + cellHeight * rows.length + 20;
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="h-auto min-w-[980px] w-full"
+      role="img"
+      aria-label="Competency heatmap"
+      onMouseLeave={() => onHoverChange(null)}
+    >
+      <text x={16} y={32} fill="#0f172a" fontSize="13" fontWeight="700">
+        Department
+      </text>
+      {competencyOrder.map((dimensionKey, columnIndex) => {
+        const x = labelWidth + columnIndex * cellWidth + cellWidth / 2;
+        const lines = splitLabelLines(humanizeEnumValue(dimensionKey), 14);
+
+        return (
+          <text
+            key={`competency-column-${dimensionKey}`}
+            x={x}
+            y={28}
+            fill="#475569"
+            fontSize="11"
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            {lines.map((line, index) => (
+              <tspan key={`${dimensionKey}-line-${index}`} x={x} dy={index === 0 ? 0 : 14}>
+                {line}
+              </tspan>
+            ))}
+          </text>
+        );
+      })}
+
+      {rows.map((row, rowIndex) => {
+        const y = headerHeight + rowIndex * cellHeight;
+
+        return (
+          <g key={`competency-row-${row.department}`}>
+            <text
+              x={16}
+              y={y + cellHeight / 2 + 4}
+              fill="#0f172a"
+              fontSize="13"
+              fontWeight="600"
+            >
+              {row.department}
+            </text>
+            {row.cells.map((cell, columnIndex) => {
+              const x = labelWidth + columnIndex * cellWidth;
+              const href = toQueryString({
+                cycleId,
+                department: selectedDepartment,
+                title: selectedTitle,
+                status: selectedStatus,
+                ratingSource: selectedRatingSource,
+                groupBy: selectedGroupBy,
+                tab: "competencies",
+                dimensionKey: cell.dimensionKey,
+                page: "1",
+              });
+              const fill = getAverageHeatColor(cell.averageRating);
+              const stroke = activeDimensionKey === cell.dimensionKey ? "#0f172a" : "#e2e8f0";
+              const label = humanizeEnumValue(cell.dimensionKey);
+
+              return (
+                <a
+                  key={`competency-cell-${row.department}-${cell.dimensionKey}`}
+                  href={href}
+                  data-testid={`reporting-competency-cell-${cell.dimensionKey}`}
+                  aria-label={`${row.department} ${label} average ${formatNumber(cell.averageRating)} from ${cell.observedCount} observed responses`}
+                  onFocus={() =>
+                    onHoverChange({
+                      department: row.department,
+                      dimensionLabel: label,
+                      averageRating: cell.averageRating,
+                      observedCount: cell.observedCount,
+                    })
+                  }
+                  onMouseEnter={() =>
+                    onHoverChange({
+                      department: row.department,
+                      dimensionLabel: label,
+                      averageRating: cell.averageRating,
+                      observedCount: cell.observedCount,
+                    })
+                  }
+                >
+                  <rect
+                    x={x + 8}
+                    y={y + 8}
+                    width={cellWidth - 16}
+                    height={cellHeight - 16}
+                    rx={16}
+                    fill={fill}
+                    stroke={stroke}
+                    strokeWidth={activeDimensionKey === cell.dimensionKey ? 2.5 : 1.2}
+                  />
+                  <text
+                    x={x + cellWidth / 2}
+                    y={y + 34}
+                    fill="#0f172a"
+                    fontSize="16"
+                    fontWeight="700"
+                    textAnchor="middle"
+                  >
+                    {formatCompactValue(cell.averageRating)}
+                  </text>
+                  <text
+                    x={x + cellWidth / 2}
+                    y={y + 52}
+                    fill="#475569"
+                    fontSize="11"
+                    textAnchor="middle"
+                  >
+                    {cell.observedCount} obs
+                  </text>
+                </a>
+              );
+            })}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function ScorecardMatrixSvg({
+  rows,
+  onHoverChange,
+}: {
+  rows: ScorecardMatrixRow[];
+  onHoverChange: (value: ScorecardHeatmapHover | null) => void;
+}) {
+  const columns = [
+    { key: "self", label: "Self avg" },
+    { key: "manager", label: "Manager avg" },
+    { key: "gap", label: "Gap" },
+    { key: "notObservedCount", label: "Not observed" },
+  ] as const;
+  const labelWidth = 232;
+  const cellWidth = 120;
+  const cellHeight = 68;
+  const headerHeight = 72;
+  const width = labelWidth + cellWidth * columns.length + 24;
+  const height = headerHeight + cellHeight * rows.length + 20;
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="h-auto min-w-[760px] w-full"
+      role="img"
+      aria-label="Scorecard metric matrix"
+      onMouseLeave={() => onHoverChange(null)}
+    >
+      <text x={16} y={30} fill="#0f172a" fontSize="13" fontWeight="700">
+        Metric
+      </text>
+      {columns.map((column, columnIndex) => {
+        const x = labelWidth + columnIndex * cellWidth + cellWidth / 2;
+
+        return (
+          <text
+            key={`scorecard-column-${column.key}`}
+            x={x}
+            y={30}
+            fill="#475569"
+            fontSize="11"
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            {column.label}
+          </text>
+        );
+      })}
+
+      {rows.map((row, rowIndex) => {
+        const y = headerHeight + rowIndex * cellHeight;
+        const metricLines = splitLabelLines(row.label, 22);
+
+        return (
+          <g key={`scorecard-row-${row.metricKey}`}>
+            <text x={16} y={y + 26} fill="#0f172a" fontSize="13" fontWeight="600">
+              {metricLines.map((line, index) => (
+                <tspan key={`${row.metricKey}-line-${index}`} x={16} dy={index === 0 ? 0 : 14}>
+                  {line}
+                </tspan>
+              ))}
+            </text>
+            <text x={16} y={y + 54} fill="#64748b" fontSize="11">
+              Avg {formatNumber(row.average)}
+            </text>
+
+            {columns.map((column, columnIndex) => {
+              const x = labelWidth + columnIndex * cellWidth;
+              const cell = getScorecardCellContent(row, column.key);
+
+              return (
+                <g
+                  key={`scorecard-cell-${row.metricKey}-${column.key}`}
+                  aria-label={`${row.label} ${column.label} ${cell.displayValue}. Observed ${row.observedCount}, not observed ${row.notObservedCount}.`}
+                  onMouseEnter={() =>
+                    onHoverChange({
+                      metricLabel: row.label,
+                      columnLabel: column.label,
+                      displayValue: cell.displayValue,
+                      observedCount: row.observedCount,
+                      notObservedCount: row.notObservedCount,
+                      comparedCount: row.comparedCount,
+                    })
+                  }
+                >
+                  <rect
+                    x={x + 8}
+                    y={y + 8}
+                    width={cellWidth - 16}
+                    height={cellHeight - 16}
+                    rx={16}
+                    fill={cell.fill}
+                    stroke="#e2e8f0"
+                    strokeWidth={1.2}
+                  />
+                  <text
+                    x={x + cellWidth / 2}
+                    y={y + 34}
+                    fill="#0f172a"
+                    fontSize="15"
+                    fontWeight="700"
+                    textAnchor="middle"
+                  >
+                    {cell.text}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
@@ -1589,15 +2042,6 @@ function legendButtonClassName(isVisible: boolean): string {
   ].join(" ");
 }
 
-function drilldownButtonClassName(isActive: boolean): string {
-  return [
-    "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300",
-    isActive
-      ? "border-slate-900 bg-slate-900 text-white"
-      : "border-slate-300 bg-white text-slate-800 hover:bg-slate-100",
-  ].join(" ");
-}
-
 function toggleClassName(isActive: boolean): string {
   return [
     "rounded-[var(--radius-sm)] px-3 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300",
@@ -1620,38 +2064,12 @@ function humanizeEnumValue(value: string): string {
     .join(" ");
 }
 
-function shortLabel(label: string, maxLength: number): string {
-  return label.length > maxLength ? `${label.slice(0, maxLength)}…` : label;
-}
-
 function formatNumber(value: number | null): string {
   if (typeof value !== "number") {
     return "-";
   }
 
   return value.toFixed(2);
-}
-
-function heatmapCellStyle(value: number | null): { background: string } {
-  if (typeof value !== "number") {
-    return { background: "linear-gradient(135deg, #f8fafc, #f1f5f9)" };
-  }
-
-  if (value < 2.5) {
-    return {
-      background: `linear-gradient(135deg, ${reportingChartTheme.competency.low}, #fca5a5)`,
-    };
-  }
-
-  if (value < 3.75) {
-    return {
-      background: `linear-gradient(135deg, ${reportingChartTheme.competency.medium}, #fcd34d)`,
-    };
-  }
-
-  return {
-    background: `linear-gradient(135deg, ${reportingChartTheme.competency.high}, #4ade80)`,
-  };
 }
 
 function toQueryString(values: Record<string, string | undefined>): string {
@@ -1670,10 +2088,7 @@ function toQueryString(values: Record<string, string | undefined>): string {
 function buildCompetencyHeatmapRows(
   competencies: ReportingCompetencyResult[],
   competencyOrder: string[],
-): Array<{
-  department: string;
-  cells: Array<{ dimensionKey: string; averageRating: number | null; observedCount: number }>;
-}> {
+): CompetencyHeatmapRow[] {
   const departments = new Set<string>();
   const byDimension = new Map(
     competencies.map((competency) => [competency.dimensionKey, competency]),
@@ -1704,6 +2119,180 @@ function buildCompetencyHeatmapRows(
         };
       }),
     }));
+}
+
+function overallStatusBadgeVariant(
+  status: ProgressStatusFilter,
+): "neutral" | "warning" | "success" | "info" {
+  if (status === "COMPLETED") {
+    return "success";
+  }
+
+  if (status === "IN_PROGRESS") {
+    return "warning";
+  }
+
+  return "neutral";
+}
+
+function formatCompactValue(value: number | null): string {
+  if (typeof value !== "number") {
+    return "—";
+  }
+
+  return value.toFixed(1);
+}
+
+function formatSignedNumber(value: number | null): string {
+  if (typeof value !== "number") {
+    return "—";
+  }
+
+  return `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
+}
+
+function getAverageHeatColor(value: number | null): string {
+  if (typeof value !== "number") {
+    return "#f8fafc";
+  }
+
+  if (value < 2.5) {
+    return "#fecaca";
+  }
+
+  if (value < 3.25) {
+    return "#fde68a";
+  }
+
+  if (value < 4) {
+    return "#bbf7d0";
+  }
+
+  return "#4ade80";
+}
+
+function getGapHeatColor(value: number | null): string {
+  if (typeof value !== "number") {
+    return "#f8fafc";
+  }
+
+  const magnitude = Math.abs(value);
+  if (magnitude < 0.2) {
+    return "#e2e8f0";
+  }
+
+  if (value > 0) {
+    return magnitude < 0.45 ? "#fdba74" : "#fb923c";
+  }
+
+  return magnitude < 0.45 ? "#bae6fd" : "#7dd3fc";
+}
+
+function getCountHeatColor(value: number): string {
+  if (value <= 0) {
+    return "#f8fafc";
+  }
+
+  if (value < 3) {
+    return "#e2e8f0";
+  }
+
+  if (value < 6) {
+    return "#cbd5e1";
+  }
+
+  return "#94a3b8";
+}
+
+function splitLabelLines(label: string, maxCharsPerLine: number): string[] {
+  const words = label.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const candidate = currentLine ? `${currentLine} ${word}` : word;
+
+    if (candidate.length <= maxCharsPerLine) {
+      currentLine = candidate;
+      continue;
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    currentLine = word;
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines.slice(0, 2);
+}
+
+function roundedRectPath(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radiusLeft: number,
+  radiusRight: number,
+): string {
+  return [
+    `M ${x + radiusLeft} ${y}`,
+    `H ${x + width - radiusRight}`,
+    radiusRight > 0 ? `A ${radiusRight} ${radiusRight} 0 0 1 ${x + width} ${y + radiusRight}` : "",
+    `V ${y + height - radiusRight}`,
+    radiusRight > 0
+      ? `A ${radiusRight} ${radiusRight} 0 0 1 ${x + width - radiusRight} ${y + height}`
+      : "",
+    `H ${x + radiusLeft}`,
+    radiusLeft > 0 ? `A ${radiusLeft} ${radiusLeft} 0 0 1 ${x} ${y + height - radiusLeft}` : "",
+    `V ${y + radiusLeft}`,
+    radiusLeft > 0 ? `A ${radiusLeft} ${radiusLeft} 0 0 1 ${x + radiusLeft} ${y}` : "",
+    "Z",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getScorecardCellContent(
+  row: ScorecardMatrixRow,
+  columnKey: "self" | "manager" | "gap" | "notObservedCount",
+): {
+  text: string;
+  displayValue: string;
+  fill: string;
+} {
+  if (columnKey === "self") {
+    return {
+      text: formatCompactValue(row.self),
+      displayValue: formatNumber(row.self),
+      fill: getAverageHeatColor(row.self),
+    };
+  }
+
+  if (columnKey === "manager") {
+    return {
+      text: formatCompactValue(row.manager),
+      displayValue: formatNumber(row.manager),
+      fill: getAverageHeatColor(row.manager),
+    };
+  }
+
+  if (columnKey === "gap") {
+    return {
+      text: formatSignedNumber(row.gap),
+      displayValue: formatSignedNumber(row.gap),
+      fill: getGapHeatColor(row.gap),
+    };
+  }
+
+  return {
+    text: String(row.notObservedCount),
+    displayValue: String(row.notObservedCount),
+    fill: getCountHeatColor(row.notObservedCount),
+  };
 }
 
 async function downloadChartAsPng(

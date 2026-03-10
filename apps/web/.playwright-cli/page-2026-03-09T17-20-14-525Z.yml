@@ -1,0 +1,417 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e8]: PM
+        - navigation [ref=e9]:
+          - link "Home" [ref=e10] [cursor=pointer]:
+            - /url: /
+            - img [ref=e12]
+            - generic [ref=e14]: Home
+            - tooltip "Home"
+          - link "Reporting" [ref=e15] [cursor=pointer]:
+            - /url: /admin/performance/reporting
+            - img [ref=e17]
+            - generic [ref=e22]: Reporting
+            - tooltip "Reporting"
+          - link "Admin Cycles" [ref=e23] [cursor=pointer]:
+            - /url: /admin/performance/review-cycles
+            - img [ref=e25]
+            - generic [ref=e30]: Admin Cycles
+            - tooltip "Admin Cycles"
+          - link "Admin Calibration" [ref=e31] [cursor=pointer]:
+            - /url: /admin/performance/calibration
+            - img [ref=e33]
+            - generic [ref=e40]: Admin Calibration
+            - tooltip "Admin Calibration"
+          - link "User Management" [ref=e41] [cursor=pointer]:
+            - /url: /admin/users
+            - img [ref=e43]
+            - generic [ref=e46]: User Management
+            - tooltip "User Management"
+          - link "Help" [ref=e47] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e49]
+            - generic [ref=e53]: Help
+            - tooltip "Help"
+    - main [ref=e54]:
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - button "Expand navigation" [ref=e57]:
+            - img [ref=e58]
+          - generic [ref=e60]:
+            - generic [ref=e61]: Workspace
+            - generic [ref=e62]: Performance reporting
+        - generic [ref=e63]:
+          - button "Current organization" [disabled] [ref=e64]:
+            - generic [ref=e65]: O
+            - generic [ref=e66]: Ironcrest Construction Group
+            - img [ref=e67]
+          - button "Harper Quinn Harper Quinn HR Admin" [ref=e70]:
+            - generic "Harper Quinn" [ref=e71]
+            - generic [ref=e72]:
+              - generic [ref=e73]: Harper Quinn
+              - generic [ref=e74]: HR Admin
+      - generic [ref=e75]:
+        - generic [ref=e77]:
+          - heading "Reporting" [level=1] [ref=e78]
+          - paragraph [ref=e79]: Review completion trends, ratings, and competency outcomes for the selected cycle.
+          - generic [ref=e81]:
+            - text: "Active cycle:"
+            - strong [ref=e82]: Annual Review 2026
+        - generic [ref=e83]:
+          - paragraph [ref=e84]: Refine the cycle scope, then move between progress, results, competencies, and scorecard views without carrying a full employee table across every tab.
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - text: Cycle
+              - combobox "Cycle" [ref=e87]:
+                - option "Annual Review 2026" [selected]
+            - generic [ref=e88]:
+              - text: Department
+              - combobox "Department" [ref=e89]:
+                - option "All departments" [selected]
+                - option "Admin/Finance"
+                - option "Maintenance"
+                - option "Operations"
+                - option "Projects"
+                - option "Safety"
+            - generic [ref=e90]:
+              - text: Title
+              - combobox "Title" [ref=e91]:
+                - option "All titles" [selected]
+                - option "Dispatcher"
+                - option "Equipment Operator"
+                - option "Foreman"
+                - option "Journeyman"
+                - option "Office Admin"
+                - option "Project Coordinator"
+                - option "Safety Coordinator"
+                - option "Site Supervisor"
+            - generic [ref=e92]:
+              - text: Status
+              - combobox "Status" [ref=e93]:
+                - option "All statuses" [selected]
+                - option "Not started"
+                - option "In progress"
+                - option "Completed"
+            - generic [ref=e94]:
+              - generic [ref=e95]: Rating source
+              - group "Rating source toggle" [ref=e96]:
+                - button "Use final ratings" [ref=e97]: Final
+                - button "Use scorecard baseline ratings" [ref=e98]: Scorecard baseline
+            - button "Apply filters" [ref=e100]
+        - generic [ref=e101]:
+          - generic [ref=e102]:
+            - link "Progress" [ref=e103] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=progress&ratingSource=FINAL&page=1"
+            - link "Results" [ref=e104] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=results&ratingSource=FINAL&page=1"
+            - link "Competencies" [ref=e105] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=competencies&ratingSource=FINAL&page=1"
+            - link "Scorecard" [ref=e106] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=scorecard&ratingSource=FINAL&page=1"
+          - generic [ref=e107]:
+            - generic [ref=e108]: Scope
+            - generic [ref=e109]: All departments
+            - text: •
+            - generic [ref=e110]: All titles
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - paragraph [ref=e114]: Strongest signal
+              - paragraph [ref=e115]: Safety Compliance
+              - paragraph [ref=e116]: Average 3.66 across 32 observed responses.
+            - generic [ref=e117]:
+              - paragraph [ref=e118]: Lowest confidence area
+              - paragraph [ref=e119]: Communication
+              - paragraph [ref=e120]: Average 3.25 with 0 not observed responses.
+            - generic [ref=e121]:
+              - paragraph [ref=e122]: Largest self-manager gap
+              - paragraph [ref=e123]: Values Culture Alignment
+              - paragraph [ref=e124]: Absolute gap 0.19 across 16 paired reviews.
+          - generic [ref=e125]:
+            - generic [ref=e127]:
+              - generic [ref=e128]:
+                - heading "Competency heatmap" [level=3] [ref=e129]
+                - paragraph [ref=e130]: A proper department-by-competency matrix. Hover for exact values, then click a cell to focus the competency detail panel below.
+              - generic [ref=e131]:
+                - button "Download competency heatmap as PNG" [ref=e132]: Download PNG
+                - link "Export competencies CSV" [ref=e133] [cursor=pointer]:
+                  - /url: data:text/csv;charset=utf-8,dimensionKey%2CaverageRating%2CselfAverage%2CmanagerAverage%2CobservedCount%2CnotObservedCount%2CaverageGap%2CaverageAbsoluteGap%0AVALUES_CULTURE_ALIGNMENT%2C3.59%2C3.5%2C3.69%2C32%2C4%2C0.19%2C0.19%0AJUDGMENT_DECISION_MAKING%2C3.59%2C3.5%2C3.69%2C32%2C4%2C0.19%2C0.19%0ASAFETY_COMPLIANCE%2C3.66%2C3.56%2C3.75%2C32%2C4%2C0.19%2C0.19%0ATECHNICAL_SKILLS%2C3.59%2C3.5%2C3.69%2C32%2C4%2C0.19%2C0.19%0AQUALITY_OF_WORK%2C3.66%2C3.63%2C3.69%2C32%2C4%2C0.06%2C0.06%0ACOMMUNICATION%2C3.25%2C3.17%2C3.33%2C36%2C0%2C0.17%2C0.17%0AACCOUNTABILITY%2C3.47%2C3.38%2C3.56%2C32%2C4%2C0.19%2C0.19%0ARELATIONSHIP_BUILDING%2C3.53%2C3.5%2C3.56%2C32%2C4%2C0.06%2C0.06%0ARESULTS_DRIVEN%2C3.5%2C3.5%2C3.5%2C32%2C4%2C0%2C0%0AATTITUDE%2C3.56%2C3.5%2C3.61%2C36%2C0%2C0.11%2C0.11%0ASERVICE_ORIENTED%2C3.53%2C3.44%2C3.61%2C36%2C0%2C0.17%2C0.17%0AADAPTABILITY%2C3.59%2C3.5%2C3.69%2C32%2C4%2C0.19%2C0.19
+            - generic [ref=e134]:
+              - generic [ref=e135]:
+                - img "Competency heatmap" [ref=e137]:
+                  - text: Department
+                  - generic [ref=e138]: Values CultureAlignment
+                  - generic [ref=e139]: JudgmentDecision
+                  - generic [ref=e140]: SafetyCompliance
+                  - generic [ref=e141]: TechnicalSkills
+                  - generic [ref=e142]: Quality OfWork
+                  - generic [ref=e143]: Communication
+                  - generic [ref=e144]: Accountability
+                  - generic [ref=e145]: RelationshipBuilding
+                  - generic [ref=e146]: Results Driven
+                  - generic [ref=e147]: Attitude
+                  - generic [ref=e148]: ServiceOriented
+                  - generic [ref=e149]: Adaptability
+                  - generic [ref=e150]:
+                    - text: Admin/Finance
+                    - link "Admin/Finance Values Culture Alignment average 3.00 from 2 observed responses" [ref=e151] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=VALUES_CULTURE_ALIGNMENT&page=1"
+                      - text: "3.0"
+                      - generic [ref=e153]: 2 obs
+                    - link "Admin/Finance Judgment Decision Making average 3.00 from 2 observed responses" [ref=e154] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=JUDGMENT_DECISION_MAKING&page=1"
+                      - text: "3.0"
+                      - generic [ref=e156]: 2 obs
+                    - link "Admin/Finance Safety Compliance average 3.00 from 2 observed responses" [ref=e157] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=SAFETY_COMPLIANCE&page=1"
+                      - text: "3.0"
+                      - generic [ref=e159]: 2 obs
+                    - link "Admin/Finance Technical Skills average 3.00 from 2 observed responses" [ref=e160] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=TECHNICAL_SKILLS&page=1"
+                      - text: "3.0"
+                      - generic [ref=e162]: 2 obs
+                    - link "Admin/Finance Quality Of Work average 3.00 from 2 observed responses" [ref=e163] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=QUALITY_OF_WORK&page=1"
+                      - text: "3.0"
+                      - generic [ref=e165]: 2 obs
+                    - link "Admin/Finance Communication average 3.00 from 4 observed responses" [ref=e166] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=COMMUNICATION&page=1"
+                      - text: "3.0"
+                      - generic [ref=e168]: 4 obs
+                    - link "Admin/Finance Accountability average 3.00 from 2 observed responses" [ref=e169] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ACCOUNTABILITY&page=1"
+                      - text: "3.0"
+                      - generic [ref=e171]: 2 obs
+                    - link "Admin/Finance Relationship Building average 3.00 from 2 observed responses" [ref=e172] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=RELATIONSHIP_BUILDING&page=1"
+                      - text: "3.0"
+                      - generic [ref=e174]: 2 obs
+                    - link "Admin/Finance Results Driven average 3.00 from 2 observed responses" [ref=e175] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=RESULTS_DRIVEN&page=1"
+                      - text: "3.0"
+                      - generic [ref=e177]: 2 obs
+                    - link "Admin/Finance Attitude average 3.00 from 4 observed responses" [ref=e178] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ATTITUDE&page=1"
+                      - text: "3.0"
+                      - generic [ref=e180]: 4 obs
+                    - link "Admin/Finance Service Oriented average 3.00 from 4 observed responses" [ref=e181] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=SERVICE_ORIENTED&page=1"
+                      - text: "3.0"
+                      - generic [ref=e183]: 4 obs
+                    - link "Admin/Finance Adaptability average 3.00 from 2 observed responses" [ref=e184] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ADAPTABILITY&page=1"
+                      - text: "3.0"
+                      - generic [ref=e186]: 2 obs
+                  - generic [ref=e187]:
+                    - text: Maintenance
+                    - link "Maintenance Values Culture Alignment average 3.50 from 6 observed responses" [ref=e188] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=VALUES_CULTURE_ALIGNMENT&page=1"
+                      - text: "3.5"
+                      - generic [ref=e190]: 6 obs
+                    - link "Maintenance Judgment Decision Making average 3.50 from 6 observed responses" [ref=e191] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=JUDGMENT_DECISION_MAKING&page=1"
+                      - text: "3.5"
+                      - generic [ref=e193]: 6 obs
+                    - link "Maintenance Safety Compliance average 3.50 from 6 observed responses" [ref=e194] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=SAFETY_COMPLIANCE&page=1"
+                      - text: "3.5"
+                      - generic [ref=e196]: 6 obs
+                    - link "Maintenance Technical Skills average 3.50 from 6 observed responses" [ref=e197] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=TECHNICAL_SKILLS&page=1"
+                      - text: "3.5"
+                      - generic [ref=e199]: 6 obs
+                    - link "Maintenance Quality Of Work average 3.67 from 6 observed responses" [ref=e200] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=QUALITY_OF_WORK&page=1"
+                      - text: "3.7"
+                      - generic [ref=e202]: 6 obs
+                    - link "Maintenance Communication average 2.83 from 6 observed responses" [ref=e203] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=COMMUNICATION&page=1"
+                      - text: "2.8"
+                      - generic [ref=e205]: 6 obs
+                    - link "Maintenance Accountability average 3.17 from 6 observed responses" [ref=e206] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ACCOUNTABILITY&page=1"
+                      - text: "3.2"
+                      - generic [ref=e208]: 6 obs
+                    - link "Maintenance Relationship Building average 3.33 from 6 observed responses" [ref=e209] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=RELATIONSHIP_BUILDING&page=1"
+                      - text: "3.3"
+                      - generic [ref=e211]: 6 obs
+                    - link "Maintenance Results Driven average 3.33 from 6 observed responses" [ref=e212] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=RESULTS_DRIVEN&page=1"
+                      - text: "3.3"
+                      - generic [ref=e214]: 6 obs
+                    - link "Maintenance Attitude average 3.50 from 6 observed responses" [ref=e215] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ATTITUDE&page=1"
+                      - text: "3.5"
+                      - generic [ref=e217]: 6 obs
+                    - link "Maintenance Service Oriented average 3.50 from 6 observed responses" [ref=e218] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=SERVICE_ORIENTED&page=1"
+                      - text: "3.5"
+                      - generic [ref=e220]: 6 obs
+                    - link "Maintenance Adaptability average 3.50 from 6 observed responses" [ref=e221] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ADAPTABILITY&page=1"
+                      - text: "3.5"
+                      - generic [ref=e223]: 6 obs
+                  - generic [ref=e224]:
+                    - text: Operations
+                    - link "Operations Values Culture Alignment average 3.50 from 10 observed responses" [ref=e225] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=VALUES_CULTURE_ALIGNMENT&page=1"
+                      - text: "3.5"
+                      - generic [ref=e227]: 10 obs
+                    - link "Operations Judgment Decision Making average 3.50 from 10 observed responses" [ref=e228] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=JUDGMENT_DECISION_MAKING&page=1"
+                      - text: "3.5"
+                      - generic [ref=e230]: 10 obs
+                    - link "Operations Safety Compliance average 3.50 from 10 observed responses" [ref=e231] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=SAFETY_COMPLIANCE&page=1"
+                      - text: "3.5"
+                      - generic [ref=e233]: 10 obs
+                    - link "Operations Technical Skills average 3.50 from 10 observed responses" [ref=e234] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=TECHNICAL_SKILLS&page=1"
+                      - text: "3.5"
+                      - generic [ref=e236]: 10 obs
+                    - link "Operations Quality Of Work average 3.50 from 10 observed responses" [ref=e237] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=QUALITY_OF_WORK&page=1"
+                      - text: "3.5"
+                      - generic [ref=e239]: 10 obs
+                    - link "Operations Communication average 3.10 from 10 observed responses" [ref=e240] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=COMMUNICATION&page=1"
+                      - text: "3.1"
+                      - generic [ref=e242]: 10 obs
+                    - link "Operations Accountability average 3.30 from 10 observed responses" [ref=e243] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ACCOUNTABILITY&page=1"
+                      - text: "3.3"
+                      - generic [ref=e245]: 10 obs
+                    - link "Operations Relationship Building average 3.50 from 10 observed responses" [ref=e246] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=RELATIONSHIP_BUILDING&page=1"
+                      - text: "3.5"
+                      - generic [ref=e248]: 10 obs
+                    - link "Operations Results Driven average 3.40 from 10 observed responses" [ref=e249] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=RESULTS_DRIVEN&page=1"
+                      - text: "3.4"
+                      - generic [ref=e251]: 10 obs
+                    - link "Operations Attitude average 3.60 from 10 observed responses" [ref=e252] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ATTITUDE&page=1"
+                      - text: "3.6"
+                      - generic [ref=e254]: 10 obs
+                    - link "Operations Service Oriented average 3.50 from 10 observed responses" [ref=e255] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=SERVICE_ORIENTED&page=1"
+                      - text: "3.5"
+                      - generic [ref=e257]: 10 obs
+                    - link "Operations Adaptability average 3.50 from 10 observed responses" [ref=e258] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ADAPTABILITY&page=1"
+                      - text: "3.5"
+                      - generic [ref=e260]: 10 obs
+                  - generic [ref=e261]:
+                    - text: Projects
+                    - link "Projects Values Culture Alignment average 3.63 from 8 observed responses" [ref=e262] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=VALUES_CULTURE_ALIGNMENT&page=1"
+                      - text: "3.6"
+                      - generic [ref=e264]: 8 obs
+                    - link "Projects Judgment Decision Making average 3.63 from 8 observed responses" [ref=e265] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=JUDGMENT_DECISION_MAKING&page=1"
+                      - text: "3.6"
+                      - generic [ref=e267]: 8 obs
+                    - link "Projects Safety Compliance average 3.63 from 8 observed responses" [ref=e268] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=SAFETY_COMPLIANCE&page=1"
+                      - text: "3.6"
+                      - generic [ref=e270]: 8 obs
+                    - link "Projects Technical Skills average 3.63 from 8 observed responses" [ref=e271] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=TECHNICAL_SKILLS&page=1"
+                      - text: "3.6"
+                      - generic [ref=e273]: 8 obs
+                    - link "Projects Quality Of Work average 3.75 from 8 observed responses" [ref=e274] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=QUALITY_OF_WORK&page=1"
+                      - text: "3.8"
+                      - generic [ref=e276]: 8 obs
+                    - link "Projects Communication average 3.40 from 10 observed responses" [ref=e277] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=COMMUNICATION&page=1"
+                      - text: "3.4"
+                      - generic [ref=e279]: 10 obs
+                    - link "Projects Accountability average 3.63 from 8 observed responses" [ref=e280] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ACCOUNTABILITY&page=1"
+                      - text: "3.6"
+                      - generic [ref=e282]: 8 obs
+                    - link "Projects Relationship Building average 3.50 from 8 observed responses" [ref=e283] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=RELATIONSHIP_BUILDING&page=1"
+                      - text: "3.5"
+                      - generic [ref=e285]: 8 obs
+                    - link "Projects Results Driven average 3.75 from 8 observed responses" [ref=e286] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=RESULTS_DRIVEN&page=1"
+                      - text: "3.8"
+                      - generic [ref=e288]: 8 obs
+                    - link "Projects Attitude average 3.50 from 10 observed responses" [ref=e289] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ATTITUDE&page=1"
+                      - text: "3.5"
+                      - generic [ref=e291]: 10 obs
+                    - link "Projects Service Oriented average 3.50 from 10 observed responses" [ref=e292] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=SERVICE_ORIENTED&page=1"
+                      - text: "3.5"
+                      - generic [ref=e294]: 10 obs
+                    - link "Projects Adaptability average 3.63 from 8 observed responses" [ref=e295] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ADAPTABILITY&page=1"
+                      - text: "3.6"
+                      - generic [ref=e297]: 8 obs
+                  - generic [ref=e298]:
+                    - text: Safety
+                    - link "Safety Values Culture Alignment average 4.00 from 6 observed responses" [ref=e299] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=VALUES_CULTURE_ALIGNMENT&page=1"
+                      - text: "4.0"
+                      - generic [ref=e301]: 6 obs
+                    - link "Safety Judgment Decision Making average 4.00 from 6 observed responses" [ref=e302] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=JUDGMENT_DECISION_MAKING&page=1"
+                      - text: "4.0"
+                      - generic [ref=e304]: 6 obs
+                    - link "Safety Safety Compliance average 4.33 from 6 observed responses" [ref=e305] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=SAFETY_COMPLIANCE&page=1"
+                      - text: "4.3"
+                      - generic [ref=e307]: 6 obs
+                    - link "Safety Technical Skills average 4.00 from 6 observed responses" [ref=e308] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=TECHNICAL_SKILLS&page=1"
+                      - text: "4.0"
+                      - generic [ref=e310]: 6 obs
+                    - link "Safety Quality Of Work average 4.00 from 6 observed responses" [ref=e311] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=QUALITY_OF_WORK&page=1"
+                      - text: "4.0"
+                      - generic [ref=e313]: 6 obs
+                    - link "Safety Communication average 3.83 from 6 observed responses" [ref=e314] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=COMMUNICATION&page=1"
+                      - text: "3.8"
+                      - generic [ref=e316]: 6 obs
+                    - link "Safety Accountability average 4.00 from 6 observed responses" [ref=e317] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ACCOUNTABILITY&page=1"
+                      - text: "4.0"
+                      - generic [ref=e319]: 6 obs
+                    - link "Safety Relationship Building average 4.00 from 6 observed responses" [ref=e320] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=RELATIONSHIP_BUILDING&page=1"
+                      - text: "4.0"
+                      - generic [ref=e322]: 6 obs
+                    - link "Safety Results Driven average 3.67 from 6 observed responses" [ref=e323] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=RESULTS_DRIVEN&page=1"
+                      - text: "3.7"
+                      - generic [ref=e325]: 6 obs
+                    - link "Safety Attitude average 4.00 from 6 observed responses" [ref=e326] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ATTITUDE&page=1"
+                      - text: "4.0"
+                      - generic [ref=e328]: 6 obs
+                    - link "Safety Service Oriented average 4.00 from 6 observed responses" [ref=e329] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=SERVICE_ORIENTED&page=1"
+                      - text: "4.0"
+                      - generic [ref=e331]: 6 obs
+                    - link "Safety Adaptability average 4.00 from 6 observed responses" [ref=e332] [cursor=pointer]:
+                      - /url: "?cycleId=cycle_seed_draft_1&ratingSource=FINAL&groupBy=department&tab=competencies&dimensionKey=ADAPTABILITY&page=1"
+                      - text: "4.0"
+                      - generic [ref=e334]: 6 obs
+                - generic [ref=e335]:
+                  - paragraph [ref=e336]: Hovered cell
+                  - heading "Move across the matrix" [level=3] [ref=e337]
+                  - paragraph [ref=e338]: Each cell is a department/competency intersection. Click a cell to pin the competency detail below.
+              - generic [ref=e339]:
+                - generic [ref=e340]: Low average
+                - generic [ref=e342]: Mid average
+                - generic [ref=e344]: High average
+  - button "Open Next.js Dev Tools" [ref=e351] [cursor=pointer]:
+    - img [ref=e352]
+  - alert [ref=e356]

@@ -39,6 +39,73 @@ interface HomeDashboardDb {
   };
 }
 
+interface HomeViewerDb {
+  employee: {
+    findFirst: (args: {
+      where: { orgId: string; userId: string };
+      select: {
+        id: true;
+        firstName: true;
+        lastName: true;
+        avatarUrl: true;
+        title: true;
+        department: true;
+        managerId: true;
+        manager: {
+          select: {
+            id: true;
+            firstName: true;
+            lastName: true;
+            avatarUrl: true;
+            title: true;
+          };
+        };
+      };
+    }) => Promise<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      avatarUrl: string | null;
+      title: string | null;
+      department: string | null;
+      managerId: string | null;
+      manager: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        avatarUrl: string | null;
+        title: string | null;
+      } | null;
+    } | null>;
+    findMany: (args: {
+      where: {
+        orgId: string;
+        managerId: string;
+        id?: {
+          not: string;
+        };
+      };
+      take: number;
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }];
+      select: {
+        id: true;
+        firstName: true;
+        lastName: true;
+        avatarUrl: true;
+        title: true;
+      };
+    }) => Promise<
+      Array<{
+        id: string;
+        firstName: string;
+        lastName: string;
+        avatarUrl: string | null;
+        title: string | null;
+      }>
+    >;
+  };
+}
+
 export interface ManagerHomeSnapshot {
   directReportCount: number;
   awaitingManagerReviewCount: number;
@@ -50,6 +117,27 @@ export interface HrHomeSnapshot {
   draftCycleCount: number;
   openSubmissionCount: number;
   submittedSubmissionCount: number;
+}
+
+export interface HomeViewerOverview {
+  displayName: string;
+  firstName: string;
+  avatarUrl: string | null;
+  title: string | null;
+  department: string | null;
+  manager: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    title: string | null;
+  } | null;
+  peopleLabel: string;
+  people: Array<{
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    title: string | null;
+  }>;
 }
 
 const activeStatuses = [CycleStatus.ACTIVE, CycleStatus.LOCKED] as const;
@@ -195,5 +283,96 @@ export async function getHrHomeSnapshot(
     draftCycleCount,
     openSubmissionCount,
     submittedSubmissionCount,
+  };
+}
+
+export async function getHomeViewerOverview(
+  context: RequestContext,
+  db: HomeViewerDb = prisma as unknown as HomeViewerDb,
+): Promise<HomeViewerOverview | null> {
+  const employee = await db.employee.findFirst({
+    where: {
+      orgId: context.orgId,
+      userId: context.userId,
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      avatarUrl: true,
+      title: true,
+      department: true,
+      managerId: true,
+      manager: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+          title: true,
+        },
+      },
+    },
+  });
+
+  if (!employee) {
+    return null;
+  }
+
+  const peopleLabel =
+    context.role === UserRole.MANAGER || context.role === UserRole.HR_ADMIN ? "Team" : "My team";
+
+  const peopleSourceManagerId =
+    context.role === UserRole.MANAGER || context.role === UserRole.HR_ADMIN
+      ? employee.id
+      : employee.managerId;
+
+  const people =
+    peopleSourceManagerId == null
+      ? []
+      : await db.employee.findMany({
+          where: {
+            orgId: context.orgId,
+            managerId: peopleSourceManagerId,
+            ...(peopleSourceManagerId === employee.managerId
+              ? {
+                  id: {
+                    not: employee.id,
+                  },
+                }
+              : {}),
+          },
+          take: 5,
+          orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            title: true,
+          },
+        });
+
+  return {
+    displayName: `${employee.firstName} ${employee.lastName}`.trim(),
+    firstName: employee.firstName,
+    avatarUrl: employee.avatarUrl,
+    title: employee.title,
+    department: employee.department,
+    manager: employee.manager
+      ? {
+          id: employee.manager.id,
+          name: `${employee.manager.firstName} ${employee.manager.lastName}`.trim(),
+          avatarUrl: employee.manager.avatarUrl,
+          title: employee.manager.title,
+        }
+      : null,
+    peopleLabel,
+    people: people.map((person) => ({
+      id: person.id,
+      name: `${person.firstName} ${person.lastName}`.trim(),
+      avatarUrl: person.avatarUrl,
+      title: person.title,
+    })),
   };
 }

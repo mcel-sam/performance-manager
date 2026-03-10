@@ -1,0 +1,604 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e8]: PM
+        - navigation [ref=e9]:
+          - link "Home" [ref=e10] [cursor=pointer]:
+            - /url: /
+            - img [ref=e12]
+            - generic [ref=e14]: Home
+            - tooltip "Home"
+          - link "Reporting" [ref=e15] [cursor=pointer]:
+            - /url: /admin/performance/reporting
+            - img [ref=e17]
+            - generic [ref=e22]: Reporting
+            - tooltip "Reporting"
+          - link "Admin Cycles" [ref=e23] [cursor=pointer]:
+            - /url: /admin/performance/review-cycles
+            - img [ref=e25]
+            - generic [ref=e30]: Admin Cycles
+            - tooltip "Admin Cycles"
+          - link "Admin Calibration" [ref=e31] [cursor=pointer]:
+            - /url: /admin/performance/calibration
+            - img [ref=e33]
+            - generic [ref=e40]: Admin Calibration
+            - tooltip "Admin Calibration"
+          - link "User Management" [ref=e41] [cursor=pointer]:
+            - /url: /admin/users
+            - img [ref=e43]
+            - generic [ref=e46]: User Management
+            - tooltip "User Management"
+          - link "Help" [ref=e47] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e49]
+            - generic [ref=e53]: Help
+            - tooltip "Help"
+    - main [ref=e54]:
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - button "Expand navigation" [ref=e57]:
+            - img [ref=e58]
+          - generic [ref=e60]:
+            - generic [ref=e61]: Workspace
+            - generic [ref=e62]: Performance reporting
+        - generic [ref=e63]:
+          - button "Current organization" [disabled] [ref=e64]:
+            - generic [ref=e65]: O
+            - generic [ref=e66]: Ironcrest Construction Group
+            - img [ref=e67]
+          - button "Harper Quinn Harper Quinn HR Admin" [ref=e70]:
+            - generic "Harper Quinn" [ref=e71]
+            - generic [ref=e72]:
+              - generic [ref=e73]: Harper Quinn
+              - generic [ref=e74]: HR Admin
+      - generic [ref=e132]:
+        - generic [ref=e134]:
+          - heading "Reporting" [level=1] [ref=e135]
+          - paragraph [ref=e136]: Review completion trends, ratings, and competency outcomes for the selected cycle.
+          - generic [ref=e138]:
+            - text: "Active cycle:"
+            - strong [ref=e139]: Annual Review 2026
+        - generic [ref=e140]:
+          - paragraph [ref=e141]: Refine the cycle scope, then move between progress, results, competencies, and scorecard views without carrying a full employee table across every tab.
+          - generic [ref=e142]:
+            - generic [ref=e143]:
+              - text: Cycle
+              - combobox "Cycle" [ref=e144]:
+                - option "Annual Review 2026" [selected]
+            - generic [ref=e145]:
+              - text: Department
+              - combobox "Department" [ref=e146]:
+                - option "All departments" [selected]
+                - option "Admin/Finance"
+                - option "Maintenance"
+                - option "Operations"
+                - option "Projects"
+                - option "Safety"
+            - generic [ref=e147]:
+              - text: Title
+              - combobox "Title" [ref=e148]:
+                - option "All titles" [selected]
+                - option "Dispatcher"
+                - option "Equipment Operator"
+                - option "Foreman"
+                - option "Journeyman"
+                - option "Office Admin"
+                - option "Project Coordinator"
+                - option "Safety Coordinator"
+                - option "Site Supervisor"
+            - generic [ref=e149]:
+              - text: Status
+              - combobox "Status" [ref=e150]:
+                - option "All statuses" [selected]
+                - option "Not started"
+                - option "In progress"
+                - option "Completed"
+            - generic [ref=e151]:
+              - generic [ref=e152]: Rating source
+              - group "Rating source toggle" [ref=e153]:
+                - button "Use final ratings" [ref=e154]: Final
+                - button "Use scorecard baseline ratings" [ref=e155]: Scorecard baseline
+            - button "Apply filters" [ref=e157]
+        - generic [ref=e158]:
+          - generic [ref=e159]:
+            - link "Progress" [ref=e160] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=progress&ratingSource=FINAL&page=1"
+            - link "Results" [ref=e161] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=results&ratingSource=FINAL&page=1"
+            - link "Competencies" [ref=e162] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=competencies&ratingSource=FINAL&page=1"
+            - link "Scorecard" [ref=e163] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=scorecard&ratingSource=FINAL&page=1"
+          - generic [ref=e164]:
+            - generic [ref=e165]: Scope
+            - generic [ref=e166]: All departments
+            - text: •
+            - generic [ref=e167]: All titles
+        - generic [ref=e168]:
+          - generic [ref=e169]:
+            - generic [ref=e171]:
+              - generic [ref=e172]:
+                - paragraph [ref=e173]: Not started
+                - generic "Focus indicator" [ref=e174]: Focus
+              - paragraph [ref=e176]: "1"
+              - paragraph [ref=e177]: No self or manager progress yet
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - paragraph [ref=e181]: In progress
+                - generic "Active indicator" [ref=e182]: Active
+              - paragraph [ref=e184]: "4"
+              - paragraph [ref=e185]: At least one review is underway
+            - generic [ref=e187]:
+              - generic [ref=e188]:
+                - paragraph [ref=e189]: Completed
+                - generic "Stable indicator" [ref=e190]: Stable
+              - paragraph [ref=e192]: "13"
+              - paragraph [ref=e193]: Self and manager submitted
+            - generic [ref=e195]:
+              - generic [ref=e196]:
+                - paragraph [ref=e197]: Self in progress
+                - generic "Monitor indicator" [ref=e198]: Monitor
+              - paragraph [ref=e200]: "1"
+              - paragraph [ref=e201]: Employee draft activity
+            - generic [ref=e203]:
+              - generic [ref=e204]:
+                - paragraph [ref=e205]: Manager in progress
+                - generic "Monitor indicator" [ref=e206]: Monitor
+              - paragraph [ref=e208]: "2"
+              - paragraph [ref=e209]: Manager draft activity
+          - generic [ref=e210]:
+            - generic [ref=e212]:
+              - generic [ref=e213]:
+                - heading "Completion overview" [level=3] [ref=e214]
+                - paragraph [ref=e215]: One view for the current cycle scope. The people queue stays here instead of following every analytics tab.
+              - generic [ref=e216]:
+                - button "Download status mix chart as PNG" [ref=e217]: Download PNG
+                - link "Export progress CSV" [ref=e218] [cursor=pointer]:
+                  - /url: data:text/csv;charset=utf-8,status%2Ctotal%2Cself%2Cmanager%0ANOT_STARTED%2C1%2C1%2C2%0AIN_PROGRESS%2C4%2C1%2C2%0ACOMPLETED%2C13%2C16%2C14
+            - generic [ref=e219]:
+              - generic [ref=e221]:
+                - generic [ref=e222]:
+                  - img "Completion overview for 18 employees" [ref=e223]:
+                    - generic [ref=e224]: 18 employees in scope
+                    - text: Focus the queue with the status cards below
+                    - generic [ref=e230]: In progress · 4
+                    - generic [ref=e233]: Completed · 13
+                    - text: Completed includes only employees with both self and manager reviews submitted.
+                  - generic [ref=e234]:
+                    - button "Filter employee queue by Not started" [ref=e235]:
+                      - generic [ref=e236]:
+                        - generic [ref=e237]: Not started
+                        - generic [ref=e239]: 6%
+                      - paragraph [ref=e240]: "1"
+                      - paragraph [ref=e241]: employee
+                    - button "Filter employee queue by In progress" [ref=e242]:
+                      - generic [ref=e243]:
+                        - generic [ref=e244]: In progress
+                        - generic [ref=e246]: 22%
+                      - paragraph [ref=e247]: "4"
+                      - paragraph [ref=e248]: employees
+                    - button "Filter employee queue by Completed" [ref=e249]:
+                      - generic [ref=e250]:
+                        - generic [ref=e251]: Completed
+                        - generic [ref=e253]: 72%
+                      - paragraph [ref=e254]: "13"
+                      - paragraph [ref=e255]: employees
+                - generic [ref=e256]:
+                  - generic [ref=e257]:
+                    - paragraph [ref=e258]: Completion rate
+                    - paragraph [ref=e259]: 72%
+                    - paragraph [ref=e260]: 13 of 18 employees completed both reviews.
+                  - generic [ref=e261]:
+                    - paragraph [ref=e262]: Employee draft activity
+                    - paragraph [ref=e263]: "1"
+                    - paragraph [ref=e264]: Self reviews started but not yet completed.
+                  - generic [ref=e265]:
+                    - paragraph [ref=e266]: Manager draft activity
+                    - paragraph [ref=e267]: "2"
+                    - paragraph [ref=e268]: Manager reviews currently in motion.
+              - generic [ref=e269]:
+                - generic [ref=e270]:
+                  - paragraph [ref=e271]: What counts as In progress?
+                  - button "Toggle help for What counts as In progress?" [ref=e272]:
+                    - generic [ref=e273]: "?"
+                - note [ref=e274]: In progress means either the self review or manager review has started, but both are not submitted yet.
+          - generic [ref=e275]:
+            - generic [ref=e277]:
+              - generic [ref=e278]:
+                - heading "Employee queue" [level=3] [ref=e279]
+                - paragraph [ref=e280]: A lighter queue view for follow-up actions and links.
+              - link "Export queue CSV" [ref=e282] [cursor=pointer]:
+                - /url: data:text/csv;charset=utf-8,Employee%2CDepartment%2CTitle%2CSelf%20Status%2CManager%20Status%2COverall%20Status%2CFinal%20Rating%2CFinal%20Rating%20Source%2CScorecard%20Percent%0AChloe%20Nguyen%2CAdmin%2FFinance%2COffice%20Admin%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C1%2CSCORECARD%2C18%0AAisha%20Rahman%2CAdmin%2FFinance%2CDispatcher%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C2%2CSCORECARD%2C60%0ALucas%20Ford%2CMaintenance%2CEquipment%20Operator%2CNOT_STARTED%2CNOT_STARTED%2CNOT_STARTED%2C1%2CSCORECARD%2C31%0ACarter%20Singh%2CMaintenance%2CEquipment%20Operator%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C5%2CSCORECARD%2C99%0AJavier%20Morales%2CMaintenance%2CEquipment%20Operator%2CSUBMITTED%2CRETURNED%2CIN_PROGRESS%2C3%2CSCORECARD%2C71.5%0AElliot%20Barnes%2COperations%2CForeman%2CSUBMITTED%2CIN_PROGRESS%2CIN_PROGRESS%2C5%2CCALIBRATION%2C91%0AOwen%20Reyes%2COperations%2CForeman%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C4%2CSCORECARD%2C80%0ASofia%20Kim%2COperations%2CSite%20Supervisor%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C2%2CSCORECARD%2C60%0ALeila%20Haddad%2COperations%2CForeman%2CSUBMITTED%2CNOT_STARTED%2CIN_PROGRESS%2C1%2CSCORECARD%2C31%0AMorgan%20Patel%2COperations%2CSite%20Supervisor%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C4%2CSCORECARD%2C80%0APriya%20Das%2CProjects%2CProject%20Coordinator%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C3%2CSCORECARD%2C71.5%0ADaniel%20Ortiz%2CProjects%2CProject%20Coordinator%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C2%2CSCORECARD%2C60%0AJordan%20Blake%2CProjects%2CForeman%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C4%2CSCORECARD%2C80%0AHannah%20Lewis%2CProjects%2CJourneyman%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C4%2CSCORECARD%2C80%0ANoah%20Bennett%2CProjects%2CJourneyman%2CIN_PROGRESS%2CSUBMITTED%2CIN_PROGRESS%2C1%2CSCORECARD%2C18%0AMarcus%20Reed%2CSafety%2CSafety%20Coordinator%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C5%2CSCORECARD%2C99%0AMaya%20Chen%2CSafety%2CSafety%20Coordinator%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C1%2CSCORECARD%2C56%0ABianca%20Alvarez%2CSafety%2CSafety%20Coordinator%2CSUBMITTED%2CSUBMITTED%2CCOMPLETED%2C4%2CSCORECARD%2C80
+            - generic [ref=e283]:
+              - generic [ref=e284]:
+                - article [ref=e285]:
+                  - generic [ref=e286]:
+                    - generic [ref=e287]:
+                      - heading "Chloe Nguyen" [level=3] [ref=e288]
+                      - paragraph [ref=e289]: Admin/Finance · Office Admin
+                    - generic [ref=e290]:
+                      - paragraph [ref=e291]: Rating
+                      - paragraph [ref=e292]: Final 1
+                      - paragraph [ref=e293]: Scorecard
+                  - generic [ref=e294]:
+                    - generic [ref=e295]: Completed
+                    - generic [ref=e296]: Self Completed
+                    - generic [ref=e297]: Manager Completed
+                    - generic [ref=e298]: 18.0% scorecard
+                  - generic [ref=e299]:
+                    - paragraph [ref=e300]: Follow-up links for the selected employee record.
+                    - generic [ref=e301]:
+                      - link "Packet" [ref=e302] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_12
+                      - link "Calibration" [ref=e303] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e304]:
+                  - generic [ref=e305]:
+                    - generic [ref=e306]:
+                      - heading "Aisha Rahman" [level=3] [ref=e307]
+                      - paragraph [ref=e308]: Admin/Finance · Dispatcher
+                    - generic [ref=e309]:
+                      - paragraph [ref=e310]: Rating
+                      - paragraph [ref=e311]: Final 2
+                      - paragraph [ref=e312]: Scorecard
+                  - generic [ref=e313]:
+                    - generic [ref=e314]: Completed
+                    - generic [ref=e315]: Self Completed
+                    - generic [ref=e316]: Manager Completed
+                    - generic [ref=e317]: 60.0% scorecard
+                  - generic [ref=e318]:
+                    - paragraph [ref=e319]: Follow-up links for the selected employee record.
+                    - generic [ref=e320]:
+                      - link "Packet" [ref=e321] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_6
+                      - link "Calibration" [ref=e322] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e323]:
+                  - generic [ref=e324]:
+                    - generic [ref=e325]:
+                      - heading "Lucas Ford" [level=3] [ref=e326]
+                      - paragraph [ref=e327]: Maintenance · Equipment Operator
+                    - generic [ref=e328]:
+                      - paragraph [ref=e329]: Rating
+                      - paragraph [ref=e330]: Final 1
+                      - paragraph [ref=e331]: Scorecard
+                  - generic [ref=e332]:
+                    - generic [ref=e333]: Not started
+                    - generic [ref=e334]: Self Not started
+                    - generic [ref=e335]: Manager Not started
+                    - generic [ref=e336]: 31.0% scorecard
+                  - generic [ref=e337]:
+                    - paragraph [ref=e338]: Follow-up links for the selected employee record.
+                    - generic [ref=e339]:
+                      - link "Packet" [ref=e340] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_5
+                      - link "Calibration" [ref=e341] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e342]:
+                  - generic [ref=e343]:
+                    - generic [ref=e344]:
+                      - heading "Carter Singh" [level=3] [ref=e345]
+                      - paragraph [ref=e346]: Maintenance · Equipment Operator
+                    - generic [ref=e347]:
+                      - paragraph [ref=e348]: Rating
+                      - paragraph [ref=e349]: Final 5
+                      - paragraph [ref=e350]: Scorecard
+                  - generic [ref=e351]:
+                    - generic [ref=e352]: Completed
+                    - generic [ref=e353]: Self Completed
+                    - generic [ref=e354]: Manager Completed
+                    - generic [ref=e355]: 99.0% scorecard
+                  - generic [ref=e356]:
+                    - paragraph [ref=e357]: Follow-up links for the selected employee record.
+                    - generic [ref=e358]:
+                      - link "Packet" [ref=e359] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_16
+                      - link "Calibration" [ref=e360] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e361]:
+                  - generic [ref=e362]:
+                    - generic [ref=e363]:
+                      - heading "Javier Morales" [level=3] [ref=e364]
+                      - paragraph [ref=e365]: Maintenance · Equipment Operator
+                    - generic [ref=e366]:
+                      - paragraph [ref=e367]: Rating
+                      - paragraph [ref=e368]: Final 3
+                      - paragraph [ref=e369]: Scorecard
+                  - generic [ref=e370]:
+                    - generic [ref=e371]: In progress
+                    - generic [ref=e372]: Self Completed
+                    - generic [ref=e373]: Manager Returned
+                    - generic [ref=e374]: 71.5% scorecard
+                  - generic [ref=e375]:
+                    - paragraph [ref=e376]: Follow-up links for the selected employee record.
+                    - generic [ref=e377]:
+                      - link "Packet" [ref=e378] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_9
+                      - link "Calibration" [ref=e379] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e380]:
+                  - generic [ref=e381]:
+                    - generic [ref=e382]:
+                      - heading "Elliot Barnes" [level=3] [ref=e383]
+                      - paragraph [ref=e384]: Operations · Foreman
+                    - generic [ref=e385]:
+                      - paragraph [ref=e386]: Rating
+                      - paragraph [ref=e387]: Final 5
+                      - paragraph [ref=e388]: Calibration
+                  - generic [ref=e389]:
+                    - generic [ref=e390]: In progress
+                    - generic [ref=e391]: Self Completed
+                    - generic [ref=e392]: Manager In progress
+                    - generic [ref=e393]: 91.0% scorecard
+                  - generic [ref=e394]:
+                    - paragraph [ref=e395]: Follow-up links for the selected employee record.
+                    - generic [ref=e396]:
+                      - link "Packet" [ref=e397] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_1
+                      - link "Calibration" [ref=e398] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                      - link "Plan" [ref=e399] [cursor=pointer]:
+                        - /url: /performance/improvement-plans/improvement_plan_seed_2
+                - article [ref=e400]:
+                  - generic [ref=e401]:
+                    - generic [ref=e402]:
+                      - heading "Owen Reyes" [level=3] [ref=e403]
+                      - paragraph [ref=e404]: Operations · Foreman
+                    - generic [ref=e405]:
+                      - paragraph [ref=e406]: Rating
+                      - paragraph [ref=e407]: Final 4
+                      - paragraph [ref=e408]: Scorecard
+                  - generic [ref=e409]:
+                    - generic [ref=e410]: Completed
+                    - generic [ref=e411]: Self Completed
+                    - generic [ref=e412]: Manager Completed
+                    - generic [ref=e413]: 80.0% scorecard
+                  - generic [ref=e414]:
+                    - paragraph [ref=e415]: Follow-up links for the selected employee record.
+                    - generic [ref=e416]:
+                      - link "Packet" [ref=e417] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_7
+                      - link "Calibration" [ref=e418] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e419]:
+                  - generic [ref=e420]:
+                    - generic [ref=e421]:
+                      - heading "Sofia Kim" [level=3] [ref=e422]
+                      - paragraph [ref=e423]: Operations · Site Supervisor
+                    - generic [ref=e424]:
+                      - paragraph [ref=e425]: Rating
+                      - paragraph [ref=e426]: Final 2
+                      - paragraph [ref=e427]: Scorecard
+                  - generic [ref=e428]:
+                    - generic [ref=e429]: Completed
+                    - generic [ref=e430]: Self Completed
+                    - generic [ref=e431]: Manager Completed
+                    - generic [ref=e432]: 60.0% scorecard
+                  - generic [ref=e433]:
+                    - paragraph [ref=e434]: Follow-up links for the selected employee record.
+                    - generic [ref=e435]:
+                      - link "Packet" [ref=e436] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_8
+                      - link "Calibration" [ref=e437] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e438]:
+                  - generic [ref=e439]:
+                    - generic [ref=e440]:
+                      - heading "Leila Haddad" [level=3] [ref=e441]
+                      - paragraph [ref=e442]: Operations · Foreman
+                    - generic [ref=e443]:
+                      - paragraph [ref=e444]: Rating
+                      - paragraph [ref=e445]: Final 1
+                      - paragraph [ref=e446]: Scorecard
+                  - generic [ref=e447]:
+                    - generic [ref=e448]: In progress
+                    - generic [ref=e449]: Self Completed
+                    - generic [ref=e450]: Manager Not started
+                    - generic [ref=e451]: 31.0% scorecard
+                  - generic [ref=e452]:
+                    - paragraph [ref=e453]: Follow-up links for the selected employee record.
+                    - generic [ref=e454]:
+                      - link "Packet" [ref=e455] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_15
+                      - link "Calibration" [ref=e456] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e457]:
+                  - generic [ref=e458]:
+                    - generic [ref=e459]:
+                      - heading "Morgan Patel" [level=3] [ref=e460]
+                      - paragraph [ref=e461]: Operations · Site Supervisor
+                    - generic [ref=e462]:
+                      - paragraph [ref=e463]: Rating
+                      - paragraph [ref=e464]: Final 4
+                      - paragraph [ref=e465]: Scorecard
+                  - generic [ref=e466]:
+                    - generic [ref=e467]: Completed
+                    - generic [ref=e468]: Self Completed
+                    - generic [ref=e469]: Manager Completed
+                    - generic [ref=e470]: 80.0% scorecard
+                  - generic [ref=e471]:
+                    - paragraph [ref=e472]: Follow-up links for the selected employee record.
+                    - generic [ref=e473]:
+                      - link "Packet" [ref=e474] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_manager_1
+                      - link "Calibration" [ref=e475] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e476]:
+                  - generic [ref=e477]:
+                    - generic [ref=e478]:
+                      - heading "Priya Das" [level=3] [ref=e479]
+                      - paragraph [ref=e480]: Projects · Project Coordinator
+                    - generic [ref=e481]:
+                      - paragraph [ref=e482]: Rating
+                      - paragraph [ref=e483]: Final 3
+                      - paragraph [ref=e484]: Scorecard
+                  - generic [ref=e485]:
+                    - generic [ref=e486]: Completed
+                    - generic [ref=e487]: Self Completed
+                    - generic [ref=e488]: Manager Completed
+                    - generic [ref=e489]: 71.5% scorecard
+                  - generic [ref=e490]:
+                    - paragraph [ref=e491]: Follow-up links for the selected employee record.
+                    - generic [ref=e492]:
+                      - link "Packet" [ref=e493] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_3
+                      - link "Calibration" [ref=e494] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                      - link "Plan" [ref=e495] [cursor=pointer]:
+                        - /url: /performance/improvement-plans/improvement_plan_seed_1
+                - article [ref=e496]:
+                  - generic [ref=e497]:
+                    - generic [ref=e498]:
+                      - heading "Daniel Ortiz" [level=3] [ref=e499]
+                      - paragraph [ref=e500]: Projects · Project Coordinator
+                    - generic [ref=e501]:
+                      - paragraph [ref=e502]: Rating
+                      - paragraph [ref=e503]: Final 2
+                      - paragraph [ref=e504]: Scorecard
+                  - generic [ref=e505]:
+                    - generic [ref=e506]: Completed
+                    - generic [ref=e507]: Self Completed
+                    - generic [ref=e508]: Manager Completed
+                    - generic [ref=e509]: 60.0% scorecard
+                  - generic [ref=e510]:
+                    - paragraph [ref=e511]: Follow-up links for the selected employee record.
+                    - generic [ref=e512]:
+                      - link "Packet" [ref=e513] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_14
+                      - link "Calibration" [ref=e514] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e515]:
+                  - generic [ref=e516]:
+                    - generic [ref=e517]:
+                      - heading "Jordan Blake" [level=3] [ref=e518]
+                      - paragraph [ref=e519]: Projects · Foreman
+                    - generic [ref=e520]:
+                      - paragraph [ref=e521]: Rating
+                      - paragraph [ref=e522]: Final 4
+                      - paragraph [ref=e523]: Scorecard
+                  - generic [ref=e524]:
+                    - generic [ref=e525]: Completed
+                    - generic [ref=e526]: Self Completed
+                    - generic [ref=e527]: Manager Completed
+                    - generic [ref=e528]: 80.0% scorecard
+                  - generic [ref=e529]:
+                    - paragraph [ref=e530]: Follow-up links for the selected employee record.
+                    - generic [ref=e531]:
+                      - link "Packet" [ref=e532] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_manager_2
+                      - link "Calibration" [ref=e533] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e534]:
+                  - generic [ref=e535]:
+                    - generic [ref=e536]:
+                      - heading "Hannah Lewis" [level=3] [ref=e537]
+                      - paragraph [ref=e538]: Projects · Journeyman
+                    - generic [ref=e539]:
+                      - paragraph [ref=e540]: Rating
+                      - paragraph [ref=e541]: Final 4
+                      - paragraph [ref=e542]: Scorecard
+                  - generic [ref=e543]:
+                    - generic [ref=e544]: Completed
+                    - generic [ref=e545]: Self Completed
+                    - generic [ref=e546]: Manager Completed
+                    - generic [ref=e547]: 80.0% scorecard
+                  - generic [ref=e548]:
+                    - paragraph [ref=e549]: Follow-up links for the selected employee record.
+                    - generic [ref=e550]:
+                      - link "Packet" [ref=e551] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_10
+                      - link "Calibration" [ref=e552] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e553]:
+                  - generic [ref=e554]:
+                    - generic [ref=e555]:
+                      - heading "Noah Bennett" [level=3] [ref=e556]
+                      - paragraph [ref=e557]: Projects · Journeyman
+                    - generic [ref=e558]:
+                      - paragraph [ref=e559]: Rating
+                      - paragraph [ref=e560]: Final 1
+                      - paragraph [ref=e561]: Scorecard
+                  - generic [ref=e562]:
+                    - generic [ref=e563]: In progress
+                    - generic [ref=e564]: Self In progress
+                    - generic [ref=e565]: Manager Completed
+                    - generic [ref=e566]: 18.0% scorecard
+                  - generic [ref=e567]:
+                    - paragraph [ref=e568]: Follow-up links for the selected employee record.
+                    - generic [ref=e569]:
+                      - link "Packet" [ref=e570] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_4
+                      - link "Calibration" [ref=e571] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e572]:
+                  - generic [ref=e573]:
+                    - generic [ref=e574]:
+                      - heading "Marcus Reed" [level=3] [ref=e575]
+                      - paragraph [ref=e576]: Safety · Safety Coordinator
+                    - generic [ref=e577]:
+                      - paragraph [ref=e578]: Rating
+                      - paragraph [ref=e579]: Final 5
+                      - paragraph [ref=e580]: Scorecard
+                  - generic [ref=e581]:
+                    - generic [ref=e582]: Completed
+                    - generic [ref=e583]: Self Completed
+                    - generic [ref=e584]: Manager Completed
+                    - generic [ref=e585]: 99.0% scorecard
+                  - generic [ref=e586]:
+                    - paragraph [ref=e587]: Follow-up links for the selected employee record.
+                    - generic [ref=e588]:
+                      - link "Packet" [ref=e589] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_11
+                      - link "Calibration" [ref=e590] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e591]:
+                  - generic [ref=e592]:
+                    - generic [ref=e593]:
+                      - heading "Maya Chen" [level=3] [ref=e594]
+                      - paragraph [ref=e595]: Safety · Safety Coordinator
+                    - generic [ref=e596]:
+                      - paragraph [ref=e597]: Rating
+                      - paragraph [ref=e598]: Final 1
+                      - paragraph [ref=e599]: Scorecard
+                  - generic [ref=e600]:
+                    - generic [ref=e601]: Completed
+                    - generic [ref=e602]: Self Completed
+                    - generic [ref=e603]: Manager Completed
+                    - generic [ref=e604]: 56.0% scorecard
+                  - generic [ref=e605]:
+                    - paragraph [ref=e606]: Follow-up links for the selected employee record.
+                    - generic [ref=e607]:
+                      - link "Packet" [ref=e608] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_2
+                      - link "Calibration" [ref=e609] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+                - article [ref=e610]:
+                  - generic [ref=e611]:
+                    - generic [ref=e612]:
+                      - heading "Bianca Alvarez" [level=3] [ref=e613]
+                      - paragraph [ref=e614]: Safety · Safety Coordinator
+                    - generic [ref=e615]:
+                      - paragraph [ref=e616]: Rating
+                      - paragraph [ref=e617]: Final 4
+                      - paragraph [ref=e618]: Scorecard
+                  - generic [ref=e619]:
+                    - generic [ref=e620]: Completed
+                    - generic [ref=e621]: Self Completed
+                    - generic [ref=e622]: Manager Completed
+                    - generic [ref=e623]: 80.0% scorecard
+                  - generic [ref=e624]:
+                    - paragraph [ref=e625]: Follow-up links for the selected employee record.
+                    - generic [ref=e626]:
+                      - link "Packet" [ref=e627] [cursor=pointer]:
+                        - /url: /performance/reviews/cycle_seed_draft_1/packet/emp_employee_13
+                      - link "Calibration" [ref=e628] [cursor=pointer]:
+                        - /url: /performance/calibration/calibration_session_seed_1
+              - generic [ref=e629]:
+                - generic [ref=e630]: Showing 18 of 18 rows on this page (Page 1 of 1; 18 employees total)
+                - generic [ref=e631]:
+                  - generic [ref=e632]: Previous
+                  - generic [ref=e633]: Next
+  - button "Open Next.js Dev Tools" [ref=e126] [cursor=pointer]:
+    - img [ref=e127]
+  - alert [ref=e131]

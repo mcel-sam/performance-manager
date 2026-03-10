@@ -8,17 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Tabs } from "@/components/ui/tabs";
+import { getReviewRelationshipLabel } from "@/lib/reviews/review-copy";
 import { Textarea } from "@/components/ui/textarea";
 import type { ReviewPacketData } from "@/server/reviews/review-packet-service";
 
 type PacketTab = "thisCycle" | "previousCycles";
-
-const relationshipLabel = {
-  SELF: "Self",
-  MANAGER: "Manager",
-  PEER: "Peer",
-  UPWARD: "Upward",
-} as const;
 
 const statusLabel = {
   NOT_STARTED: "Not started",
@@ -141,7 +135,7 @@ export default function ReviewPacketView({ data }: ReviewPacketViewProps) {
                       <div>
                         <CardTitle className="text-lg">{submission.reviewerName}</CardTitle>
                         <div className="mt-1 flex items-center gap-2 text-sm text-slate-600">
-                          <span>Relationship: {relationshipLabel[submission.relationship]}</span>
+                          <span>Review type: {getReviewRelationshipLabel(submission.relationship, "full")}</span>
                           {submission.isReferenceInput ? (
                             <Badge variant="info">Reference input</Badge>
                           ) : null}

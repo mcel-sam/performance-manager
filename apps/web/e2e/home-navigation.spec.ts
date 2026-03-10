@@ -20,10 +20,12 @@ test("home loads and primary navigation opens reviews", async ({ page }) => {
     }),
   ).toBeVisible();
   await expect(page.getByTestId("home-getting-started-link-0")).toBeVisible();
+  await expect(page.getByTestId("home-greeting")).toHaveText("Hi, Morgan!");
   await expect(page.getByTestId("home-summary-title")).toHaveText("My team");
   await expect(page.getByText("Direct reports")).toBeVisible();
   await expect(page.getByText("Awaiting manager review")).toBeVisible();
   await expect(page.getByText("Self reviews not started")).toBeVisible();
+  await expect(page.getByText("Primary action")).toHaveCount(0);
   const homeTaskTexts = await page
     .locator('[data-testid^="home-getting-started-link-"]')
     .allTextContents();
@@ -47,6 +49,10 @@ test("home loads and primary navigation opens reviews", async ({ page }) => {
 test("employee navigation hides admin and calibration modules", async ({ page }) => {
   await loginAsEmployee(page);
 
+  await expect(page.getByTestId("home-greeting")).toHaveText("Hi, Elliot!");
+  await expect(page.getByText("You're caught up")).toBeVisible();
+  await expect(page.getByText("No reviews need attention")).toBeVisible();
+  await expect(page.getByText("Self review")).toHaveCount(0);
   await openMenu(page);
   await expect(page.getByTestId("nav-link-home")).toBeVisible();
   await expect(page.getByTestId("nav-link-reviews")).toBeVisible();

@@ -1,39 +1,52 @@
+import Link from "next/link";
+
 import WriteReviewForm from "@/components/reviews/write-review-form";
 import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import { getBackLabelForHref, resolveReturnTo } from "@/lib/navigation/return-to";
+import { getReviewRelationshipLabel } from "@/lib/reviews/review-copy";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getWriteReviewData } from "@/server/reviews/participant-review-service";
 
 export const dynamic = "force-dynamic";
-
-const relationshipLabel = {
-  SELF: "Self Review",
-  MANAGER: "Manager Review",
-  PEER: "Peer Review",
-  UPWARD: "Upward Review",
-} as const;
 
 interface WriteReviewPageProps {
   params: Promise<{
     cycleId: string;
     submissionId: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WriteReviewPage({ params }: WriteReviewPageProps) {
+export default async function WriteReviewPage({
+  params,
+  searchParams,
+}: WriteReviewPageProps) {
   const { cycleId, submissionId } = await params;
+  const rawSearchParams = await searchParams;
   const context = await getDevRequestContext();
   const data = await getWriteReviewData(cycleId, submissionId, context);
+  const returnHref = resolveReturnTo(getSingleValue(rawSearchParams.returnTo), "/performance/reviews");
+  const returnLabel = getBackLabelForHref(returnHref, "Back");
 
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6 text-slate-900">
       <PageHeader
+        className="gap-4 border-slate-200 from-white via-white to-slate-50/70 p-5 shadow-[var(--shadow-xs)] sm:p-6"
         eyebrow="Write Review"
         title={data.template.name}
         description="Complete all required prompts. Autosave keeps your draft current and submit locks the review."
+        action={
+          <Link href={returnHref}>
+            <Button variant="outline" size="sm">
+              {returnLabel}
+            </Button>
+          </Link>
+        }
         metadata={
           <>
-            {data.submission.cycleName} | Subject: {data.submission.subjectName} | Relationship:{" "}
-            {relationshipLabel[data.submission.relationship]}
+            {data.submission.cycleName} | Subject: {data.submission.subjectName} | Review type:{" "}
+            {getReviewRelationshipLabel(data.submission.relationship, "full")}
           </>
         }
       />
@@ -49,9 +62,17 @@ export default async function WriteReviewPage({ params }: WriteReviewPageProps) 
           cycleName: data.submission.cycleName,
           subjectName: data.submission.subjectName,
           reviewerName: data.submission.reviewerName,
-          relationship: relationshipLabel[data.submission.relationship],
+          relationship: getReviewRelationshipLabel(data.submission.relationship, "full"),
         }}
       />
     </div>
   );
+}
+
+function getSingleValue(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
 }

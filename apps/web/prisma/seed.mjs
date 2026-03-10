@@ -14,6 +14,7 @@ import {
 } from "@prisma/client";
 
 const prisma = new PrismaClient();
+const portrait = (group, index) => `https://randomuser.me/api/portraits/${group}/${index}.jpg`;
 
 async function main() {
   const orgId = "org_demo_1";
@@ -93,6 +94,7 @@ async function main() {
       lastName: "Admin",
       department: "People Operations",
       title: "HR Admin",
+      avatarUrl: portrait("women", 68),
       managerId: null,
     },
     create: {
@@ -103,6 +105,7 @@ async function main() {
       lastName: "Admin",
       department: "People Operations",
       title: "HR Admin",
+      avatarUrl: portrait("women", 68),
       managerId: null,
     },
   });
@@ -116,6 +119,7 @@ async function main() {
       lastName: "Manager",
       department: "Engineering",
       title: "Engineering Manager",
+      avatarUrl: portrait("men", 32),
       managerId: employees.hrAdmin,
     },
     create: {
@@ -126,6 +130,7 @@ async function main() {
       lastName: "Manager",
       department: "Engineering",
       title: "Engineering Manager",
+      avatarUrl: portrait("men", 32),
       managerId: employees.hrAdmin,
     },
   });
@@ -139,6 +144,7 @@ async function main() {
       lastName: "Employee",
       department: "Engineering",
       title: "Software Engineer",
+      avatarUrl: portrait("men", 36),
       managerId: employees.manager,
     },
     create: {
@@ -149,6 +155,7 @@ async function main() {
       lastName: "Employee",
       department: "Engineering",
       title: "Software Engineer",
+      avatarUrl: portrait("men", 36),
       managerId: employees.manager,
     },
   });
@@ -162,6 +169,7 @@ async function main() {
       lastName: "Peer",
       department: "Engineering",
       title: "QA Engineer",
+      avatarUrl: portrait("women", 44),
       managerId: employees.manager,
     },
     create: {
@@ -172,6 +180,7 @@ async function main() {
       lastName: "Peer",
       department: "Engineering",
       title: "QA Engineer",
+      avatarUrl: portrait("women", 44),
       managerId: employees.manager,
     },
   });
