@@ -8,6 +8,7 @@ describe("getActiveNavKey", () => {
     canAccessCalibration: true,
     includeImprovementPlans: true,
     includePackets: true,
+    includeSuccession: true,
     includeTeamReviews: true,
     includeUserManagement: false,
   });
@@ -28,6 +29,13 @@ describe("getActiveNavKey", () => {
   it("supports manager calibration focus routes", () => {
     expect(getActiveNavKey("/performance/calibration/calibration_session_seed_1", managerNav)).toBe(
       "calibration",
+    );
+  });
+
+  it("maps manager succession routes to Succession", () => {
+    expect(getActiveNavKey("/talent/succession", managerNav)).toBe("succession");
+    expect(getActiveNavKey("/talent/succession/positions/position_1", managerNav)).toBe(
+      "succession",
     );
   });
 

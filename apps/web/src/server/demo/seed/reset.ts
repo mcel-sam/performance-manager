@@ -3,6 +3,13 @@ import { prisma } from "@/server/db/prisma";
 export async function wipeAllLocalData() {
   await prisma.$transaction(async (tx) => {
     await tx.answerEvidenceLink.deleteMany();
+    await tx.successionNote.deleteMany();
+    await tx.successionCandidateSnapshot.deleteMany();
+    await tx.successionCandidate.deleteMany();
+    await tx.successionPlanCollaborator.deleteMany();
+    await tx.successionPlanAllowedManager.deleteMany();
+    await tx.successionPlan.deleteMany();
+    await tx.position.deleteMany();
     await tx.reviewAnswer.deleteMany();
     await tx.scorecardMetricResult.deleteMany();
     await tx.reviewSubmission.deleteMany();

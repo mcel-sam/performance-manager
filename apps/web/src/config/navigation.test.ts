@@ -10,6 +10,7 @@ describe("getRoleNavigation", () => {
       includeImprovementPlans: true,
       includeTeamReviews: false,
       includeUserManagement: false,
+      includeSuccession: false,
       includePackets: false,
     });
 
@@ -28,11 +29,13 @@ describe("getRoleNavigation", () => {
       includeImprovementPlans: true,
       includeTeamReviews: false,
       includeUserManagement: true,
+      includeSuccession: true,
       includePackets: false,
     });
 
     expect(navItems.map((item) => item.label)).toEqual([
       "Home",
+      "Succession",
       "Reporting",
       "Admin Cycles",
       "Admin Calibration",

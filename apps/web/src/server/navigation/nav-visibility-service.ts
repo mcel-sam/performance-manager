@@ -26,12 +26,14 @@ export async function resolveRoleNavOptions(
 ): Promise<RoleNavOptions> {
   const canAccessCalibration = await resolveCalibrationAccess(context, db);
   const includeImprovementPlans = await resolveImprovementPlanVisibility(context, db);
+  const includeSuccession = context.role === UserRole.HR_ADMIN || context.role === UserRole.MANAGER;
 
   return {
     canAccessCalibration,
     includeImprovementPlans,
     includeTeamReviews: context.role === UserRole.MANAGER,
     includeUserManagement: context.role === UserRole.HR_ADMIN,
+    includeSuccession,
     includePackets: false,
   };
 }
