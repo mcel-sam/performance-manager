@@ -28,4 +28,9 @@ describe("parseBooleanEnv", () => {
     expect(parseBooleanEnv("not-a-bool", false)).toBe(false);
     expect(parseBooleanEnv("not-a-bool", true)).toBe(true);
   });
+
+  it("can be reused for feature flags that default to false", () => {
+    expect(parseBooleanEnv("true", false)).toBe(true);
+    expect(parseBooleanEnv(undefined, false)).toBe(false);
+  });
 });

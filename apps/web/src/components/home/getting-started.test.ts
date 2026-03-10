@@ -8,6 +8,7 @@ describe("getGettingStartedContent", () => {
     const content = getGettingStartedContent(UserRole.HR_ADMIN);
 
     expect(content.title.toLowerCase()).toContain("cycle");
+    expect(content.links.some((link) => link.href === "/admin/talent/succession")).toBe(true);
     expect(content.links.some((link) => link.href === "/admin/performance/review-cycles")).toBe(
       true,
     );
@@ -17,6 +18,7 @@ describe("getGettingStartedContent", () => {
     const content = getGettingStartedContent(UserRole.MANAGER);
 
     expect(content.links[0]?.href).toBe("/performance/team-reviews");
+    expect(content.links.some((link) => link.href === "/talent/succession")).toBe(true);
     expect(content.links.some((link) => link.href.includes("/performance/calibration"))).toBe(
       true,
     );

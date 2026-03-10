@@ -1,6 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
+const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_SERVER === "true";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -18,7 +19,7 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     url: baseURL,
-    reuseExistingServer: false,
+    reuseExistingServer,
     timeout: 120_000,
     env: {
       ...process.env,

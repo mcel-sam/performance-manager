@@ -447,6 +447,9 @@ function getShellHeaderContext(
   switch (activeNavKey) {
     case "teamReviews":
       return "Manage my team";
+    case "succession":
+    case "adminSuccession":
+      return "Succession planning";
     case "reviews":
       return "Review tasks";
     case "packets":
@@ -492,6 +495,18 @@ function NavItemIcon({
         <circle cx="13.5" cy="8.5" r="1.75" stroke="currentColor" strokeWidth="1.5" />
         <path d="M3.75 15.75C3.75 13.54 5.54 11.75 7.75 11.75H8.25C10.46 11.75 12.25 13.54 12.25 15.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         <path d="M12.5 15.5C12.64 14.03 13.89 12.88 15.38 12.88H15.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (navKey === "succession" || navKey === "adminSuccession") {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+        <rect x="4" y="4" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="11" y="4" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="7.5" y="11" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M9 6.5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M10 9V11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     );
   }

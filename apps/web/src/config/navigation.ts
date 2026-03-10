@@ -5,11 +5,13 @@ export type ShellNavKey =
   | "reviews"
   | "packets"
   | "teamReviews"
+  | "succession"
   | "calibration"
   | "adminCalibration"
   | "adminReporting"
   | "adminCycles"
   | "adminUsers"
+  | "adminSuccession"
   | "improvementPlans"
   | "help";
 
@@ -25,6 +27,7 @@ export interface RoleNavOptions {
   includeImprovementPlans: boolean;
   includeTeamReviews: boolean;
   includeUserManagement: boolean;
+  includeSuccession: boolean;
   includePackets: boolean;
 }
 
@@ -47,6 +50,12 @@ const allNavItems = {
     href: "/performance/team-reviews",
     label: "My Team",
     testId: "nav-link-team-reviews",
+  },
+  succession: {
+    key: "succession",
+    href: "/talent/succession",
+    label: "Succession",
+    testId: "nav-link-succession",
   },
   calibration: {
     key: "calibration",
@@ -78,6 +87,12 @@ const allNavItems = {
     label: "User Management",
     testId: "nav-link-admin-users",
   },
+  adminSuccession: {
+    key: "adminSuccession",
+    href: "/admin/talent/succession",
+    label: "Succession",
+    testId: "nav-link-admin-succession",
+  },
   improvementPlans: {
     key: "improvementPlans",
     href: "/performance/improvement-plans",
@@ -103,6 +118,7 @@ export function getRoleNavigation(
       return [
         allNavItems.home,
         ...(options.includeTeamReviews ? [allNavItems.teamReviews] : []),
+        ...(options.includeSuccession ? [allNavItems.succession] : []),
         allNavItems.reviews,
         ...(options.includePackets ? [allNavItems.packets] : []),
         ...(options.canAccessCalibration ? [allNavItems.calibration] : []),
@@ -112,6 +128,7 @@ export function getRoleNavigation(
     case UserRole.HR_ADMIN:
       return [
         allNavItems.home,
+        ...(options.includeSuccession ? [allNavItems.adminSuccession] : []),
         allNavItems.adminReporting,
         allNavItems.adminCycles,
         allNavItems.adminCalibration,
@@ -180,6 +197,8 @@ function matchesPathForKey(key: ShellNavKey, pathname: string): boolean {
       return /^\/performance\/reviews\/[^/]+\/packet\/[^/]+$/.test(pathname);
     case "teamReviews":
       return pathname === "/performance/team-reviews";
+    case "succession":
+      return pathname === "/talent/succession" || /^\/talent\/succession\/positions\/[^/]+$/.test(pathname);
     case "calibration":
       return /^\/performance\/calibration\/[^/]+$/.test(pathname);
     case "adminCalibration":
@@ -190,6 +209,13 @@ function matchesPathForKey(key: ShellNavKey, pathname: string): boolean {
       return pathname === "/admin/performance/review-cycles" || pathname === "/admin/performance/review-cycles/new";
     case "adminUsers":
       return pathname === "/admin/users" || pathname === "/admin/users/new" || /^\/admin\/users\/[^/]+$/.test(pathname);
+    case "adminSuccession":
+      return (
+        pathname === "/admin/talent/succession" ||
+        pathname === "/admin/talent/succession/positions" ||
+        pathname === "/admin/talent/succession/positions/new" ||
+        /^\/admin\/talent\/succession\/positions\/[^/]+$/.test(pathname)
+      );
     case "improvementPlans":
       return pathname === "/performance/improvement-plans" || /^\/performance\/improvement-plans\/[^/]+$/.test(pathname);
     case "help":

@@ -32,6 +32,13 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
           "Create a review cycle, generate assignments, and prepare calibration sessions before launch.",
         links: [
           {
+            label: "Succession planning",
+            href: "/admin/talent/succession",
+            description: "Review critical-role coverage, successor slates, and manager proposals across the org.",
+            icon: "reviewCycles",
+            metaLabel: "Talent continuity",
+          },
+          {
             label: "Review cycles",
             href: "/admin/performance/review-cycles",
             description: "Create, launch, and monitor the cycles that power each review season.",
@@ -66,6 +73,13 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
             description: "Track direct reports, packets, and next review steps from one place.",
             icon: "team",
             metaLabel: "Team workspace",
+          },
+          {
+            label: "Succession",
+            href: "/talent/succession",
+            description: "Review in-scope roles, propose successors, and add continuity notes for your area.",
+            icon: "team",
+            metaLabel: "Talent continuity",
           },
           {
             label: "Review queue",
