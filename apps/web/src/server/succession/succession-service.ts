@@ -516,18 +516,18 @@ export function parseSuccessionFilters(
   const values =
     input instanceof URLSearchParams
       ? {
-          search: input.get("search") ?? undefined,
-          department: input.get("department") ?? undefined,
+          search: normalizeOptionalFilterValue(input.get("search")),
+          department: normalizeOptionalFilterValue(input.get("department")),
           includeArchived: input.get("includeArchived") ?? undefined,
           criticalOnly: input.get("criticalOnly") ?? undefined,
-          smallNThreshold: input.get("smallNThreshold") ?? undefined,
+          smallNThreshold: normalizeOptionalFilterValue(input.get("smallNThreshold")),
         }
       : {
-          search: firstValue(input.search),
-          department: firstValue(input.department),
+          search: normalizeOptionalFilterValue(firstValue(input.search)),
+          department: normalizeOptionalFilterValue(firstValue(input.department)),
           includeArchived: firstValue(input.includeArchived),
           criticalOnly: firstValue(input.criticalOnly),
-          smallNThreshold: firstValue(input.smallNThreshold),
+          smallNThreshold: normalizeOptionalFilterValue(firstValue(input.smallNThreshold)),
         };
 
   return listFiltersSchema.parse(values);
@@ -1809,6 +1809,11 @@ function uniqueNonNull(values: Array<string | null>): string[] {
 function normalizeNullableString(value: string | null | undefined): string | null {
   const normalized = value?.trim();
   return normalized ? normalized : null;
+}
+
+function normalizeOptionalFilterValue(value: string | null | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
 }
 
 function firstValue(value: string | string[] | undefined): string | undefined {

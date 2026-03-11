@@ -2,6 +2,7 @@ import { UserRole } from "@prisma/client";
 
 export type ShellNavKey =
   | "home"
+  | "growth"
   | "reviews"
   | "packets"
   | "teamReviews"
@@ -33,6 +34,12 @@ export interface RoleNavOptions {
 
 const allNavItems = {
   home: { key: "home", href: "/", label: "Home", testId: "nav-link-home" },
+  growth: {
+    key: "growth",
+    href: "/performance/tracks",
+    label: "Tracks",
+    testId: "nav-link-growth",
+  },
   reviews: {
     key: "reviews",
     href: "/performance/reviews",
@@ -110,6 +117,7 @@ export function getRoleNavigation(
     case UserRole.EMPLOYEE:
       return [
         allNavItems.home,
+        allNavItems.growth,
         allNavItems.reviews,
         ...(options.includeImprovementPlans ? [allNavItems.improvementPlans] : []),
         allNavItems.help,
@@ -117,6 +125,7 @@ export function getRoleNavigation(
     case UserRole.MANAGER:
       return [
         allNavItems.home,
+        allNavItems.growth,
         ...(options.includeTeamReviews ? [allNavItems.teamReviews] : []),
         ...(options.includeSuccession ? [allNavItems.succession] : []),
         allNavItems.reviews,
@@ -193,6 +202,8 @@ function matchesPathForKey(key: ShellNavKey, pathname: string): boolean {
         pathname === "/performance/reviews" ||
         /^\/performance\/reviews\/[^/]+\/write\/[^/]+$/.test(pathname)
       );
+    case "growth":
+      return pathname === "/performance/tracks";
     case "packets":
       return /^\/performance\/reviews\/[^/]+\/packet\/[^/]+$/.test(pathname);
     case "teamReviews":

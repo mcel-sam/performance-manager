@@ -51,6 +51,8 @@ interface SubmissionAccessRecord {
     id: string;
     firstName: string;
     lastName: string;
+    department: string | null;
+    title: string | null;
   };
   cycle: {
     id: string;
@@ -236,6 +238,8 @@ export interface WriteReviewData {
     reviewerName: string;
     subjectName: string;
     subjectEmployeeId: string;
+    subjectDepartment: string | null;
+    subjectTitle: string | null;
   };
   template: {
     id: string;
@@ -378,6 +382,8 @@ export async function getWriteReviewData(
       reviewerName: `${submission.reviewerEmployee.firstName} ${submission.reviewerEmployee.lastName}`,
       subjectName: `${submission.subjectEmployee.firstName} ${submission.subjectEmployee.lastName}`,
       subjectEmployeeId: submission.subjectEmployeeId,
+      subjectDepartment: submission.subjectEmployee.department,
+      subjectTitle: submission.subjectEmployee.title,
     },
     template: {
       id: template.id,
@@ -661,6 +667,8 @@ async function getSubmissionForAccess(
           id: true,
           firstName: true,
           lastName: true,
+          department: true,
+          title: true,
         },
       },
       cycle: {

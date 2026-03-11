@@ -169,17 +169,18 @@ export default async function PerformanceReviewsPage({
         <EmptyState
           aria-label="Empty review task state"
           title="No assigned review tasks"
-          description="Assigned submissions appear after HR generates cycle assignments. Open Help for next steps and visibility rules."
+          description="Assigned submissions appear after HR generates cycle assignments. Use the help center for next steps and visibility rules."
           icon={<span aria-hidden="true">🗂</span>}
           nextSteps={[
             "Ask HR to generate assignments for an active cycle.",
-            "Check Help for cycle status and visibility expectations.",
+            "Review cycle status and visibility expectations in the help center.",
           ]}
           action={
-            <Link href="/help">
-              <Button variant="outline" size="sm">
-                Open Help
-              </Button>
+            <Link
+              href="/help"
+              className="text-sm font-medium text-slate-700 underline underline-offset-4 transition hover:text-slate-900"
+            >
+              Review help center
             </Link>
           }
         />

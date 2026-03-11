@@ -73,6 +73,7 @@ interface ReportingCycleRecord {
 interface ReportingSubmissionRecord {
   relationship: ReviewRelationship;
   status: ReviewSubmissionStatus;
+  dueAt: Date | null;
 }
 
 interface ReportingPacketRecord {
@@ -80,6 +81,8 @@ interface ReportingPacketRecord {
   subjectEmployeeId: string;
   snapshotDepartment: string | null;
   snapshotTitle: string | null;
+  snapshotManagerEmployeeId: string | null;
+  snapshotManagerName: string | null;
   scorecardOverallRating: number | null;
   finalRatingSource: FinalRatingSource | null;
   totalScorecardPercent: number | null;
@@ -204,6 +207,54 @@ export interface ReportingProgressResult {
   totals: SubmissionStatusBreakdown;
   self: SubmissionStatusBreakdown;
   manager: SubmissionStatusBreakdown;
+  filters: {
+    cycleId: string;
+    department?: string;
+    title?: string;
+    departments: string[];
+    titles: string[];
+  };
+  suppression: ReportingSuppressionState;
+}
+
+export interface ReportingManagerDirectReportRow {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  title: string;
+  selfStatus: ReviewSubmissionStatus;
+  managerStatus: ReviewSubmissionStatus;
+  overallStatus: ProgressStatus;
+  managerDueAt: string | null;
+  links: {
+    packet: string;
+  };
+}
+
+export interface ReportingManagerOverviewRow {
+  managerKey: string;
+  managerId: string | null;
+  managerName: string;
+  departments: string[];
+  directReportCount: number;
+  pendingManagerReviewCount: number;
+  awaitingManagerReviewCount: number;
+  inProgressManagerReviewCount: number;
+  overdueManagerReviewCount: number;
+  completedManagerReviewCount: number;
+  completionRate: number;
+  reports: ReportingManagerDirectReportRow[];
+}
+
+export interface ReportingManagerOverviewResult {
+  summary: {
+    totalManagers: number;
+    managersWithPendingReviews: number;
+    totalDirectReports: number;
+    pendingManagerReviews: number;
+    overdueManagerReviews: number;
+  };
+  rows: ReportingManagerOverviewRow[];
   filters: {
     cycleId: string;
     department?: string;
@@ -501,6 +552,171 @@ export async function getReportingProgress(
     totals,
     self,
     manager,
+    filters: {
+      cycleId: filters.cycleId,
+      department: filters.department,
+      title: filters.title,
+      departments: scope.filterOptions.departments,
+      titles: scope.filterOptions.titles,
+    },
+    suppression: unsuppressedState(),
+  };
+}
+
+export async function getReportingManagerOverview(
+  filters: NormalizedReportFilters,
+  context: RequestContext,
+  db: ReportingDb = prisma as unknown as ReportingDb,
+): Promise<ReportingManagerOverviewResult> {
+  requireReportingAccess(context);
+  const scope = await loadPacketScope(filters, context, db);
+
+  if (scope.suppressed) {
+    return {
+      summary: {
+        totalManagers: 0,
+        managersWithPendingReviews: 0,
+        totalDirectReports: 0,
+        pendingManagerReviews: 0,
+        overdueManagerReviews: 0,
+      },
+      rows: [],
+      filters: {
+        cycleId: filters.cycleId,
+        department: filters.department,
+        title: filters.title,
+        departments: scope.filterOptions.departments,
+        titles: scope.filterOptions.titles,
+      },
+      suppression: suppressedMessage(),
+    };
+  }
+
+  const now = new Date();
+  const rowsByManager = new Map<
+    string,
+    {
+      managerKey: string;
+      managerId: string | null;
+      managerName: string;
+      departments: Set<string>;
+      directReportCount: number;
+      pendingManagerReviewCount: number;
+      awaitingManagerReviewCount: number;
+      inProgressManagerReviewCount: number;
+      overdueManagerReviewCount: number;
+      completedManagerReviewCount: number;
+      reports: ReportingManagerDirectReportRow[];
+    }
+  >();
+
+  for (const packet of scope.packets) {
+    const managerSubmission = packet.submissions.find(
+      (submission) => submission.relationship === ReviewRelationship.MANAGER,
+    );
+    const managerStatus = managerSubmission?.status ?? ReviewSubmissionStatus.NOT_STARTED;
+    const selfStatus = getSubmissionStatus(packet.submissions, ReviewRelationship.SELF);
+    const overallStatus = mapOverallProgressStatus(selfStatus, managerStatus);
+    const managerKey = packet.snapshotManagerEmployeeId ?? "__unassigned_manager__";
+    const managerName = packet.snapshotManagerName?.trim() || "Unassigned manager";
+    const existing =
+      rowsByManager.get(managerKey) ??
+      {
+        managerKey,
+        managerId: packet.snapshotManagerEmployeeId ?? null,
+        managerName,
+        departments: new Set<string>(),
+        directReportCount: 0,
+        pendingManagerReviewCount: 0,
+        awaitingManagerReviewCount: 0,
+        inProgressManagerReviewCount: 0,
+        overdueManagerReviewCount: 0,
+        completedManagerReviewCount: 0,
+        reports: [],
+      };
+
+    existing.directReportCount += 1;
+    if (packet.snapshotDepartment?.trim()) {
+      existing.departments.add(packet.snapshotDepartment.trim());
+    }
+
+    if (
+      managerStatus === ReviewSubmissionStatus.NOT_STARTED ||
+      managerStatus === ReviewSubmissionStatus.RETURNED
+    ) {
+      existing.awaitingManagerReviewCount += 1;
+      existing.pendingManagerReviewCount += 1;
+    } else if (managerStatus === ReviewSubmissionStatus.IN_PROGRESS) {
+      existing.inProgressManagerReviewCount += 1;
+      existing.pendingManagerReviewCount += 1;
+    } else {
+      existing.completedManagerReviewCount += 1;
+    }
+
+    if (
+      managerSubmission?.dueAt &&
+      managerSubmission.dueAt.getTime() < now.getTime() &&
+      managerStatus !== ReviewSubmissionStatus.SUBMITTED
+    ) {
+      existing.overdueManagerReviewCount += 1;
+    }
+
+    existing.reports.push({
+      employeeId: packet.subjectEmployeeId,
+      employeeName: `${packet.subjectEmployee.firstName} ${packet.subjectEmployee.lastName}`,
+      department: packet.snapshotDepartment ?? "Unspecified",
+      title: packet.snapshotTitle ?? "Unspecified",
+      selfStatus,
+      managerStatus,
+      overallStatus,
+      managerDueAt: managerSubmission?.dueAt?.toISOString() ?? null,
+      links: {
+        packet: `/performance/reviews/${filters.cycleId}/packet/${packet.subjectEmployeeId}`,
+      },
+    });
+
+    rowsByManager.set(managerKey, existing);
+  }
+
+  const rows = Array.from(rowsByManager.values())
+    .map((row) => ({
+      ...row,
+      departments: Array.from(row.departments).sort((left, right) => left.localeCompare(right)),
+      completionRate:
+        row.directReportCount > 0
+          ? roundTo((row.completedManagerReviewCount / row.directReportCount) * 100)
+          : 0,
+      reports: [...row.reports].sort((left, right) => {
+        const leftWeight = getManagerReportSortWeight(left.managerStatus, left.managerDueAt);
+        const rightWeight = getManagerReportSortWeight(right.managerStatus, right.managerDueAt);
+        if (leftWeight !== rightWeight) {
+          return rightWeight - leftWeight;
+        }
+
+        return left.employeeName.localeCompare(right.employeeName);
+      }),
+    }))
+    .sort((left, right) => {
+      if (right.pendingManagerReviewCount !== left.pendingManagerReviewCount) {
+        return right.pendingManagerReviewCount - left.pendingManagerReviewCount;
+      }
+
+      if (right.overdueManagerReviewCount !== left.overdueManagerReviewCount) {
+        return right.overdueManagerReviewCount - left.overdueManagerReviewCount;
+      }
+
+      return left.managerName.localeCompare(right.managerName);
+    });
+
+  return {
+    summary: {
+      totalManagers: rows.length,
+      managersWithPendingReviews: rows.filter((row) => row.pendingManagerReviewCount > 0).length,
+      totalDirectReports: rows.reduce((sum, row) => sum + row.directReportCount, 0),
+      pendingManagerReviews: rows.reduce((sum, row) => sum + row.pendingManagerReviewCount, 0),
+      overdueManagerReviews: rows.reduce((sum, row) => sum + row.overdueManagerReviewCount, 0),
+    },
+    rows,
     filters: {
       cycleId: filters.cycleId,
       department: filters.department,
@@ -1055,6 +1271,8 @@ async function loadPacketScope(
       subjectEmployeeId: true,
       snapshotDepartment: true,
       snapshotTitle: true,
+      snapshotManagerEmployeeId: true,
+      snapshotManagerName: true,
       scorecardOverallRating: true,
       finalRatingSource: true,
       totalScorecardPercent: true,
@@ -1073,6 +1291,7 @@ async function loadPacketScope(
         select: {
           relationship: true,
           status: true,
+          dueAt: true,
         },
       },
     },
@@ -1218,4 +1437,26 @@ function unsuppressedState(): ReportingSuppressionState {
 
 function roundTo(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+function getManagerReportSortWeight(
+  status: ReviewSubmissionStatus,
+  dueAt: string | null,
+): number {
+  if (dueAt) {
+    const parsedDueAt = new Date(dueAt);
+    if (!Number.isNaN(parsedDueAt.getTime()) && parsedDueAt.getTime() < Date.now()) {
+      return status === ReviewSubmissionStatus.SUBMITTED ? 1 : 4;
+    }
+  }
+
+  if (status === ReviewSubmissionStatus.NOT_STARTED || status === ReviewSubmissionStatus.RETURNED) {
+    return 3;
+  }
+
+  if (status === ReviewSubmissionStatus.IN_PROGRESS) {
+    return 2;
+  }
+
+  return 1;
 }

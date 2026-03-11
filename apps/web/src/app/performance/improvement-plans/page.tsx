@@ -45,12 +45,13 @@ export default async function ImprovementPlansListPage() {
       {plans.length === 0 ? (
         <EmptyState
           title="No improvement plans yet"
-          description="Plans created by managers or HR appear here. Open Help for setup guidance."
+          description="Plans created by managers or HR appear here. Use the help center for setup guidance."
           action={
-            <Link href="/help">
-              <Button variant="outline" size="sm">
-                Open Help
-              </Button>
+            <Link
+              href="/help"
+              className="text-sm font-medium text-slate-700 underline underline-offset-4 transition hover:text-slate-900"
+            >
+              Review help center
             </Link>
           }
         />

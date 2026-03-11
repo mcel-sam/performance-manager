@@ -209,23 +209,13 @@ export default async function HomePage() {
         </div>
 
         <div className="bg-slate-50/45 p-5 sm:p-6">
-          {taskSection.layout === "caughtUp" ? (
-            <div className="space-y-5">
-              <HomeTaskSectionCard taskSection={taskSection} />
-              <div className="grid items-start gap-5 lg:grid-cols-2">
-                <HomeSummaryPanel summaryContent={summaryContent} />
-                <HomePeoplePanelCard peoplePanel={peoplePanel} />
-              </div>
+          <div className="space-y-5">
+            <HomeTaskSectionCard taskSection={taskSection} />
+            <div className="grid items-start gap-5 lg:grid-cols-2">
+              <HomeSummaryPanel summaryContent={summaryContent} />
+              <HomePeoplePanelCard peoplePanel={peoplePanel} />
             </div>
-          ) : (
-            <div className="grid items-start gap-5 sm:grid-cols-[minmax(0,1.65fr)_minmax(320px,1fr)]">
-              <HomeTaskSectionCard taskSection={taskSection} />
-              <aside className="space-y-4">
-                <HomeSummaryPanel summaryContent={summaryContent} />
-                <HomePeoplePanelCard peoplePanel={peoplePanel} />
-              </aside>
-            </div>
-          )}
+          </div>
         </div>
       </section>
     </div>
@@ -359,9 +349,9 @@ function getHomeTaskSectionTitle(role: UserRole): string {
   switch (role) {
     case UserRole.EMPLOYEE:
     case UserRole.MANAGER:
+    case UserRole.HR_ADMIN:
+    case UserRole.CALIBRATOR:
       return "Review tasks";
-    default:
-      return "Tasks";
   }
 }
 
@@ -480,7 +470,9 @@ function getHomePeoplePanel(input: {
       ? "Keep the people behind the work visible while you move through reviews."
       : input.role === UserRole.HR_ADMIN
         ? "A quick people snapshot keeps the workspace grounded in the org, not just the numbers."
-        : "Default profile cards make the review workflow feel personal instead of anonymous.";
+        : input.role === UserRole.CALIBRATOR
+          ? "Keep the people behind each calibration decision visible while you move through the session."
+          : "Keep your reporting context visible while you move through reviews.";
 
   return {
     title: input.viewerOverview?.manager ? "Org snapshot" : "People context",
@@ -507,19 +499,27 @@ function getHeroHighlights(input: {
   switch (input.role) {
     case UserRole.MANAGER:
       return [
-        `${input.managerSnapshot?.awaitingManagerReviewCount ?? 0} reviews waiting`,
-        `${input.managerSnapshot?.directReportCount ?? 0} directs in scope`,
+        formatCountLabel(input.managerSnapshot?.awaitingManagerReviewCount ?? 0, "review waiting"),
+        formatCountLabel(input.managerSnapshot?.directReportCount ?? 0, "direct report", "direct reports"),
       ];
     case UserRole.HR_ADMIN:
       return [
-        `${input.hrSnapshot?.activeCycleCount ?? 0} live cycles`,
-        `${input.hrSnapshot?.openSubmissionCount ?? 0} open submissions`,
+        formatCountLabel(input.hrSnapshot?.activeCycleCount ?? 0, "live cycle"),
+        formatCountLabel(input.hrSnapshot?.openSubmissionCount ?? 0, "open submission"),
       ];
     case UserRole.CALIBRATOR:
-      return [`${input.tasks.length} assigned items`, "Search-free focus mode"];
+      return [formatCountLabel(input.tasks.length, "assigned item"), "Search-free focus mode"];
     default:
-      return [`${input.dueSoonReviewCount} due soon`, `${input.tasks.length} total review tasks`];
+      return [
+        formatCountLabel(input.dueSoonReviewCount, "item due soon", "items due soon"),
+        formatCountLabel(input.tasks.length, "total review task"),
+      ];
   }
+}
+
+function formatCountLabel(count: number, singular: string, plural?: string): string {
+  const resolvedPlural = plural ?? `${singular}s`;
+  return `${count} ${count === 1 ? singular : resolvedPlural}`;
 }
 
 function getViewerSummaryLine(
@@ -894,6 +894,8 @@ function getHomeTaskIconPalette(icon: GettingStartedIcon | "complete"): string {
       return "border-sky-200 bg-sky-50 text-sky-700";
     case "selfReview":
       return "border-amber-200 bg-amber-50 text-amber-700";
+    case "growth":
+      return "border-violet-200 bg-violet-50 text-violet-700";
     case "help":
       return "border-teal-200 bg-teal-50 text-teal-700";
     case "team":
@@ -949,6 +951,15 @@ function renderHomeTaskIconPath(icon: GettingStartedIcon | "complete") {
             strokeWidth="1.5"
             strokeLinecap="round"
           />
+        </>
+      );
+    case "growth":
+      return (
+        <>
+          <circle cx="10" cy="10" r="5.75" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M10 6.5V10L12.5 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M10 3.5V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <path d="M16.5 10H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </>
       );
     case "help":

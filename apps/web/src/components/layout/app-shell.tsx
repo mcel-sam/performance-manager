@@ -52,6 +52,7 @@ export default function AppShell({
     () => getShellHeaderContext(activeNavKey, focusLayout),
     [activeNavKey, focusLayout],
   );
+  const showExpandedShellHeader = activeNavKey === "home" && focusLayout == null;
   const hasLoadedSidebarPreference = useRef(false);
 
   useEffect(() => {
@@ -148,20 +149,22 @@ export default function AppShell({
         >
           <div
             className={cn(
-              "rounded-[28px] border border-slate-200 bg-white transition-[box-shadow] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none",
+              "relative overflow-visible rounded-[28px] border border-slate-200 bg-white transition-[box-shadow] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none",
               isSidebarCollapsed ? "shadow-[var(--shadow-sm)]" : "shadow-[var(--shadow-lg)]",
             )}
           >
             <div
               className={cn(
-                "border-b border-slate-100",
+                "relative border-b border-slate-100",
                 isSidebarCollapsed ? "px-2 py-4" : "px-5 py-5",
               )}
             >
               <div
                 className={cn(
-                  "flex items-center",
-                  isSidebarCollapsed ? "justify-center" : "justify-between gap-3",
+                  "flex",
+                  isSidebarCollapsed
+                    ? "flex-col items-center gap-3"
+                    : "items-start gap-3",
                 )}
               >
                 {isSidebarCollapsed ? (
@@ -183,19 +186,36 @@ export default function AppShell({
                     ) : null}
                   </div>
                 )}
-
-                {!isSidebarCollapsed ? (
-                  <button
-                    type="button"
-                    data-testid="app-shell-sidebar-collapse"
-                    onClick={() => setIsSidebarCollapsed(true)}
-                    aria-label="Collapse navigation"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 motion-reduce:transition-none"
-                  >
-                    ×
-                  </button>
-                ) : null}
               </div>
+
+              <button
+                type="button"
+                data-testid="app-shell-sidebar-toggle"
+                data-state={isSidebarCollapsed ? "collapsed" : "expanded"}
+                onClick={() => setIsSidebarCollapsed((value) => !value)}
+                aria-controls="app-shell-sidebar"
+                aria-expanded={!isSidebarCollapsed}
+                aria-label={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
+                title={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
+                className={cn(
+                  "absolute right-0 top-1/2 z-20 inline-flex -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-gradient-to-b from-white to-slate-50 text-slate-500 shadow-[var(--shadow-md)] ring-1 ring-white/80 backdrop-blur transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:border-slate-300 hover:text-slate-700 hover:shadow-[var(--shadow-lg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 motion-reduce:transition-none",
+                  isSidebarCollapsed ? "h-10 w-6" : "h-11 w-7",
+                )}
+              >
+                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                  <path
+                    d={
+                      isSidebarCollapsed
+                        ? "M8 5.5L11.5 10L8 14.5"
+                        : "M12 5.5L8.5 10L12 14.5"
+                    }
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             </div>
 
             <nav
@@ -254,33 +274,17 @@ export default function AppShell({
           </div>
         </aside>
 
-        <main className={cn("p-5 sm:p-7", focusLayout && "lg:px-8")}>
+        <main className={cn("relative p-5 sm:p-7", focusLayout && "lg:px-8")}>
           <header
-            className="relative z-20 isolate mb-4 flex items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-[var(--shadow-sm)]"
+            className={cn(
+              "relative z-20 isolate flex items-center gap-3",
+              showExpandedShellHeader
+                ? "mb-4 justify-between rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-[var(--shadow-sm)]"
+                : "mb-1 justify-end px-0 py-0",
+            )}
             data-testid="app-shell-header"
           >
-            <div className="flex min-w-0 items-center gap-3">
-              <button
-                type="button"
-                data-testid="app-shell-sidebar-toggle"
-                data-state={isSidebarCollapsed ? "collapsed" : "expanded"}
-                onClick={() => setIsSidebarCollapsed((value) => !value)}
-                aria-controls="app-shell-sidebar"
-                aria-expanded={!isSidebarCollapsed}
-                aria-label={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
-                title={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 motion-reduce:transition-none"
-              >
-                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
-                  <path
-                    d="M3.5 5.5H16.5M3.5 10H16.5M3.5 14.5H12.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-
+            {showExpandedShellHeader ? (
               <div className="hidden min-w-0 flex-col sm:flex">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                   Workspace
@@ -289,20 +293,26 @@ export default function AppShell({
                   {headerContext}
                 </span>
               </div>
-            </div>
+            ) : null}
 
-            <div className="flex items-center gap-2">
+            <div className={cn("flex items-center", showExpandedShellHeader ? "gap-2" : "gap-1.5")}>
               <button
                 type="button"
                 data-testid="app-header-org-pill"
                 disabled
                 aria-label="Current organization"
                 title="Organization switching is not enabled in this build"
-                className="inline-flex h-10 max-w-[240px] items-center gap-2 rounded-full border border-slate-300 bg-slate-50/90 px-3.5 text-sm text-slate-700 opacity-90 shadow-[var(--shadow-xs)]"
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50/90 text-slate-700 opacity-90 shadow-[var(--shadow-xs)]",
+                  showExpandedShellHeader ? "h-10 max-w-[240px] px-3.5 text-sm" : "h-9 max-w-[220px] px-3 text-[13px]",
+                )}
               >
                 <span
                   aria-hidden="true"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_14%,white)] text-[11px] font-semibold text-[var(--brand-primary-strong)]"
+                  className={cn(
+                    "inline-flex items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_14%,white)] font-semibold text-[var(--brand-primary-strong)]",
+                    showExpandedShellHeader ? "h-6 w-6 text-[11px]" : "h-5.5 w-5.5 text-[10px]",
+                  )}
                 >
                   O
                 </span>
@@ -319,14 +329,17 @@ export default function AppShell({
                   onClick={() => setIsProfileMenuOpen((value) => !value)}
                   aria-expanded={isProfileMenuOpen}
                   aria-haspopup="menu"
-                  className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-300 bg-white px-2.5 text-left text-sm text-slate-800 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-50 hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white text-left text-slate-800 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-50 hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300",
+                    showExpandedShellHeader ? "h-10 px-2.5 text-sm" : "h-9 px-2 text-[13px]",
+                  )}
                 >
                   <ProfileAvatar
                     name={viewer?.displayName ?? "User"}
                     imageUrl={viewer?.avatarUrl}
                     size="sm"
                   />
-                  <span className="hidden max-w-[150px] flex-col sm:flex">
+                  <span className={cn("hidden max-w-[150px] flex-col sm:flex", !showExpandedShellHeader && "max-w-[132px]")}>
                     <span className="truncate text-xs font-semibold text-slate-900">{viewer?.displayName ?? "User"}</span>
                     <span className="truncate text-[11px] text-slate-500">{viewer?.roleLabel ?? "Member"}</span>
                   </span>
@@ -445,6 +458,8 @@ function getShellHeaderContext(
   }
 
   switch (activeNavKey) {
+    case "growth":
+      return "Tracks and competencies";
     case "teamReviews":
       return "Manage my team";
     case "succession":
@@ -495,6 +510,17 @@ function NavItemIcon({
         <circle cx="13.5" cy="8.5" r="1.75" stroke="currentColor" strokeWidth="1.5" />
         <path d="M3.75 15.75C3.75 13.54 5.54 11.75 7.75 11.75H8.25C10.46 11.75 12.25 13.54 12.25 15.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         <path d="M12.5 15.5C12.64 14.03 13.89 12.88 15.38 12.88H15.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (navKey === "growth") {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+        <circle cx="10" cy="10" r="5.75" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M10 6.5V10L12.5 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M10 3.5V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M16.5 10H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     );
   }

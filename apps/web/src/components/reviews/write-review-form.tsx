@@ -1,11 +1,17 @@
 "use client";
 
-import { EvidenceType, ReviewQuestionType, ReviewSubmissionStatus } from "@prisma/client";
+import {
+  CompetencyDimensionKey,
+  EvidenceType,
+  ReviewQuestionType,
+  ReviewSubmissionStatus,
+} from "@prisma/client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { SectionHeader } from "@/components/layout/section-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { cn } from "@/components/ui/cn";
 import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
 import { HelpHint } from "@/components/ui/help-hint";
@@ -28,7 +34,7 @@ interface WriteReviewQuestion {
   id: string;
   prompt: string;
   questionType: ReviewQuestionType;
-  dimensionKey: string | null;
+  dimensionKey: CompetencyDimensionKey | null;
   isRequired: boolean;
   answerId: string | null;
   responseText: string;
@@ -50,6 +56,8 @@ interface WriteReviewFormProps {
   submissionContext: {
     cycleName: string;
     subjectName: string;
+    subjectDepartment: string | null;
+    subjectTitle: string | null;
     reviewerName: string;
     relationship: string;
   };
@@ -92,7 +100,7 @@ const evidenceTypeLabel: Record<EvidenceType, string> = {
   UPDATE: "Updates",
   ONE_ON_ONE: "1:1s",
   GOAL: "Goals",
-  VALUE_RECOGNITION: "Values",
+  VALUE_RECOGNITION: "Company values",
 };
 
 export default function WriteReviewForm({
@@ -218,7 +226,11 @@ export default function WriteReviewForm({
       total: requiredQuestions.length,
     };
   }, [questionState]);
-
+  const sectionProgressById = useMemo(
+    () => new Map(sectionProgress.map((entry) => [entry.sectionId, entry])),
+    [sectionProgress],
+  );
+  const activeSectionProgress = activeSection ? sectionProgressById.get(activeSection.id) ?? null : null;
   const loadEvidence = useCallback(async () => {
     setEvidenceLoadState("loading");
     setEvidenceError(null);
@@ -621,106 +633,150 @@ export default function WriteReviewForm({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_336px] 2xl:grid-cols-[minmax(0,1fr)_360px]">
-      <Card>
-        <CardHeader className="space-y-3">
+    <div className="grid gap-6 xl:grid-cols-[248px_minmax(0,1fr)_336px] 2xl:grid-cols-[264px_minmax(0,1fr)_360px]">
+      <aside className="space-y-4 xl:sticky xl:top-6 xl:self-start" data-testid="write-review-phase-rail">
+        <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[var(--shadow-sm)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Review phases
+          </p>
+          <h2 className="mt-2 text-lg font-semibold tracking-tight text-slate-900">
+            Move section by section
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Required progress: {requiredProgress.answered}/{requiredProgress.total} answered.
+          </p>
+
+          <div className="mt-5 space-y-2.5">
+            {sections.map((section, index) => {
+              const progress = sectionProgressById.get(section.id);
+              const isActiveSection = section.id === activeSection?.id;
+              const progressLabel = getSectionProgressLabel(section, progress);
+
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  className={cn(
+                    "w-full rounded-[18px] border px-4 py-3 text-left transition-[border-color,background-color,box-shadow] duration-150",
+                    isActiveSection
+                      ? "border-teal-300 bg-teal-50/70 shadow-[var(--shadow-xs)]"
+                      : "border-slate-200 bg-slate-50/70 hover:border-slate-300 hover:bg-white",
+                  )}
+                  data-testid={`write-review-section-${index + 1}`}
+                  onClick={() => goToSection(index)}
+                >
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={cn(
+                        "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                        isActiveSection
+                          ? "bg-[var(--brand-primary)] text-white"
+                          : "bg-white text-slate-600",
+                      )}
+                    >
+                      {index + 1}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-start justify-between gap-3">
+                        <span className="block text-sm font-semibold leading-5 text-slate-900">
+                          {section.title}
+                        </span>
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]",
+                            isActiveSection
+                              ? "bg-white text-teal-700"
+                              : "bg-white text-slate-500",
+                          )}
+                          data-testid={`write-review-section-remaining-${index + 1}`}
+                        >
+                          {progressLabel}
+                        </span>
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-slate-500">
+                        {section.subtitle}
+                      </span>
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-testid="write-review-previous-section"
+              onClick={goToPreviousSection}
+              disabled={activeSectionIndex <= 0}
+            >
+              Previous
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              data-testid="write-review-next-section"
+              onClick={goToNextSection}
+              disabled={activeSectionIndex === -1 || activeSectionIndex >= sections.length - 1}
+            >
+              Next
+            </Button>
+          </div>
+        </section>
+      </aside>
+
+      <Card className="overflow-hidden border-slate-200/90 bg-white">
+        <CardHeader className="space-y-4 border-b border-slate-100 bg-white px-6 py-5 sm:px-7 sm:py-6">
           <SectionHeader
-            title="Write Review"
-            description={`Required progress: ${requiredProgress.answered}/${requiredProgress.total} answered`}
+            title={activeSection?.title ?? "Review writing"}
+            description={getSectionDescription(activeSection)}
             action={
-              <span
-                className="text-sm font-medium text-slate-600"
-                data-testid="write-review-save-state"
-              >
-                {saveLabel}
-              </span>
+              <div className="space-y-1 text-right">
+                <span
+                  className="block text-sm font-medium text-slate-600"
+                  data-testid="write-review-save-state"
+                >
+                  {saveLabel || "Draft"}
+                </span>
+                <span
+                  className="block text-xs text-slate-500"
+                  data-testid="write-review-active-section-label"
+                >
+                  {activeSection ? `Current: ${activeSection.title}` : ""}
+                </span>
+              </div>
             }
           />
-          <HelpHint label="Submit guidance" buttonLabel="Toggle submit guidance">
-            Submit is final for this phase. After submit, answers become read-only and any follow-up
-            visibility follows cycle policy.
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+              Phase {Math.max(activeSectionIndex + 1, 1)} of {sections.length}
+            </span>
+            <span className="rounded-full border border-teal-100 bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700">
+              {getSectionProgressLabel(activeSection, activeSectionProgress)}
+            </span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+              {activeSection?.subtitle ?? "No prompts"}
+            </span>
+          </div>
+          <HelpHint label="Submission notes" buttonLabel="Toggle submission tips">
+            <ul className="space-y-1">
+              <li>Finish every required response in the active cycle template.</li>
+              <li>Pause for autosave before leaving the page or attaching evidence.</li>
+              <li>Submit only when the tone, examples, and outcomes reflect your final draft.</li>
+            </ul>
           </HelpHint>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-6 bg-white px-6 py-6 sm:px-7">
           {questionState.length === 0 ? (
             <EmptyState
               title="No questions assigned"
               description="This submission has no template questions yet."
             />
           ) : (
-            <div className="space-y-5">
-              <div className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-slate-900">Section progress</p>
-                  <p className="text-xs text-slate-600" data-testid="write-review-active-section-label">
-                    {activeSection ? `Current: ${activeSection.title}` : ""}
-                  </p>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {sections.map((section, index) => {
-                    const progress = sectionProgress.find(
-                      (entry) => entry.sectionId === section.id,
-                    );
-                    const isActiveSection = section.id === activeSection?.id;
-                    const hasRequiredQuestions = (progress?.total ?? 0) > 0;
-                    const remainingCount = Math.max(progress?.remaining ?? 0, 0);
-                    const isComplete = hasRequiredQuestions && remainingCount === 0;
-                    const progressLabel = hasRequiredQuestions
-                      ? remainingCount === 0
-                        ? "Complete"
-                        : `${remainingCount} remaining`
-                      : section.kind === "final-summary"
-                        ? "Final step"
-                        : "Optional only";
-
-                    return (
-                      <Button
-                        key={section.id}
-                        type="button"
-                        size="sm"
-                        variant={isActiveSection ? "primary" : "outline"}
-                        className="inline-flex h-auto w-full items-center justify-between gap-3 py-2 text-left"
-                        data-testid={`write-review-section-${index + 1}`}
-                        onClick={() => goToSection(index)}
-                      >
-                        <span className="space-y-0.5 text-left">
-                          <span className="block truncate">{section.title}</span>
-                          <span className="block text-[11px] opacity-75">{section.subtitle}</span>
-                        </span>
-                        <span className="text-right text-xs opacity-90">
-                          <span className="block" data-testid={`write-review-section-remaining-${index + 1}`}>
-                            {progressLabel}
-                          </span>
-                          {isComplete ? <span className="block text-[11px]">Complete</span> : null}
-                        </span>
-                      </Button>
-                    );
-                  })}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    data-testid="write-review-previous-section"
-                    onClick={goToPreviousSection}
-                    disabled={activeSectionIndex <= 0}
-                  >
-                    Previous section
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    data-testid="write-review-next-section"
-                    onClick={goToNextSection}
-                    disabled={activeSectionIndex === -1 || activeSectionIndex >= sections.length - 1}
-                  >
-                    Next section
-                  </Button>
-                </div>
-              </div>
-
+            <div className="space-y-6">
               {sectionMessage ? <Toast variant="warning">{sectionMessage}</Toast> : null}
 
               {missingQuestionIds.some((questionId) =>
@@ -733,14 +789,14 @@ export default function WriteReviewForm({
 
               {activeSection?.kind === "final-summary" ? (
                 <div
-                  className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4"
+                  className="space-y-3 rounded-[22px] border border-slate-200 bg-slate-50/80 p-5"
                   data-testid="write-review-final-summary"
                 >
-                  <h3 className="text-sm font-semibold text-slate-900">Final summary</h3>
-                  <p className="text-sm text-slate-700">
-                    Confirm each section before submitting this review.
+                  <h3 className="text-base font-semibold text-slate-900">Final summary</h3>
+                  <p className="text-sm leading-6 text-slate-700">
+                    Confirm each phase before submitting this review.
                   </p>
-                  <ul className="space-y-1 text-xs text-slate-600">
+                  <ul className="space-y-1.5 text-sm text-slate-600">
                     {sectionProgress
                       .filter((entry) => entry.sectionId !== activeSection.id)
                       .map((entry) => {
@@ -759,221 +815,268 @@ export default function WriteReviewForm({
                 </div>
               ) : null}
 
-              <ol className="space-y-5">
+              <ol className="space-y-6">
                 {activeSectionQuestions.map((question, index) => {
-                const isMissing = missingQuestionIds.includes(question.id);
-                const isActive = activeQuestionId === question.id;
+                  const isMissing = missingQuestionIds.includes(question.id);
+                  const isActive = activeQuestionId === question.id;
 
-                return (
-                  <li
-                    key={question.id}
-                    className={`space-y-3 rounded-[var(--radius-md)] border p-4 ${
-                      isActive ? "border-slate-400 bg-slate-50" : "border-slate-200 bg-white"
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="block text-sm font-semibold text-slate-800" htmlFor={question.id}>
-                        {index + 1}. {question.prompt}
-                        {question.isRequired ? <span className="ml-1 text-rose-700">*</span> : null}
-                      </label>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={isActive ? "primary" : "outline"}
-                        onClick={() => setActiveQuestionId(question.id)}
-                      >
-                        {isActive ? "Selected for evidence" : "Attach evidence here"}
-                      </Button>
-                    </div>
-
-                    {question.questionType === ReviewQuestionType.SCALE_1_TO_5 ? (
-                      <div className="grid gap-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3 md:grid-cols-[220px_minmax(0,1fr)]">
-                        <label className="space-y-1">
-                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Rating (1-5)
-                          </span>
-                          <Select
-                            data-testid={`write-review-scale-${question.id}`}
-                            value={
-                              question.notObserved
-                                ? ""
-                                : question.scaleRating != null
-                                  ? String(question.scaleRating)
-                                  : ""
-                            }
-                            disabled={isReadOnly || question.notObserved}
-                            onChange={(event) => {
-                              const value = event.target.value;
-                              const nextScaleRating = value ? Number(value) : null;
-
-                              setQuestionState((previous) =>
-                                previous.map((entry) =>
-                                  entry.id === question.id
-                                    ? {
-                                        ...entry,
-                                        scaleRating: Number.isNaN(nextScaleRating)
-                                          ? null
-                                          : nextScaleRating,
-                                        notObserved: false,
-                                      }
-                                    : entry,
-                                ),
-                              );
-                              setDirtyQuestionId(question.id);
-                              setMissingQuestionIds((previous) =>
-                                previous.filter((missingId) => missingId !== question.id),
-                              );
-                            }}
-                          >
-                            <option value="">Select a rating</option>
-                            <option value="1">1 - Unsatisfactory</option>
-                            <option value="2">2 - Needs Improvement</option>
-                            <option value="3">3 - Meets</option>
-                            <option value="4">4 - Exceeds</option>
-                            <option value="5">5 - Exceptional</option>
-                          </Select>
-                        </label>
-
-                        <label className="flex items-center gap-2 self-end text-sm text-slate-700">
-                          <input
-                            data-testid={`write-review-not-observed-${question.id}`}
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-slate-300"
-                            checked={question.notObserved}
-                            disabled={isReadOnly}
-                            onChange={(event) => {
-                              const checked = event.target.checked;
-
-                              setQuestionState((previous) =>
-                                previous.map((entry) =>
-                                  entry.id === question.id
-                                    ? {
-                                        ...entry,
-                                        notObserved: checked,
-                                        scaleRating: checked ? null : entry.scaleRating,
-                                      }
-                                    : entry,
-                                ),
-                              );
-                              setDirtyQuestionId(question.id);
-                              setMissingQuestionIds((previous) =>
-                                previous.filter((missingId) => missingId !== question.id),
-                              );
-                            }}
-                          />
-                          Not observed (exclude from scoring)
-                        </label>
-                      </div>
-                    ) : null}
-
-                    <Textarea
-                      id={question.id}
-                      data-testid={`write-review-answer-${question.id}`}
-                      ref={(element) => {
-                        questionInputRefs.current[question.id] = element;
-                      }}
-                      value={question.responseText}
-                      onFocus={() => setActiveQuestionId(question.id)}
-                      onChange={(event) => {
-                        const nextValue = event.target.value;
-
-                        setQuestionState((previous) =>
-                          previous.map((entry) =>
-                            entry.id === question.id
-                              ? {
-                                  ...entry,
-                                  responseText: nextValue,
-                                }
-                              : entry,
-                          ),
-                        );
-                        setDirtyQuestionId(question.id);
-                        setMissingQuestionIds((previous) =>
-                          previous.filter((missingId) => missingId !== question.id),
-                        );
-                      }}
-                      rows={5}
-                      readOnly={isReadOnly}
-                      aria-invalid={isMissing}
-                      aria-describedby={isMissing ? `${question.id}-error` : undefined}
-                      className={`${isMissing ? "border-rose-400 bg-rose-50" : ""} ${
-                        isReadOnly ? "bg-slate-100 text-slate-500" : ""
-                      }`}
-                      placeholder={
-                        question.questionType === ReviewQuestionType.SCALE_1_TO_5
-                          ? "Add a short comment to support this rating"
-                          : "Write your answer"
-                      }
-                    />
-
-                    {isMissing ? (
-                      <p id={`${question.id}-error`} className="text-xs font-medium text-rose-700">
-                        This required question is missing an answer.
-                      </p>
-                    ) : null}
-
-                    {question.attachedEvidence.length > 0 ? (
-                      <div className="mt-1 flex flex-wrap gap-2">
-                        {question.attachedEvidence.map((evidence) => {
-                          const removeKey = `${question.id}:${evidence.evidenceItemId}`;
-
-                          return (
-                            <span
-                              key={evidence.evidenceItemId}
-                              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs"
-                            >
-                              <span>{evidence.title}</span>
-                              {!isReadOnly ? (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-auto border-0 bg-transparent px-1 py-0 text-xs text-slate-700 shadow-none hover:bg-transparent hover:text-rose-700"
-                                  onClick={() =>
-                                    void handleDetachEvidence(question.id, evidence.evidenceItemId)
-                                  }
-                                  disabled={detachingEvidenceKey === removeKey}
-                                >
-                                  {detachingEvidenceKey === removeKey ? "Removing..." : "Remove"}
-                                </Button>
-                              ) : null}
+                  return (
+                    <li
+                      key={question.id}
+                      className={cn(
+                        "space-y-4 rounded-[24px] border bg-white p-5 transition-[border-color,box-shadow,background-color] duration-150 sm:p-6",
+                        isActive
+                          ? "border-teal-300 bg-teal-50/35 shadow-[var(--shadow-sm)] ring-1 ring-teal-100"
+                          : "border-slate-200",
+                      )}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 max-w-3xl space-y-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {question.dimensionKey ? (
+                              <span className="rounded-full border border-teal-100 bg-teal-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-teal-700">
+                                {formatDimensionLabel(question.dimensionKey)}
+                              </span>
+                            ) : null}
+                            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                              {question.questionType === ReviewQuestionType.SCALE_1_TO_5
+                                ? "Competency rating"
+                                : "Written response"}
                             </span>
-                          );
-                        })}
+                          </div>
+                          <label
+                            className="block text-[1.02rem] font-semibold leading-7 text-slate-900"
+                            htmlFor={question.id}
+                          >
+                            {index + 1}. {question.prompt}
+                            {question.isRequired ? <span className="ml-1 text-rose-700">*</span> : null}
+                          </label>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isActive ? "primary" : "outline"}
+                          className="shrink-0"
+                          onClick={() => setActiveQuestionId(question.id)}
+                        >
+                          {isActive ? "Evidence target" : "Use in overview"}
+                        </Button>
                       </div>
-                    ) : null}
-                  </li>
-                );
+
+                      {question.questionType === ReviewQuestionType.SCALE_1_TO_5 ? (
+                        <div className="grid gap-4 rounded-[18px] border border-slate-200 bg-slate-50/80 p-4 md:grid-cols-[240px_minmax(0,1fr)]">
+                          <label className="space-y-1">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              Rating (1-5)
+                            </span>
+                            <Select
+                              data-testid={`write-review-scale-${question.id}`}
+                              value={
+                                question.notObserved
+                                  ? ""
+                                  : question.scaleRating != null
+                                    ? String(question.scaleRating)
+                                    : ""
+                              }
+                              disabled={isReadOnly || question.notObserved}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                const nextScaleRating = value ? Number(value) : null;
+
+                                setQuestionState((previous) =>
+                                  previous.map((entry) =>
+                                    entry.id === question.id
+                                      ? {
+                                          ...entry,
+                                          scaleRating: Number.isNaN(nextScaleRating)
+                                            ? null
+                                            : nextScaleRating,
+                                          notObserved: false,
+                                        }
+                                      : entry,
+                                  ),
+                                );
+                                setDirtyQuestionId(question.id);
+                                setMissingQuestionIds((previous) =>
+                                  previous.filter((missingId) => missingId !== question.id),
+                                );
+                              }}
+                            >
+                              <option value="">Select a rating</option>
+                              <option value="1">1 - Unsatisfactory</option>
+                              <option value="2">2 - Needs Improvement</option>
+                              <option value="3">3 - Meets</option>
+                              <option value="4">4 - Exceeds</option>
+                              <option value="5">5 - Exceptional</option>
+                            </Select>
+                          </label>
+
+                          <label className="flex items-center gap-2 self-end text-sm text-slate-700">
+                            <input
+                              data-testid={`write-review-not-observed-${question.id}`}
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-slate-300"
+                              checked={question.notObserved}
+                              disabled={isReadOnly}
+                              onChange={(event) => {
+                                const checked = event.target.checked;
+
+                                setQuestionState((previous) =>
+                                  previous.map((entry) =>
+                                    entry.id === question.id
+                                      ? {
+                                          ...entry,
+                                          notObserved: checked,
+                                          scaleRating: checked ? null : entry.scaleRating,
+                                        }
+                                      : entry,
+                                  ),
+                                );
+                                setDirtyQuestionId(question.id);
+                                setMissingQuestionIds((previous) =>
+                                  previous.filter((missingId) => missingId !== question.id),
+                                );
+                              }}
+                            />
+                            Not observed (exclude from scoring)
+                          </label>
+                        </div>
+                      ) : null}
+
+                      <Textarea
+                        id={question.id}
+                        data-testid={`write-review-answer-${question.id}`}
+                        ref={(element) => {
+                          questionInputRefs.current[question.id] = element;
+                        }}
+                        value={question.responseText}
+                        onFocus={() => setActiveQuestionId(question.id)}
+                        onChange={(event) => {
+                          const nextValue = event.target.value;
+
+                          setQuestionState((previous) =>
+                            previous.map((entry) =>
+                              entry.id === question.id
+                                ? {
+                                    ...entry,
+                                    responseText: nextValue,
+                                  }
+                                : entry,
+                            ),
+                          );
+                          setDirtyQuestionId(question.id);
+                          setMissingQuestionIds((previous) =>
+                            previous.filter((missingId) => missingId !== question.id),
+                          );
+                        }}
+                        rows={6}
+                        readOnly={isReadOnly}
+                        aria-invalid={isMissing}
+                        aria-describedby={isMissing ? `${question.id}-error` : undefined}
+                        className={cn(
+                          "min-h-[176px] rounded-[18px] border-slate-200 px-5 py-4 text-[15px] leading-7 shadow-none",
+                          !isReadOnly && "focus:border-teal-300 focus:ring-teal-100",
+                          isMissing && "border-rose-400 bg-rose-50",
+                          isReadOnly && "bg-slate-100 text-slate-500",
+                        )}
+                        placeholder={
+                          question.questionType === ReviewQuestionType.SCALE_1_TO_5
+                            ? "Support the rating with specific examples, outcomes, and context"
+                            : "Write a focused response with concrete outcomes and examples"
+                        }
+                      />
+
+                      {isMissing ? (
+                        <p id={`${question.id}-error`} className="text-sm font-medium text-rose-700">
+                          This required question is missing an answer.
+                        </p>
+                      ) : null}
+
+                      {question.attachedEvidence.length > 0 ? (
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {question.attachedEvidence.map((evidence) => {
+                            const removeKey = `${question.id}:${evidence.evidenceItemId}`;
+
+                            return (
+                              <span
+                                key={evidence.evidenceItemId}
+                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700"
+                              >
+                                <span>{evidence.title}</span>
+                                {!isReadOnly ? (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-auto border-0 bg-transparent px-1 py-0 text-xs text-slate-700 shadow-none hover:bg-transparent hover:text-rose-700"
+                                    onClick={() =>
+                                      void handleDetachEvidence(question.id, evidence.evidenceItemId)
+                                    }
+                                    disabled={detachingEvidenceKey === removeKey}
+                                  >
+                                    {detachingEvidenceKey === removeKey ? "Removing..." : "Remove"}
+                                  </Button>
+                                ) : null}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                    </li>
+                  );
                 })}
               </ol>
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isReadOnly || isSubmitting}
-              data-testid="write-review-submit"
-            >
-              {isReadOnly ? "Submitted" : isSubmitting ? "Submitting..." : "Submit Review"}
-            </Button>
-            {submitMessage ? (
-              <Toast variant={submitMessage.includes("success") ? "success" : "info"}>
-                {submitMessage}
-              </Toast>
-            ) : null}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousSection}
+                disabled={activeSectionIndex <= 0}
+              >
+                Previous section
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={goToNextSection}
+                disabled={activeSectionIndex === -1 || activeSectionIndex >= sections.length - 1}
+              >
+                Next section
+              </Button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isReadOnly || isSubmitting}
+                data-testid="write-review-submit"
+              >
+                {isReadOnly ? "Submitted" : isSubmitting ? "Submitting..." : "Submit Review"}
+              </Button>
+              {submitMessage ? (
+                <Toast variant={submitMessage.includes("success") ? "success" : "info"}>
+                  {submitMessage}
+                </Toast>
+              ) : null}
+            </div>
           </div>
         </CardContent>
       </Card>
 
       <Drawer
         title="Evidence"
-        description="Attach supporting evidence without leaving this review."
+        description="Attach supporting evidence without leaving the review."
         className="xl:sticky xl:top-6"
       >
         <section
-          className="space-y-4 rounded-[var(--radius-lg)] border border-slate-200 bg-slate-50/80 p-4"
+          className="space-y-4 rounded-[20px] border border-slate-200 bg-slate-50/80 p-5"
           data-testid="write-review-evidence-overview"
         >
           <div className="flex items-start justify-between gap-3">
@@ -985,7 +1088,7 @@ export default function WriteReviewForm({
                 {submissionContext.subjectName}
               </h3>
               <p className="text-sm text-slate-600">
-                {submissionContext.relationship} | {submissionContext.cycleName}
+                {submissionContext.subjectTitle ?? "Role not set"} · {submissionContext.relationship}
               </p>
             </div>
             <span className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700">
@@ -993,9 +1096,35 @@ export default function WriteReviewForm({
             </span>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="grid gap-3">
+            <div className="rounded-[var(--radius-md)] border border-white bg-white p-4 shadow-[var(--shadow-xs)]" data-testid="write-review-context-card">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                Current context
+              </p>
+              <dl className="mt-3 space-y-3 text-sm text-slate-700">
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="font-medium text-slate-500">Role</dt>
+                  <dd className="text-right text-slate-900">
+                    {submissionContext.subjectTitle ?? "Not set"}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="font-medium text-slate-500">Department</dt>
+                  <dd className="text-right text-slate-900">
+                    {submissionContext.subjectDepartment ?? "Not set"}
+                  </dd>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <dt className="font-medium text-slate-500">Current phase</dt>
+                  <dd className="text-right text-slate-900">
+                    {activeSection?.title ?? "No phase selected"}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
             <div
-              className="rounded-[var(--radius-md)] border border-white bg-white p-3 shadow-[var(--shadow-xs)]"
+              className="rounded-[var(--radius-md)] border border-white bg-white p-4 shadow-[var(--shadow-xs)]"
               data-testid="write-review-evidence-target"
             >
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -1015,7 +1144,7 @@ export default function WriteReviewForm({
               </p>
             </div>
 
-            <div className="rounded-[var(--radius-md)] border border-white bg-white p-3 shadow-[var(--shadow-xs)]">
+            <div className="rounded-[var(--radius-md)] border border-white bg-white p-4 shadow-[var(--shadow-xs)]">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 Review details
               </p>
@@ -1169,6 +1298,61 @@ export default function WriteReviewForm({
       </Drawer>
     </div>
   );
+}
+
+function getSectionDescription(section: ReviewSection | null): string {
+  if (!section) {
+    return "Write clear, evidence-backed responses for this review.";
+  }
+
+  switch (section.kind) {
+    case "impact-results":
+      return "Capture what was delivered, the outcomes created, and the business impact.";
+    case "competencies":
+      return "Describe how the work was done across the competency areas in scope.";
+    case "growth-development":
+      return "Document coaching themes, development priorities, and next-step growth needs.";
+    case "goals":
+      return "Connect future goals to the role baseline, recent evidence, and company expectations.";
+    case "additional":
+      return "Complete any remaining prompts that add important context to the review.";
+    case "final-summary":
+      return "Run a final quality check before you lock the review.";
+    default:
+      return "Write clear, evidence-backed responses for this review.";
+  }
+}
+
+function getSectionProgressLabel(
+  section: ReviewSection | null,
+  progress:
+    | {
+        answered: number;
+        total: number;
+        remaining: number;
+      }
+    | null
+    | undefined,
+): string {
+  if (!section) {
+    return "No phase";
+  }
+
+  const hasRequiredQuestions = (progress?.total ?? 0) > 0;
+  const remainingCount = Math.max(progress?.remaining ?? 0, 0);
+
+  if (hasRequiredQuestions) {
+    return remainingCount === 0 ? "Complete" : `${remainingCount} remaining`;
+  }
+
+  return section.kind === "final-summary" ? "Final step" : "Optional";
+}
+
+function formatDimensionLabel(value: CompetencyDimensionKey): string {
+  return value
+    .split("_")
+    .map((segment) => segment.charAt(0) + segment.slice(1).toLowerCase())
+    .join(" ");
 }
 
 function buildReviewSections(questions: WriteReviewQuestion[]): ReviewSection[] {

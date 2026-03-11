@@ -21,6 +21,7 @@ import {
 } from "@/server/reporting/reporting-export";
 import {
   getReportingCompetencies,
+  getReportingManagerOverview,
   getReportingPeople,
   getReportingProgress,
   getReportingRatings,
@@ -38,7 +39,13 @@ type SearchParamsShape = Record<string, QueryValue>;
 
 type ProgressStatusFilter = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 type RatingSourceFilter = "FINAL" | "SCORECARD";
-type ReportingTab = "progress" | "results" | "competencies" | "scorecard";
+type ReportingTab =
+  | "overview"
+  | "managers"
+  | "queue"
+  | "results"
+  | "competencies"
+  | "scorecard";
 type GroupByFilter = "department" | "title";
 
 const competencyOrder = Object.values(CompetencyDimensionKey);
@@ -100,9 +107,11 @@ export default async function AdminReportingPage({
   const selectedRatingSource: RatingSourceFilter =
     getSingleValue(query.ratingSource) === "SCORECARD" ? "SCORECARD" : "FINAL";
   const selectedGroupBy = parseGroupBy(getSingleValue(query.groupBy));
-  const selectedStatus = parseProgressStatus(getSingleValue(query.status));
+  const requestedStatus = parseProgressStatus(getSingleValue(query.status));
+  const selectedStatus = selectedTab === "queue" ? requestedStatus : undefined;
   const selectedPage = parsePositiveInt(getSingleValue(query.page), 1);
   const requestedDimensionKey = parseDimensionKey(getSingleValue(query.dimensionKey));
+  const requestedCompetencyDepartment = getSingleValue(query.competencyDepartment);
 
   const progressFilters = parseProgressFilters(
     toUrlSearchParams({
@@ -140,7 +149,16 @@ export default async function AdminReportingPage({
     }),
   );
 
-  const [filterCatalog, progress, ratingsFinal, ratingsScorecard, competencies, scorecard, people] =
+  const [
+    filterCatalog,
+    progress,
+    managerOverview,
+    ratingsFinal,
+    ratingsScorecard,
+    competencies,
+    scorecard,
+    people,
+  ] =
     await Promise.all([
       getReportingProgress(
         {
@@ -150,6 +168,7 @@ export default async function AdminReportingPage({
         context,
       ),
       getReportingProgress(progressFilters, context),
+      getReportingManagerOverview(progressFilters, context),
       getReportingRatings(
         parseRatingsFilters(
           toUrlSearchParams({
@@ -202,9 +221,21 @@ export default async function AdminReportingPage({
   };
 
   const tabHrefs = {
-    progress: toQueryString({
+    overview: toQueryString({
       ...baseQuery,
-      tab: "progress",
+      tab: "overview",
+      ratingSource: selectedRatingSource,
+      page: "1",
+    }),
+    managers: toQueryString({
+      ...baseQuery,
+      tab: "managers",
+      ratingSource: selectedRatingSource,
+      page: "1",
+    }),
+    queue: toQueryString({
+      ...baseQuery,
+      tab: "queue",
       status: selectedStatus,
       ratingSource: selectedRatingSource,
       page: "1",
@@ -212,22 +243,20 @@ export default async function AdminReportingPage({
     results: toQueryString({
       ...baseQuery,
       tab: "results",
-      status: selectedStatus,
       ratingSource: selectedRatingSource,
       page: "1",
     }),
     competencies: toQueryString({
       ...baseQuery,
       tab: "competencies",
-      status: selectedStatus,
       ratingSource: selectedRatingSource,
       dimensionKey: selectedCompetency?.dimensionKey,
+      competencyDepartment: requestedCompetencyDepartment,
       page: "1",
     }),
     scorecard: toQueryString({
       ...baseQuery,
       tab: "scorecard",
-      status: selectedStatus,
       ratingSource: selectedRatingSource,
       page: "1",
     }),
@@ -274,11 +303,13 @@ export default async function AdminReportingPage({
       titleOptions={titleOptions}
       tabHrefs={tabHrefs}
       paginationHrefs={paginationHrefs}
+      managerOverview={managerOverview}
       progress={progress}
       ratingsFinal={ratingsFinal}
       ratingsScorecard={ratingsScorecard}
       competencies={competencies}
       selectedCompetency={selectedCompetency}
+      selectedCompetencyDepartment={requestedCompetencyDepartment}
       scorecard={scorecard}
       people={people}
       competencyOrder={competencyOrder}
@@ -353,7 +384,9 @@ function parseProgressStatus(value: string | undefined): ProgressStatusFilter | 
 
 function parseTab(value: string | undefined): ReportingTab {
   if (
-    value === "progress" ||
+    value === "overview" ||
+    value === "managers" ||
+    value === "queue" ||
     value === "results" ||
     value === "competencies" ||
     value === "scorecard"
@@ -361,7 +394,11 @@ function parseTab(value: string | undefined): ReportingTab {
     return value;
   }
 
-  return "progress";
+  if (value === "progress") {
+    return "overview";
+  }
+
+  return "overview";
 }
 
 function parseGroupBy(value: string | undefined): GroupByFilter {

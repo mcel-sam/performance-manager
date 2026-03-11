@@ -1,5 +1,6 @@
 import {
   CycleStatus,
+  EvidenceType,
   ReviewQuestionType,
   ReviewRelationship,
   ReviewSubmissionStatus,
@@ -60,6 +61,8 @@ const submissionRecord = {
     id: "emp_employee_1",
     firstName: "Elliot",
     lastName: "Employee",
+    department: "Projects",
+    title: "Foreman",
   },
   cycle: {
     id: "cycle_seed_draft_1",
@@ -308,6 +311,29 @@ describe("submitReviewSubmission", () => {
 });
 
 describe("getWriteReviewData permissions", () => {
+  it("returns subject role context for the write-review workspace", async () => {
+    const db = buildDbMock();
+    db.reviewSubmission.findFirst.mockResolvedValue(submissionRecord);
+    db.reviewAnswer.findMany.mockResolvedValue([]);
+
+    const result = await getWriteReviewData(
+      "cycle_seed_draft_1",
+      "submission_seed_employee_self_1",
+      reviewerContext,
+      db as never,
+    );
+
+    expect(result.submission.subjectDepartment).toBe("Projects");
+    expect(result.submission.subjectTitle).toBe("Foreman");
+    expect(result.evidenceCounts).toEqual({
+      [EvidenceType.FEEDBACK]: 0,
+      [EvidenceType.UPDATE]: 0,
+      [EvidenceType.ONE_ON_ONE]: 0,
+      [EvidenceType.GOAL]: 0,
+      [EvidenceType.VALUE_RECOGNITION]: 0,
+    });
+  });
+
   it("denies access when reviewer does not match and user is not HR admin", async () => {
     const db = buildDbMock();
     db.reviewSubmission.findFirst.mockResolvedValue({

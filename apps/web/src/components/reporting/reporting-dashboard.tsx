@@ -8,7 +8,9 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -35,6 +37,7 @@ import { reportingChartTheme } from "@/components/reporting/chart-theme";
 import type {
   ReportingCompetenciesResponse,
   ReportingCompetencyResult,
+  ReportingManagerOverviewResult,
   ReportingPeopleResult,
   ReportingProgressResult,
   ReportingRatingsResult,
@@ -43,7 +46,13 @@ import type {
 
 type ProgressStatusFilter = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 type RatingSourceFilter = "FINAL" | "SCORECARD";
-type ReportingTab = "progress" | "results" | "competencies" | "scorecard";
+type ReportingTab =
+  | "overview"
+  | "managers"
+  | "queue"
+  | "results"
+  | "competencies"
+  | "scorecard";
 
 interface ReportingDashboardProps {
   cycleName: string | null;
@@ -59,7 +68,9 @@ interface ReportingDashboardProps {
   departmentOptions: string[];
   titleOptions: string[];
   tabHrefs: {
-    progress: string;
+    overview: string;
+    managers: string;
+    queue: string;
     results: string;
     competencies: string;
     scorecard: string;
@@ -68,11 +79,13 @@ interface ReportingDashboardProps {
     previous: string | null;
     next: string | null;
   };
+  managerOverview: ReportingManagerOverviewResult;
   progress: ReportingProgressResult;
   ratingsFinal: ReportingRatingsResult;
   ratingsScorecard: ReportingRatingsResult;
   competencies: ReportingCompetenciesResponse;
   selectedCompetency: ReportingCompetencyResult | null;
+  selectedCompetencyDepartment?: string;
   scorecard: ReportingScorecardResponse;
   people: ReportingPeopleResult;
   competencyOrder: string[];
@@ -160,11 +173,13 @@ export function ReportingDashboard({
   titleOptions,
   tabHrefs,
   paginationHrefs,
+  managerOverview,
   progress,
   ratingsFinal,
   ratingsScorecard,
   competencies,
   selectedCompetency,
+  selectedCompetencyDepartment,
   scorecard,
   people,
   competencyOrder,
@@ -177,7 +192,6 @@ export function ReportingDashboard({
     FINAL: false,
     SCORECARD: false,
   });
-  const [statusDrilldown, setStatusDrilldown] = useState<ProgressStatusFilter | null>(null);
 
   const totalPeople =
     progress.totals.notStarted + progress.totals.inProgress + progress.totals.completed;
@@ -195,29 +209,26 @@ export function ReportingDashboard({
     [ratingsFinal, ratingsScorecard],
   );
 
-  const activeRows = useMemo(() => {
-    return people.rows.filter((row) => {
-      if (statusDrilldown && row.overallStatus !== statusDrilldown) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [people.rows, statusDrilldown]);
-
-  const employeeCsvHref = useMemo(() => buildEmployeeCsvHref(activeRows), [activeRows]);
+  const employeeCsvHref = useMemo(() => buildEmployeeCsvHref(people.rows), [people.rows]);
 
   const baseFilterQuery = useMemo(
     () => ({
       cycleId: selectedCycleId,
       tab: selectedTab,
-      status: selectedStatus,
+      status: selectedTab === "queue" ? selectedStatus : undefined,
       ratingSource: selectedRatingSource,
       groupBy: selectedGroupBy,
       dimensionKey: selectedDimensionKey,
       page: "1",
     }),
-    [selectedCycleId, selectedTab, selectedStatus, selectedRatingSource, selectedGroupBy, selectedDimensionKey],
+    [
+      selectedCycleId,
+      selectedTab,
+      selectedStatus,
+      selectedRatingSource,
+      selectedGroupBy,
+      selectedDimensionKey,
+    ],
   );
 
   const filterChips = useMemo(
@@ -245,20 +256,8 @@ export function ReportingDashboard({
               }),
             }
           : null,
-        selectedStatus
-          ? {
-              key: "status",
-              label: `Status: ${progressStatusLabel[selectedStatus]}`,
-              clearHref: toQueryString({
-                ...baseFilterQuery,
-                department: selectedDepartment,
-                title: selectedTitle,
-                status: undefined,
-              }),
-            }
-          : null,
       ].filter((chip): chip is { key: string; label: string; clearHref: string } => chip !== null),
-    [baseFilterQuery, selectedDepartment, selectedStatus, selectedTitle],
+    [baseFilterQuery, selectedDepartment, selectedTitle],
   );
   const currentReportingHref = useMemo(
     () =>
@@ -287,7 +286,7 @@ export function ReportingDashboard({
       <FilterBar
         method="get"
         data-testid="reporting-filter-bar"
-        description="Refine the cycle scope, then move between progress, results, competencies, and scorecard views without carrying a full employee table across every tab."
+        description="Refine the cycle scope, then move between overview, manager follow-up, employee queue, results, competencies, and scorecard views."
         chips={
           filterChips.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2" data-testid="reporting-filter-chips">
@@ -311,6 +310,9 @@ export function ReportingDashboard({
         <input type="hidden" name="groupBy" value={selectedGroupBy} />
         {selectedDimensionKey ? (
           <input type="hidden" name="dimensionKey" value={selectedDimensionKey} />
+        ) : null}
+        {selectedCompetencyDepartment ? (
+          <input type="hidden" name="competencyDepartment" value={selectedCompetencyDepartment} />
         ) : null}
 
         <label className="flex flex-col gap-2 text-sm text-slate-700">
@@ -349,16 +351,6 @@ export function ReportingDashboard({
                 {title}
               </option>
             ))}
-          </Select>
-        </label>
-
-        <label className="flex flex-col gap-2 text-sm text-slate-700">
-          Status
-          <Select name="status" defaultValue={selectedStatus ?? ""} data-testid="reporting-status-filter">
-            <option value="">All statuses</option>
-            <option value="NOT_STARTED">Not started</option>
-            <option value="IN_PROGRESS">In progress</option>
-            <option value="COMPLETED">Completed</option>
           </Select>
         </label>
 
@@ -403,11 +395,25 @@ export function ReportingDashboard({
       <section className="flex items-center justify-between gap-4">
         <div className="inline-flex rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-1">
           <Link
-            href={tabHrefs.progress}
-            data-testid="reporting-tab-progress"
-            className={tabClassName(selectedTab === "progress")}
+            href={tabHrefs.overview}
+            data-testid="reporting-tab-overview"
+            className={tabClassName(selectedTab === "overview")}
           >
-            Progress
+            Overview
+          </Link>
+          <Link
+            href={tabHrefs.managers}
+            data-testid="reporting-tab-managers"
+            className={tabClassName(selectedTab === "managers")}
+          >
+            Managers
+          </Link>
+          <Link
+            href={tabHrefs.queue}
+            data-testid="reporting-tab-queue"
+            className={tabClassName(selectedTab === "queue")}
+          >
+            Employee queue
           </Link>
           <Link
             href={tabHrefs.results}
@@ -440,15 +446,29 @@ export function ReportingDashboard({
         </div>
       </section>
 
-      {selectedTab === "progress" ? (
-        <ProgressTab
+      {selectedTab === "overview" ? (
+        <OverviewTab
           progress={progress}
           totalPeople={totalPeople}
           csvHref={csvHrefs.progress}
+        />
+      ) : null}
+
+      {selectedTab === "managers" ? (
+        <ManagerAccountabilitySection
+          managerOverview={managerOverview}
+          currentReportingHref={currentReportingHref}
+        />
+      ) : null}
+
+      {selectedTab === "queue" ? (
+        <EmployeeQueueTab
+          selectedCycleId={selectedCycleId}
+          selectedDepartment={selectedDepartment}
+          selectedTitle={selectedTitle}
           selectedStatus={selectedStatus}
-          statusDrilldown={statusDrilldown}
-          onDrilldown={setStatusDrilldown}
-          activeRows={activeRows}
+          selectedRatingSource={selectedRatingSource}
+          selectedGroupBy={selectedGroupBy}
           people={people}
           paginationHrefs={paginationHrefs}
           employeeCsvHref={employeeCsvHref}
@@ -477,11 +497,11 @@ export function ReportingDashboard({
         <CompetenciesTab
           competencies={competencies}
           selectedCompetency={selectedCompetency}
+          selectedCompetencyDepartment={selectedCompetencyDepartment}
           competencyOrder={competencyOrder}
           cycleId={selectedCycleId}
           selectedDepartment={selectedDepartment}
           selectedTitle={selectedTitle}
-          selectedStatus={selectedStatus}
           selectedRatingSource={selectedRatingSource}
           selectedGroupBy={selectedGroupBy}
           csvHref={csvHrefs.competencies}
@@ -495,33 +515,14 @@ export function ReportingDashboard({
   );
 }
 
-function ProgressTab({
+function OverviewTab({
   progress,
   totalPeople,
   csvHref,
-  selectedStatus,
-  statusDrilldown,
-  onDrilldown,
-  activeRows,
-  people,
-  paginationHrefs,
-  employeeCsvHref,
-  currentReportingHref,
 }: {
   progress: ReportingProgressResult;
   totalPeople: number;
   csvHref: string;
-  selectedStatus?: ProgressStatusFilter;
-  statusDrilldown: ProgressStatusFilter | null;
-  onDrilldown: (status: ProgressStatusFilter | null) => void;
-  activeRows: ReportingPeopleResult["rows"];
-  people: ReportingPeopleResult;
-  paginationHrefs: {
-    previous: string | null;
-    next: string | null;
-  };
-  employeeCsvHref: string;
-  currentReportingHref: string;
 }) {
   if (progress.suppression.suppressed) {
     return (
@@ -544,10 +545,10 @@ function ProgressTab({
         ? reportingChartTheme.progress.notStarted
         : status === "IN_PROGRESS"
           ? reportingChartTheme.progress.inProgress
-          : reportingChartTheme.progress.completed,
+      : reportingChartTheme.progress.completed,
   }));
-  const completionRate = totalPeople > 0 ? Math.round((progress.totals.completed / totalPeople) * 100) : 0;
-  const queueLabel = statusDrilldown ?? selectedStatus ?? null;
+  const completionRate =
+    totalPeople > 0 ? Math.round((progress.totals.completed / totalPeople) * 100) : 0;
 
   return (
     <section className="space-y-4">
@@ -595,8 +596,8 @@ function ProgressTab({
             <div>
               <CardTitle>Completion overview</CardTitle>
               <CardDescription>
-                One view for the current cycle scope. The people queue stays here instead of
-                following every analytics tab.
+                One view for the current cycle scope. Use the employee queue tab for person-level
+                follow-up by status.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -632,36 +633,26 @@ function ProgressTab({
                       totalPeople > 0 ? Math.round((segment.value / totalPeople) * 100) : 0;
 
                     return (
-                      <button
-                        key={`progress-drill-${segment.status}`}
-                        type="button"
-                        aria-label={`Filter employee queue by ${segment.label}`}
-                        data-testid={`reporting-progress-drilldown-${segment.status}`}
-                        onClick={() =>
-                          onDrilldown(statusDrilldown === segment.status ? null : segment.status)
-                        }
-                        className={[
-                          "rounded-[var(--radius-md)] border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300",
-                          statusDrilldown === segment.status
-                            ? "border-slate-900 bg-slate-900 text-white"
-                            : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white",
-                        ].join(" ")}
+                      <div
+                        key={`progress-summary-${segment.status}`}
+                        data-testid={`reporting-progress-summary-${segment.status}`}
+                        className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3"
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <span className="inline-flex items-center gap-2 text-sm font-semibold">
+                          <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
                             <span
                               className="inline-block h-2.5 w-2.5 rounded-full"
                               style={{ backgroundColor: segment.color }}
                             />
                             {segment.label}
                           </span>
-                          <span className="text-xs">{segmentPercent}%</span>
+                          <span className="text-xs text-slate-500">{segmentPercent}%</span>
                         </div>
-                        <p className="mt-3 text-2xl font-semibold">{segment.value}</p>
-                        <p className="mt-1 text-xs opacity-80">
+                        <p className="mt-3 text-2xl font-semibold text-slate-900">{segment.value}</p>
+                        <p className="mt-1 text-xs text-slate-500">
                           {segment.value === 1 ? "employee" : "employees"}
                         </p>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -688,158 +679,474 @@ function ProgressTab({
           </ChartExportContainer>
 
           <HelpHint label="What counts as In progress?">
-            In progress means either the self review or manager review has started, but both are not
-            submitted yet.
+            In progress means either the self review or manager review has started, but both are
+            not submitted yet.
           </HelpHint>
         </CardContent>
       </Card>
+    </section>
+  );
+}
+
+function ManagerAccountabilitySection({
+  managerOverview,
+  currentReportingHref,
+}: {
+  managerOverview: ReportingManagerOverviewResult;
+  currentReportingHref: string;
+}) {
+  const [selectedManagerKey, setSelectedManagerKey] = useState<string | null>(null);
+  const defaultManagerKey =
+    managerOverview.rows.find((row) => row.pendingManagerReviewCount > 0)?.managerKey ??
+    managerOverview.rows[0]?.managerKey ??
+    null;
+  const selectedManager =
+    managerOverview.rows.find((row) => row.managerKey === selectedManagerKey) ??
+    managerOverview.rows.find((row) => row.managerKey === defaultManagerKey) ??
+    null;
+
+  if (managerOverview.suppression.suppressed) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-4" data-testid="reporting-manager-overview">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MiniInsightCard
+          title="Managers in scope"
+          value={String(managerOverview.summary.totalManagers)}
+          subtitle={`${managerOverview.summary.totalDirectReports} direct reports across the current filter set.`}
+        />
+        <MiniInsightCard
+          title="Managers with pending"
+          value={String(managerOverview.summary.managersWithPendingReviews)}
+          subtitle="At least one direct report still needs a manager review action."
+        />
+        <MiniInsightCard
+          title="Pending manager reviews"
+          value={String(managerOverview.summary.pendingManagerReviews)}
+          subtitle="Awaiting plus in-progress manager reviews."
+        />
+        <MiniInsightCard
+          title="Overdue manager reviews"
+          value={String(managerOverview.summary.overdueManagerReviews)}
+          subtitle="Past due and not yet submitted."
+        />
+      </div>
 
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle>Employee queue</CardTitle>
+              <CardTitle>Manager accountability</CardTitle>
               <CardDescription>
-                {queueLabel
-                  ? `Focused on ${progressStatusLabel[queueLabel].toLowerCase()} employees in the current page.`
-                  : "A lighter queue view for follow-up actions and links."}
+                This view is for HR follow-up, not org trend analysis. Select a manager row to
+                drill into their direct-report review queue.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              {statusDrilldown ? (
-                <button
-                  type="button"
-                  className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-                  data-testid="reporting-clear-drilldown"
-                  onClick={() => onDrilldown(null)}
-                >
-                  Clear queue filter
-                </button>
-              ) : null}
-              {activeRows.length > 0 ? (
-                <a
-                  href={employeeCsvHref}
-                  download="reporting-employee-queue.csv"
-                  className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-                >
-                  Export queue CSV
-                </a>
-              ) : null}
-            </div>
+            {selectedManager ? <Badge variant="info">Focused: {selectedManager.managerName}</Badge> : null}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {activeRows.length === 0 ? (
+          {managerOverview.rows.length === 0 ? (
             <EmptyState
-              title="No employees match this queue"
-              description="Try clearing the queue filter or widening the reporting scope."
+              title="No manager data in scope"
+              description="Adjust filters to include employees with assigned managers."
             />
           ) : (
-            <div className="grid gap-3">
-              {activeRows.map((row) => (
-                <article
-                  key={row.employeeId}
-                  data-testid="reporting-employee-row"
-                  className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-4 shadow-[var(--shadow-xs)]"
+            <>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-separate border-spacing-0 text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-[0.08em] text-slate-500">
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold">Manager</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold">Scope</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold">Direct reports</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold">Pending</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold">Awaiting</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold">In progress</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold">Overdue</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold">Completed</th>
+                      <th className="border-b border-slate-200 px-4 py-3 font-semibold">Completion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {managerOverview.rows.map((row) => {
+                      const isActive = selectedManager?.managerKey === row.managerKey;
+
+                      return (
+                        <tr
+                          key={row.managerKey}
+                          data-testid="reporting-manager-row"
+                          className={isActive ? "bg-slate-900 text-white" : "bg-white"}
+                        >
+                          <td className="border-b border-slate-200 px-4 py-3 align-top">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedManagerKey(row.managerKey)}
+                              className={[
+                                "text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300",
+                                isActive ? "text-white" : "text-slate-900 hover:text-slate-700",
+                              ].join(" ")}
+                            >
+                              <span className="block font-semibold">{row.managerName}</span>
+                              <span
+                                className={[
+                                  "mt-1 block text-xs",
+                                  isActive ? "text-slate-200" : "text-slate-500",
+                                ].join(" ")}
+                              >
+                                Click to drill into direct reports
+                              </span>
+                            </button>
+                          </td>
+                          <td
+                            className={[
+                              "border-b border-slate-200 px-4 py-3 align-top text-xs",
+                              isActive ? "text-slate-200" : "text-slate-600",
+                            ].join(" ")}
+                          >
+                            {row.departments.length > 0 ? row.departments.join(", ") : "Unspecified"}
+                          </td>
+                          <td className="border-b border-slate-200 px-4 py-3 font-semibold">
+                            {row.directReportCount}
+                          </td>
+                          <td className="border-b border-slate-200 px-4 py-3 font-semibold">
+                            {row.pendingManagerReviewCount}
+                          </td>
+                          <td className="border-b border-slate-200 px-4 py-3">
+                            {row.awaitingManagerReviewCount}
+                          </td>
+                          <td className="border-b border-slate-200 px-4 py-3">
+                            {row.inProgressManagerReviewCount}
+                          </td>
+                          <td className="border-b border-slate-200 px-4 py-3">
+                            {row.overdueManagerReviewCount}
+                          </td>
+                          <td className="border-b border-slate-200 px-4 py-3">
+                            {row.completedManagerReviewCount}
+                          </td>
+                          <td className="border-b border-slate-200 px-4 py-3">
+                            {row.completionRate.toFixed(1)}%
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {selectedManager ? (
+                <div
+                  className="grid gap-4 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4 xl:grid-cols-[280px_minmax(0,1fr)]"
+                  data-testid="reporting-manager-drilldown"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-3">
                     <div>
-                      <h3 className="text-sm font-semibold text-slate-900">{row.employeeName}</h3>
-                      <p className="text-sm text-slate-600">
-                        {row.department} · {row.title}
-                      </p>
-                    </div>
-                    <div className="text-right">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                        Rating
+                        Selected manager
                       </p>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {row.finalRating ? `Final ${row.finalRating}` : "No final rating"}
+                      <h3 className="mt-2 text-lg font-semibold text-slate-900">
+                        {selectedManager.managerName}
+                      </h3>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {selectedManager.directReportCount} direct reports across{" "}
+                        {selectedManager.departments.length || 1} scope area
+                        {selectedManager.departments.length === 1 ? "" : "s"}.
                       </p>
-                      <p className="text-xs text-slate-500">
-                        {row.finalRatingSource ? humanizeEnumValue(row.finalRatingSource) : "Pending source"}
-                      </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                      <MiniInsightCard
+                        title="Pending"
+                        value={String(selectedManager.pendingManagerReviewCount)}
+                        subtitle="Awaiting plus in-progress manager reviews."
+                      />
+                      <MiniInsightCard
+                        title="Overdue"
+                        value={String(selectedManager.overdueManagerReviewCount)}
+                        subtitle="Past due and still not submitted."
+                      />
                     </div>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge variant={overallStatusBadgeVariant(row.overallStatus)}>
-                      {progressStatusLabel[row.overallStatus]}
-                    </Badge>
-                    <Badge variant="neutral">Self {submissionStatusLabel[row.selfStatus]}</Badge>
-                    <Badge variant="neutral">Manager {submissionStatusLabel[row.managerStatus]}</Badge>
-                    <Badge variant="info">
-                      {typeof row.scorecardPercent === "number"
-                        ? `${row.scorecardPercent.toFixed(1)}% scorecard`
-                        : "No scorecard"}
-                    </Badge>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                    <p className="text-xs text-slate-500">
-                      Follow-up links for the selected employee record.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-700">
-                      <Link
-                        href={withReturnTo(row.links.packet, currentReportingHref)}
-                        className="underline underline-offset-2"
+                  <div className="grid gap-3">
+                    {selectedManager.reports.map((report) => (
+                      <article
+                        key={report.employeeId}
+                        className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-4 shadow-[var(--shadow-xs)]"
                       >
-                        Packet
-                      </Link>
-                      {row.links.calibrationSession ? (
-                        <Link
-                          href={withReturnTo(row.links.calibrationSession, currentReportingHref)}
-                          className="underline underline-offset-2"
-                        >
-                          Calibration
-                        </Link>
-                      ) : null}
-                      {row.links.improvementPlan ? (
-                        <Link
-                          href={withReturnTo(row.links.improvementPlan, currentReportingHref)}
-                          className="underline underline-offset-2"
-                        >
-                          Plan
-                        </Link>
-                      ) : null}
-                    </div>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <h4 className="text-sm font-semibold text-slate-900">{report.employeeName}</h4>
+                            <p className="text-sm text-slate-600">
+                              {report.department} · {report.title}
+                            </p>
+                          </div>
+                          <div className="text-right text-xs text-slate-500">
+                            <p>Overall</p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                              {progressStatusLabel[report.overallStatus]}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Badge variant={overallStatusBadgeVariant(report.overallStatus)}>
+                            {progressStatusLabel[report.overallStatus]}
+                          </Badge>
+                          <Badge variant="neutral">Self {submissionStatusLabel[report.selfStatus]}</Badge>
+                          <Badge variant="neutral">
+                            Manager {submissionStatusLabel[report.managerStatus]}
+                          </Badge>
+                          {report.managerDueAt ? (
+                            <Badge variant="info">Due {formatShortDate(report.managerDueAt)}</Badge>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                          <p className="text-xs text-slate-500">
+                            Packet access for the selected direct report.
+                          </p>
+                          <Link
+                            href={withReturnTo(report.links.packet, currentReportingHref)}
+                            className="text-xs font-medium text-slate-700 underline underline-offset-2"
+                          >
+                            Open packet
+                          </Link>
+                        </div>
+                      </article>
+                    ))}
                   </div>
-                </article>
-              ))}
-            </div>
+                </div>
+              ) : null}
+            </>
           )}
 
-          <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
-            <span data-testid="reporting-table-row-count">
-              Showing {activeRows.length} of {people.rows.length} rows on this page (Page {people.pagination.page} of{" "}
-              {Math.max(people.pagination.totalPages, 1)}; {people.pagination.totalRows} employees total)
-            </span>
-            <div className="flex items-center gap-2">
-              {paginationHrefs.previous ? (
-                <Link
-                  href={paginationHrefs.previous}
-                  className="text-xs font-medium text-slate-700 underline underline-offset-2"
-                >
-                  Previous
-                </Link>
-              ) : (
-                <span className="text-xs text-slate-400">Previous</span>
-              )}
-              {paginationHrefs.next ? (
-                <Link
-                  href={paginationHrefs.next}
-                  className="text-xs font-medium text-slate-700 underline underline-offset-2"
-                >
-                  Next
-                </Link>
-              ) : (
-                <span className="text-xs text-slate-400">Next</span>
-              )}
-            </div>
-          </div>
+          <HelpHint label="How pending is counted">
+            Awaiting includes Not Started and Returned manager reviews. Overdue is a subset of
+            pending where the manager due date has passed.
+          </HelpHint>
         </CardContent>
       </Card>
     </section>
+  );
+}
+
+function EmployeeQueueTab({
+  selectedCycleId,
+  selectedDepartment,
+  selectedTitle,
+  selectedStatus,
+  selectedRatingSource,
+  selectedGroupBy,
+  people,
+  paginationHrefs,
+  employeeCsvHref,
+  currentReportingHref,
+}: {
+  selectedCycleId: string;
+  selectedDepartment?: string;
+  selectedTitle?: string;
+  selectedStatus?: ProgressStatusFilter;
+  selectedRatingSource: RatingSourceFilter;
+  selectedGroupBy: "department" | "title";
+  people: ReportingPeopleResult;
+  paginationHrefs: {
+    previous: string | null;
+    next: string | null;
+  };
+  employeeCsvHref: string;
+  currentReportingHref: string;
+}) {
+  const queueFilterOptions: Array<{
+    label: string;
+    status?: ProgressStatusFilter;
+    testId: string;
+  }> = [
+    {
+      label: "All statuses",
+      status: undefined,
+      testId: "reporting-queue-filter-all",
+    },
+    {
+      label: "Not started",
+      status: "NOT_STARTED",
+      testId: "reporting-queue-filter-NOT_STARTED",
+    },
+    {
+      label: "In progress",
+      status: "IN_PROGRESS",
+      testId: "reporting-queue-filter-IN_PROGRESS",
+    },
+    {
+      label: "Completed",
+      status: "COMPLETED",
+      testId: "reporting-queue-filter-COMPLETED",
+    },
+  ];
+
+  const queueStatusDescription = selectedStatus
+    ? `Showing ${progressStatusLabel[selectedStatus].toLowerCase()} employees in the current reporting scope.`
+    : "Choose a queue status to narrow follow-up work without affecting the overview or manager views.";
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle>Employee queue</CardTitle>
+            <CardDescription>{queueStatusDescription}</CardDescription>
+          </div>
+          {people.rows.length > 0 ? (
+            <a
+              href={employeeCsvHref}
+              download="reporting-employee-queue.csv"
+              className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+            >
+              Export queue CSV
+            </a>
+          ) : null}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+          <div className="flex flex-wrap items-center gap-2" data-testid="reporting-queue-filter-bar">
+            {queueFilterOptions.map((option) => (
+              <Link
+                key={option.testId}
+                href={toQueryString({
+                  cycleId: selectedCycleId,
+                  department: selectedDepartment,
+                  title: selectedTitle,
+                  status: option.status,
+                  ratingSource: selectedRatingSource,
+                  groupBy: selectedGroupBy,
+                  tab: "queue",
+                  page: "1",
+                })}
+                data-testid={option.testId}
+                className={tabClassName(selectedStatus === option.status)}
+              >
+                {option.label}
+              </Link>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500">Queue filters stay local to this operational view.</p>
+        </div>
+
+        {people.rows.length === 0 ? (
+          <EmptyState
+            title="No employees match this queue"
+            description="Try a different queue status or widen the reporting scope."
+          />
+        ) : (
+          <div className="grid gap-3">
+            {people.rows.map((row) => (
+              <article
+                key={row.employeeId}
+                data-testid="reporting-employee-row"
+                className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-4 shadow-[var(--shadow-xs)]"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">{row.employeeName}</h3>
+                    <p className="text-sm text-slate-600">
+                      {row.department} · {row.title}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Rating
+                    </p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {row.finalRating ? `Final ${row.finalRating}` : "No final rating"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {row.finalRatingSource
+                        ? humanizeEnumValue(row.finalRatingSource)
+                        : "Pending source"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge variant={overallStatusBadgeVariant(row.overallStatus)}>
+                    {progressStatusLabel[row.overallStatus]}
+                  </Badge>
+                  <Badge variant="neutral">Self {submissionStatusLabel[row.selfStatus]}</Badge>
+                  <Badge variant="neutral">Manager {submissionStatusLabel[row.managerStatus]}</Badge>
+                  <Badge variant="info">
+                    {typeof row.scorecardPercent === "number"
+                      ? `${row.scorecardPercent.toFixed(1)}% scorecard`
+                      : "No scorecard"}
+                  </Badge>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                  <p className="text-xs text-slate-500">
+                    Follow-up links for the selected employee record.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-700">
+                    <Link
+                      href={withReturnTo(row.links.packet, currentReportingHref)}
+                      className="underline underline-offset-2"
+                    >
+                      Packet
+                    </Link>
+                    {row.links.calibrationSession ? (
+                      <Link
+                        href={withReturnTo(row.links.calibrationSession, currentReportingHref)}
+                        className="underline underline-offset-2"
+                      >
+                        Calibration
+                      </Link>
+                    ) : null}
+                    {row.links.improvementPlan ? (
+                      <Link
+                        href={withReturnTo(row.links.improvementPlan, currentReportingHref)}
+                        className="underline underline-offset-2"
+                      >
+                        Plan
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
+          <span data-testid="reporting-table-row-count">
+            Showing {people.rows.length} rows on this page (Page {people.pagination.page} of{" "}
+            {Math.max(people.pagination.totalPages, 1)}; {people.pagination.totalRows} employees
+            total)
+          </span>
+          <div className="flex items-center gap-2">
+            {paginationHrefs.previous ? (
+              <Link
+                href={paginationHrefs.previous}
+                className="text-xs font-medium text-slate-700 underline underline-offset-2"
+              >
+                Previous
+              </Link>
+            ) : (
+              <span className="text-xs text-slate-400">Previous</span>
+            )}
+            {paginationHrefs.next ? (
+              <Link
+                href={paginationHrefs.next}
+                className="text-xs font-medium text-slate-700 underline underline-offset-2"
+              >
+                Next
+              </Link>
+            ) : (
+              <span className="text-xs text-slate-400">Next</span>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -1059,22 +1366,22 @@ function ResultsTab({
 function CompetenciesTab({
   competencies,
   selectedCompetency,
+  selectedCompetencyDepartment,
   competencyOrder,
   cycleId,
   selectedDepartment,
   selectedTitle,
-  selectedStatus,
   selectedRatingSource,
   selectedGroupBy,
   csvHref,
 }: {
   competencies: ReportingCompetenciesResponse;
   selectedCompetency: ReportingCompetencyResult | null;
+  selectedCompetencyDepartment?: string;
   competencyOrder: string[];
   cycleId: string;
   selectedDepartment?: string;
   selectedTitle?: string;
-  selectedStatus?: ProgressStatusFilter;
   selectedRatingSource: RatingSourceFilter;
   selectedGroupBy: "department" | "title";
   csvHref: string;
@@ -1118,12 +1425,27 @@ function CompetenciesTab({
     cycleId,
     department: selectedDepartment,
     title: selectedTitle,
-    status: selectedStatus,
     ratingSource: selectedRatingSource,
     groupBy: selectedGroupBy,
     tab: "competencies",
     page: "1",
   });
+  const departmentComparison =
+    selectedCompetency != null
+      ? buildDepartmentComparisonRows(
+          selectedCompetency.departmentBreakdown,
+          selectedCompetencyDepartment,
+        )
+      : [];
+  const strongestDepartment = departmentComparison[0] ?? null;
+  const weakestDepartment =
+    departmentComparison.length > 0
+      ? departmentComparison[departmentComparison.length - 1]
+      : null;
+  const focusedDepartment =
+    selectedCompetencyDepartment != null
+      ? departmentComparison.find((item) => item.department === selectedCompetencyDepartment) ?? null
+      : null;
 
   return (
     <section className="space-y-4">
@@ -1207,10 +1529,10 @@ function CompetenciesTab({
                   cycleId={cycleId}
                   selectedDepartment={selectedDepartment}
                   selectedTitle={selectedTitle}
-                  selectedStatus={selectedStatus}
                   selectedRatingSource={selectedRatingSource}
                   selectedGroupBy={selectedGroupBy}
                   activeDimensionKey={selectedCompetency?.dimensionKey ?? null}
+                  activeDepartment={selectedCompetencyDepartment ?? null}
                   onHoverChange={setHoveredCell}
                 />
               </ChartExportContainer>
@@ -1236,9 +1558,9 @@ function CompetenciesTab({
           )}
 
           <div className="flex flex-wrap gap-2">
-            <HeatmapLegend label="Low average" swatch={getAverageHeatColor(2)} />
-            <HeatmapLegend label="Mid average" swatch={getAverageHeatColor(3.25)} />
-            <HeatmapLegend label="High average" swatch={getAverageHeatColor(4.5)} />
+            <HeatmapLegend label="Needs support 1.0-2.4" swatch={getCompetencyHeatColor(2)} />
+            <HeatmapLegend label="Watch closely 2.5-3.4" swatch={getCompetencyHeatColor(3)} />
+            <HeatmapLegend label="Strong signal 3.5-5.0" swatch={getCompetencyHeatColor(4.4)} />
           </div>
         </CardContent>
       </Card>
@@ -1250,8 +1572,9 @@ function CompetenciesTab({
               <div>
                 <CardTitle>{humanizeEnumValue(selectedCompetency.dimensionKey)}</CardTitle>
                 <CardDescription>
-                  Simplified drilldown for the selected competency, with core averages and
-                  distribution only.
+                  Department comparison stays in the drilldown because you clicked a
+                  department-by-competency cell. The department view uses ranked bars instead of a
+                  line because departments are categorical, not sequential.
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -1300,56 +1623,185 @@ function CompetenciesTab({
               />
             </div>
 
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_280px]">
-              <ChartExportContainer chartId="reporting-competency-drilldown-chart" className="p-3">
-                <div className="h-64">
-                  {showDistributionChart ? (
-                    <ResponsiveContainer width="100%" height="100%" minWidth={320} minHeight={240}>
-                      <BarChart
-                        data={[1, 2, 3, 4, 5].map((rating) => ({
-                          rating,
-                          Self: selectedCompetency.selfDistribution[
-                            String(rating) as keyof typeof selectedCompetency.selfDistribution
-                          ],
-                          Manager:
-                            selectedCompetency.managerDistribution[
-                              String(rating) as keyof typeof selectedCompetency.managerDistribution
-                            ],
-                        }))}
-                        margin={{ top: 12, right: 12, left: 6, bottom: 12 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                        <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                        <YAxis allowDecimals={false} tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                        <Tooltip labelFormatter={(value) => `Rating ${value}`} />
-                        <Legend wrapperStyle={{ fontSize: 12 }} />
-                        <Bar dataKey="Self" fill="#38bdf8" animationDuration={450} />
-                        <Bar dataKey="Manager" fill="#22c55e" animationDuration={450} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full animate-pulse rounded-[var(--radius-sm)] bg-slate-100" />
-                  )}
-                </div>
-              </ChartExportContainer>
+            <ChartExportContainer chartId="reporting-competency-drilldown-chart" className="space-y-4 p-4">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+                <div
+                  className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4"
+                  data-testid="reporting-competency-department-chart"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">Ratings by department</h3>
+                      <p className="mt-1 text-xs text-slate-600">
+                        Ranked average ratings for this competency across departments in scope.
+                      </p>
+                    </div>
+                    {focusedDepartment ? (
+                      <Badge variant="info">Focused from heatmap: {focusedDepartment.department}</Badge>
+                    ) : null}
+                  </div>
 
-              <div className="space-y-3">
-                <MiniInsightCard
-                  title="Not observed"
-                  value={String(selectedCompetency.notObservedCount)}
-                  subtitle="Excluded from averages and self-manager gap math."
-                />
-                <MiniInsightCard
-                  title="Departments in scope"
-                  value={String(selectedCompetency.departmentBreakdown.length)}
-                  subtitle="Departments with at least one observed competency response."
-                />
-                <HelpHint label="How Not Observed is handled">
-                  Not Observed responses are stored and reported separately. They are excluded from
-                  average calculations and self-vs-manager gap math.
-                </HelpHint>
+                  <div className="h-[320px]">
+                    {showDistributionChart ? (
+                      departmentComparison.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%" minWidth={320} minHeight={240}>
+                          <BarChart
+                            data={departmentComparison}
+                            layout="vertical"
+                            margin={{ top: 12, right: 52, left: 4, bottom: 12 }}
+                          >
+                            <CartesianGrid
+                              horizontal={false}
+                              strokeDasharray="3 3"
+                              stroke="#e2e8f0"
+                            />
+                            <XAxis
+                              type="number"
+                              domain={[0, 5]}
+                              ticks={[1, 2, 3, 4, 5]}
+                              tickLine={false}
+                              axisLine={{ stroke: "#cbd5e1" }}
+                            />
+                            <YAxis
+                              type="category"
+                              dataKey="department"
+                              width={132}
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <Tooltip
+                              formatter={(value: number | undefined) => [
+                                formatNumber(typeof value === "number" ? value : null),
+                                "Average rating",
+                              ]}
+                              labelFormatter={(department, payload) => {
+                                const item = payload?.[0]?.payload as
+                                  | (typeof departmentComparison)[number]
+                                  | undefined;
+                                return item
+                                  ? `${department} · ${item.observedCount} observed responses`
+                                  : String(department);
+                              }}
+                            />
+                            <Bar dataKey="averageRating" radius={[0, 10, 10, 0]} animationDuration={450}>
+                              {departmentComparison.map((item) => (
+                                <Cell
+                                  key={`competency-department-bar-${item.department}`}
+                                  fill={item.fill}
+                                  stroke={item.isFocused ? "#0f172a" : "transparent"}
+                                  strokeWidth={item.isFocused ? 1.5 : 0}
+                                />
+                              ))}
+                              <LabelList
+                                dataKey="summary"
+                                position="right"
+                                fill="#0f172a"
+                                fontSize={11}
+                              />
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <EmptyState
+                          title="No department comparison yet"
+                          description="Completed competency responses will populate department averages."
+                        />
+                      )
+                    ) : (
+                      <div className="h-full animate-pulse rounded-[var(--radius-sm)] bg-slate-100" />
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Self vs manager distribution
+                      </h3>
+                      <p className="mt-1 text-xs text-slate-600">
+                        The department chart shows where averages differ; this chart explains how
+                        raters are distributing scores.
+                      </p>
+                    </div>
+
+                    <div className="mt-4 h-64">
+                      {showDistributionChart ? (
+                        <ResponsiveContainer width="100%" height="100%" minWidth={320} minHeight={240}>
+                          <BarChart
+                            data={[1, 2, 3, 4, 5].map((rating) => ({
+                              rating,
+                              Self: selectedCompetency.selfDistribution[
+                                String(rating) as keyof typeof selectedCompetency.selfDistribution
+                              ],
+                              Manager:
+                                selectedCompetency.managerDistribution[
+                                  String(rating) as keyof typeof selectedCompetency.managerDistribution
+                                ],
+                            }))}
+                            margin={{ top: 12, right: 12, left: 6, bottom: 12 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                            <XAxis dataKey="rating" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                            <YAxis
+                              allowDecimals={false}
+                              tickLine={false}
+                              axisLine={{ stroke: "#cbd5e1" }}
+                            />
+                            <Tooltip labelFormatter={(value) => `Rating ${value}`} />
+                            <Legend wrapperStyle={{ fontSize: 12 }} />
+                            <Bar dataKey="Self" fill="#38bdf8" animationDuration={450} />
+                            <Bar dataKey="Manager" fill="#22c55e" animationDuration={450} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full animate-pulse rounded-[var(--radius-sm)] bg-slate-100" />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <MiniInsightCard
+                      title="Not observed"
+                      value={String(selectedCompetency.notObservedCount)}
+                      subtitle="Excluded from averages and self-manager gap math."
+                    />
+                    <MiniInsightCard
+                      title="Departments in scope"
+                      value={String(selectedCompetency.departmentBreakdown.length)}
+                      subtitle="Departments with at least one observed competency response."
+                    />
+                    <MiniInsightCard
+                      title="Strongest department"
+                      value={strongestDepartment?.department ?? "No data"}
+                      subtitle={
+                        strongestDepartment
+                          ? `${formatNumber(strongestDepartment.averageRating)} average across ${strongestDepartment.observedCount} observations.`
+                          : "No department signal in scope."
+                      }
+                    />
+                    <MiniInsightCard
+                      title={focusedDepartment ? "Focused department" : "Lowest department"}
+                      value={
+                        focusedDepartment?.department ?? weakestDepartment?.department ?? "No data"
+                      }
+                      subtitle={
+                        focusedDepartment
+                          ? `${formatNumber(focusedDepartment.averageRating)} average across ${focusedDepartment.observedCount} observations.`
+                          : weakestDepartment
+                            ? `${formatNumber(weakestDepartment.averageRating)} average across ${weakestDepartment.observedCount} observations.`
+                            : "No department signal in scope."
+                      }
+                    />
+                  </div>
+
+                  <HelpHint label="How Not Observed is handled">
+                    Not Observed responses are stored and reported separately. They are excluded from
+                    average calculations and self-vs-manager gap math.
+                  </HelpHint>
+                </div>
               </div>
-            </div>
+            </ChartExportContainer>
           </CardContent>
         </Card>
       ) : null}
@@ -1650,7 +2102,7 @@ function ProgressMixSvg({
         {totalPeople} employees in scope
       </text>
       <text x={width - barX} y={24} fill="#475569" fontSize="13" textAnchor="end">
-        Focus the queue with the status cards below
+        Employee queue owns the follow-up filters
       </text>
       <rect x={barX} y={barY} width={barWidth} height={barHeight} rx={20} fill="#e2e8f0" />
       {segmentGeometry.map((segment, index) => {
@@ -1695,10 +2147,10 @@ function CompetencyHeatmapSvg({
   cycleId,
   selectedDepartment,
   selectedTitle,
-  selectedStatus,
   selectedRatingSource,
   selectedGroupBy,
   activeDimensionKey,
+  activeDepartment,
   onHoverChange,
 }: {
   rows: CompetencyHeatmapRow[];
@@ -1706,15 +2158,15 @@ function CompetencyHeatmapSvg({
   cycleId: string;
   selectedDepartment?: string;
   selectedTitle?: string;
-  selectedStatus?: ProgressStatusFilter;
   selectedRatingSource: RatingSourceFilter;
   selectedGroupBy: "department" | "title";
   activeDimensionKey: string | null;
+  activeDepartment: string | null;
   onHoverChange: (value: CompetencyHeatmapHover | null) => void;
 }) {
   const labelWidth = 188;
-  const cellWidth = 108;
-  const cellHeight = 72;
+  const cellWidth = 104;
+  const cellHeight = 70;
   const headerHeight = 86;
   const width = labelWidth + cellWidth * competencyOrder.length + 24;
   const height = headerHeight + cellHeight * rows.length + 20;
@@ -1727,6 +2179,28 @@ function CompetencyHeatmapSvg({
       aria-label="Competency heatmap"
       onMouseLeave={() => onHoverChange(null)}
     >
+      <defs>
+        {rows.flatMap((row, rowIndex) =>
+          row.cells.map((cell, columnIndex) => {
+            const gradientId = getCompetencyHeatGradientId(rowIndex, columnIndex);
+            const gradient = getCompetencyHeatGradient(cell.averageRating);
+
+            return (
+              <linearGradient
+                key={gradientId}
+                id={gradientId}
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
+                <stop offset="0%" stopColor={gradient.start} />
+                <stop offset="100%" stopColor={gradient.end} />
+              </linearGradient>
+            );
+          }),
+        )}
+      </defs>
       <text x={16} y={32} fill="#0f172a" fontSize="13" fontWeight="700">
         Department
       </text>
@@ -1773,15 +2247,21 @@ function CompetencyHeatmapSvg({
                 cycleId,
                 department: selectedDepartment,
                 title: selectedTitle,
-                status: selectedStatus,
                 ratingSource: selectedRatingSource,
                 groupBy: selectedGroupBy,
                 tab: "competencies",
                 dimensionKey: cell.dimensionKey,
+                competencyDepartment: row.department,
                 page: "1",
               });
-              const fill = getAverageHeatColor(cell.averageRating);
-              const stroke = activeDimensionKey === cell.dimensionKey ? "#0f172a" : "#e2e8f0";
+              const isFocusedDepartment = activeDepartment === row.department;
+              const isFocusedCell = isFocusedDepartment && activeDimensionKey === cell.dimensionKey;
+              const fill = `url(#${getCompetencyHeatGradientId(rowIndex, columnIndex)})`;
+              const stroke = isFocusedCell
+                ? "#0f172a"
+                : activeDimensionKey === cell.dimensionKey
+                  ? "#cbd5e1"
+                  : "#ffffff";
               const label = humanizeEnumValue(cell.dimensionKey);
 
               return (
@@ -1808,18 +2288,18 @@ function CompetencyHeatmapSvg({
                   }
                 >
                   <rect
-                    x={x + 8}
-                    y={y + 8}
-                    width={cellWidth - 16}
-                    height={cellHeight - 16}
-                    rx={16}
+                    x={x + 1}
+                    y={y + 1}
+                    width={cellWidth - 2}
+                    height={cellHeight - 2}
+                    rx={0}
                     fill={fill}
                     stroke={stroke}
-                    strokeWidth={activeDimensionKey === cell.dimensionKey ? 2.5 : 1.2}
+                    strokeWidth={isFocusedCell ? 3 : activeDimensionKey === cell.dimensionKey ? 1.5 : 1}
                   />
                   <text
                     x={x + cellWidth / 2}
-                    y={y + 34}
+                    y={y + 30}
                     fill="#0f172a"
                     fontSize="16"
                     fontWeight="700"
@@ -1829,7 +2309,7 @@ function CompetencyHeatmapSvg({
                   </text>
                   <text
                     x={x + cellWidth / 2}
-                    y={y + 52}
+                    y={y + 50}
                     fill="#475569"
                     fontSize="11"
                     textAnchor="middle"
@@ -2072,6 +2552,18 @@ function formatNumber(value: number | null): string {
   return value.toFixed(2);
 }
 
+function formatShortDate(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(parsed);
+}
+
 function toQueryString(values: Record<string, string | undefined>): string {
   const searchParams = new URLSearchParams();
 
@@ -2121,6 +2613,40 @@ function buildCompetencyHeatmapRows(
     }));
 }
 
+function buildDepartmentComparisonRows(
+  breakdown: ReportingCompetencyResult["departmentBreakdown"],
+  focusedDepartment?: string,
+) {
+  return [...breakdown]
+    .filter(
+      (
+        item,
+      ): item is typeof item & {
+        averageRating: number;
+      } => typeof item.averageRating === "number",
+    )
+    .sort((left, right) => {
+      if (right.averageRating !== left.averageRating) {
+        return right.averageRating - left.averageRating;
+      }
+
+      if (right.observedCount !== left.observedCount) {
+        return right.observedCount - left.observedCount;
+      }
+
+      return left.department.localeCompare(right.department);
+    })
+    .map((item) => ({
+      ...item,
+      isFocused: item.department === focusedDepartment,
+      fill:
+        item.department === focusedDepartment
+          ? "#0f172a"
+          : getCompetencyHeatColor(item.averageRating),
+      summary: `${item.averageRating.toFixed(2)} · ${item.observedCount} obs`,
+    }));
+}
+
 function overallStatusBadgeVariant(
   status: ProgressStatusFilter,
 ): "neutral" | "warning" | "success" | "info" {
@@ -2149,6 +2675,108 @@ function formatSignedNumber(value: number | null): string {
   }
 
   return `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
+}
+
+function getCompetencyHeatColor(value: number | null): string {
+  if (typeof value !== "number") {
+    return "#f8fafc";
+  }
+
+  const clamped = Math.min(5, Math.max(1, value));
+  return competencyHeatToneToCss(getCompetencyHeatTone(clamped));
+}
+
+function getCompetencyHeatGradient(value: number | null): {
+  start: string;
+  end: string;
+} {
+  if (typeof value !== "number") {
+    return {
+      start: "#f8fafc",
+      end: "#eef2f7",
+    };
+  }
+
+  const tone = getCompetencyHeatTone(Math.min(5, Math.max(1, value)));
+
+  return {
+    start: competencyHeatToneToCss({
+      hue: tone.hue,
+      saturation: Math.min(96, tone.saturation + 2),
+      lightness: Math.min(95, tone.lightness + 6),
+    }),
+    end: competencyHeatToneToCss({
+      hue: tone.hue,
+      saturation: Math.min(98, tone.saturation + 4),
+      lightness: Math.max(54, tone.lightness - 6),
+    }),
+  };
+}
+
+function getCompetencyHeatGradientId(rowIndex: number, columnIndex: number): string {
+  return `competency-heat-${rowIndex}-${columnIndex}`;
+}
+
+function getCompetencyHeatTone(value: number): {
+  hue: number;
+  saturation: number;
+  lightness: number;
+} {
+  if (value < 2.5) {
+    return interpolateCompetencyHeatTone(
+      value,
+      1,
+      2.5,
+      { hue: 5, saturation: 82, lightness: 92 },
+      { hue: 4, saturation: 86, lightness: 76 },
+    );
+  }
+
+  if (value < 3.5) {
+    return interpolateCompetencyHeatTone(
+      value,
+      2.5,
+      3.5,
+      { hue: 48, saturation: 88, lightness: 88 },
+      { hue: 52, saturation: 93, lightness: 72 },
+    );
+  }
+
+  return interpolateCompetencyHeatTone(
+    value,
+    3.5,
+    5,
+    { hue: 101, saturation: 59, lightness: 85 },
+    { hue: 128, saturation: 66, lightness: 66 },
+  );
+}
+
+function interpolateCompetencyHeatTone(
+  value: number,
+  min: number,
+  max: number,
+  start: { hue: number; saturation: number; lightness: number },
+  end: { hue: number; saturation: number; lightness: number },
+) {
+  const progress = max === min ? 0 : (value - min) / (max - min);
+
+  return {
+    hue: interpolateNumber(start.hue, end.hue, progress),
+    saturation: interpolateNumber(start.saturation, end.saturation, progress),
+    lightness: interpolateNumber(start.lightness, end.lightness, progress),
+  };
+}
+
+function competencyHeatToneToCss(tone: {
+  hue: number;
+  saturation: number;
+  lightness: number;
+}): string {
+  return `hsl(${tone.hue} ${tone.saturation}% ${tone.lightness}%)`;
+}
+
+function interpolateNumber(start: number, end: number, progress: number): number {
+  return start + (end - start) * progress;
 }
 
 function getAverageHeatColor(value: number | null): string {

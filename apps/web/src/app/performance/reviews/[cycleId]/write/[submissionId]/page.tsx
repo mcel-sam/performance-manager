@@ -32,7 +32,6 @@ export default async function WriteReviewPage({
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6 text-slate-900">
       <PageHeader
-        className="gap-4 border-slate-200 from-white via-white to-slate-50/70 p-5 shadow-[var(--shadow-xs)] sm:p-6"
         eyebrow="Write Review"
         title={data.template.name}
         description="Complete all required prompts. Autosave keeps your draft current and submit locks the review."
@@ -61,6 +60,8 @@ export default async function WriteReviewPage({
         submissionContext={{
           cycleName: data.submission.cycleName,
           subjectName: data.submission.subjectName,
+          subjectDepartment: data.submission.subjectDepartment,
+          subjectTitle: data.submission.subjectTitle,
           reviewerName: data.submission.reviewerName,
           relationship: getReviewRelationshipLabel(data.submission.relationship, "full"),
         }}

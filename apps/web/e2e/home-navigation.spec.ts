@@ -13,6 +13,7 @@ test.beforeAll(async ({ request }) => {
 
 test("home loads and primary navigation opens reviews", async ({ page }) => {
   await loginAsManager(page);
+  const summaryPanel = page.getByTestId("home-summary-panel");
 
   await expect(
     page.getByRole("heading", {
@@ -22,9 +23,9 @@ test("home loads and primary navigation opens reviews", async ({ page }) => {
   await expect(page.getByTestId("home-getting-started-link-0")).toBeVisible();
   await expect(page.getByTestId("home-greeting")).toHaveText("Hi, Morgan!");
   await expect(page.getByTestId("home-summary-title")).toHaveText("My team");
-  await expect(page.getByText("Direct reports")).toBeVisible();
-  await expect(page.getByText("Awaiting manager review")).toBeVisible();
-  await expect(page.getByText("Self reviews not started")).toBeVisible();
+  await expect(summaryPanel.getByText("Direct reports")).toBeVisible();
+  await expect(summaryPanel.getByText("Awaiting manager review")).toBeVisible();
+  await expect(summaryPanel.getByText("Self reviews not started")).toBeVisible();
   await expect(page.getByText("Primary action")).toHaveCount(0);
   const homeTaskTexts = await page
     .locator('[data-testid^="home-getting-started-link-"]')
@@ -55,12 +56,19 @@ test("employee navigation hides admin and calibration modules", async ({ page })
   await expect(page.getByText("Self review")).toHaveCount(0);
   await openMenu(page);
   await expect(page.getByTestId("nav-link-home")).toBeVisible();
+  await expect(page.getByTestId("nav-link-growth")).toBeVisible();
   await expect(page.getByTestId("nav-link-reviews")).toBeVisible();
   await expect(page.getByTestId("nav-link-help")).toBeVisible();
   await expect(page.getByTestId("nav-link-admin-cycles")).toHaveCount(0);
   await expect(page.getByTestId("nav-link-admin-calibration")).toHaveCount(0);
   await expect(page.getByTestId("nav-link-admin-reporting")).toHaveCount(0);
   await expect(page.getByTestId("nav-link-calibration")).toHaveCount(0);
+
+  await page.getByTestId("nav-link-growth").click();
+  await expect(page).toHaveURL(/\/performance\/tracks$/);
+  await expect(page.getByRole("heading", { name: "Tracks and competencies" })).toBeVisible();
+  await expect(page.getByTestId("growth-level-framework")).toBeVisible();
+  await expect(page.getByTestId("growth-competencies")).toBeVisible();
 });
 
 test("manager team reviews page loads with direct-report rows", async ({ page }) => {
@@ -98,11 +106,12 @@ test("manager team reviews page loads with direct-report rows", async ({ page })
 
 test("hr admin home shows a cycle overview summary", async ({ page }) => {
   await loginAsHrAdmin(page);
+  const summaryPanel = page.getByTestId("home-summary-panel");
 
   await expect(page.getByTestId("home-summary-title")).toHaveText("Cycle overview");
-  await expect(page.getByText("Live cycles")).toBeVisible();
-  await expect(page.getByText("Cycles in draft")).toBeVisible();
-  await expect(page.getByText("Open submissions")).toBeVisible();
+  await expect(summaryPanel.getByText("Live cycles")).toBeVisible();
+  await expect(summaryPanel.getByText("Cycles in draft")).toBeVisible();
+  await expect(summaryPanel.getByText("Open submissions")).toBeVisible();
 });
 
 test("packet route keeps one active nav item and enables focus layout collapse", async ({ page }) => {

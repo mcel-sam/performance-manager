@@ -3,6 +3,7 @@ import { UserRole } from "@prisma/client";
 export type GettingStartedIcon =
   | "reviewCycles"
   | "queue"
+  | "growth"
   | "selfReview"
   | "help"
   | "team"
@@ -123,6 +124,13 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
             description: "Pick up your draft and keep your self review moving toward submission.",
             icon: "selfReview",
             metaLabel: "Personal draft",
+          },
+          {
+            label: "Tracks & competencies",
+            href: "/performance/tracks",
+            description: "See your current track, level expectations, and what good looks like in-role.",
+            icon: "growth",
+            metaLabel: "Career baseline",
           },
           {
             label: "Help center",

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { ensureDemoSetup, loginAsHrAdmin, loginAsManager } from "./helpers/demo";
+import { getSettledByTestId } from "./helpers/locators";
 
 test.beforeEach(async ({ request }) => {
   await ensureDemoSetup(request);
@@ -11,8 +12,8 @@ test("hr admin can create a succession position and add a candidate", async ({ p
   await page.goto("/admin/talent/succession");
 
   await expect(page.getByRole("heading", { name: "Succession Planning" })).toBeVisible();
-  await expect(page.getByTestId("succession-export-positions")).toBeVisible();
-  await expect(page.getByTestId("succession-export-coverage")).toBeVisible();
+  await expect(await getSettledByTestId(page, "succession-export-positions")).toBeVisible();
+  await expect(await getSettledByTestId(page, "succession-export-coverage")).toBeVisible();
 
   await page.goto("/admin/talent/succession/positions/new");
   await expect(page.getByRole("heading", { name: "Create succession position" })).toBeVisible();
@@ -60,7 +61,7 @@ test("manager view stays scoped and supports proposing a direct report", async (
   );
 
   await expect(page.getByRole("heading", { name: "Field Training Lead" })).toBeVisible();
-  await expect(page.getByTestId("right-drawer")).toBeVisible();
+  await expect(await getSettledByTestId(page, "right-drawer")).toBeVisible();
   await expect(page.getByText("Risk of loss")).toHaveCount(0);
   await expect(page.getByText("Confidence")).toHaveCount(0);
 

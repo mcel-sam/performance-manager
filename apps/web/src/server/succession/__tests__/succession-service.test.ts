@@ -74,6 +74,26 @@ const employeeContext = {
   role: UserRole.EMPLOYEE,
 };
 
+describe("parseSuccessionFilters", () => {
+  it("treats blank query values as unset filters", () => {
+    const filters = parseSuccessionFilters(
+      new URLSearchParams({
+        search: "",
+        department: "",
+        criticalOnly: "on",
+      }),
+    );
+
+    expect(filters).toEqual({
+      search: undefined,
+      department: undefined,
+      includeArchived: false,
+      criticalOnly: true,
+      smallNThreshold: 5,
+    });
+  });
+});
+
 describe("listSuccessionOverview", () => {
   it("rejects employees from succession access", async () => {
     const db = buildDbMock();

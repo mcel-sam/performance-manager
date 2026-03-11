@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   getReportingCompetencies,
+  getReportingManagerOverview,
   getReportingProgress,
   getReportingRatings,
   getReportingScorecard,
@@ -53,16 +54,21 @@ function buildPacketRecord(overrides: {
   subjectEmployeeId: string;
   selfStatus: ReviewSubmissionStatus;
   managerStatus: ReviewSubmissionStatus;
+  managerDueAt?: Date | null;
   scorecardOverallRating?: number | null;
   finalRatingSource?: FinalRatingSource | null;
   snapshotDepartment?: string | null;
   snapshotTitle?: string | null;
+  snapshotManagerEmployeeId?: string | null;
+  snapshotManagerName?: string | null;
 }) {
   return {
     id: overrides.id,
     subjectEmployeeId: overrides.subjectEmployeeId,
     snapshotDepartment: overrides.snapshotDepartment ?? "Operations",
     snapshotTitle: overrides.snapshotTitle ?? "Foreman",
+    snapshotManagerEmployeeId: overrides.snapshotManagerEmployeeId ?? "mgr_1",
+    snapshotManagerName: overrides.snapshotManagerName ?? "Morgan Manager",
     scorecardOverallRating: overrides.scorecardOverallRating ?? null,
     finalRatingSource: overrides.finalRatingSource ?? null,
     totalScorecardPercent: 81,
@@ -74,10 +80,12 @@ function buildPacketRecord(overrides: {
       {
         relationship: ReviewRelationship.SELF,
         status: overrides.selfStatus,
+        dueAt: null,
       },
       {
         relationship: ReviewRelationship.MANAGER,
         status: overrides.managerStatus,
+        dueAt: overrides.managerDueAt ?? null,
       },
     ],
   };
@@ -318,6 +326,73 @@ describe("reporting-service", () => {
       { department: "Field Operations", observedCount: 2, averageRating: 2 },
       { department: "Operations", observedCount: 2, averageRating: 3.5 },
     ]);
+  });
+
+  it("groups manager accountability stats with direct-report drilldown", async () => {
+    const db = createReportingDbMock();
+    db.reviewPacket.findMany.mockResolvedValue([
+      buildPacketRecord({
+        id: "packet_1",
+        subjectEmployeeId: "emp_1",
+        selfStatus: ReviewSubmissionStatus.SUBMITTED,
+        managerStatus: ReviewSubmissionStatus.NOT_STARTED,
+        snapshotDepartment: "Operations",
+        snapshotManagerEmployeeId: "mgr_1",
+        snapshotManagerName: "Morgan Manager",
+        managerDueAt: new Date("2026-03-01T00:00:00.000Z"),
+      }),
+      buildPacketRecord({
+        id: "packet_2",
+        subjectEmployeeId: "emp_2",
+        selfStatus: ReviewSubmissionStatus.IN_PROGRESS,
+        managerStatus: ReviewSubmissionStatus.IN_PROGRESS,
+        snapshotDepartment: "Operations",
+        snapshotManagerEmployeeId: "mgr_1",
+        snapshotManagerName: "Morgan Manager",
+        managerDueAt: new Date("2026-03-15T00:00:00.000Z"),
+      }),
+      buildPacketRecord({
+        id: "packet_3",
+        subjectEmployeeId: "emp_3",
+        selfStatus: ReviewSubmissionStatus.SUBMITTED,
+        managerStatus: ReviewSubmissionStatus.SUBMITTED,
+        snapshotDepartment: "Field Operations",
+        snapshotManagerEmployeeId: "mgr_2",
+        snapshotManagerName: "Avery Lead",
+        managerDueAt: new Date("2026-03-05T00:00:00.000Z"),
+      }),
+    ]);
+
+    const result = await getReportingManagerOverview(
+      {
+        cycleId: "cycle_seed_1",
+        smallNThreshold: 1,
+      },
+      hrAdminContext,
+      db as never,
+    );
+
+    expect(result.summary).toEqual({
+      totalManagers: 2,
+      managersWithPendingReviews: 1,
+      totalDirectReports: 3,
+      pendingManagerReviews: 2,
+      overdueManagerReviews: 1,
+    });
+    expect(result.rows[0]).toMatchObject({
+      managerId: "mgr_1",
+      managerName: "Morgan Manager",
+      directReportCount: 2,
+      pendingManagerReviewCount: 2,
+      awaitingManagerReviewCount: 1,
+      inProgressManagerReviewCount: 1,
+      overdueManagerReviewCount: 1,
+      completedManagerReviewCount: 0,
+    });
+    expect(result.rows[0]?.reports[0]).toMatchObject({
+      employeeId: "emp_1",
+      managerStatus: ReviewSubmissionStatus.NOT_STARTED,
+    });
   });
 
   it("returns scorecard metrics with Not Observed counts and gaps", async () => {
