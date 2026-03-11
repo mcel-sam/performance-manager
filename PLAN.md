@@ -1836,3 +1836,234 @@ Completed in PR #47.
 #### Acceptance criteria
 - [x] Demo mode showcases both HR and Manager succession journeys realistically
 - [x] Walkthrough documentation is sufficient for local demo and Playwright setup
+
+
+
+## Milestone 10 — Goals & OKRs + Grow Tracks + Competencies (Analytics-ready, Review-integrated)
+
+**Status:** Not started  
+**Objective:** Add Goals/OKRs as a first-class module with cascading alignment (goal tree) and ongoing updates, while introducing a minimal “Grow” foundation (Career Tracks + Competency Library + employee track assignment). Tie Goals into Tracks/Competencies and integrate goal progress into Reviews and Reporting.
+
+### Product principles (inspired by Lattice patterns)
+- Goals are *continuous work*, not a one-time form (list, filters, status, updates, visibility). :contentReference[oaicite:8]{index=8}
+- Cascading alignment (goal tree) is the core alignment mechanic. :contentReference[oaicite:9]{index=9}
+- Tracks/Competencies provide “what good looks like” per role/level and should be visible during performance workflows. :contentReference[oaicite:10]{index=10}
+
+---
+
+## Scope
+
+### In scope
+- Goals/OKRs:
+  - Objective + Key Results model
+  - cascading alignment (parent/child) + goal tree view
+  - status + progress + check-ins (updates)
+  - visibility controls (public/team/private) + watchers
+- Grow foundation:
+  - Track Groups, Tracks, Levels, Competencies, Expectations
+  - Employee track assignment (manual first; optional job-architecture mapping later)
+  - Manager/employee “align on expectations” comments + strength/opportunity labels (MVP-lite)
+- Integrations:
+  - Reviews: show goal progress + goal updates context during review writing
+  - Evidence: treat goal updates as an evidence source (attachable to review answers)
+  - Reporting: goal adoption + progress dashboards by dept/title/track/competency
+- Demo data: realistic goals/OKRs tied to seeded reviews and competencies
+
+### Out of scope (for this milestone)
+- Automated reminders/notifications (worker) beyond basic UI prompts
+- Deep integrations (Jira/Salesforce/Slack)
+- Full-blown “Development plans / Growth areas” module (can follow after)
+- Multi-org org-switching logic (UI may exist from Milestone 9, but scope here is goal/grow data)
+
+---
+
+## Phase 1 — Data model + migration (Grow + Goals foundations)
+
+### Grow (Tracks/Competencies)
+- [x] Add TrackGroup, Track, TrackLevel
+- [x] Add Competency + CompetencyTheme (optional)
+- [x] Add TrackLevelCompetencyExpectation (text expectations per level/competency)
+- [x] Add EmployeeTrackAssignment (employee -> track + level)
+- [x] Add CompetencyAlignmentComment + label (NONE | STRENGTH | OPPORTUNITY) for employee/manager alignment notes
+
+### Goals & OKRs
+- [x] Add GoalCycle (Quarterly/Annual; start/end; status)
+- [x] Add Goal (Objective):
+  - org_id, owner_employee_id
+  - title, description
+  - cycle_id
+  - status (NOT_STARTED | ON_TRACK | AT_RISK | OFF_TRACK | COMPLETE | CANCELED)
+  - progress_percent (0-100) (stored)
+  - visibility (ORG | TEAM | PRIVATE)
+  - parent_goal_id (nullable) for cascade
+- [x] Add KeyResult:
+  - goal_id
+  - title
+  - type (PERCENT | NUMBER | BOOLEAN)
+  - start_value, target_value, current_value
+  - weight (optional; default equal)
+- [x] Add GoalUpdate (check-in):
+  - goal_id
+  - author_employee_id
+  - note
+  - progress_delta / snapshot_current_values
+  - created_at
+- [x] Add GoalCompetencyLink (goal -> competency tags)
+- [x] Add GoalWatcher (users who follow a goal)
+- [ ] Add audit events for all mutations (create/update/archive/align/update)
+
+**Acceptance criteria**
+- [x] Prisma migration committed and clean
+- [x] Indexes for common queries: org_id, owner_employee_id, cycle_id, parent_goal_id
+- [x] `lint/typecheck/test/build` pass
+- Completed in PR #49
+
+---
+
+## Phase 2 — Server services + APIs + tests (permissions + audit + core rules)
+
+### Permissions (server-side)
+- HR_ADMIN: full access org-wide
+- MANAGER: can view team goals (direct reports + goals aligned under their team’s goals); can comment/update if permitted
+- EMPLOYEE: can view own goals + public/org goals; can edit own goals; can comment on goals they can see
+
+### APIs (thin route handlers + server services)
+- [ ] Goal cycles:
+  - GET/POST/PATCH /api/goals/cycles
+- [ ] Goals:
+  - GET /api/goals?cycleId=&ownerId=&status=&visibility=
+  - POST /api/goals
+  - GET /api/goals/:goalId
+  - PATCH /api/goals/:goalId
+  - DELETE (archive) /api/goals/:goalId
+- [ ] Cascading:
+  - POST /api/goals/:goalId/align (set parent)
+  - POST /api/goals/:goalId/unlink
+  - GET /api/goals/:goalId/tree (ancestors + children)
+- [ ] Key results:
+  - POST/PATCH/DELETE /api/goals/:goalId/key-results/*
+- [ ] Updates:
+  - POST /api/goals/:goalId/updates
+  - GET /api/goals/:goalId/updates
+- [ ] Track/Grow:
+  - GET /api/grow/tracks (published)
+  - GET /api/grow/tracks/:trackId
+  - POST/PATCH admin track endpoints
+  - POST/PATCH /api/grow/assignments (assign employee to track/level)
+  - POST /api/grow/competencies/:competencyId/comments (align on expectations)
+- [ ] Audit events written for all mutations (goal, KR, update, track edits, assignments, competency comments)
+
+### Tests
+- [ ] Permission gating (HR vs manager vs employee)
+- [ ] Cascade alignment rules (no cycles, no self-parent, prevent loops)
+- [ ] Progress math for KRs -> goal progress (deterministic)
+- [ ] Audit events emitted for sensitive changes
+
+**Acceptance criteria**
+- [ ] All endpoints have Zod validation + authz
+- [ ] Unit tests pass and cover the core invariants
+- [ ] `lint/typecheck/test/build` pass
+
+---
+
+## Phase 3 — Admin UI for Tracks + Goal Cycles (setup flows)
+
+### Admin: Grow
+- [ ] /admin/grow/tracks (list + create)
+- [ ] /admin/grow/tracks/new (track + levels)
+- [ ] /admin/grow/tracks/:id (edit competencies + expectations matrix)
+- [ ] /admin/grow/assignments (assign employees to track/level; search + bulk optional)
+
+### Admin: Goals
+- [ ] /admin/goals/cycles (create/manage cycles)
+- [ ] Ensure cycle selector is available in Goals UI
+
+**Acceptance criteria**
+- [ ] HR can create tracks + assign employees
+- [ ] HR can create a goal cycle
+- [ ] Loading/empty/error states present
+- [ ] Playwright: create cycle + create track smoke test
+
+---
+
+## Phase 4 — Goals UI (employee + manager) + goal details drawer + goal tree
+
+### Goals home + list
+- [ ] /goals (employee/manager view)
+- [ ] Summary cards: on track / progressing / off track / no update
+- [ ] Filters: owner, status, cycle, visibility (use FilterChips/FilterBar pattern)
+- [ ] “Create goal” CTA
+
+### Goal create/edit
+- [ ] Objective form + KR builder
+- [ ] Visibility controls (ORG/TEAM/PRIVATE)
+- [ ] Tag competencies (from competency library)
+- [ ] Align to parent goal (cascading)
+
+### Goal detail (RightDrawer pattern)
+- [ ] Overview tab: objective, owner, status, progress
+- [ ] Timeline tab: check-ins/updates
+- [ ] Audit tab: mutation log (from AuditEvent)
+- [ ] Goal tree mini-view: parent breadcrumb + children list (tree view later)
+
+**Acceptance criteria**
+- [ ] Users can create goal + KRs + post updates
+- [ ] Users can align a goal to a parent and see the relationship
+- [ ] Playwright: create goal + add KR + post update + align goal
+
+---
+
+## Phase 5 — Integrations: Reviews + Evidence + Track/Competency context
+
+### Reviews integration
+- [ ] In write-review context drawer: show “Goals for this cycle” summary (progress + last update)
+- [ ] For “goals met?” prompts: show quick picker of relevant goals (optional; not required to answer)
+
+### Evidence integration
+- [ ] Add Evidence type: GOAL_UPDATE
+- [ ] Goal updates become attachable evidence items (with visibility rules)
+- [ ] Evidence panel can filter to “Goals” bucket
+
+### Track/Competency context integration
+- [ ] Add “Current Track” card in relevant work drawers (write review, packet view)
+- [ ] “View competencies” opens competency expectations view for assigned level
+
+**Acceptance criteria**
+- [ ] Goal updates appear as evidence and can be attached/detached (audited)
+- [ ] Review writing shows goals context and track/competency linkouts
+
+---
+
+## Phase 6 — Reporting (Goals + Competencies + Tracks)
+
+### Reporting views (HR + Manager scoped)
+- [ ] Goals adoption dashboard:
+  - # goals active, # off track, # no update, completion rate
+  - filters: cycle, department, position title, track
+- [ ] Competency linkage report:
+  - goals tagged to competencies (counts + progress distribution)
+- [ ] Track coverage report:
+  - employees assigned to tracks/levels by department/title
+- [ ] Export CSV for goals list + KR progress
+
+**Acceptance criteria**
+- [ ] Reporting works with permissions and small-N privacy conventions
+- [ ] Exports function reliably
+- [ ] Playwright: export/download smoke test
+
+---
+
+## Phase 7 — Demo data + walkthrough
+
+- [ ] Update demo setup to seed:
+  - one active GoalCycle (e.g., Q4 2026)
+  - realistic company/team/personal goals with cascading
+  - KRs with meaningful progress
+  - goal updates (some stale/no-update goals)
+  - employee track assignments + competency expectations
+  - goals tagged to competencies that match seeded review dimensions
+- [ ] Add docs walkthrough: /docs/demo/GOALS_OKRS_WALKTHROUGH.md
+
+**Acceptance criteria**
+- [ ] Demo experience is “alive” and coherent across Goals + Reviews + Reporting
+- [ ] All gates pass (`lint/typecheck/test/build/test:e2e`)
