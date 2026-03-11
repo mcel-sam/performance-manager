@@ -151,7 +151,7 @@ export default async function GrowthTrackPage() {
                 </CardContent>
               </Card>
 
-              <Card data-testid="growth-competencies">
+              <Card id="growth-competencies" data-testid="growth-competencies">
                 <CardHeader className="pb-3">
                   <CardTitle>Competencies required now</CardTitle>
                 </CardHeader>

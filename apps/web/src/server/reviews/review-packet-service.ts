@@ -3,6 +3,7 @@ import {
   CycleVisibilityPolicy,
   EvidenceType,
   EvidenceVisibility,
+  GoalStatus,
   ReviewRelationship,
   ReviewQuestionType,
   ReviewSubmissionStatus,
@@ -12,6 +13,8 @@ import { z } from "zod";
 
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
+import { getGoalReviewContext } from "@/server/goals/goal-service";
+import { getGrowthTrackDataForEmployee } from "@/server/growth/growth-track-service";
 import { AppError } from "@/server/http/errors";
 
 interface ReviewAnswerRecord {
@@ -79,14 +82,29 @@ interface ReviewPacketDb {
   };
   employee: {
     findFirst: (args: {
-      where: {
-        orgId: string;
-        userId: string;
-      };
-      select: {
-        id: true;
-      };
+      where: Record<string, unknown>;
+      select: Record<string, unknown>;
     }) => Promise<PacketViewerRecord | null>;
+  };
+  reviewTemplate: {
+    findFirst: (args: {
+      where: Record<string, unknown>;
+      select: Record<string, unknown>;
+    }) => Promise<unknown>;
+  };
+  goalCycle: {
+    findFirst: (args: {
+      where: Record<string, unknown>;
+      orderBy: Array<Record<string, "desc">>;
+      select: Record<string, unknown>;
+    }) => Promise<unknown>;
+  };
+  goal: {
+    findMany: (args: {
+      where: Record<string, unknown>;
+      orderBy: Array<Record<string, "desc">>;
+      select: Record<string, unknown>;
+    }) => Promise<unknown[]>;
   };
   evidenceItem: {
     groupBy: (args: {
@@ -124,6 +142,31 @@ export interface ReviewPacketData {
     submittedCount: number;
     evidenceCounts: Record<EvidenceType, number>;
   };
+  goalContext: {
+    cycleId: string;
+    cycleName: string;
+    goals: Array<{
+      id: string;
+      title: string;
+      status: GoalStatus;
+      progressPercent: number;
+      lastUpdate: {
+        id: string;
+        note: string;
+        createdAt: string;
+      } | null;
+    }>;
+  } | null;
+  trackContext: {
+    trackLabel: string;
+    levelLabel: string;
+    summary: string;
+    competenciesHref: string;
+    competencies: Array<{
+      label: string;
+      summary: string;
+    }>;
+  } | null;
   submissions: {
     submissionId: string;
     relationship: ReviewRelationship;
@@ -226,7 +269,11 @@ export async function getReviewPacket(
   }
 
   const access = await assertPacketAccess(packet, context, db);
-  const evidenceCounts = await loadEvidenceCounts(packet.subjectEmployeeId, context.orgId, access, db);
+  const [evidenceCounts, goalContext, growthTrack] = await Promise.all([
+    loadEvidenceCounts(packet.subjectEmployeeId, context.orgId, access, db),
+    getGoalReviewContext(packet.subjectEmployeeId, context, db as never),
+    getGrowthTrackDataForEmployee(packet.subjectEmployeeId, context, db as never),
+  ]);
 
   const submissions = [...packet.submissions]
     .sort((left, right) => submissionOrder[left.relationship] - submissionOrder[right.relationship])
@@ -269,6 +316,17 @@ export async function getReviewPacket(
       totalSubmissions: submissions.length,
       submittedCount,
       evidenceCounts,
+    },
+    goalContext,
+    trackContext: {
+      trackLabel: growthTrack.track.label,
+      levelLabel: growthTrack.currentLevel.label,
+      summary: growthTrack.track.summary,
+      competenciesHref: "/performance/tracks#growth-competencies",
+      competencies: growthTrack.competencies.slice(0, 4).map((competency) => ({
+        label: competency.label,
+        summary: competency.summary,
+      })),
     },
     submissions,
   };
@@ -396,6 +454,7 @@ function buildEmptyEvidenceCountMap(): Record<EvidenceType, number> {
     [EvidenceType.UPDATE]: 0,
     [EvidenceType.ONE_ON_ONE]: 0,
     [EvidenceType.GOAL]: 0,
+    [EvidenceType.GOAL_UPDATE]: 0,
     [EvidenceType.VALUE_RECOGNITION]: 0,
   };
 }

@@ -65,6 +65,8 @@ export default async function WriteReviewPage({
           reviewerName: data.submission.reviewerName,
           relationship: getReviewRelationshipLabel(data.submission.relationship, "full"),
         }}
+        goalContext={data.goalContext}
+        trackContext={data.trackContext}
       />
     </div>
   );

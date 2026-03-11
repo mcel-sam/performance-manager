@@ -2019,21 +2019,22 @@ Completed in PR #47.
 ## Phase 5 — Integrations: Reviews + Evidence + Track/Competency context
 
 ### Reviews integration
-- [ ] In write-review context drawer: show “Goals for this cycle” summary (progress + last update)
-- [ ] For “goals met?” prompts: show quick picker of relevant goals (optional; not required to answer)
+- [x] In write-review context drawer: show “Goals for this cycle” summary (progress + last update)
+- [x] For “goals met?” prompts: show quick picker of relevant goals (optional; not required to answer)
 
 ### Evidence integration
-- [ ] Add Evidence type: GOAL_UPDATE
-- [ ] Goal updates become attachable evidence items (with visibility rules)
-- [ ] Evidence panel can filter to “Goals” bucket
+- [x] Add Evidence type: GOAL_UPDATE
+- [x] Goal updates become attachable evidence items (with visibility rules)
+- [x] Evidence panel can filter to “Goals” bucket
 
 ### Track/Competency context integration
-- [ ] Add “Current Track” card in relevant work drawers (write review, packet view)
-- [ ] “View competencies” opens competency expectations view for assigned level
+- [x] Add “Current Track” card in relevant work drawers (write review, packet view)
+- [x] “View competencies” opens competency expectations view for assigned level
 
 **Acceptance criteria**
-- [ ] Goal updates appear as evidence and can be attached/detached (audited)
-- [ ] Review writing shows goals context and track/competency linkouts
+- [x] Goal updates appear as evidence and can be attached/detached (audited)
+- [x] Review writing shows goals context and track/competency linkouts
+- Phase 5 implemented locally on `dev`; Playwright deferred to end-of-milestone validation per demo workflow
 
 ---
 

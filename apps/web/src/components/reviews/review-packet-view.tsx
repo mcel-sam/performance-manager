@@ -21,20 +21,15 @@ const statusLabel = {
   RETURNED: "Returned",
 } as const;
 
-const evidenceLabel: Record<EvidenceType, string> = {
-  FEEDBACK: "Feedback",
-  UPDATE: "Updates",
-  ONE_ON_ONE: "1:1s",
-  GOAL: "Goals",
-  VALUE_RECOGNITION: "Values",
-};
-
-const evidenceOrder: EvidenceType[] = [
-  EvidenceType.FEEDBACK,
-  EvidenceType.UPDATE,
-  EvidenceType.ONE_ON_ONE,
-  EvidenceType.GOAL,
-  EvidenceType.VALUE_RECOGNITION,
+const evidenceBuckets: Array<{
+  label: string;
+  types: EvidenceType[];
+}> = [
+  { label: "Feedback", types: [EvidenceType.FEEDBACK] },
+  { label: "Updates", types: [EvidenceType.UPDATE] },
+  { label: "1:1s", types: [EvidenceType.ONE_ON_ONE] },
+  { label: "Goals", types: [EvidenceType.GOAL, EvidenceType.GOAL_UPDATE] },
+  { label: "Values", types: [EvidenceType.VALUE_RECOGNITION] },
 ];
 
 interface ReviewPacketViewProps {
@@ -46,8 +41,13 @@ export default function ReviewPacketView({ data }: ReviewPacketViewProps) {
 
   const evidenceCountTotal = useMemo(
     () =>
-      evidenceOrder.reduce(
-        (total, type) => total + (data.packet.evidenceCounts[type] ?? 0),
+      evidenceBuckets.reduce(
+        (total, bucket) =>
+          total +
+          bucket.types.reduce(
+            (bucketTotal, type) => bucketTotal + (data.packet.evidenceCounts[type] ?? 0),
+            0,
+          ),
         0,
       ),
     [data.packet.evidenceCounts],
@@ -79,6 +79,90 @@ export default function ReviewPacketView({ data }: ReviewPacketViewProps) {
         />
       ) : (
         <>
+          <div className="grid gap-4 xl:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <SectionHeader
+                  title="Current track"
+                  description="Role baseline and competency expectations relevant to this packet."
+                />
+              </CardHeader>
+              <CardContent className="space-y-3 pt-0">
+                <div className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-4 py-3">
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Track</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {data.trackContext
+                      ? `${data.trackContext.trackLabel} · ${data.trackContext.levelLabel}`
+                      : "Track not available"}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {data.trackContext?.summary ??
+                      "Track context will appear here when the role baseline is available."}
+                  </p>
+                </div>
+                {data.trackContext?.competencies.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {data.trackContext.competencies.map((competency) => (
+                      <span
+                        key={competency.label}
+                        className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                      >
+                        {competency.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {data.trackContext ? (
+                  <a
+                    href={data.trackContext.competenciesHref}
+                    className="inline-flex text-sm font-semibold text-teal-700"
+                  >
+                    View competencies
+                  </a>
+                ) : null}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <SectionHeader
+                  title="Goals snapshot"
+                  description="Current-cycle goals and the latest visible check-ins."
+                />
+              </CardHeader>
+              <CardContent className="space-y-3 pt-0">
+                <div className="flex items-center justify-between gap-3 text-sm text-slate-600">
+                  <span>{data.goalContext?.cycleName ?? "No active goal cycle"}</span>
+                  <span>{data.goalContext?.goals.length ?? 0} goals</span>
+                </div>
+                {data.goalContext?.goals.length ? (
+                  <div className="space-y-2">
+                    {data.goalContext.goals.slice(0, 3).map((goal) => (
+                      <div
+                        key={goal.id}
+                        className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-3"
+                      >
+                        <p className="text-sm font-semibold text-slate-900">{goal.title}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {goal.progressPercent.toFixed(0)}% · {goal.lastUpdate ? "Updated" : "No update"}
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-slate-700">
+                          {goal.lastUpdate?.note ?? "No update posted yet."}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    title="No visible goals"
+                    description="There are no active goals available for this packet context."
+                    className="p-4"
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
               <SectionHeader
@@ -106,14 +190,17 @@ export default function ReviewPacketView({ data }: ReviewPacketViewProps) {
               />
             </CardHeader>
             <CardContent className="grid gap-2 pt-0 sm:grid-cols-2 lg:grid-cols-3">
-              {evidenceOrder.map((type) => (
+              {evidenceBuckets.map((bucket) => (
                 <div
-                  key={type}
+                  key={bucket.label}
                   className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-2"
                 >
-                  <p className="text-xs text-slate-500">{evidenceLabel[type]}</p>
+                  <p className="text-xs text-slate-500">{bucket.label}</p>
                   <p className="text-base font-semibold text-slate-900">
-                    {data.packet.evidenceCounts[type] ?? 0}
+                    {bucket.types.reduce(
+                      (total, type) => total + (data.packet.evidenceCounts[type] ?? 0),
+                      0,
+                    )}
                   </p>
                 </div>
               ))}

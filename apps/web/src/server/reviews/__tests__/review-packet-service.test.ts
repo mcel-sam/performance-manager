@@ -11,6 +11,15 @@ function buildDbMock() {
     employee: {
       findFirst: vi.fn(),
     },
+    reviewTemplate: {
+      findFirst: vi.fn(),
+    },
+    goalCycle: {
+      findFirst: vi.fn(),
+    },
+    goal: {
+      findMany: vi.fn(),
+    },
     evidenceItem: {
       groupBy: vi.fn().mockResolvedValue([]),
     },
@@ -158,6 +167,66 @@ describe("getReviewPacket", () => {
   it("returns packet submissions and answers for HR admin", async () => {
     const db = buildDbMock();
     db.reviewPacket.findFirst.mockResolvedValue(buildPacketRecord());
+    db.employee.findFirst.mockImplementation(async (args: { where: { id?: string } }) => {
+      if (args.where.id === "emp_employee_1") {
+        return {
+          id: "emp_employee_1",
+          firstName: "Elliot",
+          lastName: "Employee",
+          title: "Foreman",
+          department: "Projects",
+          manager: {
+            firstName: "Morgan",
+            lastName: "Patel",
+            title: "Manager",
+          },
+        };
+      }
+
+      return null;
+    });
+    db.reviewTemplate.findFirst.mockResolvedValue({
+      id: "template_default_1",
+      name: "Default Performance Template",
+      questions: [],
+    });
+    db.goalCycle.findFirst.mockResolvedValue({
+      id: "goal_cycle_active_1",
+      name: "Q4 2026",
+    });
+    db.goal.findMany.mockResolvedValue([
+      {
+        id: "goal_1",
+        orgId: "org_demo_1",
+        cycleId: "goal_cycle_active_1",
+        ownerEmployeeId: "emp_employee_1",
+        title: "Improve project handoff reliability",
+        description: null,
+        status: "ON_TRACK",
+        progressPercent: 72,
+        visibility: "TEAM",
+        parentGoalId: null,
+        createdAt: new Date("2026-03-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-03-10T00:00:00.000Z"),
+        ownerEmployee: {
+          id: "emp_employee_1",
+          userId: "user_employee_1",
+          managerId: "emp_manager_1",
+          firstName: "Elliot",
+          lastName: "Employee",
+        },
+        _count: {
+          updates: 1,
+        },
+        updates: [
+          {
+            id: "goal_update_1",
+            note: "Weekly handoff checklist is live across the crew.",
+            createdAt: new Date("2026-03-10T00:00:00.000Z"),
+          },
+        ],
+      },
+    ]);
     db.evidenceItem.groupBy.mockResolvedValue([
       {
         type: "FEEDBACK",
@@ -181,6 +250,8 @@ describe("getReviewPacket", () => {
     expect(result.packet.evidenceCounts.FEEDBACK).toBe(2);
     expect(result.packet.evidenceCounts.GOAL).toBe(1);
     expect(result.packet.evidenceCounts.UPDATE).toBe(0);
+    expect(result.trackContext?.trackLabel).toBe("Projects");
+    expect(result.goalContext?.goals[0]?.title).toBe("Improve project handoff reliability");
     expect(result.submissions[0]?.answers[0]?.prompt).toBe(
       "What impact did this employee create this cycle?",
     );
@@ -193,13 +264,44 @@ describe("getReviewPacket", () => {
         }),
       }),
     );
-    expect(db.employee.findFirst).not.toHaveBeenCalled();
   });
 
   it("allows manager-of-subject access", async () => {
     const db = buildDbMock();
     db.reviewPacket.findFirst.mockResolvedValue(buildPacketRecord());
-    db.employee.findFirst.mockResolvedValue({ id: "emp_manager_1" });
+    db.employee.findFirst.mockImplementation(async (args: { where: { userId?: string; id?: string } }) => {
+      if (args.where.userId === "user_manager_1") {
+        return {
+          id: "emp_manager_1",
+          managerId: null,
+          directReports: [{ id: "emp_employee_1" }],
+        };
+      }
+
+      if (args.where.id === "emp_employee_1") {
+        return {
+          id: "emp_employee_1",
+          firstName: "Elliot",
+          lastName: "Employee",
+          title: "Foreman",
+          department: "Projects",
+          manager: {
+            firstName: "Morgan",
+            lastName: "Patel",
+            title: "Manager",
+          },
+        };
+      }
+
+      return null;
+    });
+    db.reviewTemplate.findFirst.mockResolvedValue({
+      id: "template_default_1",
+      name: "Default Performance Template",
+      questions: [],
+    });
+    db.goalCycle.findFirst.mockResolvedValue(null);
+    db.goal.findMany.mockResolvedValue([]);
 
     const result = await getReviewPacket(
       "cycle_seed_1",
@@ -218,7 +320,39 @@ describe("getReviewPacket", () => {
         includeReferenceSubmission: true,
       }),
     );
-    db.employee.findFirst.mockResolvedValue({ id: "emp_manager_1" });
+    db.employee.findFirst.mockImplementation(async (args: { where: { userId?: string; id?: string } }) => {
+      if (args.where.userId === "user_manager_1") {
+        return {
+          id: "emp_manager_1",
+          managerId: null,
+          directReports: [{ id: "emp_employee_1" }],
+        };
+      }
+
+      if (args.where.id === "emp_employee_1") {
+        return {
+          id: "emp_employee_1",
+          firstName: "Elliot",
+          lastName: "Employee",
+          title: "Foreman",
+          department: "Projects",
+          manager: {
+            firstName: "Morgan",
+            lastName: "Patel",
+            title: "Manager",
+          },
+        };
+      }
+
+      return null;
+    });
+    db.reviewTemplate.findFirst.mockResolvedValue({
+      id: "template_default_1",
+      name: "Default Performance Template",
+      questions: [],
+    });
+    db.goalCycle.findFirst.mockResolvedValue(null);
+    db.goal.findMany.mockResolvedValue([]);
 
     const result = await getReviewPacket(
       "cycle_seed_1",
@@ -243,7 +377,39 @@ describe("getReviewPacket", () => {
         visibilityPolicy: CycleVisibilityPolicy.EMPLOYEE_AFTER_RELEASE,
       }),
     );
-    db.employee.findFirst.mockResolvedValue({ id: "emp_employee_1" });
+    db.employee.findFirst.mockImplementation(async (args: { where: { userId?: string; id?: string } }) => {
+      if (args.where.userId === "user_employee_1") {
+        return {
+          id: "emp_employee_1",
+          managerId: "emp_manager_1",
+          directReports: [],
+        };
+      }
+
+      if (args.where.id === "emp_employee_1") {
+        return {
+          id: "emp_employee_1",
+          firstName: "Elliot",
+          lastName: "Employee",
+          title: "Foreman",
+          department: "Projects",
+          manager: {
+            firstName: "Morgan",
+            lastName: "Patel",
+            title: "Manager",
+          },
+        };
+      }
+
+      return null;
+    });
+    db.reviewTemplate.findFirst.mockResolvedValue({
+      id: "template_default_1",
+      name: "Default Performance Template",
+      questions: [],
+    });
+    db.goalCycle.findFirst.mockResolvedValue(null);
+    db.goal.findMany.mockResolvedValue([]);
 
     const result = await getReviewPacket(
       "cycle_seed_1",

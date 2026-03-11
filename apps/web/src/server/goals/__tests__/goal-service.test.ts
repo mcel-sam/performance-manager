@@ -47,6 +47,9 @@ function buildGoalDbMock() {
       deleteMany: vi.fn(),
       createMany: vi.fn(),
     },
+    evidenceItem: {
+      create: vi.fn(),
+    },
     auditEvent: {
       create: vi.fn(),
     },
@@ -287,6 +290,7 @@ describe("createGoalUpdate", () => {
         lastName: "Patel",
       },
     });
+    db.evidenceItem.create.mockResolvedValue({ id: "evidence_goal_update_1" });
     db.auditEvent.create.mockResolvedValue({ id: "audit_1" });
 
     const result = await createGoalUpdate(
@@ -301,6 +305,15 @@ describe("createGoalUpdate", () => {
 
     expect(result.snapshotProgressPercent).toBe(60);
     expect(db.keyResult.update).toHaveBeenCalledTimes(1);
+    expect(db.evidenceItem.create).toHaveBeenCalledTimes(1);
+    expect(db.evidenceItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: "GOAL_UPDATE",
+          subjectEmployeeId: "emp_employee_1",
+        }),
+      }),
+    );
     expect(db.auditEvent.create).toHaveBeenCalledTimes(1);
   });
 });

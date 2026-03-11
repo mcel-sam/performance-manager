@@ -15,6 +15,7 @@ const EVIDENCE_TYPE_ORDER: EvidenceType[] = [
   EvidenceType.UPDATE,
   EvidenceType.ONE_ON_ONE,
   EvidenceType.GOAL,
+  EvidenceType.GOAL_UPDATE,
   EvidenceType.VALUE_RECOGNITION,
 ];
 
@@ -216,6 +217,7 @@ export async function listEvidenceForSubject(
     [EvidenceType.UPDATE]: [],
     [EvidenceType.ONE_ON_ONE]: [],
     [EvidenceType.GOAL]: [],
+    [EvidenceType.GOAL_UPDATE]: [],
     [EvidenceType.VALUE_RECOGNITION]: [],
   };
 
@@ -566,6 +568,7 @@ function buildEvidenceCountMap(
     [EvidenceType.UPDATE]: 0,
     [EvidenceType.ONE_ON_ONE]: 0,
     [EvidenceType.GOAL]: 0,
+    [EvidenceType.GOAL_UPDATE]: 0,
     [EvidenceType.VALUE_RECOGNITION]: 0,
   };
 

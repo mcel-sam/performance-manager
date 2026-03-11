@@ -9,7 +9,8 @@ interface GrowthTrackDb {
     findFirst: (args: {
       where: {
         orgId: string;
-        userId: string;
+        userId?: string;
+        id?: string;
       };
       select: {
         id: true;
@@ -255,10 +256,43 @@ export async function getGrowthTrackData(
   context: RequestContext,
   db: GrowthTrackDb = prisma as unknown as GrowthTrackDb,
 ): Promise<GrowthTrackData> {
-  const employee = await db.employee.findFirst({
+  const viewer = await db.employee.findFirst({
     where: {
       orgId: context.orgId,
       userId: context.userId,
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      title: true,
+      department: true,
+      manager: {
+        select: {
+          firstName: true,
+          lastName: true,
+          title: true,
+        },
+      },
+    },
+  });
+
+  if (!viewer) {
+    throw new AppError("NOT_FOUND", "Employee profile not found", 404);
+  }
+
+  return getGrowthTrackDataForEmployee(viewer.id, context, db);
+}
+
+export async function getGrowthTrackDataForEmployee(
+  employeeId: string,
+  context: RequestContext,
+  db: GrowthTrackDb = prisma as unknown as GrowthTrackDb,
+): Promise<GrowthTrackData> {
+  const employee = await db.employee.findFirst({
+    where: {
+      orgId: context.orgId,
+      id: employeeId,
     },
     select: {
       id: true,

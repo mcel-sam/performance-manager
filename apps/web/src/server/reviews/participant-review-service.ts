@@ -2,6 +2,7 @@ import {
   CycleStatus,
   CompetencyDimensionKey,
   EvidenceType,
+  GoalStatus,
   ReviewRelationship,
   ReviewQuestionType,
   ReviewSubmissionStatus,
@@ -11,6 +12,8 @@ import { z } from "zod";
 
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
+import { getGoalReviewContext } from "@/server/goals/goal-service";
+import { getGrowthTrackDataForEmployee } from "@/server/growth/growth-track-service";
 import { AppError } from "@/server/http/errors";
 import {
   recomputePacketScorecard,
@@ -101,6 +104,12 @@ interface ReviewAnswerRecord {
 }
 
 interface ParticipantReviewDb {
+  employee: {
+    findFirst: (args: {
+      where: Record<string, unknown>;
+      select: Record<string, unknown>;
+    }) => Promise<unknown>;
+  };
   reviewSubmission: {
     findMany: (args: {
       where: Record<string, unknown>;
@@ -145,6 +154,20 @@ interface ParticipantReviewDb {
         };
       };
     }) => Promise<TemplateRecord | null>;
+  };
+  goalCycle: {
+    findFirst: (args: {
+      where: Record<string, unknown>;
+      orderBy: Array<Record<string, "desc">>;
+      select: Record<string, unknown>;
+    }) => Promise<unknown>;
+  };
+  goal: {
+    findMany: (args: {
+      where: Record<string, unknown>;
+      orderBy: Array<Record<string, "desc">>;
+      select: Record<string, unknown>;
+    }) => Promise<unknown[]>;
   };
   reviewAnswer: {
     findMany: (args: {
@@ -257,6 +280,31 @@ export interface WriteReviewData {
     notObserved: boolean;
     attachedEvidence: AttachedEvidenceSummary[];
   }[];
+  goalContext: {
+    cycleId: string;
+    cycleName: string;
+    goals: Array<{
+      id: string;
+      title: string;
+      status: GoalStatus;
+      progressPercent: number;
+      lastUpdate: {
+        id: string;
+        note: string;
+        createdAt: string;
+      } | null;
+    }>;
+  } | null;
+  trackContext: {
+    trackLabel: string;
+    levelLabel: string;
+    summary: string;
+    competenciesHref: string;
+    competencies: Array<{
+      label: string;
+      summary: string;
+    }>;
+  } | null;
   evidenceCounts: Record<EvidenceType, number>;
 }
 
@@ -369,6 +417,10 @@ export async function getWriteReviewData(
   });
 
   const answerByQuestionId = new Map(answers.map((answer) => [answer.questionId, answer]));
+  const [goalContext, growthTrack] = await Promise.all([
+    getGoalReviewContext(submission.subjectEmployeeId, context, db as never),
+    getGrowthTrackDataForEmployee(submission.subjectEmployeeId, context, db as never),
+  ]);
 
   return {
     submission: {
@@ -412,6 +464,17 @@ export async function getWriteReviewData(
           })) ?? [],
       };
     }),
+    goalContext,
+    trackContext: {
+      trackLabel: growthTrack.track.label,
+      levelLabel: growthTrack.currentLevel.label,
+      summary: growthTrack.track.summary,
+      competenciesHref: "/performance/tracks#growth-competencies",
+      competencies: growthTrack.competencies.slice(0, 4).map((competency) => ({
+        label: competency.label,
+        summary: competency.summary,
+      })),
+    },
     evidenceCounts: buildEmptyEvidenceCountMap(),
   };
 }
@@ -786,6 +849,7 @@ function buildEmptyEvidenceCountMap(): Record<EvidenceType, number> {
     [EvidenceType.UPDATE]: 0,
     [EvidenceType.ONE_ON_ONE]: 0,
     [EvidenceType.GOAL]: 0,
+    [EvidenceType.GOAL_UPDATE]: 0,
     [EvidenceType.VALUE_RECOGNITION]: 0,
   };
 }

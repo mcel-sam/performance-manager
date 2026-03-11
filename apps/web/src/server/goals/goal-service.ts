@@ -1,4 +1,6 @@
 import {
+  EvidenceType,
+  EvidenceVisibility,
   GoalCycleCadence,
   GoalCycleStatus,
   GoalStatus,
@@ -575,6 +577,93 @@ export async function listGoalAuditEvents(
   }));
 }
 
+export async function getGoalReviewContext(
+  subjectEmployeeId: string,
+  context: RequestContext,
+  db: GoalDb = prisma,
+) {
+  const scope =
+    context.role === UserRole.HR_ADMIN
+      ? {
+          viewerEmployeeId: "__hr_admin__",
+          viewerManagerId: null,
+          directReportIds: new Set<string>(),
+        }
+      : await getViewerScope(context, db);
+  const cycle =
+    (await db.goalCycle.findFirst({
+      where: {
+        orgId: context.orgId,
+        status: GoalCycleStatus.ACTIVE,
+      },
+      orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        name: true,
+      },
+    })) ??
+    (await db.goalCycle.findFirst({
+      where: {
+        orgId: context.orgId,
+      },
+      orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        name: true,
+      },
+    }));
+
+  if (!cycle) {
+    return null;
+  }
+
+  const goals = await db.goal.findMany({
+    where: {
+      orgId: context.orgId,
+      cycleId: cycle.id,
+      ownerEmployeeId: subjectEmployeeId,
+    },
+    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    select: {
+      ...goalAccessSelect,
+      updates: {
+        take: 1,
+        orderBy: [{ createdAt: "desc" }],
+        select: {
+          id: true,
+          note: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+
+  const visibleGoals = [];
+  for (const goal of goals) {
+    if (await canViewGoal(goal, context, scope, db)) {
+      visibleGoals.push(goal);
+    }
+  }
+
+  return {
+    cycleId: cycle.id,
+    cycleName: cycle.name,
+    goals: visibleGoals.map((goal) => ({
+      id: goal.id,
+      title: goal.title,
+      status: goal.status,
+      progressPercent: goal.progressPercent,
+      lastUpdate: goal.updates[0]
+        ? {
+            id: goal.updates[0].id,
+            note: goal.updates[0].note,
+            createdAt: goal.updates[0].createdAt.toISOString(),
+          }
+        : null,
+    })),
+  };
+}
+
 export async function updateGoal(
   goalId: string,
   payload: unknown,
@@ -1028,10 +1117,24 @@ export async function createGoalUpdate(
     },
   });
 
+  const evidenceVisibility = mapGoalVisibilityToEvidenceVisibility(goal.visibility);
+  await db.evidenceItem.create({
+    data: {
+      orgId: context.orgId,
+      subjectEmployeeId: goal.ownerEmployeeId,
+      authorEmployeeId: scope.viewerEmployeeId,
+      type: EvidenceType.GOAL_UPDATE,
+      visibility: evidenceVisibility,
+      content: parsed.note,
+      occurredAt: update.createdAt,
+    },
+  });
+
   await writeAuditEvent(db, context, "GOAL_UPDATE_CREATED", "GoalUpdate", update.id, {
     goalId,
     progressPercent: nextProgressPercent,
     keyResultCount: parsed.keyResults.length,
+    evidenceType: EvidenceType.GOAL_UPDATE,
   });
 
   return {
@@ -1044,6 +1147,18 @@ export async function createGoalUpdate(
     author: formatPersonName(update.authorEmployee.firstName, update.authorEmployee.lastName),
     authorEmployeeId: update.authorEmployee.id,
   };
+}
+
+function mapGoalVisibilityToEvidenceVisibility(goalVisibility: GoalVisibility): EvidenceVisibility {
+  switch (goalVisibility) {
+    case GoalVisibility.ORG:
+      return EvidenceVisibility.ORG_VISIBLE;
+    case GoalVisibility.TEAM:
+      return EvidenceVisibility.SHARED_WITH_SUBJECT;
+    case GoalVisibility.PRIVATE:
+    default:
+      return EvidenceVisibility.PRIVATE;
+  }
 }
 
 async function getViewerScope(context: RequestContext, db: GoalDb): Promise<ViewerScope> {

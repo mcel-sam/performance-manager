@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import {
   CompetencyDimensionKey,
   EvidenceType,
+  GoalStatus,
   ReviewQuestionType,
   ReviewSubmissionStatus,
 } from "@prisma/client";
@@ -61,6 +63,31 @@ interface WriteReviewFormProps {
     reviewerName: string;
     relationship: string;
   };
+  goalContext: {
+    cycleId: string;
+    cycleName: string;
+    goals: Array<{
+      id: string;
+      title: string;
+      status: GoalStatus;
+      progressPercent: number;
+      lastUpdate: {
+        id: string;
+        note: string;
+        createdAt: string;
+      } | null;
+    }>;
+  } | null;
+  trackContext: {
+    trackLabel: string;
+    levelLabel: string;
+    summary: string;
+    competenciesHref: string;
+    competencies: Array<{
+      label: string;
+      summary: string;
+    }>;
+  } | null;
 }
 
 interface EvidenceResponse {
@@ -71,6 +98,7 @@ interface EvidenceResponse {
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 type EvidenceLoadState = "loading" | "loaded" | "error";
+type EvidenceBucket = "feedback" | "updates" | "oneOnOne" | "goals" | "values";
 type ReviewSectionKind =
   | "impact-results"
   | "competencies"
@@ -87,21 +115,26 @@ interface ReviewSection {
   kind: ReviewSectionKind;
 }
 
-const evidenceTypeOrder: EvidenceType[] = [
-  EvidenceType.FEEDBACK,
-  EvidenceType.UPDATE,
-  EvidenceType.ONE_ON_ONE,
-  EvidenceType.GOAL,
-  EvidenceType.VALUE_RECOGNITION,
-];
-
 const evidenceTypeLabel: Record<EvidenceType, string> = {
   FEEDBACK: "Feedback",
   UPDATE: "Updates",
   ONE_ON_ONE: "1:1s",
   GOAL: "Goals",
+  GOAL_UPDATE: "Goal updates",
   VALUE_RECOGNITION: "Company values",
 };
+
+const evidenceBucketOrder: Array<{
+  id: EvidenceBucket;
+  label: string;
+  types: EvidenceType[];
+}> = [
+  { id: "feedback", label: "Feedback", types: [EvidenceType.FEEDBACK] },
+  { id: "updates", label: "Updates", types: [EvidenceType.UPDATE] },
+  { id: "oneOnOne", label: "1:1s", types: [EvidenceType.ONE_ON_ONE] },
+  { id: "goals", label: "Goals", types: [EvidenceType.GOAL, EvidenceType.GOAL_UPDATE] },
+  { id: "values", label: "Company values", types: [EvidenceType.VALUE_RECOGNITION] },
+];
 
 export default function WriteReviewForm({
   cycleId,
@@ -111,6 +144,8 @@ export default function WriteReviewForm({
   questions,
   initialStatus,
   submissionContext,
+  goalContext,
+  trackContext,
 }: WriteReviewFormProps) {
   const [questionState, setQuestionState] = useState<WriteReviewQuestion[]>(questions);
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(questions[0]?.id ?? null);
@@ -131,15 +166,37 @@ export default function WriteReviewForm({
   const [evidenceLimitPerType, setEvidenceLimitPerType] = useState(20);
   const [evidenceLoadState, setEvidenceLoadState] = useState<EvidenceLoadState>("loading");
   const [evidenceError, setEvidenceError] = useState<string | null>(null);
-  const [selectedEvidenceType, setSelectedEvidenceType] = useState<EvidenceType>(
-    EvidenceType.FEEDBACK,
-  );
+  const [selectedEvidenceBucket, setSelectedEvidenceBucket] = useState<EvidenceBucket>("feedback");
   const [evidenceSearch, setEvidenceSearch] = useState("");
   const [evidenceMessage, setEvidenceMessage] = useState<string | null>(null);
   const [attachingEvidenceId, setAttachingEvidenceId] = useState<string | null>(null);
   const [detachingEvidenceKey, setDetachingEvidenceKey] = useState<string | null>(null);
 
   const isReadOnly = status === ReviewSubmissionStatus.SUBMITTED;
+
+  function addGoalQuickPick(
+    questionId: string,
+    goal: NonNullable<WriteReviewFormProps["goalContext"]>["goals"][number],
+  ) {
+    const nextLine = formatGoalQuickPick(goal);
+
+    setQuestionState((previous) =>
+      previous.map((entry) => {
+        if (entry.id !== questionId) {
+          return entry;
+        }
+
+        const existing = entry.responseText.trimEnd();
+        return {
+          ...entry,
+          responseText: existing.length > 0 ? `${existing}\n${nextLine}` : nextLine,
+        };
+      }),
+    );
+    setActiveQuestionId(questionId);
+    setDirtyQuestionId(questionId);
+    setMissingQuestionIds((previous) => previous.filter((missingId) => missingId !== questionId));
+  }
 
   const activeQuestion = useMemo(
     () => questionState.find((question) => question.id === activeQuestionId) ?? null,
@@ -180,10 +237,19 @@ export default function WriteReviewForm({
   }, [sections]);
   const [sectionMessage, setSectionMessage] = useState<string | null>(null);
 
-  const selectedEvidenceItems = useMemo(
-    () => evidenceItemsByType[selectedEvidenceType] ?? [],
-    [evidenceItemsByType, selectedEvidenceType],
-  );
+  const selectedEvidenceItems = useMemo(() => {
+    const bucket =
+      evidenceBucketOrder.find((entry) => entry.id === selectedEvidenceBucket) ??
+      evidenceBucketOrder[0];
+
+    return bucket.types
+      .flatMap((type) => evidenceItemsByType[type] ?? [])
+      .sort((left, right) => {
+        const leftTime = new Date(left.occurredAt).getTime();
+        const rightTime = new Date(right.occurredAt).getTime();
+        return rightTime - leftTime;
+      });
+  }, [evidenceItemsByType, selectedEvidenceBucket]);
   const filteredEvidenceItems = useMemo(() => {
     const normalizedQuery = evidenceSearch.trim().toLowerCase();
     if (!normalizedQuery) {
@@ -196,7 +262,13 @@ export default function WriteReviewForm({
     });
   }, [evidenceSearch, selectedEvidenceItems]);
   const evidenceTotalCount = useMemo(
-    () => evidenceTypeOrder.reduce((sum, type) => sum + (evidenceCounts[type] ?? 0), 0),
+    () =>
+      evidenceBucketOrder.reduce(
+        (sum, bucket) =>
+          sum +
+          bucket.types.reduce((bucketTotal, type) => bucketTotal + (evidenceCounts[type] ?? 0), 0),
+        0,
+      ),
     [evidenceCounts],
   );
   const activeQuestionEvidenceCount = activeQuestion?.attachedEvidence.length ?? 0;
@@ -273,7 +345,7 @@ export default function WriteReviewForm({
 
   useEffect(() => {
     setEvidenceSearch("");
-  }, [selectedEvidenceType]);
+  }, [selectedEvidenceBucket]);
 
   useEffect(() => {
     if (sections.length === 0) {
@@ -863,6 +935,48 @@ export default function WriteReviewForm({
                         </Button>
                       </div>
 
+                      {goalContext && goalContext.goals.length > 0 && isGoalQuestion(question) ? (
+                        <div className="rounded-[18px] border border-teal-100 bg-teal-50/70 p-4">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-700">
+                                Goal quick picks
+                              </p>
+                              <p className="mt-1 text-sm text-slate-700">
+                                Pull in active goals, current progress, and the latest check-in with one click.
+                              </p>
+                            </div>
+                            <span className="rounded-full border border-white bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                              {goalContext.cycleName}
+                            </span>
+                          </div>
+                          <div className="mt-3 grid gap-2">
+                            {goalContext.goals.map((goal) => (
+                              <button
+                                key={`${question.id}-${goal.id}`}
+                                type="button"
+                                className="flex items-start justify-between gap-3 rounded-[14px] border border-white bg-white px-3 py-3 text-left shadow-[var(--shadow-xs)] transition hover:border-teal-200"
+                                onClick={() => addGoalQuickPick(question.id, goal)}
+                                disabled={isReadOnly}
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-slate-900">
+                                    {goal.title}
+                                  </p>
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    {humanizeGoalStatus(goal.status)} · {Math.round(goal.progressPercent)}%
+                                    {goal.lastUpdate
+                                      ? ` · Updated ${new Date(goal.lastUpdate.createdAt).toLocaleDateString()}`
+                                      : " · No update yet"}
+                                  </p>
+                                </div>
+                                <span className="text-xs font-semibold text-teal-700">Insert</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
                       {question.questionType === ReviewQuestionType.SCALE_1_TO_5 ? (
                         <div className="grid gap-4 rounded-[18px] border border-slate-200 bg-slate-50/80 p-4 md:grid-cols-[240px_minmax(0,1fr)]">
                           <label className="space-y-1">
@@ -1123,6 +1237,83 @@ export default function WriteReviewForm({
               </dl>
             </div>
 
+            <div className="rounded-[var(--radius-md)] border border-white bg-white p-4 shadow-[var(--shadow-xs)]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Current track
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {trackContext
+                      ? `${trackContext.trackLabel} · ${trackContext.levelLabel}`
+                      : "Track not available"}
+                  </p>
+                </div>
+                {trackContext ? (
+                  <Link
+                    href={trackContext.competenciesHref}
+                    className="text-xs font-semibold text-teal-700"
+                  >
+                    View competencies
+                  </Link>
+                ) : null}
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-700">
+                {trackContext?.summary ??
+                  "Track and competency context will appear here when the role baseline is available."}
+              </p>
+              {trackContext?.competencies.length ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {trackContext.competencies.map((competency) => (
+                    <span
+                      key={competency.label}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500"
+                    >
+                      {competency.label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="rounded-[var(--radius-md)] border border-white bg-white p-4 shadow-[var(--shadow-xs)]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Goals for this cycle
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {goalContext?.cycleName ?? "No active goal cycle"}
+                  </p>
+                </div>
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  {goalContext?.goals.length ?? 0} goals
+                </span>
+              </div>
+              {goalContext?.goals.length ? (
+                <div className="mt-3 space-y-2">
+                  {goalContext.goals.slice(0, 3).map((goal) => (
+                    <div
+                      key={goal.id}
+                      className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3"
+                    >
+                      <p className="text-sm font-semibold text-slate-900">{goal.title}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {humanizeGoalStatus(goal.status)} · {Math.round(goal.progressPercent)}%
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-slate-700">
+                        {goal.lastUpdate?.note ?? "No update posted yet."}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  No visible goals are linked to the current planning cycle yet.
+                </p>
+              )}
+            </div>
+
             <div
               className="rounded-[var(--radius-md)] border border-white bg-white p-4 shadow-[var(--shadow-xs)]"
               data-testid="write-review-evidence-target"
@@ -1200,12 +1391,12 @@ export default function WriteReviewForm({
           <div className="space-y-4">
             <Tabs
               ariaLabel="Evidence type tabs"
-              value={selectedEvidenceType}
-              onValueChange={(nextValue) => setSelectedEvidenceType(nextValue as EvidenceType)}
+              value={selectedEvidenceBucket}
+              onValueChange={(nextValue) => setSelectedEvidenceBucket(nextValue as EvidenceBucket)}
               className="w-full"
-              tabs={evidenceTypeOrder.map((type) => ({
-                value: type,
-                label: `${evidenceTypeLabel[type]} (${evidenceCounts[type] ?? 0})`,
+              tabs={evidenceBucketOrder.map((bucket) => ({
+                value: bucket.id,
+                label: `${bucket.label} (${bucket.types.reduce((total, type) => total + (evidenceCounts[type] ?? 0), 0)})`,
               }))}
             />
 
@@ -1213,7 +1404,8 @@ export default function WriteReviewForm({
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900">
-                    {evidenceTypeLabel[selectedEvidenceType]}
+                    {evidenceBucketOrder.find((bucket) => bucket.id === selectedEvidenceBucket)?.label ??
+                      "Evidence"}
                   </h3>
                   <p className="text-xs text-slate-500">
                     Showing {filteredEvidenceItems.length} of {selectedEvidenceItems.length}
@@ -1239,13 +1431,13 @@ export default function WriteReviewForm({
               {selectedEvidenceItems.length === 0 ? (
                 <EmptyState
                   title="No evidence items"
-                  description="No evidence items are available for this type."
+                  description="No evidence items are available for this bucket."
                   className="p-4"
                 />
               ) : filteredEvidenceItems.length === 0 ? (
                 <EmptyState
                   title="No evidence matches"
-                  description="Try a broader keyword or switch evidence type."
+                  description="Try a broader keyword or switch evidence bucket."
                   className="p-4"
                 />
               ) : (
@@ -1355,6 +1547,34 @@ function formatDimensionLabel(value: CompetencyDimensionKey): string {
     .join(" ");
 }
 
+function humanizeGoalStatus(status: GoalStatus): string {
+  switch (status) {
+    case GoalStatus.NOT_STARTED:
+      return "Not started";
+    case GoalStatus.ON_TRACK:
+      return "On track";
+    case GoalStatus.AT_RISK:
+      return "At risk";
+    case GoalStatus.OFF_TRACK:
+      return "Off track";
+    case GoalStatus.COMPLETE:
+      return "Complete";
+    case GoalStatus.CANCELED:
+    default:
+      return "Canceled";
+  }
+}
+
+function formatGoalQuickPick(
+  goal: NonNullable<WriteReviewFormProps["goalContext"]>["goals"][number],
+): string {
+  const status = humanizeGoalStatus(goal.status);
+  const progress = `${Math.round(goal.progressPercent)}%`;
+  const lastUpdate = goal.lastUpdate?.note ? ` Latest update: ${goal.lastUpdate.note}` : "";
+
+  return `- ${goal.title} (${status}, ${progress}).${lastUpdate}`;
+}
+
 function buildReviewSections(questions: WriteReviewQuestion[]): ReviewSection[] {
   const buckets: Record<ReviewSectionKind, WriteReviewQuestion[]> = {
     "impact-results": [],
@@ -1449,6 +1669,10 @@ function classifyQuestion(question: WriteReviewQuestion): ReviewSectionKind {
   return "additional";
 }
 
+function isGoalQuestion(question: WriteReviewQuestion) {
+  return question.questionType !== ReviewQuestionType.SCALE_1_TO_5 && classifyQuestion(question) === "goals";
+}
+
 function includesAny(value: string, keywords: string[]): boolean {
   return keywords.some((keyword) => value.includes(keyword));
 }
@@ -1485,6 +1709,7 @@ function createEmptyEvidenceCounts(): Record<EvidenceType, number> {
     [EvidenceType.UPDATE]: 0,
     [EvidenceType.ONE_ON_ONE]: 0,
     [EvidenceType.GOAL]: 0,
+    [EvidenceType.GOAL_UPDATE]: 0,
     [EvidenceType.VALUE_RECOGNITION]: 0,
   };
 }
@@ -1503,6 +1728,7 @@ function createEmptyEvidenceItemsByType(): Record<EvidenceType, EvidenceSummary[
     [EvidenceType.UPDATE]: [],
     [EvidenceType.ONE_ON_ONE]: [],
     [EvidenceType.GOAL]: [],
+    [EvidenceType.GOAL_UPDATE]: [],
     [EvidenceType.VALUE_RECOGNITION]: [],
   };
 }

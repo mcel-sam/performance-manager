@@ -15,6 +15,9 @@ import {
 
 function buildDbMock() {
   return {
+    employee: {
+      findFirst: vi.fn(),
+    },
     reviewSubmission: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
@@ -22,6 +25,12 @@ function buildDbMock() {
     },
     reviewTemplate: {
       findFirst: vi.fn(),
+    },
+    goalCycle: {
+      findFirst: vi.fn(),
+    },
+    goal: {
+      findMany: vi.fn(),
     },
     reviewAnswer: {
       findMany: vi.fn(),
@@ -315,6 +324,74 @@ describe("getWriteReviewData permissions", () => {
     const db = buildDbMock();
     db.reviewSubmission.findFirst.mockResolvedValue(submissionRecord);
     db.reviewAnswer.findMany.mockResolvedValue([]);
+    db.employee.findFirst.mockImplementation(async (args: { where: { userId?: string; id?: string } }) => {
+      if (args.where.userId === "user_employee_1") {
+        return {
+          id: "emp_employee_1",
+          managerId: "emp_manager_1",
+          directReports: [],
+        };
+      }
+
+      if (args.where.id === "emp_employee_1") {
+        return {
+          id: "emp_employee_1",
+          firstName: "Elliot",
+          lastName: "Employee",
+          title: "Foreman",
+          department: "Projects",
+          manager: {
+            firstName: "Morgan",
+            lastName: "Patel",
+            title: "Manager",
+          },
+        };
+      }
+
+      return null;
+    });
+    db.reviewTemplate.findFirst.mockResolvedValue({
+      id: "template_default_1",
+      name: "Default Performance Template",
+      questions: [],
+    });
+    db.goalCycle.findFirst.mockResolvedValue({
+      id: "goal_cycle_active_1",
+      name: "Q4 2026",
+    });
+    db.goal.findMany.mockResolvedValue([
+      {
+        id: "goal_1",
+        orgId: "org_demo_1",
+        cycleId: "goal_cycle_active_1",
+        ownerEmployeeId: "emp_employee_1",
+        title: "Improve project handoff reliability",
+        description: null,
+        status: "ON_TRACK",
+        progressPercent: 72,
+        visibility: "TEAM",
+        parentGoalId: null,
+        createdAt: new Date("2026-03-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-03-10T00:00:00.000Z"),
+        ownerEmployee: {
+          id: "emp_employee_1",
+          userId: "user_employee_1",
+          managerId: "emp_manager_1",
+          firstName: "Elliot",
+          lastName: "Employee",
+        },
+        _count: {
+          updates: 1,
+        },
+        updates: [
+          {
+            id: "goal_update_1",
+            note: "Weekly handoff checklist is live across the crew.",
+            createdAt: new Date("2026-03-10T00:00:00.000Z"),
+          },
+        ],
+      },
+    ]);
 
     const result = await getWriteReviewData(
       "cycle_seed_draft_1",
@@ -330,8 +407,11 @@ describe("getWriteReviewData permissions", () => {
       [EvidenceType.UPDATE]: 0,
       [EvidenceType.ONE_ON_ONE]: 0,
       [EvidenceType.GOAL]: 0,
+      [EvidenceType.GOAL_UPDATE]: 0,
       [EvidenceType.VALUE_RECOGNITION]: 0,
     });
+    expect(result.goalContext?.goals[0]?.title).toBe("Improve project handoff reliability");
+    expect(result.trackContext?.trackLabel).toBe("Projects");
   });
 
   it("denies access when reviewer does not match and user is not HR admin", async () => {

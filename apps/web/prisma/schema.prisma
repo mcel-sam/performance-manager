@@ -86,6 +86,7 @@ enum EvidenceType {
   UPDATE
   ONE_ON_ONE
   GOAL
+  GOAL_UPDATE
   VALUE_RECOGNITION
 }
 

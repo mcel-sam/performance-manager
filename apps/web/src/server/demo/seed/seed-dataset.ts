@@ -822,7 +822,13 @@ function buildEvidenceRows(
     orgId: string;
     subjectEmployeeId: string;
     authorEmployeeId: string;
-    type: "FEEDBACK" | "UPDATE" | "ONE_ON_ONE" | "GOAL" | "VALUE_RECOGNITION";
+    type:
+      | "FEEDBACK"
+      | "UPDATE"
+      | "ONE_ON_ONE"
+      | "GOAL"
+      | "GOAL_UPDATE"
+      | "VALUE_RECOGNITION";
     visibility: "PRIVATE" | "MANAGER_ONLY" | "SHARED_WITH_SUBJECT" | "ORG_VISIBLE";
     content: string;
     occurredAt: Date;
@@ -835,7 +841,13 @@ function buildEvidenceRows(
     orgId: string;
     subjectEmployeeId: string;
     authorEmployeeId: string;
-    type: "FEEDBACK" | "UPDATE" | "ONE_ON_ONE" | "GOAL" | "VALUE_RECOGNITION";
+    type:
+      | "FEEDBACK"
+      | "UPDATE"
+      | "ONE_ON_ONE"
+      | "GOAL"
+      | "GOAL_UPDATE"
+      | "VALUE_RECOGNITION";
     visibility: "PRIVATE" | "MANAGER_ONLY" | "SHARED_WITH_SUBJECT" | "ORG_VISIBLE";
     content: string;
     occurredAt: Date;
