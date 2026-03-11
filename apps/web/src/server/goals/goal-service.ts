@@ -123,6 +123,11 @@ const goalAccessSelect = {
       lastName: true,
     },
   },
+  _count: {
+    select: {
+      updates: true,
+    },
+  },
 } satisfies Prisma.GoalSelect;
 
 const goalDetailSelect = {
@@ -444,6 +449,130 @@ export async function getGoal(
   const goal = await getGoalDetailOrThrow(goalId, context, db);
   await assertCanViewGoal(goal, context, scope, db);
   return mapGoalDetail(goal);
+}
+
+export async function getGoalFormCatalog(
+  cycleId: string,
+  context: RequestContext,
+  db: GoalDb = prisma,
+) {
+  const scope = await getViewerScope(context, db);
+  await getGoalCycleOrThrow(cycleId, context, db);
+
+  const manageableOwnerIds =
+    context.role === UserRole.HR_ADMIN
+      ? undefined
+      : context.role === UserRole.MANAGER
+        ? [scope.viewerEmployeeId, ...scope.directReportIds]
+        : [scope.viewerEmployeeId];
+
+  const [owners, competencies, goalsInCycle] = await Promise.all([
+    db.employee.findMany({
+      where: {
+        orgId: context.orgId,
+        ...(manageableOwnerIds
+          ? {
+              id: {
+                in: manageableOwnerIds,
+              },
+            }
+          : {}),
+      },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        department: true,
+        title: true,
+      },
+    }),
+    db.competency.findMany({
+      where: {
+        orgId: context.orgId,
+      },
+      orderBy: [{ name: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        dimensionKey: true,
+      },
+    }),
+    db.goal.findMany({
+      where: {
+        orgId: context.orgId,
+        cycleId,
+      },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      select: goalAccessSelect,
+    }),
+  ]);
+
+  const visibleParentGoals: GoalAccessRecord[] = [];
+  for (const goal of goalsInCycle) {
+    if (await canViewGoal(goal, context, scope, db)) {
+      visibleParentGoals.push(goal);
+    }
+  }
+
+  return {
+    owners: owners.map((owner) => ({
+      id: owner.id,
+      name: formatPersonName(owner.firstName, owner.lastName),
+      department: owner.department,
+      title: owner.title,
+    })),
+    competencies,
+    parentGoals: visibleParentGoals.map(mapGoalSummary),
+    defaultOwnerEmployeeId: scope.viewerEmployeeId,
+  };
+}
+
+export async function listGoalAuditEvents(
+  goalId: string,
+  context: RequestContext,
+  db: GoalDb = prisma,
+) {
+  const scope = await getViewerScope(context, db);
+  const goal = await getGoalAccessOrThrow(goalId, context, db);
+  await assertCanViewGoal(goal, context, scope, db);
+
+  const events = await db.auditEvent.findMany({
+    where: {
+      orgId: context.orgId,
+      entityType: "Goal",
+      entityId: goalId,
+    },
+    orderBy: [{ createdAt: "desc" }],
+    select: {
+      id: true,
+      action: true,
+      entityType: true,
+      entityId: true,
+      metadata: true,
+      createdAt: true,
+      actorUser: {
+        select: {
+          id: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  return events.map((event) => ({
+    id: event.id,
+    action: event.action,
+    entityType: event.entityType,
+    entityId: event.entityId,
+    metadata: event.metadata,
+    createdAt: event.createdAt.toISOString(),
+    actor: {
+      userId: event.actorUser.id,
+      email: event.actorUser.email,
+    },
+  }));
 }
 
 export async function updateGoal(
@@ -1330,6 +1459,7 @@ function mapGoalSummary(goal: GoalAccessRecord) {
     progressPercent: goal.progressPercent,
     visibility: goal.visibility,
     parentGoalId: goal.parentGoalId,
+    updateCount: goal._count.updates,
     createdAt: goal.createdAt.toISOString(),
     updatedAt: goal.updatedAt.toISOString(),
   };

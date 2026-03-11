@@ -1991,27 +1991,28 @@ Completed in PR #47.
 ## Phase 4 — Goals UI (employee + manager) + goal details drawer + goal tree
 
 ### Goals home + list
-- [ ] /goals (employee/manager view)
-- [ ] Summary cards: on track / progressing / off track / no update
-- [ ] Filters: owner, status, cycle, visibility (use FilterChips/FilterBar pattern)
-- [ ] “Create goal” CTA
+- [x] /goals (employee/manager view)
+- [x] Summary cards: on track / progressing / off track / no update
+- [x] Filters: owner, status, cycle, visibility (use FilterChips/FilterBar pattern)
+- [x] “Create goal” CTA
 
 ### Goal create/edit
-- [ ] Objective form + KR builder
-- [ ] Visibility controls (ORG/TEAM/PRIVATE)
-- [ ] Tag competencies (from competency library)
-- [ ] Align to parent goal (cascading)
+- [x] Objective form + KR builder
+- [x] Visibility controls (ORG/TEAM/PRIVATE)
+- [x] Tag competencies (from competency library)
+- [x] Align to parent goal (cascading)
 
 ### Goal detail (RightDrawer pattern)
-- [ ] Overview tab: objective, owner, status, progress
-- [ ] Timeline tab: check-ins/updates
-- [ ] Audit tab: mutation log (from AuditEvent)
-- [ ] Goal tree mini-view: parent breadcrumb + children list (tree view later)
+- [x] Overview tab: objective, owner, status, progress
+- [x] Timeline tab: check-ins/updates
+- [x] Audit tab: mutation log (from AuditEvent)
+- [x] Goal tree mini-view: parent breadcrumb + children list (tree view later)
 
 **Acceptance criteria**
-- [ ] Users can create goal + KRs + post updates
-- [ ] Users can align a goal to a parent and see the relationship
+- [x] Users can create goal + KRs + post updates
+- [x] Users can align a goal to a parent and see the relationship
 - [ ] Playwright: create goal + add KR + post update + align goal
+- Phase 4 implemented locally on `dev`; Playwright deferred to end-of-milestone validation per demo workflow
 
 ---
 
