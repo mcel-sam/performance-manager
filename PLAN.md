@@ -1928,61 +1928,63 @@ Completed in PR #47.
 - EMPLOYEE: can view own goals + public/org goals; can edit own goals; can comment on goals they can see
 
 ### APIs (thin route handlers + server services)
-- [ ] Goal cycles:
+- [x] Goal cycles:
   - GET/POST/PATCH /api/goals/cycles
-- [ ] Goals:
+- [x] Goals:
   - GET /api/goals?cycleId=&ownerId=&status=&visibility=
   - POST /api/goals
   - GET /api/goals/:goalId
   - PATCH /api/goals/:goalId
   - DELETE (archive) /api/goals/:goalId
-- [ ] Cascading:
+- [x] Cascading:
   - POST /api/goals/:goalId/align (set parent)
   - POST /api/goals/:goalId/unlink
   - GET /api/goals/:goalId/tree (ancestors + children)
-- [ ] Key results:
+- [x] Key results:
   - POST/PATCH/DELETE /api/goals/:goalId/key-results/*
-- [ ] Updates:
+- [x] Updates:
   - POST /api/goals/:goalId/updates
   - GET /api/goals/:goalId/updates
-- [ ] Track/Grow:
+- [x] Track/Grow:
   - GET /api/grow/tracks (published)
   - GET /api/grow/tracks/:trackId
   - POST/PATCH admin track endpoints
   - POST/PATCH /api/grow/assignments (assign employee to track/level)
   - POST /api/grow/competencies/:competencyId/comments (align on expectations)
-- [ ] Audit events written for all mutations (goal, KR, update, track edits, assignments, competency comments)
+- [x] Audit events written for all mutations (goal, KR, update, track edits, assignments, competency comments)
 
 ### Tests
-- [ ] Permission gating (HR vs manager vs employee)
-- [ ] Cascade alignment rules (no cycles, no self-parent, prevent loops)
-- [ ] Progress math for KRs -> goal progress (deterministic)
-- [ ] Audit events emitted for sensitive changes
+- [x] Permission gating (HR vs manager vs employee)
+- [x] Cascade alignment rules (no cycles, no self-parent, prevent loops)
+- [x] Progress math for KRs -> goal progress (deterministic)
+- [x] Audit events emitted for sensitive changes
 
 **Acceptance criteria**
-- [ ] All endpoints have Zod validation + authz
-- [ ] Unit tests pass and cover the core invariants
-- [ ] `lint/typecheck/test/build` pass
+- [x] All endpoints have Zod validation + authz
+- [x] Unit tests pass and cover the core invariants
+- [x] `lint/typecheck/test/build` pass
+- Completed locally on `dev`; PR pending after branch stabilization
 
 ---
 
 ## Phase 3 — Admin UI for Tracks + Goal Cycles (setup flows)
 
 ### Admin: Grow
-- [ ] /admin/grow/tracks (list + create)
-- [ ] /admin/grow/tracks/new (track + levels)
-- [ ] /admin/grow/tracks/:id (edit competencies + expectations matrix)
-- [ ] /admin/grow/assignments (assign employees to track/level; search + bulk optional)
+- [x] /admin/grow/tracks (list + create)
+- [x] /admin/grow/tracks/new (track + levels)
+- [x] /admin/grow/tracks/:id (edit competencies + expectations matrix)
+- [x] /admin/grow/assignments (assign employees to track/level; search + bulk optional)
 
 ### Admin: Goals
-- [ ] /admin/goals/cycles (create/manage cycles)
-- [ ] Ensure cycle selector is available in Goals UI
+- [x] /admin/goals/cycles (create/manage cycles)
+- [x] Ensure cycle selector is available in Goals UI
 
 **Acceptance criteria**
-- [ ] HR can create tracks + assign employees
-- [ ] HR can create a goal cycle
-- [ ] Loading/empty/error states present
+- [x] HR can create tracks + assign employees
+- [x] HR can create a goal cycle
+- [x] Loading/empty/error states present
 - [ ] Playwright: create cycle + create track smoke test
+- UI implemented locally on `dev`; Playwright deferred to end-of-milestone validation per demo workflow
 
 ---
 

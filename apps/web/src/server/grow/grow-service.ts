@@ -243,6 +243,236 @@ export async function getTrack(
   };
 }
 
+export async function listAdminTracks(
+  context: RequestContext,
+  db: GrowDb = prisma,
+) {
+  requireHrAdmin(context);
+
+  const tracks = await db.track.findMany({
+    where: {
+      orgId: context.orgId,
+    },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      isPublished: true,
+      sortOrder: true,
+      updatedAt: true,
+      trackGroup: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          sortOrder: true,
+        },
+      },
+      levels: {
+        orderBy: [{ levelOrder: "asc" }],
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          levelOrder: true,
+          _count: {
+            select: {
+              expectations: true,
+            },
+          },
+        },
+      },
+      _count: {
+        select: {
+          assignments: true,
+        },
+      },
+    },
+  });
+
+  return tracks.map((track) => ({
+    id: track.id,
+    slug: track.slug,
+    name: track.name,
+    description: track.description,
+    isPublished: track.isPublished,
+    sortOrder: track.sortOrder,
+    updatedAt: track.updatedAt.toISOString(),
+    trackGroup: track.trackGroup,
+    levelCount: track.levels.length,
+    assignmentCount: track._count.assignments,
+    levels: track.levels.map((level) => ({
+      id: level.id,
+      name: level.name,
+      slug: level.slug,
+      levelOrder: level.levelOrder,
+      expectationCount: level._count.expectations,
+    })),
+  }));
+}
+
+export async function getGrowAdminCatalog(
+  context: RequestContext,
+  db: GrowDb = prisma,
+) {
+  requireHrAdmin(context);
+
+  const [trackGroups, competencies, employees, tracks] = await Promise.all([
+    db.trackGroup.findMany({
+      where: {
+        orgId: context.orgId,
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        sortOrder: true,
+      },
+    }),
+    db.competency.findMany({
+      where: {
+        orgId: context.orgId,
+      },
+      orderBy: [{ name: "asc" }],
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        dimensionKey: true,
+        theme: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    }),
+    db.employee.findMany({
+      where: {
+        orgId: context.orgId,
+      },
+      orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        department: true,
+        title: true,
+        manager: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    }),
+    db.track.findMany({
+      where: {
+        orgId: context.orgId,
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        isPublished: true,
+        levels: {
+          orderBy: [{ levelOrder: "asc" }],
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            levelOrder: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  return {
+    trackGroups,
+    competencies: competencies.map((competency) => ({
+      id: competency.id,
+      slug: competency.slug,
+      name: competency.name,
+      dimensionKey: competency.dimensionKey,
+      theme: competency.theme,
+    })),
+    employees: employees.map((employee) => ({
+      id: employee.id,
+      name: `${employee.firstName} ${employee.lastName}`,
+      department: employee.department,
+      title: employee.title,
+      managerName: employee.manager
+        ? `${employee.manager.firstName} ${employee.manager.lastName}`
+        : null,
+    })),
+    tracks: tracks.map((track) => ({
+      id: track.id,
+      name: track.name,
+      isPublished: track.isPublished,
+      levels: track.levels,
+    })),
+  };
+}
+
+export async function listTrackAssignmentsForAdmin(
+  context: RequestContext,
+  db: GrowDb = prisma,
+) {
+  requireHrAdmin(context);
+
+  const assignments = await db.employeeTrackAssignment.findMany({
+    where: {
+      orgId: context.orgId,
+    },
+    orderBy: [{ assignedAt: "desc" }],
+    select: {
+      id: true,
+      assignedAt: true,
+      employee: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          department: true,
+          title: true,
+        },
+      },
+      track: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      trackLevel: {
+        select: {
+          id: true,
+          name: true,
+          levelOrder: true,
+        },
+      },
+    },
+  });
+
+  return assignments.map((assignment) => ({
+    id: assignment.id,
+    assignedAt: assignment.assignedAt.toISOString(),
+    employee: {
+      id: assignment.employee.id,
+      name: `${assignment.employee.firstName} ${assignment.employee.lastName}`,
+      department: assignment.employee.department,
+      title: assignment.employee.title,
+    },
+    track: assignment.track,
+    trackLevel: assignment.trackLevel,
+  }));
+}
+
 export async function createTrack(
   payload: unknown,
   context: RequestContext,
