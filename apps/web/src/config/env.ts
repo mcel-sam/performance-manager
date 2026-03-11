@@ -26,6 +26,7 @@ export const appEnv = {
   demoModeEnabled: demoModeFlag && nodeEnv === "development",
   nextPublicDemoMode: parseBooleanEnv(process.env.NEXT_PUBLIC_DEMO_MODE, false),
   presentationMode: parseBooleanEnv(process.env.PRESENTATION_MODE, false),
+  allowManagerRiskView: parseBooleanEnv(process.env.ALLOW_MANAGER_RISK_VIEW, false),
   databaseConfigured: databaseUrl.length > 0,
 } as const;
 

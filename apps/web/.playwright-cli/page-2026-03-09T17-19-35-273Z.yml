@@ -1,0 +1,209 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e8]: PM
+        - navigation [ref=e9]:
+          - link "Home" [ref=e10] [cursor=pointer]:
+            - /url: /
+            - img [ref=e12]
+            - generic [ref=e14]: Home
+            - tooltip "Home"
+          - link "Reporting" [ref=e15] [cursor=pointer]:
+            - /url: /admin/performance/reporting
+            - img [ref=e17]
+            - generic [ref=e22]: Reporting
+            - tooltip "Reporting"
+          - link "Admin Cycles" [ref=e23] [cursor=pointer]:
+            - /url: /admin/performance/review-cycles
+            - img [ref=e25]
+            - generic [ref=e30]: Admin Cycles
+            - tooltip "Admin Cycles"
+          - link "Admin Calibration" [ref=e31] [cursor=pointer]:
+            - /url: /admin/performance/calibration
+            - img [ref=e33]
+            - generic [ref=e40]: Admin Calibration
+            - tooltip "Admin Calibration"
+          - link "User Management" [ref=e41] [cursor=pointer]:
+            - /url: /admin/users
+            - img [ref=e43]
+            - generic [ref=e46]: User Management
+            - tooltip "User Management"
+          - link "Help" [ref=e47] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e49]
+            - generic [ref=e53]: Help
+            - tooltip "Help"
+    - main [ref=e54]:
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - button "Expand navigation" [ref=e57]:
+            - img [ref=e58]
+          - generic [ref=e60]:
+            - generic [ref=e61]: Workspace
+            - generic [ref=e62]: Performance reporting
+        - generic [ref=e63]:
+          - button "Current organization" [disabled] [ref=e64]:
+            - generic [ref=e65]: O
+            - generic [ref=e66]: Ironcrest Construction Group
+            - img [ref=e67]
+          - button "Harper Quinn Harper Quinn HR Admin" [ref=e70]:
+            - generic "Harper Quinn" [ref=e71]
+            - generic [ref=e72]:
+              - generic [ref=e73]: Harper Quinn
+              - generic [ref=e74]: HR Admin
+      - generic [ref=e75]:
+        - generic [ref=e77]:
+          - heading "Reporting" [level=1] [ref=e78]
+          - paragraph [ref=e79]: Review completion trends, ratings, and competency outcomes for the selected cycle.
+          - generic [ref=e81]:
+            - text: "Active cycle:"
+            - strong [ref=e82]: Annual Review 2026
+        - generic [ref=e83]:
+          - paragraph [ref=e84]: Refine the cycle scope, then move between progress, results, competencies, and scorecard views without carrying a full employee table across every tab.
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - text: Cycle
+              - combobox "Cycle" [ref=e87]:
+                - option "Annual Review 2026" [selected]
+            - generic [ref=e88]:
+              - text: Department
+              - combobox "Department" [ref=e89]:
+                - option "All departments" [selected]
+                - option "Admin/Finance"
+                - option "Maintenance"
+                - option "Operations"
+                - option "Projects"
+                - option "Safety"
+            - generic [ref=e90]:
+              - text: Title
+              - combobox "Title" [ref=e91]:
+                - option "All titles" [selected]
+                - option "Dispatcher"
+                - option "Equipment Operator"
+                - option "Foreman"
+                - option "Journeyman"
+                - option "Office Admin"
+                - option "Project Coordinator"
+                - option "Safety Coordinator"
+                - option "Site Supervisor"
+            - generic [ref=e92]:
+              - text: Status
+              - combobox "Status" [ref=e93]:
+                - option "All statuses" [selected]
+                - option "Not started"
+                - option "In progress"
+                - option "Completed"
+            - generic [ref=e94]:
+              - generic [ref=e95]: Rating source
+              - group "Rating source toggle" [ref=e96]:
+                - button "Use final ratings" [ref=e97]: Final
+                - button "Use scorecard baseline ratings" [ref=e98]: Scorecard baseline
+            - button "Apply filters" [ref=e100]
+        - generic [ref=e101]:
+          - generic [ref=e102]:
+            - link "Progress" [ref=e103] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=progress&ratingSource=FINAL&page=1"
+            - link "Results" [ref=e104] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=results&ratingSource=FINAL&page=1"
+            - link "Competencies" [ref=e105] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=competencies&ratingSource=FINAL&page=1"
+            - link "Scorecard" [ref=e106] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=scorecard&ratingSource=FINAL&page=1"
+          - generic [ref=e107]:
+            - generic [ref=e108]: Scope
+            - generic [ref=e109]: All departments
+            - text: •
+            - generic [ref=e110]: All titles
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - paragraph [ref=e114]: Biggest alignment gap
+              - paragraph [ref=e115]: Accountability
+              - paragraph [ref=e116]: Absolute gap 0.19 across 16 paired ratings.
+            - generic [ref=e117]:
+              - paragraph [ref=e118]: Highest manager average
+              - paragraph [ref=e119]: Quality Of Work
+              - paragraph [ref=e120]: Manager average 3.69.
+            - generic [ref=e121]:
+              - paragraph [ref=e122]: Most incomplete metric
+              - paragraph [ref=e123]: Quality Of Work
+              - paragraph [ref=e124]: 4 not observed responses.
+          - generic [ref=e125]:
+            - generic [ref=e127]:
+              - generic [ref=e128]:
+                - heading "Scorecard metric matrix" [level=3] [ref=e129]
+                - paragraph [ref=e130]: Metrics stay readable on the left, with self, manager, gap, and data quality in a single hoverable matrix.
+              - button "Download scorecard metric comparison chart as PNG" [ref=e131]: Download PNG
+            - generic [ref=e132]:
+              - generic [ref=e133]:
+                - img "Scorecard metric matrix" [ref=e135]:
+                  - text: MetricSelf avgManager avgGapNot observed
+                  - generic [ref=e136]:
+                    - generic [ref=e137]: Quality Of Work
+                    - generic [ref=e138]: Avg 3.66
+                    - generic "Quality Of Work Self avg 3.63. Observed 32, not observed 4." [ref=e139]: "3.6"
+                    - generic "Quality Of Work Manager avg 3.69. Observed 32, not observed 4." [ref=e141]: "3.7"
+                    - generic "Quality Of Work Gap +0.06. Observed 32, not observed 4." [ref=e143]: "+0.06"
+                    - generic "Quality Of Work Not observed 4. Observed 32, not observed 4." [ref=e145]: "4"
+                  - generic [ref=e147]:
+                    - generic [ref=e148]: Communication
+                    - generic [ref=e149]: Avg 3.25
+                    - generic "Communication Self avg 3.17. Observed 36, not observed 0." [ref=e150]: "3.2"
+                    - generic "Communication Manager avg 3.33. Observed 36, not observed 0." [ref=e152]: "3.3"
+                    - generic "Communication Gap +0.17. Observed 36, not observed 0." [ref=e154]: "+0.17"
+                    - generic "Communication Not observed 0. Observed 36, not observed 0." [ref=e156]: "0"
+                  - generic [ref=e158]:
+                    - generic [ref=e159]: Accountability
+                    - generic [ref=e160]: Avg 3.47
+                    - generic "Accountability Self avg 3.38. Observed 32, not observed 4." [ref=e161]: "3.4"
+                    - generic "Accountability Manager avg 3.56. Observed 32, not observed 4." [ref=e163]: "3.6"
+                    - generic "Accountability Gap +0.19. Observed 32, not observed 4." [ref=e165]: "+0.19"
+                    - generic "Accountability Not observed 4. Observed 32, not observed 4." [ref=e167]: "4"
+                  - generic [ref=e169]:
+                    - generic [ref=e170]: Relationship Building
+                    - generic [ref=e171]: Avg 3.53
+                    - generic "Relationship Building Self avg 3.50. Observed 32, not observed 4." [ref=e172]: "3.5"
+                    - generic "Relationship Building Manager avg 3.56. Observed 32, not observed 4." [ref=e174]: "3.6"
+                    - generic "Relationship Building Gap +0.06. Observed 32, not observed 4." [ref=e176]: "+0.06"
+                    - generic "Relationship Building Not observed 4. Observed 32, not observed 4." [ref=e178]: "4"
+                  - generic [ref=e180]:
+                    - generic [ref=e181]: Results Driven
+                    - generic [ref=e182]: Avg 3.50
+                    - generic "Results Driven Self avg 3.50. Observed 32, not observed 4." [ref=e183]: "3.5"
+                    - generic "Results Driven Manager avg 3.50. Observed 32, not observed 4." [ref=e185]: "3.5"
+                    - generic "Results Driven Gap 0.00. Observed 32, not observed 4." [ref=e187]: "0.00"
+                    - generic "Results Driven Not observed 4. Observed 32, not observed 4." [ref=e189]: "4"
+                  - generic [ref=e191]:
+                    - generic [ref=e192]: Attitude
+                    - generic [ref=e193]: Avg 3.56
+                    - generic "Attitude Self avg 3.50. Observed 36, not observed 0." [ref=e194]: "3.5"
+                    - generic "Attitude Manager avg 3.61. Observed 36, not observed 0." [ref=e196]: "3.6"
+                    - generic "Attitude Gap +0.11. Observed 36, not observed 0." [ref=e198]: "+0.11"
+                    - generic "Attitude Not observed 0. Observed 36, not observed 0." [ref=e200]: "0"
+                  - generic [ref=e202]:
+                    - generic [ref=e203]: Service Oriented
+                    - generic [ref=e204]: Avg 3.53
+                    - generic "Service Oriented Self avg 3.44. Observed 36, not observed 0." [ref=e205]: "3.4"
+                    - generic "Service Oriented Manager avg 3.61. Observed 36, not observed 0." [ref=e207]: "3.6"
+                    - generic "Service Oriented Gap +0.17. Observed 36, not observed 0." [ref=e209]: "+0.17"
+                    - generic "Service Oriented Not observed 0. Observed 36, not observed 0." [ref=e211]: "0"
+                  - generic [ref=e213]:
+                    - generic [ref=e214]: Adaptability
+                    - generic [ref=e215]: Avg 3.59
+                    - generic "Adaptability Self avg 3.50. Observed 32, not observed 4." [ref=e216]: "3.5"
+                    - generic "Adaptability Manager avg 3.69. Observed 32, not observed 4." [ref=e218]: "3.7"
+                    - generic "Adaptability Gap +0.19. Observed 32, not observed 4." [ref=e220]: "+0.19"
+                    - generic "Adaptability Not observed 4. Observed 32, not observed 4." [ref=e222]: "4"
+                - generic [ref=e224]:
+                  - paragraph [ref=e225]: Hovered metric
+                  - heading "Move across the matrix" [level=3] [ref=e226]
+                  - paragraph [ref=e227]: Hover any self, manager, gap, or not observed cell to inspect a metric without scanning tiny bars.
+              - generic [ref=e228]:
+                - generic [ref=e229]: Self avg
+                - generic [ref=e231]: Manager avg
+                - generic [ref=e233]: Gap intensity
+                - generic [ref=e235]: Data quality
+  - button "Open Next.js Dev Tools" [ref=e242] [cursor=pointer]:
+    - img [ref=e243]
+  - alert [ref=e247]

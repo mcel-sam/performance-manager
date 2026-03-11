@@ -1,0 +1,60 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e8]: PM
+        - navigation [ref=e9]:
+          - link "Home" [ref=e10] [cursor=pointer]:
+            - /url: /
+            - img [ref=e12]
+            - generic [ref=e14]: Home
+            - tooltip "Home"
+          - link "Reporting" [ref=e15] [cursor=pointer]:
+            - /url: /admin/performance/reporting
+            - img [ref=e17]
+            - generic [ref=e22]: Reporting
+            - tooltip "Reporting"
+          - link "Admin Cycles" [ref=e23] [cursor=pointer]:
+            - /url: /admin/performance/review-cycles
+            - img [ref=e25]
+            - generic [ref=e30]: Admin Cycles
+            - tooltip "Admin Cycles"
+          - link "Admin Calibration" [ref=e31] [cursor=pointer]:
+            - /url: /admin/performance/calibration
+            - img [ref=e33]
+            - generic [ref=e40]: Admin Calibration
+            - tooltip "Admin Calibration"
+          - link "User Management" [ref=e41] [cursor=pointer]:
+            - /url: /admin/users
+            - img [ref=e43]
+            - generic [ref=e46]: User Management
+            - tooltip "User Management"
+          - link "Help" [ref=e47] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e49]
+            - generic [ref=e53]: Help
+            - tooltip "Help"
+    - main [ref=e54]:
+      - generic [ref=e55]:
+        - generic [ref=e56]:
+          - button "Expand navigation" [ref=e57]:
+            - img [ref=e58]
+          - generic [ref=e60]:
+            - generic [ref=e61]: Workspace
+            - generic [ref=e62]: Performance reporting
+        - generic [ref=e63]:
+          - button "Current organization" [disabled] [ref=e64]:
+            - generic [ref=e65]: O
+            - generic [ref=e66]: Ironcrest Construction Group
+            - img [ref=e67]
+          - button "Harper Quinn Harper Quinn HR Admin" [ref=e70]:
+            - generic "Harper Quinn" [ref=e71]
+            - generic [ref=e72]:
+              - generic [ref=e73]: Harper Quinn
+              - generic [ref=e74]: HR Admin
+      - generic [ref=e77]:
+        - heading "Reporting" [level=1] [ref=e78]
+        - paragraph [ref=e79]: Loading cycle progress and results...
+  - button "Open Next.js Dev Tools" [ref=e126] [cursor=pointer]:
+    - img [ref=e127]
+  - alert [ref=e131]

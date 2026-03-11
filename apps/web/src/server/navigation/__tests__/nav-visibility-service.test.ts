@@ -27,6 +27,7 @@ describe("resolveRoleNavOptions", () => {
     expect(options.canAccessCalibration).toBe(true);
     expect(options.includeTeamReviews).toBe(true);
     expect(options.includeImprovementPlans).toBe(true);
+    expect(options.includeSuccession).toBe(true);
     expect(options.includePackets).toBe(false);
   });
 
@@ -48,6 +49,7 @@ describe("resolveRoleNavOptions", () => {
 
     expect(options.canAccessCalibration).toBe(false);
     expect(options.includeTeamReviews).toBe(true);
+    expect(options.includeSuccession).toBe(true);
   });
 
   it("hides improvement plans for employees without visible plans", async () => {
@@ -68,6 +70,7 @@ describe("resolveRoleNavOptions", () => {
 
     expect(options.includeImprovementPlans).toBe(false);
     expect(options.canAccessCalibration).toBe(false);
+    expect(options.includeSuccession).toBe(false);
     expect(options.includePackets).toBe(false);
   });
 });

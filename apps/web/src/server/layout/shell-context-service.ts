@@ -10,12 +10,12 @@ interface ShellContextDb {
       select: {
         role: true;
         org: { select: { name: true } };
-        employee: { select: { firstName: true; lastName: true } };
+        employee: { select: { firstName: true; lastName: true; avatarUrl: true } };
       };
     }) => Promise<{
       role: UserRole;
       org: { name: string };
-      employee: { firstName: string; lastName: string } | null;
+      employee: { firstName: string; lastName: string; avatarUrl: string | null } | null;
     } | null>;
   };
 }
@@ -26,6 +26,7 @@ export interface ShellViewer {
   roleLabel: string;
   orgName: string;
   displayName: string;
+  avatarUrl: string | null;
   initials: string;
 }
 
@@ -49,6 +50,7 @@ export async function resolveShellViewer(
         select: {
           firstName: true,
           lastName: true,
+          avatarUrl: true,
         },
       },
     },
@@ -64,6 +66,7 @@ export async function resolveShellViewer(
     roleLabel: humanizeRole(userRecord?.role ?? context.role),
     orgName: userRecord?.org.name ?? "Organization",
     displayName,
+    avatarUrl: userRecord?.employee?.avatarUrl ?? null,
     initials: toInitials(displayName),
   };
 }

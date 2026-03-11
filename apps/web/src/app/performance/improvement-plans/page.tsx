@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { withReturnTo } from "@/lib/navigation/return-to";
 import {
   Table,
   TableBody,
@@ -81,7 +82,12 @@ export default async function ImprovementPlansListPage() {
                         {new Date(plan.endDate).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Link href={`/performance/improvement-plans/${plan.id}`}>
+                        <Link
+                          href={withReturnTo(
+                            `/performance/improvement-plans/${plan.id}`,
+                            "/performance/improvement-plans",
+                          )}
+                        >
                           <Button size="sm">Open Plan</Button>
                         </Link>
                       </TableCell>

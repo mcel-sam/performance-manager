@@ -20,6 +20,7 @@ describe("resolveShellViewer", () => {
           employee: {
             firstName: "Morgan",
             lastName: "Patel",
+            avatarUrl: "https://randomuser.me/api/portraits/men/32.jpg",
           },
         }),
       },
@@ -27,6 +28,7 @@ describe("resolveShellViewer", () => {
 
     expect(viewer.orgName).toBe("Ironcrest");
     expect(viewer.displayName).toBe("Morgan Patel");
+    expect(viewer.avatarUrl).toBe("https://randomuser.me/api/portraits/men/32.jpg");
     expect(viewer.initials).toBe("MP");
     expect(viewer.roleLabel).toBe("Manager");
   });
@@ -46,6 +48,7 @@ describe("resolveShellViewer", () => {
 
     expect(viewer.orgName).toBe("Organization");
     expect(viewer.displayName).toBe("user_hr_admin_1");
+    expect(viewer.avatarUrl).toBeNull();
     expect(viewer.initials).toBe("US");
     expect(viewer.roleLabel).toBe("HR Admin");
   });

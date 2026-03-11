@@ -77,6 +77,7 @@ interface ReviewTaskRecord {
   subjectEmployee: {
     firstName: string;
     lastName: string;
+    avatarUrl: string | null;
   };
 }
 
@@ -209,6 +210,7 @@ export interface ReviewTaskListItem {
   cycleEndDate: string;
   cycleStatus: CycleStatus;
   subjectName: string;
+  subjectAvatarUrl: string | null;
   relationship: ReviewRelationship;
   status: ReviewSubmissionStatus;
   submittedAt: string | null;
@@ -301,6 +303,7 @@ export async function listAssignedReviewTasks(
         select: {
           firstName: true,
           lastName: true,
+          avatarUrl: true,
         },
       },
     },
@@ -316,6 +319,7 @@ export async function listAssignedReviewTasks(
     cycleEndDate: submission.cycle.endDate.toISOString(),
     cycleStatus: submission.cycle.status,
     subjectName: `${submission.subjectEmployee.firstName} ${submission.subjectEmployee.lastName}`,
+    subjectAvatarUrl: submission.subjectEmployee.avatarUrl,
     relationship: submission.relationship,
     status: submission.status,
     submittedAt: submission.submittedAt?.toISOString() ?? null,

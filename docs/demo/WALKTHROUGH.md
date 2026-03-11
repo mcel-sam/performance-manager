@@ -60,7 +60,9 @@ Important:
 - `/performance/calibration/calibration_session_seed_1` → **Calibration**
 - `/admin/performance/calibration` → **Admin Calibration**
 - `/performance/improvement-plans` → **Improvement Plans**
+- `/talent/succession` → **Manager Succession**
 - `/admin/performance/review-cycles` → **Admin Cycles**
+- `/admin/talent/succession` → **Admin Succession**
 - `/help` → **Help**
 - `/login` → **Demo Login + Reset** (Demo Mode)
 
@@ -99,6 +101,27 @@ Important:
 ### 4) Release visibility
 
 - Use cycle status transitions in `/admin/performance/review-cycles` to move cycles to **RELEASED** when ready.
+
+### 5) Review succession coverage and bench depth
+
+1. Go to `/admin/talent/succession`.
+2. Review the top-line KPIs for visible positions, critical roles, ready-now coverage, and manager proposals.
+3. Use the **Critical-role gaps** and **Manager proposals awaiting review** cards to find priority follow-up items.
+4. Use **Export slate CSV** for the position/candidate view and **Export coverage CSV** for the department-level privacy-safe summary.
+
+### 6) Create or update a succession plan
+
+1. On `/admin/talent/succession`, click **Create Position**.
+2. On `/admin/talent/succession/positions/new`:
+   - enter a position title, department, and location
+   - assign a **Plan owner**
+   - set **Visibility scope**
+   - capture continuity context in **Planning notes**
+3. After save, use the detail workspace to:
+   - update ownership or visibility rules
+   - add candidates with readiness, risk, and confidence
+   - review candidate signals in the right drawer
+   - add HR-only or plan-viewer notes
 
 ## Manager walkthrough
 
@@ -141,6 +164,17 @@ Important:
 
 Note:
 - There is currently no “Create plan” button in the UI. Plan creation is seeded in Demo Mode or available via `POST /api/performance/improvement-plans`.
+
+### 6) Succession planning in my area
+
+1. Open `/talent/succession`.
+2. Review only the positions in your scope. HR-only plans do not appear here.
+3. Open a position and use the **Propose Candidate** form to nominate a direct report.
+4. Open candidate context in the right drawer to review performance signals and add plan-viewer notes.
+
+Important:
+- Managers cannot set or view `risk_of_loss` and `confidence` unless `ALLOW_MANAGER_RISK_VIEW=true`.
+- Managers can only propose their own direct reports in this MVP flow.
 
 ## Employee walkthrough
 
@@ -188,11 +222,16 @@ Use this script for a short live demo.
 - Show autosave state and submit with **Submit Review**.
 - Show evidence attach flow in **Evidence Context**.
 
-4. Minute 9-12: Packet + calibration
+4. Minute 9-11: Packet + calibration
 - Open packet route and show **Reference input** labels.
 - Open calibration workspace and move one person with **Save placement**.
 
-5. Minute 12-15: Finalization and release
+5. Minute 11-13: Succession planning
+- Switch to **HR Admin** and open `/admin/talent/succession`.
+- Show **Critical-role gaps**, **Manager proposals awaiting review**, and the export actions.
+- Open a seeded position, then switch to **Manager** and show `/talent/succession` with scoped visibility only.
+
+6. Minute 13-15: Finalization and release
 - Switch back to **HR Admin**.
 - Finalize calibration with **Finalize Session**.
 - Return to `/admin/performance/review-cycles` and progress to **Move to RELEASED**.

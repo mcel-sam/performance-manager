@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { UserRole } from "@prisma/client";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/components/ui/cn";
+import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { getActiveNavKey, type ShellNavItem, type ShellNavKey } from "@/config/navigation";
+import { getBackLabelForHref, getReturnToParam, resolveReturnTo } from "@/lib/navigation/return-to";
 
 interface AppShellProps {
   children: ReactNode;
@@ -18,6 +20,7 @@ interface AppShellProps {
     roleLabel: string;
     orgName: string;
     displayName: string;
+    avatarUrl: string | null;
     initials: string;
   } | null;
   demoModeEnabled: boolean;
@@ -33,14 +36,22 @@ export default function AppShell({
   demoModeEnabled,
 }: AppShellProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [pendingProfileAction, setPendingProfileAction] = useState<ProfileAction | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const isPublicRoute = pathname === "/login" || pathname.startsWith("/demo/login");
-  const focusLayout = useMemo(() => getFocusLayoutConfig(pathname), [pathname]);
+  const focusLayout = useMemo(
+    () => getFocusLayoutConfig(pathname, getReturnToParam(searchParams)),
+    [pathname, searchParams],
+  );
   const activeNavKey = useMemo(() => getActiveNavKey(pathname, navItems), [pathname, navItems]);
+  const headerContext = useMemo(
+    () => getShellHeaderContext(activeNavKey, focusLayout),
+    [activeNavKey, focusLayout],
+  );
   const hasLoadedSidebarPreference = useRef(false);
 
   useEffect(() => {
@@ -245,29 +256,40 @@ export default function AppShell({
 
         <main className={cn("p-5 sm:p-7", focusLayout && "lg:px-8")}>
           <header
-            className="mb-4 flex items-center justify-between gap-3"
+            className="relative z-20 isolate mb-4 flex items-center justify-between gap-3 rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-[var(--shadow-sm)]"
             data-testid="app-shell-header"
           >
-            <button
-              type="button"
-              data-testid="app-shell-sidebar-toggle"
-              data-state={isSidebarCollapsed ? "collapsed" : "expanded"}
-              onClick={() => setIsSidebarCollapsed((value) => !value)}
-              aria-controls="app-shell-sidebar"
-              aria-expanded={!isSidebarCollapsed}
-              aria-label={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
-              title={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 motion-reduce:transition-none"
-            >
-              <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
-                <path
-                  d="M3.5 5.5H16.5M3.5 10H16.5M3.5 14.5H12.5"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                data-testid="app-shell-sidebar-toggle"
+                data-state={isSidebarCollapsed ? "collapsed" : "expanded"}
+                onClick={() => setIsSidebarCollapsed((value) => !value)}
+                aria-controls="app-shell-sidebar"
+                aria-expanded={!isSidebarCollapsed}
+                aria-label={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
+                title={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-slate-300 bg-white text-slate-700 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 motion-reduce:transition-none"
+              >
+                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                  <path
+                    d="M3.5 5.5H16.5M3.5 10H16.5M3.5 14.5H12.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+
+              <div className="hidden min-w-0 flex-col sm:flex">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Workspace
+                </span>
+                <span className="truncate text-sm font-semibold text-slate-900">
+                  {headerContext}
+                </span>
+              </div>
+            </div>
 
             <div className="flex items-center gap-2">
               <button
@@ -276,8 +298,14 @@ export default function AppShell({
                 disabled
                 aria-label="Current organization"
                 title="Organization switching is not enabled in this build"
-                className="inline-flex h-9 max-w-[220px] items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700 opacity-90"
+                className="inline-flex h-10 max-w-[240px] items-center gap-2 rounded-full border border-slate-300 bg-slate-50/90 px-3.5 text-sm text-slate-700 opacity-90 shadow-[var(--shadow-xs)]"
               >
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_14%,white)] text-[11px] font-semibold text-[var(--brand-primary-strong)]"
+                >
+                  O
+                </span>
                 <span className="truncate">{viewer?.orgName ?? "Organization"}</span>
                 <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
                   <path d="M6.5 8.5L10 12L13.5 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -291,11 +319,13 @@ export default function AppShell({
                   onClick={() => setIsProfileMenuOpen((value) => !value)}
                   aria-expanded={isProfileMenuOpen}
                   aria-haspopup="menu"
-                  className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-300 bg-white px-2.5 text-left text-sm text-slate-800 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-50 hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                  className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-300 bg-white px-2.5 text-left text-sm text-slate-800 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-50 hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                 >
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold uppercase text-white">
-                    {viewer?.initials ?? "U"}
-                  </span>
+                  <ProfileAvatar
+                    name={viewer?.displayName ?? "User"}
+                    imageUrl={viewer?.avatarUrl}
+                    size="sm"
+                  />
                   <span className="hidden max-w-[150px] flex-col sm:flex">
                     <span className="truncate text-xs font-semibold text-slate-900">{viewer?.displayName ?? "User"}</span>
                     <span className="truncate text-[11px] text-slate-500">{viewer?.roleLabel ?? "Member"}</span>
@@ -306,7 +336,7 @@ export default function AppShell({
                   <div
                     role="menu"
                     data-testid="app-header-profile-menu"
-                    className="absolute right-0 top-11 z-30 min-w-[200px] space-y-1 rounded-[var(--radius-md)] border border-slate-200 bg-white p-2 shadow-[var(--shadow-sm)]"
+                    className="absolute right-0 top-11 z-40 min-w-[200px] space-y-1 rounded-[var(--radius-md)] border border-slate-200 bg-white p-2 shadow-[var(--shadow-lg)]"
                   >
                     <Link
                       href="/profile"
@@ -344,19 +374,6 @@ export default function AppShell({
             </div>
           </header>
 
-          {focusLayout ? (
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-4 py-2.5 text-sm leading-6 text-slate-700 shadow-[var(--shadow-xs)] transition-[box-shadow,border-color] duration-[var(--transition-base)] ease-[var(--ease-standard)]">
-              <span>{focusLayout.label}</span>
-              <div className="flex items-center gap-2">
-                <Link
-                  href={focusLayout.backHref}
-                  className="rounded-[var(--radius-sm)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:shadow-[var(--shadow-xs)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-                >
-                  {focusLayout.backLabel}
-                </Link>
-              </div>
-            </div>
-          ) : null}
           {children}
         </main>
       </div>
@@ -372,7 +389,11 @@ interface FocusLayoutConfig {
 
 const focusRouteMatchers: Array<{
   pattern: RegExp;
-  config: FocusLayoutConfig;
+  config: {
+    backHref: string;
+    backLabel: string;
+    label: string;
+  };
 }> = [
   {
     pattern: /^\/performance\/reviews\/[^/]+\/write\/[^/]+$/,
@@ -400,14 +421,56 @@ const focusRouteMatchers: Array<{
   },
 ];
 
-function getFocusLayoutConfig(pathname: string): FocusLayoutConfig | null {
+function getFocusLayoutConfig(pathname: string, returnTo: string | null): FocusLayoutConfig | null {
   for (const matcher of focusRouteMatchers) {
     if (matcher.pattern.test(pathname)) {
-      return matcher.config;
+      const backHref = resolveReturnTo(returnTo, matcher.config.backHref);
+      return {
+        ...matcher.config,
+        backHref,
+        backLabel: getBackLabelForHref(backHref, matcher.config.backLabel),
+      };
     }
   }
 
   return null;
+}
+
+function getShellHeaderContext(
+  activeNavKey: ShellNavKey | null,
+  focusLayout: FocusLayoutConfig | null,
+): string {
+  if (focusLayout) {
+    return focusLayout.label;
+  }
+
+  switch (activeNavKey) {
+    case "teamReviews":
+      return "Manage my team";
+    case "succession":
+    case "adminSuccession":
+      return "Succession planning";
+    case "reviews":
+      return "Review tasks";
+    case "packets":
+      return "Review packets";
+    case "calibration":
+    case "adminCalibration":
+      return "Calibration workspace";
+    case "adminReporting":
+      return "Performance reporting";
+    case "adminCycles":
+      return "Review cycles";
+    case "adminUsers":
+      return "People directory";
+    case "improvementPlans":
+      return "Improvement plans";
+    case "help":
+      return "Help center";
+    case "home":
+    default:
+      return "Home";
+  }
 }
 
 function NavItemIcon({
@@ -432,6 +495,18 @@ function NavItemIcon({
         <circle cx="13.5" cy="8.5" r="1.75" stroke="currentColor" strokeWidth="1.5" />
         <path d="M3.75 15.75C3.75 13.54 5.54 11.75 7.75 11.75H8.25C10.46 11.75 12.25 13.54 12.25 15.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         <path d="M12.5 15.5C12.64 14.03 13.89 12.88 15.38 12.88H15.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (navKey === "succession" || navKey === "adminSuccession") {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+        <rect x="4" y="4" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="11" y="4" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="7.5" y="11" width="5" height="5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M9 6.5H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M10 9V11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     );
   }

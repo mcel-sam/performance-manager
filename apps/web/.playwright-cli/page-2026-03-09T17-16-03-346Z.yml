@@ -1,0 +1,33 @@
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: Performance Manager
+        - heading "Demo login" [level=1] [ref=e8]
+        - paragraph [ref=e9]: Sign in by role and optionally reset sample data for walkthroughs.
+        - generic [ref=e10]: Demo mode is enabled (development only).
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - heading "Choose a demo role" [level=3] [ref=e13]
+          - paragraph [ref=e14]: Select a role to sign in immediately. No manual credential entry is required.
+        - generic [ref=e15]:
+          - generic [ref=e16]:
+            - button "Sign in as HR Admin Run cycles, calibrations, and release workflows." [ref=e17]:
+              - paragraph [ref=e18]: Sign in as HR Admin
+              - paragraph [ref=e19]: Run cycles, calibrations, and release workflows.
+            - button "Sign in as Calibrator Facilitate placements and alignment discussions." [ref=e20]:
+              - paragraph [ref=e21]: Sign in as Calibrator
+              - paragraph [ref=e22]: Facilitate placements and alignment discussions.
+            - button "Sign in as Manager Write manager reviews, calibrate, and track plans." [ref=e23]:
+              - paragraph [ref=e24]: Sign in as Manager
+              - paragraph [ref=e25]: Write manager reviews, calibrate, and track plans.
+            - button "Sign in as Employee Complete self review tasks and submit evidence-backed input." [ref=e26]:
+              - paragraph [ref=e27]: Sign in as Employee
+              - paragraph [ref=e28]: Complete self review tasks and submit evidence-backed input.
+          - generic [ref=e29]:
+            - paragraph [ref=e30]: Reset demo database & load sample data
+            - paragraph [ref=e31]: This wipes local database data and seeds a realistic construction-company walkthrough dataset.
+            - button "Reset demo database & load sample data" [ref=e33]
+  - button "Open Next.js Dev Tools" [ref=e39] [cursor=pointer]:
+    - img [ref=e40]
+  - alert [ref=e44]

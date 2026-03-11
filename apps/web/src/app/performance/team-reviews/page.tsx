@@ -13,6 +13,8 @@ import { RightDrawer } from "@/components/ui/right-drawer";
 import { SegmentedProgress } from "@/components/ui/segmented-progress";
 import { Select } from "@/components/ui/select";
 import { getReviewStatusTone, StatusChip } from "@/components/ui/status-chip";
+import { withReturnTo } from "@/lib/navigation/return-to";
+import { getReviewRelationshipLabel } from "@/lib/reviews/review-copy";
 import {
   Table,
   TableBody,
@@ -304,11 +306,11 @@ export default async function TeamReviewsPage({
                               <StatusStack
                                 items={[
                                   {
-                                    label: "Self",
+                                    label: getReviewRelationshipLabel(ReviewRelationship.SELF),
                                     status: row.statuses[ReviewRelationship.SELF],
                                   },
                                   {
-                                    label: "Manager",
+                                    label: getReviewRelationshipLabel(ReviewRelationship.MANAGER),
                                     status: row.statuses[ReviewRelationship.MANAGER],
                                   },
                                 ]}
@@ -318,11 +320,11 @@ export default async function TeamReviewsPage({
                               <StatusStack
                                 items={[
                                   {
-                                    label: "Peer",
+                                    label: getReviewRelationshipLabel(ReviewRelationship.PEER),
                                     status: row.statuses[ReviewRelationship.PEER],
                                   },
                                   {
-                                    label: "Upward",
+                                    label: getReviewRelationshipLabel(ReviewRelationship.UPWARD),
                                     status: row.statuses[ReviewRelationship.UPWARD],
                                   },
                                 ]}
@@ -331,7 +333,12 @@ export default async function TeamReviewsPage({
                             <TableCell>
                               <div className="space-y-2 text-sm text-slate-600">
                                 {row.managerReviewHref ? (
-                                  <Link href={row.managerReviewHref}>
+                                  <Link
+                                    href={withReturnTo(
+                                      row.managerReviewHref,
+                                      toMyTeamHref(dashboard.cycle?.id ?? null, row.employeeId),
+                                    )}
+                                  >
                                     <Button
                                       size="sm"
                                       variant="outline"
@@ -383,19 +390,19 @@ export default async function TeamReviewsPage({
 
                         <div className="space-y-2">
                           <StatusLine
-                            label="Self"
+                            label={getReviewRelationshipLabel(ReviewRelationship.SELF)}
                             status={selectedRow.statuses[ReviewRelationship.SELF]}
                           />
                           <StatusLine
-                            label="Manager"
+                            label={getReviewRelationshipLabel(ReviewRelationship.MANAGER)}
                             status={selectedRow.statuses[ReviewRelationship.MANAGER]}
                           />
                           <StatusLine
-                            label="Peer"
+                            label={getReviewRelationshipLabel(ReviewRelationship.PEER)}
                             status={selectedRow.statuses[ReviewRelationship.PEER]}
                           />
                           <StatusLine
-                            label="Upward"
+                            label={getReviewRelationshipLabel(ReviewRelationship.UPWARD)}
                             status={selectedRow.statuses[ReviewRelationship.UPWARD]}
                           />
                         </div>
@@ -422,14 +429,24 @@ export default async function TeamReviewsPage({
 
                         <div className="flex flex-wrap gap-2">
                           {selectedRow.managerReviewHref ? (
-                            <Link href={selectedRow.managerReviewHref}>
+                            <Link
+                              href={withReturnTo(
+                                selectedRow.managerReviewHref,
+                                toMyTeamHref(dashboard.cycle?.id ?? null, selectedRow.employeeId),
+                              )}
+                            >
                               <Button size="sm" data-testid="my-team-drawer-open-review">
                                 Open manager review
                               </Button>
                             </Link>
                           ) : null}
                           {selectedRow.packetHref ? (
-                            <Link href={selectedRow.packetHref}>
+                            <Link
+                              href={withReturnTo(
+                                selectedRow.packetHref,
+                                toMyTeamHref(dashboard.cycle?.id ?? null, selectedRow.employeeId),
+                              )}
+                            >
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -692,10 +709,10 @@ function toMyTeamBaseHref(cycleId: string | null): string {
 
 function createReviewerAvatarItems(employeeName: string): Array<{ id: string; label: string }> {
   return [
-    { id: `${employeeName}-self`, label: `${employeeName} Self` },
+    { id: `${employeeName}-self`, label: `${employeeName} Self review` },
     { id: `${employeeName}-manager`, label: `${employeeName} Manager Review` },
-    { id: `${employeeName}-peer`, label: `${employeeName} Peer Input` },
-    { id: `${employeeName}-upward`, label: `${employeeName} Upward Input` },
+    { id: `${employeeName}-peer`, label: `${employeeName} Peer review` },
+    { id: `${employeeName}-upward`, label: `${employeeName} Manager feedback` },
   ];
 }
 
@@ -703,10 +720,10 @@ function createStatusTimelineEntries(row: {
   statuses: Partial<Record<ReviewRelationship, ReviewSubmissionStatus>>;
 }): Array<{ key: string; title: string; description: string }> {
   const relationships: Array<{ key: ReviewRelationship; label: string }> = [
-    { key: ReviewRelationship.SELF, label: "Self" },
-    { key: ReviewRelationship.MANAGER, label: "Manager" },
-    { key: ReviewRelationship.PEER, label: "Peer" },
-    { key: ReviewRelationship.UPWARD, label: "Upward" },
+    { key: ReviewRelationship.SELF, label: getReviewRelationshipLabel(ReviewRelationship.SELF, "full") },
+    { key: ReviewRelationship.MANAGER, label: getReviewRelationshipLabel(ReviewRelationship.MANAGER, "full") },
+    { key: ReviewRelationship.PEER, label: getReviewRelationshipLabel(ReviewRelationship.PEER, "full") },
+    { key: ReviewRelationship.UPWARD, label: getReviewRelationshipLabel(ReviewRelationship.UPWARD, "full") },
   ];
 
   return relationships.map((entry) => ({
@@ -750,7 +767,7 @@ function createMiniInsights(row: {
   } else if ((row.statuses[ReviewRelationship.SELF] ?? null) !== ReviewSubmissionStatus.SUBMITTED) {
     insights.push("Next attention: self review follow-through remains open.");
   } else {
-    insights.push("Next attention: peer and upward feedback drive final context.");
+    insights.push("Next attention: peer review and manager feedback drive final context.");
   }
 
   return insights;

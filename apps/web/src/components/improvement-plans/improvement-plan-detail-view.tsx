@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   ImprovementPlanOutcome,
   ImprovementPlanStatus,
@@ -28,6 +29,7 @@ import type {
 
 interface ImprovementPlanDetailViewProps {
   planId: string;
+  returnHref: string;
   auth: {
     userId: string;
     orgId: string;
@@ -65,6 +67,7 @@ const transitionOptionsByStatus: Record<
 
 export default function ImprovementPlanDetailView({
   planId,
+  returnHref,
   auth,
   initialPlan,
 }: ImprovementPlanDetailViewProps) {
@@ -278,9 +281,16 @@ export default function ImprovementPlanDetailView({
         title={plan.title}
         description={`${new Date(plan.startDate).toLocaleDateString()} - ${new Date(plan.endDate).toLocaleDateString()}`}
         action={
-          <Button onClick={() => void handleExportRequest()} disabled={isExporting}>
-            {isExporting ? "Requesting..." : "Export"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={returnHref}>
+              <Button variant="outline" size="sm">
+                Back
+              </Button>
+            </Link>
+            <Button onClick={() => void handleExportRequest()} disabled={isExporting}>
+              {isExporting ? "Requesting..." : "Export"}
+            </Button>
+          </div>
         }
         metadata={
           <div className="flex flex-wrap items-center gap-2">

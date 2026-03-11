@@ -1,0 +1,147 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e45]:
+    - complementary [ref=e46]:
+      - generic [ref=e47]:
+        - generic [ref=e50]: PM
+        - navigation [ref=e51]:
+          - link "Home" [ref=e52] [cursor=pointer]:
+            - /url: /
+            - img [ref=e54]
+            - generic [ref=e56]: Home
+            - tooltip "Home"
+          - link "Reporting" [ref=e57] [cursor=pointer]:
+            - /url: /admin/performance/reporting
+            - img [ref=e59]
+            - generic [ref=e64]: Reporting
+            - tooltip "Reporting"
+          - link "Admin Cycles" [ref=e65] [cursor=pointer]:
+            - /url: /admin/performance/review-cycles
+            - img [ref=e67]
+            - generic [ref=e72]: Admin Cycles
+            - tooltip "Admin Cycles"
+          - link "Admin Calibration" [ref=e73] [cursor=pointer]:
+            - /url: /admin/performance/calibration
+            - img [ref=e75]
+            - generic [ref=e82]: Admin Calibration
+            - tooltip "Admin Calibration"
+          - link "User Management" [ref=e83] [cursor=pointer]:
+            - /url: /admin/users
+            - img [ref=e85]
+            - generic [ref=e88]: User Management
+            - tooltip "User Management"
+          - link "Help" [ref=e89] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e91]
+            - generic [ref=e95]: Help
+            - tooltip "Help"
+    - main [ref=e96]:
+      - generic [ref=e97]:
+        - generic [ref=e98]:
+          - button "Expand navigation" [ref=e99]:
+            - img [ref=e100]
+          - generic [ref=e102]:
+            - generic [ref=e103]: Workspace
+            - generic [ref=e104]: Home
+        - generic [ref=e105]:
+          - button "Current organization" [disabled] [ref=e106]:
+            - generic [ref=e107]: O
+            - generic [ref=e108]: Ironcrest Construction Group
+            - img [ref=e109]
+          - button "Harper Quinn Harper Quinn HR Admin" [ref=e112]:
+            - generic "Harper Quinn" [ref=e113]
+            - generic [ref=e114]:
+              - generic [ref=e115]: Harper Quinn
+              - generic [ref=e116]: HR Admin
+      - generic [ref=e118]:
+        - generic [ref=e120]:
+          - generic [ref=e121]:
+            - generic "Harper Quinn" [ref=e122]
+            - generic [ref=e123]:
+              - heading "Performance workflows by role" [level=2] [ref=e124]
+              - heading "Hi, Harper!" [level=1] [ref=e125]
+              - paragraph [ref=e126]: Office Admin • Admin/Finance
+          - generic [ref=e127]:
+            - generic [ref=e128]: HR Admin
+            - generic [ref=e129]: 1 live cycles
+            - generic [ref=e130]: 6 open submissions
+        - generic [ref=e132]:
+          - generic [ref=e133]: Home
+          - link "Reporting" [ref=e134] [cursor=pointer]:
+            - /url: /admin/performance/reporting
+        - generic [ref=e136]:
+          - generic [ref=e137]:
+            - generic [ref=e138]:
+              - generic [ref=e139]:
+                - heading "Tasks" [level=3] [ref=e140]
+                - paragraph [ref=e141]: Jump straight into the next action instead of hunting through the workspace.
+              - generic [ref=e142]: 3 in focus
+            - generic [ref=e143]:
+              - link "Javier Morales Javier Morales Returned Manager review Annual Review 2026 Due Dec 30" [ref=e144] [cursor=pointer]:
+                - /url: /performance/reviews/cycle_seed_draft_1/write/submission_seed_emp_employee_9_manager?returnTo=%2F
+                - generic "Javier Morales" [ref=e145]
+                - generic [ref=e146]:
+                  - generic [ref=e147]:
+                    - paragraph [ref=e148]: Javier Morales
+                    - generic [ref=e151]: Returned
+                  - paragraph [ref=e152]: Manager review
+                  - generic [ref=e153]:
+                    - generic [ref=e154]: Annual Review 2026
+                    - generic [ref=e155]: Due Dec 30
+                - generic [ref=e156]: ›
+              - link "Elliot Barnes Elliot Barnes In progress Manager review Annual Review 2026 Due Dec 30" [ref=e157] [cursor=pointer]:
+                - /url: /performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_manager_1?returnTo=%2F
+                - generic "Elliot Barnes" [ref=e158]
+                - generic [ref=e159]:
+                  - generic [ref=e160]:
+                    - paragraph [ref=e161]: Elliot Barnes
+                    - generic [ref=e164]: In progress
+                  - paragraph [ref=e165]: Manager review
+                  - generic [ref=e166]:
+                    - generic [ref=e167]: Annual Review 2026
+                    - generic [ref=e168]: Due Dec 30
+                - generic [ref=e169]: ›
+              - link "Noah Bennett Noah Bennett In progress Self review Annual Review 2026 Due Dec 30" [ref=e170] [cursor=pointer]:
+                - /url: /performance/reviews/cycle_seed_draft_1/write/submission_seed_emp_employee_4_self?returnTo=%2F
+                - generic "Noah Bennett" [ref=e171]
+                - generic [ref=e172]:
+                  - generic [ref=e173]:
+                    - paragraph [ref=e174]: Noah Bennett
+                    - generic [ref=e177]: In progress
+                  - paragraph [ref=e178]: Self review
+                  - generic [ref=e179]:
+                    - generic [ref=e180]: Annual Review 2026
+                    - generic [ref=e181]: Due Dec 30
+                - generic [ref=e182]: ›
+          - complementary [ref=e183]:
+            - generic [ref=e184]:
+              - generic [ref=e185]:
+                - heading "Cycle overview" [level=3] [ref=e186]
+                - generic [ref=e187]: Live snapshot
+              - generic [ref=e188]:
+                - generic [ref=e189]:
+                  - text: Live cycles
+                  - paragraph [ref=e190]: "1"
+                - generic [ref=e191]:
+                  - text: Cycles in draft
+                  - paragraph [ref=e192]: "0"
+                - generic [ref=e193]:
+                  - text: Open submissions
+                  - paragraph [ref=e194]: "6"
+            - generic [ref=e195]:
+              - heading "People context" [level=3] [ref=e196]
+              - paragraph [ref=e197]: A quick people snapshot keeps the workspace grounded in the org, not just the numbers.
+              - group [ref=e198]:
+                - generic "Team 3 teammates Casey Romero Jordan Blake Morgan Patel View all" [ref=e199] [cursor=pointer]:
+                  - generic [ref=e200]:
+                    - generic [ref=e201]:
+                      - paragraph [ref=e202]: Team
+                      - paragraph [ref=e203]: 3 teammates
+                    - generic [ref=e204]:
+                      - generic [ref=e205]:
+                        - generic "Casey Romero" [ref=e206]
+                        - generic "Jordan Blake" [ref=e207]
+                        - generic "Morgan Patel" [ref=e208]
+                      - generic [ref=e209]: View all
+  - button "Open Next.js Dev Tools" [ref=e39] [cursor=pointer]:
+    - img [ref=e40]
+  - alert [ref=e44]

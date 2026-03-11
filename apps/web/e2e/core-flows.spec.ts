@@ -18,13 +18,14 @@ test("reviews tasks list loads", async ({ page }) => {
   await expect(page.getByRole("table")).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Cycle" })).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Subject" })).toBeVisible();
-  await expect(page.getByRole("columnheader", { name: "Relationship" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Review type" })).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Status" })).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Due" })).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Action" })).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Priority" })).toHaveCount(0);
   await expect(page.getByRole("columnheader", { name: "Owner" })).toHaveCount(0);
   await expect(page.getByRole("columnheader", { name: "Progress" })).toHaveCount(0);
+  await expect(page.getByTestId("reviews-filter-relationship")).toContainText("Manager feedback");
   await expect(page.getByRole("button", { name: "Open Review" }).first()).toBeVisible();
 });
 
@@ -36,14 +37,12 @@ test("write review autosave and submit locks the submission", async ({ page }) =
   await expect(page.getByRole("link", { name: "Back to Reviews" })).toBeVisible();
   await expect(page.getByText("Phase Navigation")).toHaveCount(0);
   await expect(page.getByTestId("write-review-section-1")).toContainText("Impact / Results");
-  await expect(page.getByTestId("write-review-context-toggle")).toHaveText("Show context details");
-  await page.getByTestId("write-review-context-toggle").click();
-  await expect(page.getByTestId("write-review-context-toggle")).toHaveText("Hide context details");
-  await expect(page.getByTestId("write-review-context-details")).toBeVisible();
-  await page.getByTestId("write-review-selected-answer-toggle").click();
-  await expect(page.getByTestId("write-review-selected-answer-toggle")).toHaveText(
-    "Hide full prompt",
+  await expect(page.getByTestId("write-review-evidence-overview")).toBeVisible();
+  await expect(page.getByTestId("write-review-evidence-target")).toContainText(
+    "What impact did this employee deliver this year?",
   );
+  await expect(page.getByTestId("write-review-context-toggle")).toHaveCount(0);
+  await expect(page.getByTestId("write-review-selected-answer-toggle")).toHaveCount(0);
   await page.getByTestId("write-review-evidence-search").fill("zzzz-no-match");
   await expect(page.getByText("No evidence matches")).toBeVisible();
   await page.getByTestId("write-review-evidence-search").fill("");
@@ -87,6 +86,31 @@ test("packet page renders for manager visibility scope", async ({ page }) => {
   await expect(page.getByText("Packet visibility")).toBeVisible();
 });
 
+test("write review returns to the filtered reviews queue", async ({ page }) => {
+  await loginAsManager(page);
+  await page.goto("/performance/reviews?relationship=UPWARD");
+
+  await page.getByRole("button", { name: "Open Review" }).first().click();
+  await expect(page.getByRole("link", { name: "Back to Reviews" })).toBeVisible();
+  await page.getByRole("link", { name: "Back to Reviews" }).click();
+
+  await expect(page).toHaveURL(/\/performance\/reviews\?relationship=UPWARD/);
+  await expect(page.getByTestId("reviews-filter-relationship")).toHaveValue("UPWARD");
+});
+
+test("my team drill-in returns to the selected direct report", async ({ page }) => {
+  await loginAsManager(page);
+  await page.goto("/performance/team-reviews?employeeId=emp_employee_1");
+
+  await expect(page.getByTestId("my-team-profile-drawer")).toBeVisible();
+  await page.getByTestId("my-team-drawer-open-review").click();
+  await expect(page.getByRole("link", { name: "Back to My Team" })).toBeVisible();
+  await page.getByRole("link", { name: "Back to My Team" }).click();
+
+  await expect(page).toHaveURL(/\/performance\/team-reviews\?.*employeeId=emp_employee_1/);
+  await expect(page.getByTestId("my-team-profile-drawer")).toBeVisible();
+});
+
 test("calibration allows drawer context and placement movement", async ({ page }) => {
   await loginAsManager(page);
   await page.goto("/performance/calibration/calibration_session_seed_1");
@@ -105,7 +129,8 @@ test("calibration allows drawer context and placement movement", async ({ page }
 
 test("improvement plan check-in creates a timeline entry", async ({ page }) => {
   await loginAsManager(page);
-  await page.goto("/performance/improvement-plans/improvement_plan_seed_1");
+  await page.goto("/performance/improvement-plans");
+  await page.getByRole("button", { name: "Open Plan" }).first().click();
 
   const checkInNote = `E2E check-in ${Date.now()}`;
   await page.getByTestId("improvement-checkin-input").fill(checkInNote);
@@ -113,4 +138,6 @@ test("improvement plan check-in creates a timeline entry", async ({ page }) => {
 
   await expect(page.getByText("Check-in added.")).toBeVisible();
   await expect(page.getByText(checkInNote)).toBeVisible();
+  await page.getByRole("link", { name: "Back" }).click();
+  await expect(page).toHaveURL(/\/performance\/improvement-plans$/);
 });
