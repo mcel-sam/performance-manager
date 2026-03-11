@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import AppShell from "@/components/layout/app-shell";
 import { appEnv, isDatabaseConfigured } from "@/config/env";
@@ -29,17 +30,27 @@ export default function RootLayout({
   );
 }
 
+function AppShellSuspenseFallback({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-slate-100 text-slate-900">
+      <main className="mx-auto w-full max-w-[1520px] p-5 sm:p-7">{children}</main>
+    </div>
+  );
+}
+
 async function RootLayoutShell({ children }: { children: React.ReactNode }) {
   // Build pipelines may run without DATABASE_URL; render shell without user nav in that case.
   if (!isDatabaseConfigured()) {
     return (
-      <AppShell
-        navItems={[]}
-        viewer={null}
-        demoModeEnabled={appEnv.nextPublicDemoMode}
-      >
-        {children}
-      </AppShell>
+      <Suspense fallback={<AppShellSuspenseFallback>{children}</AppShellSuspenseFallback>}>
+        <AppShell
+          navItems={[]}
+          viewer={null}
+          demoModeEnabled={appEnv.nextPublicDemoMode}
+        >
+          {children}
+        </AppShell>
+      </Suspense>
     );
   }
 
@@ -59,12 +70,14 @@ async function RootLayoutShell({ children }: { children: React.ReactNode }) {
   const viewer = context ? await resolveShellViewer(context) : null;
 
   return (
-    <AppShell
-      navItems={navItems}
-      viewer={viewer}
-      demoModeEnabled={appEnv.nextPublicDemoMode}
-    >
-      {children}
-    </AppShell>
+    <Suspense fallback={<AppShellSuspenseFallback>{children}</AppShellSuspenseFallback>}>
+      <AppShell
+        navItems={navItems}
+        viewer={viewer}
+        demoModeEnabled={appEnv.nextPublicDemoMode}
+      >
+        {children}
+      </AppShell>
+    </Suspense>
   );
 }
