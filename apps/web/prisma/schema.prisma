@@ -96,6 +96,45 @@ enum EvidenceVisibility {
   ORG_VISIBLE
 }
 
+enum GoalCycleCadence {
+  QUARTERLY
+  ANNUAL
+}
+
+enum GoalCycleStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+  ARCHIVED
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  ON_TRACK
+  AT_RISK
+  OFF_TRACK
+  COMPLETE
+  CANCELED
+}
+
+enum GoalVisibility {
+  ORG
+  TEAM
+  PRIVATE
+}
+
+enum KeyResultType {
+  PERCENT
+  NUMBER
+  BOOLEAN
+}
+
+enum CompetencyAlignmentLabel {
+  NONE
+  STRENGTH
+  OPPORTUNITY
+}
+
 enum CalibrationBucket {
   LOW
   MEDIUM
@@ -144,37 +183,51 @@ enum SuccessionNoteVisibility {
 }
 
 model Org {
-  id                            String                          @id @default(cuid())
-  name                          String
-  createdAt                     DateTime                        @default(now())
-  updatedAt                     DateTime                        @updatedAt
-  users                         User[]
-  employees                     Employee[]
-  reviewTemplates               ReviewTemplate[]
-  reviewTemplateQuestions       ReviewTemplateQuestion[]
-  reviewCycles                  ReviewCycle[]
-  reviewPackets                 ReviewPacket[]
-  reviewSubmissions             ReviewSubmission[]
-  reviewAnswers                 ReviewAnswer[]
-  reviewCycleMetrics            ReviewCycleScorecardMetric[]
-  scorecardMetricResults        ScorecardMetricResult[]
-  evidenceItems                 EvidenceItem[]
-  answerEvidenceLinks           AnswerEvidenceLink[]
-  calibrationSessions           CalibrationSession[]
-  calibrationPlacements         CalibrationPlacement[]
-  calibrationParticipants       CalibrationSessionParticipant[]
-  calibrationSnapshots          CalibrationSnapshot[]
-  improvementPlans              ImprovementPlan[]
-  improvementPlanGoals          ImprovementPlanGoal[]
-  improvementPlanCheckIns       ImprovementPlanCheckIn[]
-  positions                     Position[]
-  successionPlans               SuccessionPlan[]
-  successionPlanCollaborators   SuccessionPlanCollaborator[]
-  successionPlanAllowedManagers SuccessionPlanAllowedManager[]
-  successionCandidates          SuccessionCandidate[]
-  successionNotes               SuccessionNote[]
-  successionCandidateSnapshots  SuccessionCandidateSnapshot[]
-  auditEvents                   AuditEvent[]
+  id                               String                            @id @default(cuid())
+  name                             String
+  createdAt                        DateTime                          @default(now())
+  updatedAt                        DateTime                          @updatedAt
+  users                            User[]
+  employees                        Employee[]
+  reviewTemplates                  ReviewTemplate[]
+  reviewTemplateQuestions          ReviewTemplateQuestion[]
+  reviewCycles                     ReviewCycle[]
+  reviewPackets                    ReviewPacket[]
+  reviewSubmissions                ReviewSubmission[]
+  reviewAnswers                    ReviewAnswer[]
+  reviewCycleMetrics               ReviewCycleScorecardMetric[]
+  scorecardMetricResults           ScorecardMetricResult[]
+  evidenceItems                    EvidenceItem[]
+  answerEvidenceLinks              AnswerEvidenceLink[]
+  calibrationSessions              CalibrationSession[]
+  calibrationPlacements            CalibrationPlacement[]
+  calibrationParticipants          CalibrationSessionParticipant[]
+  calibrationSnapshots             CalibrationSnapshot[]
+  improvementPlans                 ImprovementPlan[]
+  improvementPlanGoals             ImprovementPlanGoal[]
+  improvementPlanCheckIns          ImprovementPlanCheckIn[]
+  positions                        Position[]
+  successionPlans                  SuccessionPlan[]
+  successionPlanCollaborators      SuccessionPlanCollaborator[]
+  successionPlanAllowedManagers    SuccessionPlanAllowedManager[]
+  successionCandidates             SuccessionCandidate[]
+  successionNotes                  SuccessionNote[]
+  successionCandidateSnapshots     SuccessionCandidateSnapshot[]
+  goalCycles                       GoalCycle[]
+  goals                            Goal[]
+  keyResults                       KeyResult[]
+  goalUpdates                      GoalUpdate[]
+  goalCompetencyLinks              GoalCompetencyLink[]
+  goalWatchers                     GoalWatcher[]
+  trackGroups                      TrackGroup[]
+  tracks                           Track[]
+  trackLevels                      TrackLevel[]
+  competencyThemes                 CompetencyTheme[]
+  competencies                     Competency[]
+  trackLevelCompetencyExpectations TrackLevelCompetencyExpectation[]
+  employeeTrackAssignments         EmployeeTrackAssignment[]
+  competencyAlignmentComments      CompetencyAlignmentComment[]
+  auditEvents                      AuditEvent[]
 }
 
 model User {
@@ -190,6 +243,7 @@ model User {
   calibrationParticipations CalibrationSessionParticipant[]
   improvementPlansCreated   ImprovementPlan[]
   improvementPlanCheckIns   ImprovementPlanCheckIn[]
+  goalWatchers              GoalWatcher[]
 
   @@unique([orgId, email])
   @@index([orgId])
@@ -221,6 +275,10 @@ model Employee {
   improvementPlansAsSubject    ImprovementPlan[]              @relation("ImprovementPlanSubjectEmployee")
   improvementPlansAsManager    ImprovementPlan[]              @relation("ImprovementPlanManagerEmployee")
   improvementPlansAsHrOwner    ImprovementPlan[]              @relation("ImprovementPlanHrOwnerEmployee")
+  ownedGoals                   Goal[]                         @relation("GoalOwnerEmployee")
+  goalUpdatesAuthored          GoalUpdate[]                   @relation("GoalUpdateAuthorEmployee")
+  trackAssignment              EmployeeTrackAssignment?
+  competencyAlignmentComments  CompetencyAlignmentComment[]   @relation("CompetencyAlignmentCommentAuthorEmployee")
   successionPlansOwned         SuccessionPlan[]               @relation("SuccessionPlanOwnerEmployee")
   successionPlanCollaborations SuccessionPlanCollaborator[]   @relation("SuccessionPlanCollaboratorEmployee")
   successionPlanManagerScopes  SuccessionPlanAllowedManager[] @relation("SuccessionPlanAllowedManagerEmployee")
@@ -300,6 +358,287 @@ model ReviewCycle {
 
   @@index([orgId])
   @@index([orgId, status])
+}
+
+model TrackGroup {
+  id          String   @id @default(cuid())
+  orgId       String
+  slug        String
+  name        String
+  description String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  org         Org      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  tracks      Track[]
+
+  @@unique([orgId, slug])
+  @@index([orgId])
+  @@index([orgId, sortOrder])
+}
+
+model Track {
+  id           String                    @id @default(cuid())
+  orgId        String
+  trackGroupId String
+  slug         String
+  name         String
+  description  String?
+  isPublished  Boolean                   @default(false)
+  sortOrder    Int                       @default(0)
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  org          Org                       @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  trackGroup   TrackGroup                @relation(fields: [trackGroupId], references: [id], onDelete: Cascade)
+  levels       TrackLevel[]
+  assignments  EmployeeTrackAssignment[]
+
+  @@unique([orgId, slug])
+  @@index([orgId])
+  @@index([trackGroupId])
+  @@index([orgId, isPublished])
+  @@index([trackGroupId, sortOrder])
+}
+
+model TrackLevel {
+  id           String                            @id @default(cuid())
+  orgId        String
+  trackId      String
+  slug         String
+  name         String
+  description  String?
+  levelOrder   Int                               @default(0)
+  createdAt    DateTime                          @default(now())
+  updatedAt    DateTime                          @updatedAt
+  org          Org                               @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  track        Track                             @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  expectations TrackLevelCompetencyExpectation[]
+  assignments  EmployeeTrackAssignment[]
+
+  @@unique([trackId, slug])
+  @@unique([trackId, levelOrder])
+  @@index([orgId])
+  @@index([trackId])
+}
+
+model CompetencyTheme {
+  id           String       @id @default(cuid())
+  orgId        String
+  slug         String
+  name         String
+  description  String?
+  sortOrder    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  org          Org          @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  competencies Competency[]
+
+  @@unique([orgId, slug])
+  @@index([orgId])
+  @@index([orgId, sortOrder])
+}
+
+model Competency {
+  id                String                            @id @default(cuid())
+  orgId             String
+  themeId           String?
+  slug              String
+  name              String
+  description       String
+  dimensionKey      CompetencyDimensionKey?
+  createdAt         DateTime                          @default(now())
+  updatedAt         DateTime                          @updatedAt
+  org               Org                               @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  theme             CompetencyTheme?                  @relation(fields: [themeId], references: [id], onDelete: SetNull)
+  expectations      TrackLevelCompetencyExpectation[]
+  goalLinks         GoalCompetencyLink[]
+  alignmentComments CompetencyAlignmentComment[]
+
+  @@unique([orgId, slug])
+  @@unique([orgId, dimensionKey])
+  @@index([orgId])
+  @@index([themeId])
+}
+
+model TrackLevelCompetencyExpectation {
+  id           String     @id @default(cuid())
+  orgId        String
+  trackLevelId String
+  competencyId String
+  expectation  String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  org          Org        @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  trackLevel   TrackLevel @relation(fields: [trackLevelId], references: [id], onDelete: Cascade)
+  competency   Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+
+  @@unique([trackLevelId, competencyId])
+  @@index([orgId])
+  @@index([trackLevelId])
+  @@index([competencyId])
+}
+
+model EmployeeTrackAssignment {
+  id                String                       @id @default(cuid())
+  orgId             String
+  employeeId        String                       @unique
+  trackId           String
+  trackLevelId      String
+  assignedAt        DateTime                     @default(now())
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+  org               Org                          @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  employee          Employee                     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  track             Track                        @relation(fields: [trackId], references: [id], onDelete: Restrict)
+  trackLevel        TrackLevel                   @relation(fields: [trackLevelId], references: [id], onDelete: Restrict)
+  alignmentComments CompetencyAlignmentComment[]
+
+  @@index([orgId])
+  @@index([trackId])
+  @@index([trackLevelId])
+}
+
+model CompetencyAlignmentComment {
+  id                        String                   @id @default(cuid())
+  orgId                     String
+  employeeTrackAssignmentId String
+  competencyId              String
+  authorEmployeeId          String
+  label                     CompetencyAlignmentLabel @default(NONE)
+  note                      String
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
+  org                       Org                      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  employeeTrackAssignment   EmployeeTrackAssignment  @relation(fields: [employeeTrackAssignmentId], references: [id], onDelete: Cascade)
+  competency                Competency               @relation(fields: [competencyId], references: [id], onDelete: Restrict)
+  authorEmployee            Employee                 @relation("CompetencyAlignmentCommentAuthorEmployee", fields: [authorEmployeeId], references: [id], onDelete: Restrict)
+
+  @@index([orgId])
+  @@index([employeeTrackAssignmentId])
+  @@index([competencyId])
+  @@index([authorEmployeeId])
+}
+
+model GoalCycle {
+  id        String           @id @default(cuid())
+  orgId     String
+  name      String
+  cadence   GoalCycleCadence
+  startDate DateTime
+  endDate   DateTime
+  status    GoalCycleStatus  @default(DRAFT)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  org       Org              @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  goals     Goal[]
+
+  @@unique([orgId, name])
+  @@index([orgId])
+  @@index([orgId, status])
+}
+
+model Goal {
+  id              String               @id @default(cuid())
+  orgId           String
+  ownerEmployeeId String
+  cycleId         String
+  title           String
+  description     String?
+  status          GoalStatus           @default(NOT_STARTED)
+  progressPercent Float                @default(0)
+  visibility      GoalVisibility       @default(TEAM)
+  parentGoalId    String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  org             Org                  @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  ownerEmployee   Employee             @relation("GoalOwnerEmployee", fields: [ownerEmployeeId], references: [id], onDelete: Restrict)
+  cycle           GoalCycle            @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  parentGoal      Goal?                @relation("GoalCascade", fields: [parentGoalId], references: [id], onDelete: SetNull)
+  childGoals      Goal[]               @relation("GoalCascade")
+  keyResults      KeyResult[]
+  updates         GoalUpdate[]
+  competencyLinks GoalCompetencyLink[]
+  watchers        GoalWatcher[]
+
+  @@index([orgId])
+  @@index([ownerEmployeeId])
+  @@index([cycleId])
+  @@index([parentGoalId])
+  @@index([orgId, cycleId, ownerEmployeeId])
+  @@index([orgId, status])
+}
+
+model KeyResult {
+  id           String        @id @default(cuid())
+  orgId        String
+  goalId       String
+  title        String
+  type         KeyResultType
+  startValue   Float?
+  targetValue  Float?
+  currentValue Float?
+  weight       Float?
+  sortOrder    Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  org          Org           @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  goal         Goal          @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+  @@index([goalId])
+  @@index([goalId, sortOrder])
+}
+
+model GoalUpdate {
+  id                      String   @id @default(cuid())
+  orgId                   String
+  goalId                  String
+  authorEmployeeId        String
+  note                    String
+  progressDelta           Float?
+  snapshotProgressPercent Float?
+  snapshotCurrentValues   Json?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  org                     Org      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  goal                    Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  authorEmployee          Employee @relation("GoalUpdateAuthorEmployee", fields: [authorEmployeeId], references: [id], onDelete: Restrict)
+
+  @@index([orgId])
+  @@index([goalId, createdAt])
+  @@index([authorEmployeeId])
+}
+
+model GoalCompetencyLink {
+  id           String     @id @default(cuid())
+  orgId        String
+  goalId       String
+  competencyId String
+  createdAt    DateTime   @default(now())
+  org          Org        @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  goal         Goal       @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  competency   Competency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, competencyId])
+  @@index([orgId])
+  @@index([goalId])
+  @@index([competencyId])
+}
+
+model GoalWatcher {
+  id        String   @id @default(cuid())
+  orgId     String
+  goalId    String
+  userId    String
+  createdAt DateTime @default(now())
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, userId])
+  @@index([orgId])
+  @@index([goalId])
+  @@index([userId])
 }
 
 model Position {
