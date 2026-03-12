@@ -1,5 +1,6 @@
 import type {
   ReportingCompetenciesResponse,
+  ReportingGoalsResult,
   ReportingProgressResult,
   ReportingRatingsResult,
 } from "@/server/reporting/reporting-service";
@@ -85,6 +86,80 @@ export function buildCompetencyBreakdownCsv(result: ReportingCompetenciesRespons
       competency.selfManagerGap.averageGap ?? "",
       competency.selfManagerGap.averageAbsoluteGap ?? "",
     ]);
+  }
+
+  return csvLines(rows);
+}
+
+export function buildGoalsProgressCsv(result: ReportingGoalsResult): string {
+  if (result.suppression.suppressed) {
+    return csvLines([
+      ["status", "message"],
+      ["suppressed", result.suppression.message ?? "Insufficient data for this filter group."],
+    ]);
+  }
+
+  const rows: Array<Array<string | number>> = [
+    [
+      "goalTitle",
+      "ownerName",
+      "department",
+      "title",
+      "track",
+      "level",
+      "status",
+      "progressPercent",
+      "updateCount",
+      "lastUpdateAt",
+      "competencies",
+      "keyResultTitle",
+      "keyResultType",
+      "keyResultCurrentValue",
+      "keyResultTargetValue",
+    ],
+  ];
+
+  for (const goal of result.rows) {
+    if (goal.keyResults.length === 0) {
+      rows.push([
+        goal.title,
+        goal.ownerName,
+        goal.department,
+        goal.titleName,
+        goal.trackName,
+        goal.levelName,
+        goal.status,
+        goal.progressPercent,
+        goal.updateCount,
+        goal.lastUpdateAt ?? "",
+        goal.competencyNames.join(" | "),
+        "",
+        "",
+        "",
+        "",
+      ]);
+      continue;
+    }
+
+    for (const keyResult of goal.keyResults) {
+      rows.push([
+        goal.title,
+        goal.ownerName,
+        goal.department,
+        goal.titleName,
+        goal.trackName,
+        goal.levelName,
+        goal.status,
+        goal.progressPercent,
+        goal.updateCount,
+        goal.lastUpdateAt ?? "",
+        goal.competencyNames.join(" | "),
+        keyResult.title,
+        keyResult.type,
+        keyResult.currentValue ?? "",
+        keyResult.targetValue ?? "",
+      ]);
+    }
   }
 
   return csvLines(rows);

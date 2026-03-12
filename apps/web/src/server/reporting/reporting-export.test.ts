@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCompetencyBreakdownCsv,
+  buildGoalsProgressCsv,
   buildProgressSummaryCsv,
   buildRatingsDistributionCsv,
 } from "@/server/reporting/reporting-export";
@@ -65,5 +66,60 @@ describe("reporting-export", () => {
       "dimensionKey,averageRating,selfAverage,managerAverage,observedCount,notObservedCount,averageGap,averageAbsoluteGap",
     );
     expect(csv).toContain("COMMUNICATION,3,2.5,3.5,4,1,1,1");
+  });
+
+  it("builds goals progress csv", () => {
+    const csv = buildGoalsProgressCsv({
+      summary: {
+        goalCycleName: "FY26 Goals",
+        activeGoals: 2,
+        offTrackGoals: 1,
+        noUpdateGoals: 1,
+        completionRate: 50,
+      },
+      linkage: [],
+      trackCoverage: [],
+      rows: [
+        {
+          goalId: "goal_1",
+          title: "Improve platform reliability",
+          ownerName: "Elliot Employee",
+          department: "Operations",
+          titleName: "Software Engineer",
+          trackId: "track_software",
+          trackName: "Software",
+          levelName: "Senior",
+          status: "ON_TRACK",
+          progressPercent: 82,
+          updateCount: 2,
+          lastUpdateAt: "2026-02-14T00:00:00.000Z",
+          competencyNames: ["Communication", "Accountability"],
+          keyResults: [
+            {
+              id: "kr_1",
+              title: "Ship roadmap milestone",
+              type: "PERCENT",
+              currentValue: 75,
+              targetValue: 100,
+            },
+          ],
+        },
+      ],
+      filters: {
+        cycleId: "cycle_1",
+        track: "track_software",
+        departments: ["Operations"],
+        titles: ["Software Engineer"],
+        tracks: [{ value: "track_software", label: "Software" }],
+      },
+      suppression: { suppressed: false, message: null },
+    });
+
+    expect(csv).toContain(
+      "goalTitle,ownerName,department,title,track,level,status,progressPercent,updateCount,lastUpdateAt,competencies,keyResultTitle,keyResultType,keyResultCurrentValue,keyResultTargetValue",
+    );
+    expect(csv).toContain(
+      "Improve platform reliability,Elliot Employee,Operations,Software Engineer,Software,Senior,ON_TRACK,82,2,2026-02-14T00:00:00.000Z,Communication | Accountability,Ship roadmap milestone,PERCENT,75,100",
+    );
   });
 });

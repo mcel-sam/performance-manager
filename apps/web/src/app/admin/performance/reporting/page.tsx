@@ -16,11 +16,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import {
   buildCompetencyBreakdownCsv,
+  buildGoalsProgressCsv,
   buildProgressSummaryCsv,
   buildRatingsDistributionCsv,
 } from "@/server/reporting/reporting-export";
 import {
   getReportingCompetencies,
+  getReportingGoals,
   getReportingManagerOverview,
   getReportingPeople,
   getReportingProgress,
@@ -28,6 +30,7 @@ import {
   getReportingScorecard,
   listReportingCycles,
   parseCompetenciesFilters,
+  parseGoalsFilters,
   parsePeopleFilters,
   parseProgressFilters,
   parseRatingsFilters,
@@ -43,6 +46,7 @@ type ReportingTab =
   | "overview"
   | "managers"
   | "queue"
+  | "goals"
   | "results"
   | "competencies"
   | "scorecard";
@@ -104,6 +108,7 @@ export default async function AdminReportingPage({
   const selectedTab = parseTab(getSingleValue(query.tab));
   const selectedDepartment = getSingleValue(query.department);
   const selectedTitle = getSingleValue(query.title);
+  const selectedTrack = getSingleValue(query.track);
   const selectedRatingSource: RatingSourceFilter =
     getSingleValue(query.ratingSource) === "SCORECARD" ? "SCORECARD" : "FINAL";
   const selectedGroupBy = parseGroupBy(getSingleValue(query.groupBy));
@@ -118,6 +123,16 @@ export default async function AdminReportingPage({
       cycleId: selectedCycleId,
       department: selectedDepartment,
       title: selectedTitle,
+      track: selectedTrack,
+    }),
+  );
+
+  const goalsFilters = parseGoalsFilters(
+    toUrlSearchParams({
+      cycleId: selectedCycleId,
+      department: selectedDepartment,
+      title: selectedTitle,
+      track: selectedTrack,
     }),
   );
 
@@ -152,6 +167,7 @@ export default async function AdminReportingPage({
   const [
     filterCatalog,
     progress,
+    goals,
     managerOverview,
     ratingsFinal,
     ratingsScorecard,
@@ -168,6 +184,7 @@ export default async function AdminReportingPage({
         context,
       ),
       getReportingProgress(progressFilters, context),
+      getReportingGoals(goalsFilters, context),
       getReportingManagerOverview(progressFilters, context),
       getReportingRatings(
         parseRatingsFilters(
@@ -203,8 +220,11 @@ export default async function AdminReportingPage({
     label: item.name,
   }));
 
-  const departmentOptions = filterCatalog.filters.departments;
-  const titleOptions = filterCatalog.filters.titles;
+  const departmentOptions =
+    selectedTab === "goals" ? goals.filters.departments : filterCatalog.filters.departments;
+  const titleOptions =
+    selectedTab === "goals" ? goals.filters.titles : filterCatalog.filters.titles;
+  const trackOptions = goals.filters.tracks;
 
   const selectedCompetency = requestedDimensionKey
     ? competencies.competencies.find((item) => item.dimensionKey === requestedDimensionKey) ??
@@ -237,6 +257,13 @@ export default async function AdminReportingPage({
       ...baseQuery,
       tab: "queue",
       status: selectedStatus,
+      ratingSource: selectedRatingSource,
+      page: "1",
+    }),
+    goals: toQueryString({
+      ...baseQuery,
+      tab: "goals",
+      track: selectedTrack,
       ratingSource: selectedRatingSource,
       page: "1",
     }),
@@ -294,6 +321,7 @@ export default async function AdminReportingPage({
       selectedCycleId={selectedCycleId}
       selectedDepartment={selectedDepartment}
       selectedTitle={selectedTitle}
+      selectedTrack={selectedTrack}
       selectedStatus={selectedStatus}
       selectedRatingSource={selectedRatingSource}
       selectedGroupBy={selectedGroupBy}
@@ -301,10 +329,12 @@ export default async function AdminReportingPage({
       cycleOptions={cycleOptions}
       departmentOptions={departmentOptions}
       titleOptions={titleOptions}
+      trackOptions={trackOptions}
       tabHrefs={tabHrefs}
       paginationHrefs={paginationHrefs}
       managerOverview={managerOverview}
       progress={progress}
+      goals={goals}
       ratingsFinal={ratingsFinal}
       ratingsScorecard={ratingsScorecard}
       competencies={competencies}
@@ -316,6 +346,7 @@ export default async function AdminReportingPage({
       scorecardOrder={scorecardOrder}
       csvHrefs={{
         progress: toDataCsvHref(buildProgressSummaryCsv(progress)),
+        goals: toDataCsvHref(buildGoalsProgressCsv(goals)),
         ratings: toDataCsvHref(
           buildRatingsDistributionCsv(
             selectedRatingSource === "FINAL" ? ratingsFinal : ratingsScorecard,
@@ -387,6 +418,7 @@ function parseTab(value: string | undefined): ReportingTab {
     value === "overview" ||
     value === "managers" ||
     value === "queue" ||
+    value === "goals" ||
     value === "results" ||
     value === "competencies" ||
     value === "scorecard"

@@ -1,6 +1,7 @@
 import {
   CompetencyDimensionKey,
   FinalRatingSource,
+  GoalStatus,
   ReviewRelationship,
   ReviewSubmissionStatus,
   ScorecardMetricKey,
@@ -10,6 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   getReportingCompetencies,
+  getReportingGoals,
   getReportingManagerOverview,
   getReportingProgress,
   getReportingRatings,
@@ -22,7 +24,13 @@ function createReportingDbMock() {
     reviewCycle: {
       findMany: vi.fn().mockResolvedValue([]),
     },
+    goalCycle: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
     reviewPacket: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    goal: {
       findMany: vi.fn().mockResolvedValue([]),
     },
     reviewAnswer: {
@@ -88,6 +96,75 @@ function buildPacketRecord(overrides: {
         dueAt: overrides.managerDueAt ?? null,
       },
     ],
+  };
+}
+
+function buildGoalRecord(overrides: {
+  id: string;
+  title: string;
+  ownerEmployeeId: string;
+  status?: GoalStatus;
+  progressPercent?: number;
+  department?: string | null;
+  employeeTitle?: string | null;
+  trackId?: string;
+  trackName?: string;
+  levelId?: string;
+  levelName?: string;
+  competencyNames?: string[];
+  updates?: Array<{ id: string; createdAt: Date; note: string }>;
+  keyResults?: Array<{
+    id: string;
+    title: string;
+    type: string;
+    currentValue: number | null;
+    targetValue: number | null;
+  }>;
+}) {
+  return {
+    id: overrides.id,
+    title: overrides.title,
+    status: overrides.status ?? GoalStatus.ON_TRACK,
+    progressPercent: overrides.progressPercent ?? 65,
+    ownerEmployeeId: overrides.ownerEmployeeId,
+    ownerEmployee: {
+      firstName: "Elliot",
+      lastName: "Employee",
+      department: overrides.department ?? "Operations",
+      title: overrides.employeeTitle ?? "Software Engineer",
+      trackAssignment: {
+        track: {
+          id: overrides.trackId ?? "track_software",
+          name: overrides.trackName ?? "Software",
+        },
+        trackLevel: {
+          id: overrides.levelId ?? "track_level_senior",
+          name: overrides.levelName ?? "Senior",
+        },
+      },
+    },
+    keyResults: overrides.keyResults ?? [
+      {
+        id: `${overrides.id}_kr_1`,
+        title: "Ship roadmap milestone",
+        type: "PERCENT",
+        currentValue: 75,
+        targetValue: 100,
+      },
+    ],
+    updates: overrides.updates ?? [
+      {
+        id: `${overrides.id}_update_1`,
+        createdAt: new Date("2026-02-14T00:00:00.000Z"),
+        note: "Weekly check-in posted.",
+      },
+    ],
+    competencyLinks: (overrides.competencyNames ?? ["Communication"]).map((name) => ({
+      competency: {
+        id: `${overrides.id}_${name.toLowerCase().replaceAll(" ", "_")}`,
+        name,
+      },
+    })),
   };
 }
 
@@ -393,6 +470,118 @@ describe("reporting-service", () => {
       employeeId: "emp_1",
       managerStatus: ReviewSubmissionStatus.NOT_STARTED,
     });
+  });
+
+  it("aggregates goals adoption, linkage, and track coverage", async () => {
+    const db = createReportingDbMock();
+    db.reviewCycle.findMany.mockResolvedValue([
+      {
+        id: "cycle_seed_1",
+        name: "Annual Review 2026",
+        status: "ACTIVE",
+        startDate: new Date("2026-01-01T00:00:00.000Z"),
+        endDate: new Date("2026-12-31T00:00:00.000Z"),
+        createdAt: new Date("2025-12-15T00:00:00.000Z"),
+        packets: [{ id: "packet_1" }],
+      },
+    ]);
+    db.goalCycle.findMany.mockResolvedValue([
+      {
+        id: "goal_cycle_2026",
+        name: "FY26 Goals",
+        startDate: new Date("2026-01-01T00:00:00.000Z"),
+        endDate: new Date("2026-12-31T00:00:00.000Z"),
+        goals: [{ id: "goal_1" }, { id: "goal_2" }],
+      },
+    ]);
+    db.goal.findMany.mockResolvedValue([
+      buildGoalRecord({
+        id: "goal_1",
+        title: "Improve platform reliability",
+        ownerEmployeeId: "emp_1",
+        status: GoalStatus.ON_TRACK,
+        progressPercent: 82,
+        trackId: "track_software",
+        trackName: "Software",
+        levelName: "Senior",
+        competencyNames: ["Communication", "Accountability"],
+      }),
+      buildGoalRecord({
+        id: "goal_2",
+        title: "Tighten data quality checks",
+        ownerEmployeeId: "emp_2",
+        status: GoalStatus.OFF_TRACK,
+        progressPercent: 34,
+        department: "Data",
+        employeeTitle: "Analytics Engineer",
+        trackId: "track_data",
+        trackName: "Data",
+        levelName: "Associate",
+        competencyNames: ["Judgment"],
+        updates: [],
+      }),
+    ]);
+
+    const result = await getReportingGoals(
+      {
+        cycleId: "cycle_seed_1",
+        track: "track_software",
+        smallNThreshold: 1,
+      },
+      hrAdminContext,
+      db as never,
+    );
+
+    expect(result.summary).toEqual({
+      goalCycleName: "FY26 Goals",
+      activeGoals: 1,
+      offTrackGoals: 0,
+      noUpdateGoals: 0,
+      completionRate: 0,
+    });
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0]).toMatchObject({
+      title: "Improve platform reliability",
+      trackName: "Software",
+      levelName: "Senior",
+      competencyNames: ["Accountability", "Communication"],
+    });
+    expect(result.linkage).toEqual([
+      expect.objectContaining({
+        competencyName: "Accountability",
+        goalCount: 1,
+        onTrackCount: 1,
+        offTrackCount: 0,
+      }),
+      expect.objectContaining({
+        competencyName: "Communication",
+        goalCount: 1,
+        onTrackCount: 1,
+        offTrackCount: 0,
+      }),
+    ]);
+    expect(result.trackCoverage).toEqual([
+      expect.objectContaining({
+        trackId: "track_software",
+        trackName: "Software",
+        levelName: "Senior",
+        employeeCount: 1,
+        goalCount: 1,
+      }),
+    ]);
+    expect(result.filters.tracks).toEqual([
+      { value: "track_data", label: "Data" },
+      { value: "track_software", label: "Software" },
+    ]);
+
+    expect(db.goal.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          orgId: "org_demo_1",
+          cycleId: "goal_cycle_2026",
+        }),
+      }),
+    );
   });
 
   it("returns scorecard metrics with Not Observed counts and gaps", async () => {

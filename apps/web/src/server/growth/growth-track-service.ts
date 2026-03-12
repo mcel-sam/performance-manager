@@ -86,6 +86,13 @@ interface GrowthLevelDefinition {
   summary: string;
 }
 
+export interface GrowthTrackBaseline {
+  trackId: string;
+  trackLabel: string;
+  levelKey: TrackLevelKey;
+  levelLabel: string;
+}
+
 export interface GrowthTrackData {
   employee: {
     displayName: string;
@@ -380,6 +387,21 @@ export async function getGrowthTrackDataForEmployee(
       };
     }),
     templateName: template?.name ?? null,
+  };
+}
+
+export function inferGrowthTrackBaseline(
+  department: string | null,
+  title: string | null,
+): GrowthTrackBaseline {
+  const track = resolveTrack(department, title);
+  const level = resolveTrackLevel(title);
+
+  return {
+    trackId: track.id,
+    trackLabel: track.label,
+    levelKey: level.key,
+    levelLabel: level.label,
   };
 }
 

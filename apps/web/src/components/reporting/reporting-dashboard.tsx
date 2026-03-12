@@ -37,6 +37,7 @@ import { reportingChartTheme } from "@/components/reporting/chart-theme";
 import type {
   ReportingCompetenciesResponse,
   ReportingCompetencyResult,
+  ReportingGoalsResult,
   ReportingManagerOverviewResult,
   ReportingPeopleResult,
   ReportingProgressResult,
@@ -50,6 +51,7 @@ type ReportingTab =
   | "overview"
   | "managers"
   | "queue"
+  | "goals"
   | "results"
   | "competencies"
   | "scorecard";
@@ -60,6 +62,7 @@ interface ReportingDashboardProps {
   selectedCycleId: string;
   selectedDepartment?: string;
   selectedTitle?: string;
+  selectedTrack?: string;
   selectedStatus?: ProgressStatusFilter;
   selectedRatingSource: RatingSourceFilter;
   selectedGroupBy?: "department" | "title";
@@ -67,10 +70,12 @@ interface ReportingDashboardProps {
   cycleOptions: Array<{ value: string; label: string }>;
   departmentOptions: string[];
   titleOptions: string[];
+  trackOptions: Array<{ value: string; label: string }>;
   tabHrefs: {
     overview: string;
     managers: string;
     queue: string;
+    goals: string;
     results: string;
     competencies: string;
     scorecard: string;
@@ -81,6 +86,7 @@ interface ReportingDashboardProps {
   };
   managerOverview: ReportingManagerOverviewResult;
   progress: ReportingProgressResult;
+  goals: ReportingGoalsResult;
   ratingsFinal: ReportingRatingsResult;
   ratingsScorecard: ReportingRatingsResult;
   competencies: ReportingCompetenciesResponse;
@@ -92,6 +98,7 @@ interface ReportingDashboardProps {
   scorecardOrder: string[];
   csvHrefs: {
     progress: string;
+    goals: string;
     ratings: string;
     competencies: string;
   };
@@ -164,6 +171,7 @@ export function ReportingDashboard({
   selectedCycleId,
   selectedDepartment,
   selectedTitle,
+  selectedTrack,
   selectedStatus,
   selectedRatingSource,
   selectedGroupBy = "department",
@@ -171,10 +179,12 @@ export function ReportingDashboard({
   cycleOptions,
   departmentOptions,
   titleOptions,
+  trackOptions,
   tabHrefs,
   paginationHrefs,
   managerOverview,
   progress,
+  goals,
   ratingsFinal,
   ratingsScorecard,
   competencies,
@@ -215,6 +225,7 @@ export function ReportingDashboard({
     () => ({
       cycleId: selectedCycleId,
       tab: selectedTab,
+      track: selectedTab === "goals" ? selectedTrack : undefined,
       status: selectedTab === "queue" ? selectedStatus : undefined,
       ratingSource: selectedRatingSource,
       groupBy: selectedGroupBy,
@@ -224,6 +235,7 @@ export function ReportingDashboard({
     [
       selectedCycleId,
       selectedTab,
+      selectedTrack,
       selectedStatus,
       selectedRatingSource,
       selectedGroupBy,
@@ -256,8 +268,22 @@ export function ReportingDashboard({
               }),
             }
           : null,
+        selectedTab === "goals" && selectedTrack
+          ? {
+              key: "track",
+              label: `Track: ${
+                trackOptions.find((option) => option.value === selectedTrack)?.label ?? selectedTrack
+              }`,
+              clearHref: toQueryString({
+                ...baseFilterQuery,
+                department: selectedDepartment,
+                title: selectedTitle,
+                track: undefined,
+              }),
+            }
+          : null,
       ].filter((chip): chip is { key: string; label: string; clearHref: string } => chip !== null),
-    [baseFilterQuery, selectedDepartment, selectedTitle],
+    [baseFilterQuery, selectedDepartment, selectedTab, selectedTitle, selectedTrack, trackOptions],
   );
   const currentReportingHref = useMemo(
     () =>
@@ -286,7 +312,7 @@ export function ReportingDashboard({
       <FilterBar
         method="get"
         data-testid="reporting-filter-bar"
-        description="Refine the cycle scope, then move between overview, manager follow-up, employee queue, results, competencies, and scorecard views."
+        description="Refine the cycle scope, then move between completion, manager follow-up, employee queue, goals adoption, results, competencies, and scorecard views."
         chips={
           filterChips.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2" data-testid="reporting-filter-chips">
@@ -354,6 +380,24 @@ export function ReportingDashboard({
           </Select>
         </label>
 
+        {selectedTab === "goals" || selectedTrack ? (
+          <label className="flex flex-col gap-2 text-sm text-slate-700">
+            Track
+            <Select
+              name="track"
+              defaultValue={selectedTrack ?? ""}
+              data-testid="reporting-filter-track"
+            >
+              <option value="">All tracks</option>
+              {trackOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </label>
+        ) : null}
+
         <div className="flex flex-col gap-2">
           <span className="text-sm text-slate-700">Rating source</span>
           <div
@@ -416,6 +460,13 @@ export function ReportingDashboard({
             Employee queue
           </Link>
           <Link
+            href={tabHrefs.goals}
+            data-testid="reporting-tab-goals"
+            className={tabClassName(selectedTab === "goals")}
+          >
+            Goals
+          </Link>
+          <Link
             href={tabHrefs.results}
             data-testid="reporting-tab-results"
             className={tabClassName(selectedTab === "results")}
@@ -443,6 +494,14 @@ export function ReportingDashboard({
           <span data-testid="reporting-current-department">{selectedDepartment ?? "All departments"}</span>
           {" • "}
           <span data-testid="reporting-current-title">{selectedTitle ?? "All titles"}</span>
+          {selectedTab === "goals" || selectedTrack ? (
+            <>
+              {" • "}
+              <span data-testid="reporting-current-track">
+                {trackOptions.find((option) => option.value === selectedTrack)?.label ?? "All tracks"}
+              </span>
+            </>
+          ) : null}
         </div>
       </section>
 
@@ -474,6 +533,10 @@ export function ReportingDashboard({
           employeeCsvHref={employeeCsvHref}
           currentReportingHref={currentReportingHref}
         />
+      ) : null}
+
+      {selectedTab === "goals" ? (
+        <GoalsTab goals={goals} selectedTrack={selectedTrack} csvHref={csvHrefs.goals} />
       ) : null}
 
       {selectedTab === "results" ? (
@@ -1147,6 +1210,351 @@ function EmployeeQueueTab({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function GoalsTab({
+  goals,
+  selectedTrack,
+  csvHref,
+}: {
+  goals: ReportingGoalsResult;
+  selectedTrack?: string;
+  csvHref: string;
+}) {
+  if (goals.suppression.suppressed) {
+    return (
+      <EmptyState
+        title="Insufficient data for selected filters"
+        description={
+          goals.suppression.message ??
+          "Widen the goal reporting scope to view adoption and progress safely."
+        }
+      />
+    );
+  }
+
+  const visibleGoals = goals.rows.slice(0, 8);
+  const atRiskGoals = goals.rows.filter(
+    (goal) => goal.status === "AT_RISK" || goal.status === "OFF_TRACK",
+  );
+  const mappedCycleLabel = goals.summary.goalCycleName ?? "No mapped goal cycle";
+  const strongestLinkage = goals.linkage[0] ?? null;
+  const broadestTrackCoverage = goals.trackCoverage[0] ?? null;
+
+  return (
+    <section className="space-y-4" data-testid="reporting-goals-overview">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MiniInsightCard
+          title="Active goals"
+          value={String(goals.summary.activeGoals)}
+          subtitle={`Across ${goals.rows.length} scoped objectives in ${mappedCycleLabel}.`}
+        />
+        <MiniInsightCard
+          title="Off track"
+          value={String(goals.summary.offTrackGoals)}
+          subtitle="Goals already marked off track and needing leadership attention."
+        />
+        <MiniInsightCard
+          title="No updates"
+          value={String(goals.summary.noUpdateGoals)}
+          subtitle="Goals without any check-in yet in the mapped goal cycle."
+        />
+        <MiniInsightCard
+          title="Completion rate"
+          value={`${goals.summary.completionRate}%`}
+          subtitle="Share of scoped goals already marked complete."
+        />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_360px]">
+        <Card>
+          <CardHeader>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <CardTitle>Goals adoption</CardTitle>
+                <CardDescription>
+                  Track objective health, updates, and competency tagging for the goal cycle mapped
+                  to the selected review cycle.
+                </CardDescription>
+              </div>
+              <a
+                href={csvHref}
+                download="reporting-goals-progress.csv"
+                className="rounded-[var(--radius-md)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-[var(--shadow-xs)] transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              >
+                Export goals CSV
+              </a>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Goal cycle
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">{mappedCycleLabel}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Derived from the review cycle selection to keep the reporting flow flat.
+                </p>
+              </div>
+              <div className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Track focus
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {selectedTrack
+                    ? goals.filters.tracks.find((track) => track.value === selectedTrack)?.label ??
+                      selectedTrack
+                    : "All tracks"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Use the track filter when HR wants adoption by job architecture slice.
+                </p>
+              </div>
+              <div className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                  Highest risk pocket
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900">
+                  {atRiskGoals[0]?.title ?? "No at-risk goals"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {atRiskGoals[0]
+                    ? `${atRiskGoals[0].ownerName} · ${atRiskGoals[0].department}`
+                    : "No goals are currently marked at risk or off track."}
+                </p>
+              </div>
+            </div>
+
+            {visibleGoals.length === 0 ? (
+              <EmptyState
+                title="No goals in scope"
+                description="Adjust department, title, or track filters to include active goals."
+              />
+            ) : (
+              <div className="grid gap-3">
+                {visibleGoals.map((goal) => (
+                  <article
+                    key={goal.goalId}
+                    data-testid="reporting-goal-row"
+                    className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-4 shadow-[var(--shadow-xs)]"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm font-semibold text-slate-900">{goal.title}</h3>
+                          <Badge variant={goalStatusBadgeVariant(goal.status)}>
+                            {humanizeEnumValue(goal.status)}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-slate-600">
+                          {goal.ownerName} · {goal.department} · {goal.titleName}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="neutral">
+                            {goal.trackName} · {goal.levelName}
+                          </Badge>
+                          <Badge variant="info">
+                            {goal.updateCount} {goal.updateCount === 1 ? "update" : "updates"}
+                          </Badge>
+                          <Badge variant="neutral">
+                            {goal.keyResults.length}{" "}
+                            {goal.keyResults.length === 1 ? "key result" : "key results"}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="min-w-[180px] flex-1 max-w-[240px]">
+                        <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
+                          <span>Progress</span>
+                          <span>{goal.progressPercent}%</span>
+                        </div>
+                        <div className="mt-2 h-2 rounded-full bg-slate-100">
+                          <div
+                            className="h-2 rounded-full transition-[width]"
+                            style={{
+                              width: `${Math.max(0, Math.min(goal.progressPercent, 100))}%`,
+                              backgroundColor: goalProgressColor(goal.status, goal.progressPercent),
+                            }}
+                          />
+                        </div>
+                        <p className="mt-2 text-xs text-slate-500">
+                          {goal.lastUpdateAt
+                            ? `Last update ${formatShortDate(goal.lastUpdateAt)}`
+                            : "No check-ins recorded yet"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 border-t border-slate-100 pt-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                          Competency tags
+                        </p>
+                        <p className="mt-2 text-sm text-slate-700">
+                          {goal.competencyNames.length > 0
+                            ? goal.competencyNames.join(", ")
+                            : "No competency linkage yet."}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                          Key result scope
+                        </p>
+                        <div className="mt-2 space-y-1.5 text-sm text-slate-700">
+                          {goal.keyResults.slice(0, 2).map((keyResult) => (
+                            <p key={keyResult.id}>
+                              {keyResult.title} · {humanizeEnumValue(keyResult.type)}
+                            </p>
+                          ))}
+                          {goal.keyResults.length > 2 ? (
+                            <p className="text-xs text-slate-500">
+                              +{goal.keyResults.length - 2} more key results in export.
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {goals.rows.length > visibleGoals.length ? (
+              <p className="text-xs text-slate-500">
+                Showing the first {visibleGoals.length} goals in the UI. Export CSV for the full
+                scoped dataset.
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Competency linkage</CardTitle>
+              <CardDescription>
+                Goals tagged to competencies, with average progress and risk signal.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {goals.linkage.length === 0 ? (
+                <EmptyState
+                  title="No competency tags yet"
+                  description="Tagged goals will show how objective work aligns to capability expectations."
+                />
+              ) : (
+                <>
+                  {strongestLinkage ? (
+                    <div className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                        Most linked competency
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {strongestLinkage.competencyName}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {strongestLinkage.goalCount} linked goals · {formatNumber(strongestLinkage.averageProgress)} average progress
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {goals.linkage.slice(0, 5).map((link) => (
+                    <div
+                      key={link.competencyId}
+                      className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{link.competencyName}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {link.goalCount} linked goals
+                          </p>
+                        </div>
+                        <div className="text-right text-xs text-slate-500">
+                          <p>Avg progress</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">
+                            {formatNumber(link.averageProgress)}%
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Badge variant="success">{link.onTrackCount} on track</Badge>
+                        <Badge variant="warning">{link.offTrackCount} off track</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Track coverage</CardTitle>
+              <CardDescription>
+                Track and level slices using assigned grow tracks first, with role baseline fallback.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {goals.trackCoverage.length === 0 ? (
+                <EmptyState
+                  title="No track coverage in scope"
+                  description="Track and level coverage appears once goals map to assigned or inferred tracks."
+                />
+              ) : (
+                <>
+                  {broadestTrackCoverage ? (
+                    <div className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                        Broadest footprint
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {broadestTrackCoverage.trackName} · {broadestTrackCoverage.levelName}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {broadestTrackCoverage.employeeCount} employees · {broadestTrackCoverage.goalCount} goals
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {goals.trackCoverage.slice(0, 5).map((coverage) => (
+                    <div
+                      key={`${coverage.trackId}-${coverage.levelName}`}
+                      className="rounded-[var(--radius-md)] border border-slate-200 bg-white p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">
+                            {coverage.trackName} · {coverage.levelName}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {coverage.departments.join(", ")}
+                          </p>
+                        </div>
+                        <div className="text-right text-xs text-slate-500">
+                          <p>{coverage.employeeCount} employees</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">
+                            {coverage.goalCount} goals
+                          </p>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-xs text-slate-500">{coverage.titles.join(", ")}</p>
+                    </div>
+                  ))}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <HelpHint label="How adoption is calculated">
+        Active goals exclude completed and canceled objectives. No updates counts goals with zero
+        check-ins. Completion rate is goal-level completion, not key-result completion.
+      </HelpHint>
+    </section>
   );
 }
 
@@ -2645,6 +3053,51 @@ function buildDepartmentComparisonRows(
           : getCompetencyHeatColor(item.averageRating),
       summary: `${item.averageRating.toFixed(2)} · ${item.observedCount} obs`,
     }));
+}
+
+function goalStatusBadgeVariant(
+  status: ReportingGoalsResult["rows"][number]["status"],
+): "neutral" | "warning" | "success" | "info" {
+  if (status === "COMPLETE" || status === "ON_TRACK") {
+    return "success";
+  }
+
+  if (status === "AT_RISK" || status === "OFF_TRACK") {
+    return "warning";
+  }
+
+  if (status === "NOT_STARTED") {
+    return "info";
+  }
+
+  return "neutral";
+}
+
+function goalProgressColor(
+  status: ReportingGoalsResult["rows"][number]["status"],
+  progressPercent: number,
+): string {
+  if (status === "OFF_TRACK") {
+    return "#ef4444";
+  }
+
+  if (status === "AT_RISK") {
+    return "#f59e0b";
+  }
+
+  if (status === "COMPLETE") {
+    return "#10b981";
+  }
+
+  if (progressPercent >= 75) {
+    return "#22c55e";
+  }
+
+  if (progressPercent >= 35) {
+    return "#eab308";
+  }
+
+  return "#94a3b8";
 }
 
 function overallStatusBadgeVariant(

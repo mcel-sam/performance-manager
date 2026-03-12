@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "next typegen && tsc --noEmit --incremental false",
+    "typecheck": "node -e \"const fs=require('node:fs'); ['.next/types','.next/dev/types','tsconfig.tsbuildinfo'].forEach((path)=>fs.rmSync(path,{recursive:true,force:true}))\" && next typegen && tsc --noEmit --incremental false",
     "test": "vitest run",
     "test:e2e": "playwright test --grep-invert @ux",
     "test:e2e:ux": "playwright test --grep @ux",

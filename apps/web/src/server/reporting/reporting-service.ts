@@ -1,6 +1,7 @@
 import {
   CompetencyDimensionKey,
   FinalRatingSource,
+  GoalStatus,
   ImprovementPlanStatus,
   ReviewRelationship,
   ReviewSubmissionStatus,
@@ -11,6 +12,7 @@ import { z } from "zod";
 
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
+import { inferGrowthTrackBaseline } from "@/server/growth/growth-track-service";
 import { AppError } from "@/server/http/errors";
 
 const DEFAULT_SMALL_N_THRESHOLD = 5;
@@ -35,6 +37,7 @@ const baseFilterSchema = z.object({
     .min(1)
     .max(160)
     .optional(),
+  track: z.string().trim().min(1).max(160).optional(),
   smallNThreshold: z.coerce.number().int().min(1).max(50).default(DEFAULT_SMALL_N_THRESHOLD),
 });
 
@@ -119,12 +122,68 @@ interface ImprovementPlanLinkRecord {
   createdAt: Date;
 }
 
+interface ReportingGoalCycleRecord {
+  id: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  goals: { id: string }[];
+}
+
+interface ReportingGoalRecord {
+  id: string;
+  title: string;
+  status: GoalStatus;
+  progressPercent: number;
+  ownerEmployeeId: string;
+  ownerEmployee: {
+    firstName: string;
+    lastName: string;
+    department: string | null;
+    title: string | null;
+    trackAssignment: {
+      track: {
+        id: string;
+        name: string;
+      };
+      trackLevel: {
+        id: string;
+        name: string;
+      };
+    } | null;
+  };
+  keyResults: Array<{
+    id: string;
+    title: string;
+    type: string;
+    currentValue: number | null;
+    targetValue: number | null;
+  }>;
+  updates: Array<{
+    id: string;
+    createdAt: Date;
+    note: string;
+  }>;
+  competencyLinks: Array<{
+    competency: {
+      id: string;
+      name: string;
+    };
+  }>;
+}
+
 interface ReportingDb {
   reviewCycle: {
     findMany: (args: Record<string, unknown>) => Promise<ReportingCycleRecord[]>;
   };
+  goalCycle: {
+    findMany: (args: Record<string, unknown>) => Promise<ReportingGoalCycleRecord[]>;
+  };
   reviewPacket: {
     findMany: (args: Record<string, unknown>) => Promise<ReportingPacketRecord[]>;
+  };
+  goal: {
+    findMany: (args: Record<string, unknown>) => Promise<ReportingGoalRecord[]>;
   };
   reviewAnswer: {
     findMany: (args: Record<string, unknown>) => Promise<CompetencyAnswerRecord[]>;
@@ -141,6 +200,7 @@ interface NormalizedReportFilters {
   cycleId: string;
   department?: string;
   title?: string;
+  track?: string;
   smallNThreshold: number;
 }
 
@@ -150,6 +210,44 @@ interface PacketScope {
   filterOptions: {
     departments: string[];
     titles: string[];
+  };
+}
+
+interface GoalScopeRow {
+  goalId: string;
+  ownerEmployeeId: string;
+  ownerName: string;
+  title: string;
+  department: string;
+  titleName: string;
+  trackId: string;
+  trackName: string;
+  levelName: string;
+  status: GoalStatus;
+  progressPercent: number;
+  updateCount: number;
+  lastUpdateAt: string | null;
+  competencyNames: string[];
+  keyResults: Array<{
+    id: string;
+    title: string;
+    type: string;
+    currentValue: number | null;
+    targetValue: number | null;
+  }>;
+}
+
+interface GoalScope {
+  rows: GoalScopeRow[];
+  suppressed: boolean;
+  goalCycleName: string | null;
+  filterOptions: {
+    departments: string[];
+    titles: string[];
+    tracks: Array<{
+      value: string;
+      label: string;
+    }>;
   };
 }
 
@@ -400,11 +498,74 @@ export interface ReportingPeopleResult {
   suppression: ReportingSuppressionState;
 }
 
+export interface ReportingGoalsResult {
+  summary: {
+    goalCycleName: string | null;
+    activeGoals: number;
+    offTrackGoals: number;
+    noUpdateGoals: number;
+    completionRate: number;
+  };
+  linkage: Array<{
+    competencyId: string;
+    competencyName: string;
+    goalCount: number;
+    averageProgress: number | null;
+    onTrackCount: number;
+    offTrackCount: number;
+  }>;
+  trackCoverage: Array<{
+    trackId: string;
+    trackName: string;
+    levelName: string;
+    employeeCount: number;
+    goalCount: number;
+    departments: string[];
+    titles: string[];
+  }>;
+  rows: Array<{
+    goalId: string;
+    title: string;
+    ownerName: string;
+    department: string;
+    titleName: string;
+    trackId: string;
+    trackName: string;
+    levelName: string;
+    status: GoalStatus;
+    progressPercent: number;
+    updateCount: number;
+    lastUpdateAt: string | null;
+    competencyNames: string[];
+    keyResults: Array<{
+      id: string;
+      title: string;
+      type: string;
+      currentValue: number | null;
+      targetValue: number | null;
+    }>;
+  }>;
+  filters: {
+    cycleId: string;
+    department?: string;
+    title?: string;
+    track?: string;
+    departments: string[];
+    titles: string[];
+    tracks: Array<{
+      value: string;
+      label: string;
+    }>;
+  };
+  suppression: ReportingSuppressionState;
+}
+
 export function parseProgressFilters(searchParams: URLSearchParams): NormalizedReportFilters {
   const parsed = baseFilterSchema.safeParse({
     cycleId: searchParams.get("cycleId") ?? "",
     department: normalizeOptionalFilter(searchParams.get("department")),
     title: normalizeOptionalFilter(searchParams.get("title")),
+    track: normalizeOptionalFilter(searchParams.get("track")),
     smallNThreshold: normalizeOptionalFilter(searchParams.get("smallNThreshold")) ?? DEFAULT_SMALL_N_THRESHOLD,
   });
 
@@ -422,6 +583,7 @@ export function parseRatingsFilters(
     cycleId: searchParams.get("cycleId") ?? "",
     department: normalizeOptionalFilter(searchParams.get("department")),
     title: normalizeOptionalFilter(searchParams.get("title")),
+    track: normalizeOptionalFilter(searchParams.get("track")),
     ratingSource: normalizeOptionalFilter(searchParams.get("ratingSource")) ?? "FINAL",
     smallNThreshold: normalizeOptionalFilter(searchParams.get("smallNThreshold")) ?? DEFAULT_SMALL_N_THRESHOLD,
   });
@@ -453,6 +615,7 @@ export function parsePeopleFilters(
     cycleId: searchParams.get("cycleId") ?? "",
     department: normalizeOptionalFilter(searchParams.get("department")),
     title: normalizeOptionalFilter(searchParams.get("title")),
+    track: normalizeOptionalFilter(searchParams.get("track")),
     status: normalizeOptionalFilter(searchParams.get("status")),
     ratingSource: normalizeOptionalFilter(searchParams.get("ratingSource")) ?? "FINAL",
     page: normalizeOptionalFilter(searchParams.get("page")) ?? 1,
@@ -465,6 +628,10 @@ export function parsePeopleFilters(
   }
 
   return parsed.data;
+}
+
+export function parseGoalsFilters(searchParams: URLSearchParams): NormalizedReportFilters {
+  return parseProgressFilters(searchParams);
 }
 
 export async function listReportingCycles(
@@ -1251,6 +1418,382 @@ export async function getReportingPeople(
   };
 }
 
+export async function getReportingGoals(
+  filters: NormalizedReportFilters,
+  context: RequestContext,
+  db: ReportingDb = prisma as unknown as ReportingDb,
+): Promise<ReportingGoalsResult> {
+  requireReportingAccess(context);
+  const scope = await loadGoalScope(filters, context, db);
+
+  if (scope.suppressed) {
+    return {
+      summary: {
+        goalCycleName: scope.goalCycleName,
+        activeGoals: 0,
+        offTrackGoals: 0,
+        noUpdateGoals: 0,
+        completionRate: 0,
+      },
+      linkage: [],
+      trackCoverage: [],
+      rows: [],
+      filters: {
+        cycleId: filters.cycleId,
+        department: filters.department,
+        title: filters.title,
+        track: filters.track,
+        departments: scope.filterOptions.departments,
+        titles: scope.filterOptions.titles,
+        tracks: scope.filterOptions.tracks,
+      },
+      suppression: suppressedMessage(),
+    };
+  }
+
+  const activeGoals = scope.rows.filter(
+    (row) => row.status !== GoalStatus.COMPLETE && row.status !== GoalStatus.CANCELED,
+  ).length;
+  const offTrackGoals = scope.rows.filter((row) => row.status === GoalStatus.OFF_TRACK).length;
+  const noUpdateGoals = scope.rows.filter((row) => row.updateCount === 0).length;
+  const completedGoals = scope.rows.filter((row) => row.status === GoalStatus.COMPLETE).length;
+  const completionRate =
+    scope.rows.length === 0 ? 0 : Math.round((completedGoals / scope.rows.length) * 100);
+
+  const linkageAccumulator = new Map<
+    string,
+    {
+      competencyId: string;
+      competencyName: string;
+      goalCount: number;
+      progressSum: number;
+      onTrackCount: number;
+      offTrackCount: number;
+    }
+  >();
+
+  for (const row of scope.rows) {
+    for (const competencyName of row.competencyNames) {
+      const key = competencyName.toLowerCase();
+      const existing = linkageAccumulator.get(key) ?? {
+        competencyId: key,
+        competencyName,
+        goalCount: 0,
+        progressSum: 0,
+        onTrackCount: 0,
+        offTrackCount: 0,
+      };
+      existing.goalCount += 1;
+      existing.progressSum += row.progressPercent;
+      if (row.status === GoalStatus.ON_TRACK) {
+        existing.onTrackCount += 1;
+      }
+      if (row.status === GoalStatus.OFF_TRACK) {
+        existing.offTrackCount += 1;
+      }
+      linkageAccumulator.set(key, existing);
+    }
+  }
+
+  const trackCoverageAccumulator = new Map<
+    string,
+    {
+      trackId: string;
+      trackName: string;
+      levelName: string;
+      employeeIds: Set<string>;
+      goalCount: number;
+      departments: Set<string>;
+      titles: Set<string>;
+    }
+  >();
+
+  for (const row of scope.rows) {
+    const key = `${row.trackId}:${row.levelName}`;
+    const existing = trackCoverageAccumulator.get(key) ?? {
+      trackId: row.trackId,
+      trackName: row.trackName,
+      levelName: row.levelName,
+      employeeIds: new Set<string>(),
+      goalCount: 0,
+      departments: new Set<string>(),
+      titles: new Set<string>(),
+    };
+    existing.employeeIds.add(row.ownerEmployeeId);
+    existing.goalCount += 1;
+    existing.departments.add(row.department);
+    existing.titles.add(row.titleName);
+    trackCoverageAccumulator.set(key, existing);
+  }
+
+  return {
+    summary: {
+      goalCycleName: scope.goalCycleName,
+      activeGoals,
+      offTrackGoals,
+      noUpdateGoals,
+      completionRate,
+    },
+    linkage: Array.from(linkageAccumulator.values())
+      .map((entry) => ({
+        competencyId: entry.competencyId,
+        competencyName: entry.competencyName,
+        goalCount: entry.goalCount,
+        averageProgress: entry.goalCount > 0 ? roundToOne(entry.progressSum / entry.goalCount) : null,
+        onTrackCount: entry.onTrackCount,
+        offTrackCount: entry.offTrackCount,
+      }))
+      .sort((left, right) => right.goalCount - left.goalCount || left.competencyName.localeCompare(right.competencyName)),
+    trackCoverage: Array.from(trackCoverageAccumulator.values())
+      .map((entry) => ({
+        trackId: entry.trackId,
+        trackName: entry.trackName,
+        levelName: entry.levelName,
+        employeeCount: entry.employeeIds.size,
+        goalCount: entry.goalCount,
+        departments: Array.from(entry.departments).sort((left, right) => left.localeCompare(right)),
+        titles: Array.from(entry.titles).sort((left, right) => left.localeCompare(right)),
+      }))
+      .sort((left, right) => right.employeeCount - left.employeeCount || left.trackName.localeCompare(right.trackName)),
+    rows: scope.rows,
+    filters: {
+      cycleId: filters.cycleId,
+      department: filters.department,
+      title: filters.title,
+      track: filters.track,
+      departments: scope.filterOptions.departments,
+      titles: scope.filterOptions.titles,
+      tracks: scope.filterOptions.tracks,
+    },
+    suppression: unsuppressedState(),
+  };
+}
+
+async function loadGoalScope(
+  filters: NormalizedReportFilters,
+  context: RequestContext,
+  db: ReportingDb,
+): Promise<GoalScope> {
+  const goalCycle = await resolveGoalCycleForReportingCycle(filters.cycleId, context, db);
+  if (!goalCycle) {
+    return {
+      rows: [],
+      suppressed: false,
+      goalCycleName: null,
+      filterOptions: {
+        departments: [],
+        titles: [],
+        tracks: [],
+      },
+    };
+  }
+
+  const goals = await db.goal.findMany({
+    where: {
+      orgId: context.orgId,
+      cycleId: goalCycle.id,
+      ...(filters.department
+        ? {
+            ownerEmployee: {
+              department: filters.department,
+            },
+          }
+        : {}),
+      ...(filters.title
+        ? {
+            ownerEmployee: {
+              ...(filters.department ? { department: filters.department } : {}),
+              title: filters.title,
+            },
+          }
+        : {}),
+    },
+    orderBy: [{ progressPercent: "desc" }, { title: "asc" }],
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      progressPercent: true,
+      ownerEmployeeId: true,
+      ownerEmployee: {
+        select: {
+          firstName: true,
+          lastName: true,
+          department: true,
+          title: true,
+          trackAssignment: {
+            select: {
+              track: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              trackLevel: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      keyResults: {
+        orderBy: [{ sortOrder: "asc" }],
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          currentValue: true,
+          targetValue: true,
+        },
+      },
+      updates: {
+        orderBy: [{ createdAt: "desc" }],
+        select: {
+          id: true,
+          createdAt: true,
+          note: true,
+        },
+      },
+      competencyLinks: {
+        select: {
+          competency: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const allRows = goals.map((goal) => {
+    const assignedTrack = goal.ownerEmployee.trackAssignment;
+    const inferredTrack = inferGrowthTrackBaseline(
+      goal.ownerEmployee.department,
+      goal.ownerEmployee.title,
+    );
+    const trackId = assignedTrack?.track.id ?? inferredTrack.trackId;
+    const trackName = assignedTrack?.track.name ?? inferredTrack.trackLabel;
+    const levelName = assignedTrack?.trackLevel.name ?? inferredTrack.levelLabel;
+
+    return {
+      goalId: goal.id,
+      ownerEmployeeId: goal.ownerEmployeeId,
+      ownerName: `${goal.ownerEmployee.firstName} ${goal.ownerEmployee.lastName}`,
+      title: goal.title,
+      department: goal.ownerEmployee.department ?? "Unspecified",
+      titleName: goal.ownerEmployee.title ?? "Unspecified",
+      trackId,
+      trackName,
+      levelName,
+      status: goal.status,
+      progressPercent: goal.progressPercent,
+      updateCount: goal.updates.length,
+      lastUpdateAt: goal.updates[0]?.createdAt.toISOString() ?? null,
+      competencyNames: goal.competencyLinks.map((link) => link.competency.name).sort((left, right) =>
+        left.localeCompare(right),
+      ),
+      keyResults: goal.keyResults.map((keyResult) => ({
+        id: keyResult.id,
+        title: keyResult.title,
+        type: keyResult.type,
+        currentValue: keyResult.currentValue,
+        targetValue: keyResult.targetValue,
+      })),
+    } satisfies GoalScopeRow;
+  });
+
+  const tracks = uniqueTrackOptions(
+    allRows.map((row) => ({
+      value: row.trackId,
+      label: row.trackName,
+    })),
+  );
+  const rows = filters.track ? allRows.filter((row) => row.trackId === filters.track) : allRows;
+
+  return {
+    rows,
+    suppressed: shouldSuppressSmallGroup(rows.length, filters.smallNThreshold),
+    goalCycleName: goalCycle.name,
+    filterOptions: {
+      departments: uniqueSortedValues(allRows.map((row) => row.department)),
+      titles: uniqueSortedValues(allRows.map((row) => row.titleName)),
+      tracks,
+    },
+  };
+}
+
+async function resolveGoalCycleForReportingCycle(
+  cycleId: string,
+  context: RequestContext,
+  db: ReportingDb,
+) {
+  const [reviewCycle] = await db.reviewCycle.findMany({
+    where: {
+      orgId: context.orgId,
+      id: cycleId,
+    },
+    take: 1,
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      startDate: true,
+      endDate: true,
+      createdAt: true,
+      packets: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  const goalCycles = await db.goalCycle.findMany({
+    where: {
+      orgId: context.orgId,
+    },
+    orderBy: [{ startDate: "desc" }, { endDate: "desc" }],
+    select: {
+      id: true,
+      name: true,
+      startDate: true,
+      endDate: true,
+      goals: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  if (goalCycles.length === 0) {
+    return null;
+  }
+
+  if (reviewCycle) {
+    const overlapping = goalCycles.find(
+      (goalCycle) =>
+        goalCycle.startDate <= reviewCycle.endDate && goalCycle.endDate >= reviewCycle.startDate,
+    );
+
+    if (overlapping) {
+      return overlapping;
+    }
+
+    const matchingYear = goalCycles.find((goalCycle) => goalCycle.name.includes(extractYear(reviewCycle.name)));
+    if (matchingYear) {
+      return matchingYear;
+    }
+  }
+
+  return goalCycles[0];
+}
+
 async function loadPacketScope(
   filters: NormalizedReportFilters,
   context: RequestContext,
@@ -1370,6 +1913,41 @@ function uniqueSortedValues(values: Array<string | null>): string[] {
   return Array.from(new Set(values.filter((value): value is string => Boolean(value)).map((value) => value.trim())))
     .filter((value) => value.length > 0)
     .sort((left, right) => left.localeCompare(right));
+}
+
+function uniqueTrackOptions(
+  values: Array<{
+    value: string;
+    label: string;
+  }>,
+): Array<{
+  value: string;
+  label: string;
+}> {
+  const seen = new Map<string, string>();
+
+  for (const item of values) {
+    if (!item.value || !item.label) {
+      continue;
+    }
+
+    if (!seen.has(item.value)) {
+      seen.set(item.value, item.label);
+    }
+  }
+
+  return Array.from(seen.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((left, right) => left.label.localeCompare(right.label));
+}
+
+function extractYear(value: string): string {
+  const match = value.match(/\b(20\d{2})\b/);
+  return match?.[1] ?? "";
+}
+
+function roundToOne(value: number): number {
+  return Math.round(value * 10) / 10;
 }
 
 function emptyBreakdown(): SubmissionStatusBreakdown {
