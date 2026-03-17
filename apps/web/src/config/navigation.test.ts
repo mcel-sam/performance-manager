@@ -16,6 +16,7 @@ describe("getRoleNavigation", () => {
 
     expect(navItems.map((item) => item.label)).toEqual([
       "Home",
+      "Goals",
       "Tracks",
       "Reviews",
       "Improvement Plans",
@@ -36,6 +37,8 @@ describe("getRoleNavigation", () => {
 
     expect(navItems.map((item) => item.label)).toEqual([
       "Home",
+      "Goals",
+      "Goal Cycles",
       "Succession",
       "Reporting",
       "Admin Cycles",

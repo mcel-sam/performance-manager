@@ -20,6 +20,10 @@ describe("getActiveNavKey", () => {
     ).toBe("reviews");
   });
 
+  it("maps the goals workspace route to Goals", () => {
+    expect(getActiveNavKey("/goals", managerNav)).toBe("goals");
+  });
+
   it("maps packet routes to Packets without activating Reviews", () => {
     expect(
       getActiveNavKey("/performance/reviews/cycle_seed_draft_1/packet/emp_employee_1", managerNav),

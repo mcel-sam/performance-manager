@@ -458,6 +458,8 @@ function getShellHeaderContext(
   }
 
   switch (activeNavKey) {
+    case "goals":
+      return "Goals and measures";
     case "growth":
       return "Tracks and competencies";
     case "teamReviews":
@@ -472,6 +474,8 @@ function getShellHeaderContext(
     case "calibration":
     case "adminCalibration":
       return "Calibration workspace";
+    case "adminGoalCycles":
+      return "Goal cycle administration";
     case "adminReporting":
       return "Performance reporting";
     case "adminCycles":
@@ -510,6 +514,19 @@ function NavItemIcon({
         <circle cx="13.5" cy="8.5" r="1.75" stroke="currentColor" strokeWidth="1.5" />
         <path d="M3.75 15.75C3.75 13.54 5.54 11.75 7.75 11.75H8.25C10.46 11.75 12.25 13.54 12.25 15.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         <path d="M12.5 15.5C12.64 14.03 13.89 12.88 15.38 12.88H15.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (navKey === "goals") {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+        <circle cx="10" cy="10" r="5.75" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="10" cy="10" r="1.8" fill="currentColor" />
+        <path d="M10 4V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M16 10H14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M10 14V16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M6 10H4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     );
   }
@@ -577,6 +594,18 @@ function NavItemIcon({
         <path d="M3.5 8H16.5" stroke="currentColor" strokeWidth="1.5" />
         <path d="M7 3.5V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         <path d="M13 3.5V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (navKey === "adminGoalCycles") {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+        <rect x="3.5" y="4.5" width="13" height="11.5" rx="1.8" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M3.5 8H16.5" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M7 3.5V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M13 3.5V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M7 11L9 13L13 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     );
   }

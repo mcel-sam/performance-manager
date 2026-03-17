@@ -2,12 +2,14 @@ import { UserRole } from "@prisma/client";
 
 export type ShellNavKey =
   | "home"
+  | "goals"
   | "growth"
   | "reviews"
   | "packets"
   | "teamReviews"
   | "succession"
   | "calibration"
+  | "adminGoalCycles"
   | "adminCalibration"
   | "adminReporting"
   | "adminCycles"
@@ -34,6 +36,12 @@ export interface RoleNavOptions {
 
 const allNavItems = {
   home: { key: "home", href: "/", label: "Home", testId: "nav-link-home" },
+  goals: {
+    key: "goals",
+    href: "/goals",
+    label: "Goals",
+    testId: "nav-link-goals",
+  },
   growth: {
     key: "growth",
     href: "/performance/tracks",
@@ -69,6 +77,12 @@ const allNavItems = {
     href: "/performance/calibration/calibration_session_seed_1",
     label: "Calibration",
     testId: "nav-link-calibration",
+  },
+  adminGoalCycles: {
+    key: "adminGoalCycles",
+    href: "/admin/goals/cycles",
+    label: "Goal Cycles",
+    testId: "nav-link-admin-goal-cycles",
   },
   adminCalibration: {
     key: "adminCalibration",
@@ -117,6 +131,7 @@ export function getRoleNavigation(
     case UserRole.EMPLOYEE:
       return [
         allNavItems.home,
+        allNavItems.goals,
         allNavItems.growth,
         allNavItems.reviews,
         ...(options.includeImprovementPlans ? [allNavItems.improvementPlans] : []),
@@ -125,6 +140,7 @@ export function getRoleNavigation(
     case UserRole.MANAGER:
       return [
         allNavItems.home,
+        allNavItems.goals,
         allNavItems.growth,
         ...(options.includeTeamReviews ? [allNavItems.teamReviews] : []),
         ...(options.includeSuccession ? [allNavItems.succession] : []),
@@ -137,6 +153,8 @@ export function getRoleNavigation(
     case UserRole.HR_ADMIN:
       return [
         allNavItems.home,
+        allNavItems.goals,
+        allNavItems.adminGoalCycles,
         ...(options.includeSuccession ? [allNavItems.adminSuccession] : []),
         allNavItems.adminReporting,
         allNavItems.adminCycles,
@@ -202,6 +220,8 @@ function matchesPathForKey(key: ShellNavKey, pathname: string): boolean {
         pathname === "/performance/reviews" ||
         /^\/performance\/reviews\/[^/]+\/write\/[^/]+$/.test(pathname)
       );
+    case "goals":
+      return pathname === "/goals";
     case "growth":
       return pathname === "/performance/tracks";
     case "packets":
@@ -212,6 +232,8 @@ function matchesPathForKey(key: ShellNavKey, pathname: string): boolean {
       return pathname === "/talent/succession" || /^\/talent\/succession\/positions\/[^/]+$/.test(pathname);
     case "calibration":
       return /^\/performance\/calibration\/[^/]+$/.test(pathname);
+    case "adminGoalCycles":
+      return pathname === "/admin/goals/cycles";
     case "adminCalibration":
       return pathname === "/admin/performance/calibration" || pathname === "/admin/performance/calibration/new";
     case "adminReporting":

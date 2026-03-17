@@ -690,7 +690,7 @@ export function GoalsWorkspace({
                     </section>
 
                     <section className="space-y-3">
-                      <h3 className="text-sm font-semibold text-slate-900">Key results</h3>
+                      <h3 className="text-sm font-semibold text-slate-900">Measures</h3>
                       <div className="space-y-2">
                         {selectedGoal.keyResults.length > 0 ? (
                           selectedGoal.keyResults.map((keyResult) => (
@@ -710,7 +710,7 @@ export function GoalsWorkspace({
                             </div>
                           ))
                         ) : (
-                          <p className="text-sm text-slate-500">No key results attached yet.</p>
+                          <p className="text-sm text-slate-500">No measures attached yet.</p>
                         )}
                       </div>
                     </section>

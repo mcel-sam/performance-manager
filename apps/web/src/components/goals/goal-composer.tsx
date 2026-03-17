@@ -6,10 +6,16 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Toast } from "@/components/ui/toast";
+import {
+  prepareGoalKeyResults,
+  type GoalComposerKeyResultDraft,
+  type GoalComposerKeyResultPayload,
+} from "@/components/goals/goal-composer-utils";
 
 interface GoalComposerProps {
   auth: {
@@ -74,17 +80,7 @@ interface GoalComposerProps {
 type GoalComposerInitialGoal = NonNullable<GoalComposerProps["initialGoal"]>;
 type GoalComposerInitialKeyResult = GoalComposerInitialGoal["keyResults"][number];
 
-interface KeyResultDraft {
-  id?: string;
-  title: string;
-  type: KeyResultType;
-  startValue: string;
-  targetValue: string;
-  currentValue: string;
-  weight: string;
-}
-
-function blankKeyResult(): KeyResultDraft {
+function blankKeyResult(): GoalComposerKeyResultDraft {
   return {
     title: "",
     type: KeyResultType.PERCENT,
@@ -114,7 +110,7 @@ export function GoalComposer({
   const [visibility, setVisibility] = useState<GoalVisibility>(GoalVisibility.TEAM);
   const [parentGoalId, setParentGoalId] = useState("");
   const [competencyIds, setCompetencyIds] = useState<string[]>([]);
-  const [keyResults, setKeyResults] = useState<KeyResultDraft[]>([blankKeyResult()]);
+  const [keyResults, setKeyResults] = useState<GoalComposerKeyResultDraft[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -138,8 +134,9 @@ export function GoalComposer({
               currentValue: toInputNumberValue(keyResult.currentValue),
               weight: toInputNumberValue(keyResult.weight),
             }))
-          : [blankKeyResult()],
+          : [],
       );
+      setMessage(null);
       return;
     }
 
@@ -150,7 +147,8 @@ export function GoalComposer({
     setVisibility(GoalVisibility.TEAM);
     setParentGoalId("");
     setCompetencyIds([]);
-    setKeyResults([blankKeyResult()]);
+    setKeyResults([]);
+    setMessage(null);
   }, [defaultOwnerEmployeeId, initialGoal, mode]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -159,6 +157,11 @@ export function GoalComposer({
     setIsSubmitting(true);
 
     try {
+      const preparedKeyResults = prepareGoalKeyResults(keyResults);
+      if (preparedKeyResults.error) {
+        throw new Error(preparedKeyResults.error);
+      }
+
       if (mode === "create") {
         const response = await fetch("/api/goals", {
           method: "POST",
@@ -173,7 +176,7 @@ export function GoalComposer({
             parentGoalId: normalizeNullableString(parentGoalId),
             competencyIds,
             watcherUserIds: [],
-            keyResults: buildKeyResultPayload(keyResults),
+            keyResults: preparedKeyResults.keyResults,
           }),
         });
         const payload = (await response.json()) as {
@@ -214,7 +217,7 @@ export function GoalComposer({
         throw new Error(updatePayload.message ?? "Unable to update goal");
       }
 
-      await syncKeyResults(initialGoal.id, initialGoal.keyResults, keyResults, auth);
+      await syncKeyResults(initialGoal.id, initialGoal.keyResults, preparedKeyResults.keyResults, auth);
       await syncGoalAlignment(initialGoal.id, initialGoal.parentGoal?.id ?? null, parentGoalId, auth);
 
       await onSaved(initialGoal.id);
@@ -225,7 +228,7 @@ export function GoalComposer({
     }
   }
 
-  function updateKeyResultDraft(index: number, nextDraft: KeyResultDraft) {
+  function updateKeyResultDraft(index: number, nextDraft: GoalComposerKeyResultDraft) {
     setKeyResults((current) =>
       current.map((draft, draftIndex) => (draftIndex === index ? nextDraft : draft)),
     );
@@ -248,7 +251,7 @@ export function GoalComposer({
           <div>
             <CardTitle>{mode === "create" ? "Create goal" : "Edit goal"}</CardTitle>
             <CardDescription>
-              Capture the objective, attach measurable results, align it upward, and tag the competencies it should reinforce.
+              Capture the objective, define the measures that show how it will be tracked, align it upward, and tag the competencies it should reinforce.
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -336,9 +339,9 @@ export function GoalComposer({
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-semibold text-slate-900">Key results</h3>
+                <h3 className="text-base font-semibold text-slate-900">Measures</h3>
                 <p className="text-sm text-slate-500">
-                  Mix percent, number, or binary checks so progress can roll up cleanly.
+                  Measures are how you track this goal. Use percent, number, or binary checks so progress can roll up cleanly.
                 </p>
               </div>
               <Button
@@ -347,19 +350,34 @@ export function GoalComposer({
                 onClick={() => setKeyResults((current) => [...current, blankKeyResult()])}
                 data-testid="goal-composer-add-kr"
               >
-                Add key result
+                Add measure
               </Button>
             </div>
 
-            {keyResults.map((keyResult, index) => (
-              <div
-                key={keyResult.id ?? `draft-${index}`}
-                className="space-y-3 rounded-[var(--radius-lg)] border border-slate-200 bg-slate-50 p-4"
-              >
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+            {keyResults.length === 0 ? (
+              <EmptyState
+                title="No measures yet"
+                description="You can save the goal now and add the measures later, or add one before saving."
+                action={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setKeyResults([blankKeyResult()])}
+                  >
+                    Add first measure
+                  </Button>
+                }
+              />
+            ) : (
+              keyResults.map((keyResult, index) => (
+                <div
+                  key={keyResult.id ?? `draft-${index}`}
+                  className="space-y-3 rounded-[var(--radius-lg)] border border-slate-200 bg-slate-50 p-4"
+                >
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
                   <label className="space-y-1 md:col-span-2 xl:col-span-2">
                     <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                      KR title
+                      Measure title
                     </span>
                     <Input
                       value={keyResult.title}
@@ -369,7 +387,6 @@ export function GoalComposer({
                           title: event.target.value,
                         })
                       }
-                      required
                     />
                   </label>
 
@@ -503,19 +520,14 @@ export function GoalComposer({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      setKeyResults((current) =>
-                        current.length === 1
-                          ? [blankKeyResult()]
-                          : current.filter((_, draftIndex) => draftIndex !== index),
-                      )
-                    }
+                    onClick={() => setKeyResults((current) => current.filter((_, draftIndex) => draftIndex !== index))}
                   >
                     Remove KR
                   </Button>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </section>
 
           <section className="space-y-3">
@@ -580,7 +592,7 @@ export function GoalComposer({
 async function syncKeyResults(
   goalId: string,
   previousKeyResults: GoalComposerInitialGoal["keyResults"],
-  nextKeyResults: KeyResultDraft[],
+  nextKeyResults: GoalComposerKeyResultPayload[],
   auth: GoalComposerProps["auth"],
 ) {
   const previousById = new Map(
@@ -590,10 +602,11 @@ async function syncKeyResults(
 
   for (const previousKeyResult of previousKeyResults) {
     if (!nextExistingIds.has(previousKeyResult.id)) {
-      await fetch(`/api/goals/${goalId}/key-results/${previousKeyResult.id}`, {
+      const response = await fetch(`/api/goals/${goalId}/key-results/${previousKeyResult.id}`, {
         method: "DELETE",
         headers: authHeaders(auth),
       });
+      await assertGoalMutationResponse(response, "Unable to remove key result");
     }
   }
 
@@ -601,27 +614,29 @@ async function syncKeyResults(
     const payload = {
       title: keyResult.title,
       type: keyResult.type,
-      startValue: coerceNullableNumber(keyResult.startValue),
-      targetValue: coerceNullableNumber(keyResult.targetValue),
-      currentValue: coerceNullableNumber(keyResult.currentValue),
-      weight: coerceNullableNumber(keyResult.weight),
+      startValue: keyResult.startValue,
+      targetValue: keyResult.targetValue,
+      currentValue: keyResult.currentValue,
+      weight: keyResult.weight,
       sortOrder: index,
     };
 
     if (keyResult.id && previousById.has(keyResult.id)) {
-      await fetch(`/api/goals/${goalId}/key-results/${keyResult.id}`, {
+      const response = await fetch(`/api/goals/${goalId}/key-results/${keyResult.id}`, {
         method: "PATCH",
         headers: authHeaders(auth),
         body: JSON.stringify(payload),
       });
+      await assertGoalMutationResponse(response, "Unable to update key result");
       continue;
     }
 
-    await fetch(`/api/goals/${goalId}/key-results`, {
+    const response = await fetch(`/api/goals/${goalId}/key-results`, {
       method: "POST",
       headers: authHeaders(auth),
       body: JSON.stringify(payload),
     });
+    await assertGoalMutationResponse(response, "Unable to create key result");
   }
 }
 
@@ -637,32 +652,22 @@ async function syncGoalAlignment(
   }
 
   if (!normalizedNextParentGoalId) {
-    await fetch(`/api/goals/${goalId}/unlink`, {
+    const response = await fetch(`/api/goals/${goalId}/unlink`, {
       method: "POST",
       headers: authHeaders(auth),
     });
+    await assertGoalMutationResponse(response, "Unable to remove goal alignment");
     return;
   }
 
-  await fetch(`/api/goals/${goalId}/align`, {
+  const response = await fetch(`/api/goals/${goalId}/align`, {
     method: "POST",
     headers: authHeaders(auth),
     body: JSON.stringify({
       parentGoalId: normalizedNextParentGoalId,
     }),
   });
-}
-
-function buildKeyResultPayload(keyResults: KeyResultDraft[]) {
-  return keyResults.map((keyResult, index) => ({
-    title: keyResult.title,
-    type: keyResult.type,
-    startValue: coerceNullableNumber(keyResult.startValue),
-    targetValue: coerceNullableNumber(keyResult.targetValue),
-    currentValue: coerceNullableNumber(keyResult.currentValue),
-    weight: coerceNullableNumber(keyResult.weight),
-    sortOrder: index,
-  }));
+  await assertGoalMutationResponse(response, "Unable to align goal");
 }
 
 function authHeaders(auth: GoalComposerProps["auth"]) {
@@ -682,7 +687,20 @@ function toInputNumberValue(value: number | null) {
   return value == null ? "" : String(value);
 }
 
-function coerceNullableNumber(value: string) {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? Number(trimmed) : null;
+async function assertGoalMutationResponse(response: Response, fallbackMessage: string) {
+  if (response.ok) {
+    return;
+  }
+
+  let message = fallbackMessage;
+  try {
+    const payload = (await response.json()) as { message?: string };
+    if (payload.message) {
+      message = payload.message;
+    }
+  } catch {
+    // Ignore non-JSON error payloads and use the fallback message.
+  }
+
+  throw new Error(message);
 }
