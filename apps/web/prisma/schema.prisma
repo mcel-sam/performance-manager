@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
@@ -235,6 +236,7 @@ model User {
   id                        String                          @id @default(cuid())
   orgId                     String
   email                     String
+  authIdentityId            String?                         @unique
   role                      UserRole                        @default(EMPLOYEE)
   employee                  Employee?
   createdAt                 DateTime                        @default(now())

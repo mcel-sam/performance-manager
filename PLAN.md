@@ -1,2073 +1,633 @@
-# PLAN.md — Execution plans (living)
-
-This file tracks milestone-level execution plans and serves as the coordination doc for Codex-driven development.
-For detailed requirements, see `/docs/product/PRD.md`. For working rules, see `/AGENTS.md`.
-
----
-
-## How to use this file
-
-### When to use a plan
-Use a plan when the task:
-- spans UI + API + DB (or infra)
-- needs sequencing
-- involves permissions/audit logging
-- impacts multiple routes/modules
-
-### Plan rules
-- Keep changes vertical-slice oriented (DB → API → UI → tests).
-- Each milestone can be delivered via multiple PRs, but each PR should be independently testable.
-- Every PR must include: how to test, migrations (if any), screenshots for UI changes.
+# Trellis — Execution Plan
+**Status:** Active  
+**Scope:** Vanilla Build + HR Sandbox  
+**Owner:** Sammy  
+**Last Updated:** 2026-03-24
 
 ---
 
-## Shared “Definition of Done” (applies to all plans)
-- [x] Server-side permission checks are implemented for all endpoints
-- [x] Audit events written for sensitive mutations
-- [x] Loading/empty/error states exist for UI routes
-- [x] Local run works (`npm run dev`, docker Postgres)
-- [x] Prisma migrations committed (when schema changes)
-- [x] `lint`, `typecheck`, `test` pass (or are added as part of work)
+## 1. Purpose
+
+This document is the active execution plan for Trellis.
+
+It replaces the earlier prototype-era planning doc as the source of truth for what is being built next. The goal is to deliver a focused vanilla build of Trellis and deploy a sandbox version for HR to run realistic mock performance cycles.
+
+This plan is intentionally narrow and execution-oriented.
 
 ---
 
-# Milestone 0 — Foundation (Boot + DB + first routes)
-
-**Status:** Completed locally on 2026-02-26 (PR number pending).  
-**Objective:** Prove the stack end-to-end: Next.js boots, Postgres reachable, migrations work, basic pages load.
-
-## Scope
-**In scope**
-- Next.js app scaffold in `/apps/web` (TS, App Router, Tailwind, ESLint)
-- Shared package scaffold in `/packages/types`
-- Local Postgres via root `docker-compose.yml`
-- Prisma setup + initial migration
-- `GET /api/health` returns `{ ok: true, db: "ok" }` when DB is reachable
-- `/performance/reviews` page loads and shows an empty state
-- Containerization: `Dockerfile` + `.dockerignore`
-- GitHub Actions: `ci.yml` (PR checks). Deploy workflow can be stubbed if Azure resources not ready.
-
-**Out of scope**
-- Real auth (can be mocked for MVP foundation if needed)
-- Full review cycle UI and workflow
-
-## Work breakdown (ordered)
-1) Repo scaffold
-   - [x] Create `/apps/web`, `/packages/types`, `/docs/*`, `/infra/terraform`
-   - [x] Ensure README points to AGENTS/PRD/Architecture/ADR
-2) Web scaffold
-   - [x] Create Next.js app in `/apps/web`
-   - [x] Confirm `npm run dev` works
-3) Local DB
-   - [x] Add `docker-compose.yml` for Postgres
-   - [x] Add `.env.example` with `DATABASE_URL` placeholder
-4) Prisma
-   - [x] Install Prisma + init schema
-   - [x] Create initial models: Org, User, Employee (minimal)
-   - [x] Migration name: `init`
-5) Health endpoint
-   - [x] Add `/api/health` route that checks DB connectivity
-6) First page
-   - [x] Add `/performance/reviews` page with empty state
-7) Containerization
-   - [x] Add Dockerfile + .dockerignore
-   - [x] Validate container run locally
-8) CI
-   - [x] Add GitHub Actions `ci.yml` for lint/typecheck/test/build
-
-## Acceptance criteria
-- [x] `docker compose up` starts Postgres
-- [x] `npx prisma migrate dev` succeeds on a clean DB
-- [x] `/api/health` returns ok + db ok
-- [x] `/performance/reviews` loads without errors and shows empty state
-- [x] CI workflow runs successfully on PR
-
-## How to test
-```bash
-# from repo root
-docker compose up -d
-
-cd apps/web
-npm install
-npx prisma migrate dev
-npm run dev
-
-```
-
-## visit: 
-#### http://localhost:3000/api/health
-#### http://localhost:3000/performance/reviews
-
-# Performance Reviews — MVP Milestones
-
-## Milestone 1 — Reviews MVP (Cycle + Tasks + Write + Autosave + Submit + Evidence attach)
-
-**Status:** Phase 1, Phase 2, and Phase 3 complete (local workspace, PR number pending).  
-**Objective:** Run a review cycle end-to-end for a small org with basic evidence support.
-
-### Scope
-
-#### In scope
-- Admin can create a cycle, generate packets/submissions, and move cycle states
-- Employees/managers can see assigned review tasks
-- Write screen: 3-panel layout (phase nav, questions, evidence sidebar)
-- Autosave and submit with required validation
-- Evidence: counts + drill-in list + attach/detach evidence to answers
-- Audit logging for all sensitive mutations
-- Seed data sufficient for demo (org, employees, one cycle, evidence)
-
-#### Out of scope
-- Complex reviewer assignment logic (use simple rules first)
-- Advanced rating rubrics (keep minimal)
-- Notifications/email reminders (optional later)
-
-### Work breakdown (ordered)
-
-1. [x] **Data model + migration**
-   - Add models: `ReviewCycle`, `ReviewTemplate`, `ReviewTemplateQuestion`
-   - Add models: `ReviewPacket`, `ReviewSubmission`, `ReviewAnswer`
-   - Add evidence models: `EvidenceItem`, `AnswerEvidenceLink`
-   - Add audit model: `AuditEvent` (if not already)
-   - Migration name: `add_reviews_mvp_core`
-
-2. **Admin cycle setup**
-   - [x] UI: `/admin/performance/review-cycles` list
-   - [x] UI: `/admin/performance/review-cycles/new`
-   - [x] API: create cycle
-   - [x] API: generate packets/submissions
-   - [x] API: status transitions `Draft → Active → Locked → Released`
-   - [x] Audit events for each mutation
-
-3. [x] **Tasks list**
-   - [x] UI: `/performance/reviews` shows submissions assigned to current user
-   - [x] API: tasks endpoint
-
-4. [x] **Write review screen**
-   - [x] Route: `/performance/reviews/:cycleId/write/:submissionId`
-   - [x] Center: questions + text answers (rich text deferred)
-   - [x] Autosave endpoint per answer
-   - [x] Submit endpoint with validation
-   - [x] Required progress indicator + first-missing required question focus/scroll on submit failure
-   - [x] Submitted review is read-only
-
-5. **Evidence panel**
-   - [x] Evidence counts by type
-   - [x] Drill-in list (by type)
-   - [x] Attach/detach evidence to answer
-   - [x] Audit events for attach/detach
-
-6. **Quality**
-   - [x] Tests for required validation
-   - [x] Tests for permission denial on cross-submission access
-   - [x] Tests for evidence attach/detach + no-leak visibility counts
-   - [x] Tests for cycle state transitions
-   - [x] Ensure empty/loading/error states
-
-7. [x] **Seed/demo**
-   - Seed script to create minimal org and sample data
-
-Phase 1 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
-Phase 2 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
-Phase 3 note: Completed locally on 2026-02-26 (no PR number assigned in local workspace).
-
-### Acceptance criteria
-- [x] HR can create cycle + generate submissions
-- [x] User sees tasks list
-- [x] User can write answers, refresh page, and see work preserved
-- [x] Submit blocks until required questions answered
-- [x] Evidence can be attached/detached and is audited
-- [x] Permissions prevent cross-employee access
-
-### How to test
-```bash
-docker compose up -d
-cd apps/web
-npm install
-npx prisma migrate dev
-npm run dev
-```
-
-#### use seed endpoint/script if present
-#### navigate:
-#### /admin/performance/review-cycles
-#### /performance/reviews
-#### open a submission and verify autosave+submit
-
-
-## Milestone 1.5 — App Shell & UX Foundation + Reviews Hardening
-
-**Status:** Completed locally on 2026-02-27 (PR number pending).  
-**Objective:** Establish a consistent app shell UX and close the remaining Milestone 1 gaps for admin workflow hardening.
-
-### Scope
-
-#### In scope
-- Shared application shell layout (global navigation + content container)
-- Home page for module navigation and current milestone entry points
-- Shared UI primitives for consistent cards/buttons/form controls
-- Remaining Milestone 1 items:
-  - Admin review cycle pages (`/admin/performance/review-cycles`, `/admin/performance/review-cycles/new`)
-  - Review cycle status transition API (`Draft -> Active -> Locked -> Released`)
-  - Tests for cycle status transitions
-
-#### Out of scope
-- Milestone 2 packet/calibration implementation
-- Design-system overhaul beyond foundational primitives
-
-### Work breakdown (ordered)
-
-1. **App shell foundation**
-   - [x] Add app shell layout used by main app routes
-   - [x] Add primary navigation for Home, Reviews, and Admin Review Cycles
-
-2. **Home route**
-   - [x] Replace default Next.js starter page with product home route
-   - [x] Add quick links to active workflows
-
-3. **Shared UI primitives**
-   - [x] Add shared primitives for button/card/badge/input/select (or equivalent)
-   - [x] Use primitives in new admin/home views
-
-4. **Admin review cycles UI**
-   - [x] Add `/admin/performance/review-cycles` list page with loading/empty/error states
-   - [x] Add `/admin/performance/review-cycles/new` create page with loading/error states
-   - [x] Add UI actions to generate artifacts and transition status
-
-5. **API hardening**
-   - [x] Add cycle status transition server logic with Zod validation + permission checks
-   - [x] Add thin route handler for transition endpoint
-   - [x] Add cycle listing endpoint (for admin pages)
-   - [x] Add audit events for status transitions
-
-6. **Quality**
-   - [x] Add tests for valid and invalid cycle status transitions
-   - [x] Ensure lint, typecheck, test, and build pass
-
-### Acceptance criteria
-- [x] App shell is visible on core app routes and provides stable navigation
-- [x] Home page is no longer scaffold placeholder and links to key flows
-- [x] Admin can create cycles from UI, generate artifacts, and move cycle status in order
-- [x] Invalid or out-of-order status transitions are rejected server-side
-- [x] Cycle transition tests are present and passing
-- [x] Full quality gates pass locally
-
-
-## Milestone 2 — Packets + Calibration (9-box)
-
-**Status:** Phase 1, Phase 2, and Phase 3 completed locally on 2026-02-27.  
-**Objective:** Managers/HR can view packets and calibrate a cohort in 9-box with finalize snapshot.
-
-### Scope
-
-#### In scope
-- Packet view (subject-centric) with submissions read-only after lock
-- Calibration session creation (simple cohort selection)
-- 9-box UI with placements
-- Right drawer with packet summary and “This cycle / Previous cycles” tabs (previous can be empty initially)
-- Finalize calibration creates immutable snapshot and locks session
-- Audit events for move + finalize
-
-#### Out of scope
-- Sophisticated analytics comparisons
-- Fully accessible drag-drop (provide non-drag move control in MVP)
-
-### Work breakdown (ordered)
-
-1. **Data model + migration**
-   - [x] Add `CalibrationSession`, `CalibrationPlacement`
-   - [x] Add `CalibrationSnapshot`
-   - [x] Migration name: `add_calibration_mvp`
-   - [x] Additional finalize migration: `add_calibration_snapshot_finalize_lock`
-
-2. **Phase 1 — Packet view**
-   - [x] UI route: `/performance/reviews/:cycleId/packet/:employeeId`
-   - [x] API/service: permissioned packet fetch with submissions + answers
-   - [x] Visibility rules: HR admin, manager-of-subject, subject employee only after release when policy allows
-   - [x] Packet essentials placeholders: evidence counts, previous-cycles empty-state tab, summary placeholder block
-   - [x] Loading/empty/error states for packet route
-   - [x] Tests for packet fetch + permission gating
-   - Completed in local workspace commit set for Milestone 2 Phase 1 on 2026-02-27
-
-3. **Calibration session creation**
-   - [x] Admin route: `/admin/performance/calibration/new`
-   - [x] Admin list route: `/admin/performance/calibration`
-   - [x] API: create session with cohort (`POST /api/performance/calibration`)
-   - [x] API: list sessions (`GET /api/performance/calibration`)
-   - Completed in local workspace commit set for Milestone 2 D1 follow-on on 2026-02-27
-
-4. **Calibration workspace**
-   - [x] UI: `/performance/calibration/:sessionId`
-   - [x] Move control (dropdown “Move to box”) plus optional drag-drop
-   - [x] Right drawer shows packet summary and link to packet
-   - [x] Tabs: “This cycle” and “Previous cycles” (previous cycle tab currently empty state)
-   - [x] Helper copy/tooltips and loading/empty/error/read-only states
-   - Completed in local workspace commit set for Milestone 2 Phase 2 on 2026-02-27
-
-5. **Finalize**
-   - [x] Finalize endpoint locks session and creates snapshot JSON
-   - [x] Endpoint: `POST /api/performance/calibration/:sessionId/finalize`
-   - [x] Locked/read-only UI state: finalize banner + disabled move controls
-   - Completed in local workspace commit set for Milestone 2 Phase 3 on 2026-02-27
-
-6. **Quality**
-   - [x] Tests for session fetch permission gating and placement move authorization
-   - [x] Tests for finalize locking + snapshot creation
-   - [x] Tests for unauthorized finalize access
-
-### Acceptance criteria
-- [x] Packet view works and is permission-gated
-- [x] Calibration grid loads cohort and updates placement
-- [x] Finalize locks session and stores snapshot
-- [x] Audit events captured for move/finalize
-
-## Milestone 3 — Improvement Plans MVP (Timeline + Audit + Export placeholder)
-
-**Status:** Phase 1, Phase 2, Phase 3, and Phase 4 completed locally on 2026-02-27 (PR number pending).  
-**Objective:** Create and manage improvement plans with compliance-ready records.
-
-### Scope
-
-#### In scope
-- Create plan (manager/HR)
-- Plan detail page with timeline entries (check-ins)
-- Status transitions (draft/active/completed/extended/cancel)
-- Audit log for all changes
-- Export placeholder endpoint/button
-
-#### Out of scope
-- Complex templating and approval workflows
-- Advanced notifications
-
-### Work breakdown (ordered)
-
-1. **Data model + migration**
-   - `ImprovementPlan`, `ImprovementPlanGoal`, `ImprovementPlanCheckIn`
-   - Attachments (optional scaffolding)
-   - Migration name: `add_improvement_plans_mvp`
-
-2. **UI routes**
-   - `/performance/improvement-plans/:planId` detail + timeline
-
-3. **API**
-   - Create plan
-   - Update plan goals/date range
-   - Add check-in entry
-   - Change status
-   - Get audit events
-   - Export placeholder endpoint
-
-4. **Permissions**
-   - Strict: subject/manager/HR only
-
-5. **Quality**
-   - Tests for status transitions and audit events
-
-### Phase tracking
-
-#### Phase 1 — DB + create/list/detail APIs + strict permissions
-- [x] Add Prisma enums/models: `ImprovementPlan`, `ImprovementPlanGoal`, `ImprovementPlanCheckIn`
-- [x] Commit migration `add_improvement_plans_mvp`
-- [x] Add seed/dev data for one improvement plan and goals
-- [x] Add APIs:
-  - [x] `POST /api/performance/improvement-plans`
-  - [x] `GET /api/performance/improvement-plans`
-  - [x] `GET /api/performance/improvement-plans/:planId`
-- [x] Keep route handlers thin; move logic to `src/server/improvement-plans/*`
-- [x] Enforce server-side permissions (HR admin, manager direct-report scope, subject/manager/HR access scope)
-- [x] Add service tests for create/list/detail and permission denials
-- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
-- Completed in local workspace commit set on 2026-02-27 (PR number pending)
-
-#### Phase 2 — timeline/check-ins + status transitions + auditing
-- [x] Add check-in API `POST /api/performance/improvement-plans/:planId/checkins`
-- [x] Add status transition API `PATCH /api/performance/improvement-plans/:planId/status`
-- [x] Add strict permissions:
-  - [x] Check-in create: subject/manager/HR admin only
-  - [x] Status change: manager owner or HR admin only
-- [x] Add status transition validation rules (`DRAFT -> ACTIVE -> COMPLETED -> EXTENDED/CANCELED`, with completion outcome required)
-- [x] Add audit events for check-in create and status transitions
-- [x] Add detail UI route `/performance/improvement-plans/:planId` with timeline feed
-- [x] Add loading/empty/error states for improvement plan detail timeline
-- [x] Add tests for:
-  - [x] Authorized check-in create + audit event
-  - [x] Unauthorized check-in create blocked
-  - [x] Valid status transition + audit event
-  - [x] Invalid status transition rejected
-  - [x] Unauthorized status transition blocked
-- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
-- Completed in local workspace commit set on 2026-02-27 (PR number pending)
-
-#### Phase 3 — audit log view + export placeholder
-- [x] Add audit event retrieval endpoint for improvement plans
-- [x] Add export placeholder endpoint and UI action
-- [x] Add audit log view on `/performance/improvement-plans/:planId` with loading/empty/error states
-- [x] Add tests for audit feed and export placeholder behavior
-- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
-- Completed in local workspace commit set on 2026-02-27 (PR number pending)
-
-#### Phase 4 — audit completeness for plan edits
-- [x] Add plan edit endpoint `PATCH /api/performance/improvement-plans/:planId` for goals/date range
-- [x] Add audit events for goal and date edits
-- [x] Add permission + audit tests for edit flow
-- [x] Local quality gates pass (`lint`, `typecheck`, `test`, `build`)
-- Completed in local workspace commit set on 2026-02-27 (PR number pending)
-
-### Acceptance criteria
-- [x] Authorized users can create and view plans
-- [x] Check-ins append to timeline and are audited
-- [x] Export placeholder exists and is clearly marked
-- [x] Unauthorized users cannot access plan data
-
-## Milestone 4 — UX Polish + Help & Launch Readiness (No Analytics Yet)
-
-**Status:** Core implementation complete in PRs #3, #4, #5, and #6; remaining consistency/help polish moved to Milestone 4.1.  
-**Objective:** Make the product feel elegant and self-serve (Lattice-like UI polish + in-app guidance), while closing remaining MVP-adjacent UX gaps. Analytics dashboards will be handled in a later milestone after HR confirms the rating framework.
-
-### Implementation notes (tighten execution)
-- **Core routes in scope for UI consistency:** Home, Reviews Tasks, Write Review, Packet, Calibration, Improvement Plans (list/detail), Admin Review Cycles, Admin Calibration, Help.
-- **Component locations (to avoid sprawl):**
-  - UI primitives: `apps/web/src/components/ui/*`
-  - Layout components: `apps/web/src/components/layout/*`
-  - Page-specific components: colocate under the route folder or `apps/web/src/components/features/*`
-- **Manual visual QA checklist (include in PR description for UX phases):**
-  - [x] Spacing/typography consistent with PageHeader + tokens
-  - [x] Buttons/inputs/cards use shared primitives (no one-off styles)
-  - [x] Focus rings visible; keyboard navigation works for drawers/modals
-  - [x] Loading/empty/error states present and readable
-  - [x] No layout break on common widths (desktop + narrow)
-
-### Scope
-
-#### In scope (this milestone)
-- UI Foundation / Design System polish (tokens + primitives + consistent layouts)
-- In-app Guidance (Help Center + tooltips + contextual coaching + better empty states)
-- Remaining follow-on UX gaps from Milestones 1–3:
-  - write-review UX completeness
-  - calibration notes + export placeholder
-  - improvement plan list route + polish
-- Basic home/dashboard task surfacing (in-app, lightweight)
-
-#### Out of scope (explicitly deferred)
-- Analytics dashboards and charts (Lattice-style insights)
-- Identity/SSO hardening and production RBAC rollout
-- Notifications/worker jobs
-- Advanced AI analytics engines
-- Full calibration write-back/ranking systems beyond agreed MVP+ scope
+## 2. Current Milestone
+
+## Milestone: Vanilla Build + HR Sandbox
+
+### Objective
+Deploy a sandbox version of Trellis within the next 2 days so the HR team can perform mock runs of the performance process using realistic workflows.
+
+### Outcome
+HR should be able to:
+- log into Trellis with sandbox-safe accounts
+- access a realistic org structure
+- create and manage review cycles
+- set and approve goals
+- complete self and manager reviews
+- run 9-box calibration
+- identify succession and risk outputs
+- create and track PIPs
 
 ---
 
-### Phase 1 — UI Foundation (Design System Nucleus)
-- [x] Define design tokens (typography scale, spacing, radii, shadows) via Tailwind config and/or CSS variables
-- [x] Create/standardize core UI primitives:
-  - [x] Button
-  - [x] Card
-  - [x] Input / Textarea
-  - [x] Select
-  - [x] Badge/StatusChip
-  - [x] Tabs
-  - [x] Table
-  - [x] Drawer/SidePanel
-  - [x] Modal
-  - [x] Toast
-  - [x] EmptyState
-  - [x] Skeleton loader
-- [x] Create standard layout components:
-  - [x] PageHeader (title + subtitle + primary CTA slot)
-  - [x] SectionHeader
-- [x] Refactor 3 routes to use primitives/layout:
-  - [x] Home
-  - [x] /performance/reviews (tasks)
-  - [x] One admin route (review cycles list OR calibration admin list)
-- [x] Add a short “Visual spot-check” list to the PR description (manual QA checklist)
-- Completed in PR #3 (dev -> main Milestone 4 Phase 1)
+## 3. Product Scope Locked for Vanilla Build
 
-**Acceptance criteria**
-- [x] Refactored routes share consistent spacing/typography and components
-- [x] No business logic changes
-- [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
+The vanilla build includes only the core workflows needed for a structured annual performance process.
+
+### In Scope
+1. Goals + Measures
+2. Reviews
+3. 9-Box Calibration
+4. Succession Planning Outputs
+5. Risk Assessment Outputs
+6. Performance Improvement Plans (PIP)
+7. Role-based permissions
+8. Auditability for sensitive actions
+9. Sandbox deployment for HR pilot
+
+### Out of Scope
+- Peer reviews
+- Upward reviews
+- Continuous feedback feed
+- Full standalone succession planning module
+- Compensation planning
+- AI-generated ratings or recommendations
+- Advanced analytics explorer
+- Entra ID for the immediate sandbox milestone
 
 ---
 
-### Phase 2 — Apply Consistency Across Core Flows
-- [x] Refactor remaining core routes to use primitives/layout:
-  - [x] Write review screen
-  - [x] Packet view
-  - [x] Calibration session view
-  - [x] Improvement plans detail
-  - [x] Admin review cycles new/create page (if still inconsistent)
-- [x] Standardize loading/empty/error states using shared components (completed in Milestone 4.1, PR #7)
-- [x] Add Skeleton loaders on packet/calibration/improvement plan detail where data fetches occur
-- [x] Accessibility baseline pass:
-  - [x] Focus states visible
-  - [x] Keyboard navigation for drawers/modals
-  - [x] `aria-label` on icon buttons
+## 4. Product Definition
 
-**Acceptance criteria**
-- [x] Core flows look consistent and use shared components
-- [x] No mixed styling patterns remain on core routes (completed in Milestone 4.1, PR #7)
-- [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
-- Completed in PR #4 (dev -> main Milestone 4 Phase 2)
+Trellis is a performance management system designed to create a clear, fair structure for growth.
+
+The vanilla build focuses on four connected workflows:
+- Goals define direction
+- Reviews assess progress
+- Calibration aligns standards
+- PIPs provide support when performance is off track
+
+This version is not a broad HR platform. It is a focused performance system for running a structured annual cycle.
 
 ---
 
-### Phase 3 — In-app Guidance (Help + Tooltips + Coaching)
-- [x] Add persistent Help entry point in app shell (header or nav)
-- [x] Add `/help` page with role-based sections and deep links:
-  - [x] Employee: tasks, writing/submitting, evidence, viewing packet
-  - [x] Manager: calibration, review participation, improvement plans
-  - [x] HR: cycle setup, progress monitoring, calibration sessions, audit/export concepts
-- [x] Add “Getting started” coaching card on Home (role-aware links)
-- [x] Add contextual tooltips/helper text (concise, accessible) for:
-  - [x] Submit (finality + visibility)
-  - [x] Evidence (what counts + visibility)
-  - [x] Calibration axes meaning + finalized/locked meaning
-  - [x] Packet visibility rules (locked vs released)
-  - [x] Improvement plan visibility & audit notes
-- [x] Improve empty-state coaching copy on key pages (“what to do next”)
+## 5. Roles
 
-**Acceptance criteria**
-- [x] Users can self-serve core workflows without external training
-- [x] Tooltips are accessible (keyboard + aria) and concise
-- [x] `/help` provides accurate deep links to in-app pages
-- [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
-- Completed in PR #5 (dev -> main Milestone 4 Phase 3)
+### Employee
+- create and submit goals
+- respond to manager-requested changes
+- update goal progress during check-in windows
+- complete self review
+- view released review packet where allowed
+- participate in PIP check-ins
 
----
+### Manager
+- review and approve goals
+- request changes to goals
+- complete manager reviews for direct reports
+- participate in calibration where allowed
+- provide PIP feedback and checkpoint updates
 
-### Phase 4 — Remaining MVP-adjacent UX gaps (from PRD_AUDIT)
-This phase finishes the leftover functional UX items without adding analytics.
+### HR Admin
+- create and manage review cycles
+- configure review templates and timelines
+- oversee operational workflow
+- monitor completion and compliance
+- oversee PIP process
 
-#### Write-review UX completeness
-- [x] Expand write-review left phase navigation beyond task context (clean phase nav)
-- [x] Add right-panel reviewer/subject context summary on write-review screen
-- [x] Keep current answer editor for MVP (richer editor deferred pending product confirmation)
-
-#### Calibration completion
-- [x] Add calibration participant notes/justifications in right drawer (if not already)
-- [x] Add calibration snapshot export/download placeholder endpoint + UI action
-- [x] Optional write-back of finalized bucket/rating to packet stable fields explicitly deferred pending product confirmation
-
-#### Improvement plans completion
-- [x] Add `/performance/improvement-plans` list route
-- [x] Add incremental UX polish beyond MVP placeholders
-
-#### Home/dashboard task surfacing
-- [x] Add due-soon indicators for assigned review tasks and improvement plan check-ins (in-app only)
-
-**Acceptance criteria**
-- [x] All remaining follow-on items from Milestones 1–3 are tracked and completed here (or explicitly deferred)
-- [x] New/updated endpoints include Zod validation + server-side permission checks
-- [x] New mutations write audit events with non-sensitive metadata
-- [x] New UI routes include loading/empty/error states
-- [x] `lint`, `typecheck`, `test`, `build` pass in `apps/web`
-- Completed in PR #6 (dev -> main Milestone 4 Phase 4)
-
-
-## Milestone 4.1 — UX/Help Fixes
-
-**Status:** Completed in PR #7 (dev -> main Milestone 4.1 UX/Help Fixes).  
-**Objective:** Close the remaining consistency and help-system polish gaps identified by `docs/product/MILESTONE4_AUDIT.md`.
-
-### Short checklist
-- [x] Refactor admin calibration headers to shared layout primitives (`PageHeader` / `SectionHeader`) on:
-  - `/admin/performance/calibration`
-  - `/admin/performance/calibration/new`
-- [x] Convert remaining one-off loading/error pages to shared primitives (`Skeleton`, `Card`, `Button`, `EmptyState`) for:
-  - `/performance/reviews/loading`
-  - `/performance/reviews/error`
-  - `/admin/performance/calibration/loading`
-  - `/admin/performance/calibration/new/loading`
-  - `/admin/performance/review-cycles/loading`
-- [x] Add a reusable tooltip/help-hint primitive and standardize contextual guidance usage on key flows
-- [x] Re-run manual visual QA checklist for core routes and capture results in PR description
-- [x] Ensure `lint`, `typecheck`, `test`, and `build` pass in `apps/web`
-
-## Milestone 4.2 — Playwright E2E Smoke Suite (UX Regression Gates)
-
-**Status:** Completed in PRs #8, #9, and #10.  
-**Objective:** Add a small, stable Playwright smoke suite to catch UX regressions across core flows (Lattice-like UI polish protection). Keep scope minimal and tests reliable.
-
-### Scope
-
-#### In scope
-- Add Playwright test runner and repo configuration under `apps/web`
-- Add `apps/web/e2e/*` smoke tests for critical user journeys (5–8 tests max)
-- Use stable selectors (`data-testid`) for key interactive elements
-- Provide a repeatable local run path for E2E tests
-- Optional: add an E2E job in CI for PRs to `main` once stable
-
-#### Out of scope
-- Full visual regression screenshot diffing (can be added later)
-- Large suite of brittle UI tests
-- Testing every page or every component
-- Load/performance testing
+### Super Admin
+- full access to sensitive workflows
+- lead and finalize 9-box calibration
+- access leadership-team review cycles
+- override locked goals in special cases
+- capture succession and risk outputs
+- manage restricted org-level talent decisions
 
 ---
 
-### Phase 1 — Playwright Setup + First Smoke Test
-- [x] Install Playwright test dependencies in `apps/web` (`@playwright/test`)
-- [x] Create Playwright config (baseURL, webServer, retries, trace on failure)
-- [x] Add npm scripts in `apps/web/package.json`:
-  - [x] `test:e2e`
-  - [x] `test:e2e:ui`
-- [x] Add minimal smoke test: Home loads + navigation works
-- [x] Add/standardize `data-testid` attributes on primary nav and Home “Getting started” links (only what tests need)
-- [x] Document how to run E2E locally in README (short section)
+## 6. Vanilla Build Requirements
 
-**Acceptance criteria**
-- [x] `npm run test:e2e` runs locally and passes consistently
-- [x] One smoke test is present and stable
-- [x] No flaky selectors (prefer `data-testid`)
-- Completed in PR #8 (dev -> main Milestone 4.2 Phase 1)
+## 6.1 Goals + Measures
 
----
+### Rules
+- each employee may have a maximum of 5 goals
+- goals can be either:
+  - Performance Goal
+  - Development Goal
+- goals are created by the employee
+- goals are not final until approved by the manager
+- manager may request revisions
+- employee must revise and resubmit if changes are requested
+- approved goals are locked
+- goals may only be fully changed after approval by Super Admin in exceptional scope-change cases
+- progress updates and comments are only allowed during configured review/check-in windows
 
-### Phase 2 — Core Flow Smoke Coverage (Keep to ~5–8 tests)
-Add smoke tests (only core happy paths; no deep edge cases):
-- [x] Reviews tasks list loads (`/performance/reviews`)
-- [x] Write review: autosave works + submit locks (minimal path)
-- [x] Packet page renders
-- [x] Calibration: open drawer + move placement via accessible control
-- [x] Improvement plan: add check-in and see timeline entry
-
-Implementation notes:
-- [x] Add `data-testid` only where needed for stability (submit buttons, autosave indicator, drawer open, move placement control)
-- [x] Keep each test under ~30–60 seconds and avoid brittle timing assumptions
-
-**Acceptance criteria**
-- [x] All smoke tests pass locally in one run
-- [x] Tests are stable across repeated runs
-- [x] Failures produce trace/screenshots for debugging (configured)
-- Completed in PR #9 (dev -> main Milestone 4.2 Phase 2)
+### Build Intent
+This is not a free-form OKR system. It is a governed annual goal workflow tied to the review cycle.
 
 ---
 
-### Phase 3 — CI Integration (Optional, after stability)
-- [x] Add a separate CI job/workflow to run E2E smoke suite:
-  - [x] Run on PRs to `main` (or nightly until stable)
-  - [x] Upload trace/screenshots on failure
-- [x] Ensure E2E does not block iteration if flaky (use retries and keep suite small)
+## 6.2 Reviews
 
-**Acceptance criteria**
-- [x] E2E runs in CI reliably (or is scheduled nightly) with debuggable artifacts
-- [x] CI remains fast enough for team velocity
-- Completed in PR #10 (dev -> main Milestone 4.2 Phase 3)
+### Review Types
+- Self Review
+- Manager Review
 
-## Milestone 5 — HR Scorecard + Analytics-ready Data Foundations + Demo Login (No Dashboards Yet)
+### Rules
+- employees review themselves first
+- managers review direct reports after self review is available
+- HR controls templates and questions
+- review packet becomes visible to employee only after release according to cycle rules
 
-**Status:** Phase 1, Phase 2, Phase 3, and Phase 4 completed in PRs #11, #12, #13, and #14.  
-**Objective:** Implement the HR-defined rating model and store analytics-ready data (competencies + weighted scorecard) while enabling HR to run everything through the UI using demo logins/configs (no scripts). Dashboards/charts will be a later milestone once HR confirms reporting preferences.
+### Review Content
+The review content should capture:
+- accomplishments and business results
+- progress against goals
+- strengths
+- development opportunities
+- leadership behaviors
+- future growth potential
+- career interests where appropriate
 
-### HR form requirements (source)
-- Competencies rated **1–5** by **Employee + Manager**, with comments:
-  - Values / Culture Alignment
-  - Judgment & Decision-Making
-  - Safety & Compliance
-  - Technical Skills
-  - Quality of Work
-  - Communication
-  - Accountability
-  - Relationship Building
-  - Results Driven
-  - Attitude
-  - Service Oriented
-  - Adaptability
-- Performance Metrics Scorecard (weighted subset, totals to 100%):
-  - Quality of Work (15%)
-  - Communication (10%)
-  - Accountability (15%)
-  - Relationship Building (10%)
-  - Results Driven (20%)
-  - Attitude (10%)
-  - Service Oriented (10%)
-  - Adaptability (10%)
-- Blended Rating per metric: `(Employee + Manager) / 2`
-- Weighted Score % per metric: `(Blended / 5) * weight%`
-- Total % mapped to rating:
-  - 5 Exceptional: 90–100%
-  - 4 Exceeds: 80–89%
-  - 3 Meets: 70–79%
-  - 2 Needs Improvement: 60–69%
-  - 1 Unsatisfactory: <60%
-
-### Key decisions (locked for this milestone)
-- Peer/Upward reviews may collect the same 1–5 competency ratings + comments, but are **reference input only**.
-- Scorecard math uses **Self + Manager only** by default.
-- Scorecard weights are **global company-wide** (no per-department weights yet).
-- Support **N/A / Not Observed** as a stored rating state; exclude from scoring by default (unless HR specifies otherwise later).
-
-### Scope
-
-#### In scope
-- Data model changes to represent competencies/ratings with stable `dimension_key`
-- Store self + manager competency ratings + comments (via existing submissions)
-- Store scorecard weights as cycle config (global company weights)
-- Compute and store derived scorecard outputs per employee packet:
-  - per-metric blended rating
-  - per-metric weighted percent
-  - total percent
-  - scorecard-mapped overall rating (1–5)
-- Persist per-metric breakdown results (for easy charting later)
-- Peer/upward reviews supported as **reference input** (ratings/comments stored) but **not included in scorecard math** (default)
-- Demo-mode login/reset setup:
-  - `/login` role tiles for HR Admin, Calibrator, Manager, Employee
-  - `/api/demo/reset` to wipe + reseed realistic demo data in development
-  - demo-only auth/session flow enabled only with guardrails
-- Update Playwright smoke suite to use `/api/demo/reset` + `/login`
-
-#### Out of scope
-- Analytics dashboards/charts (separate milestone after HR confirms reporting view)
-- Production SSO/identity hardening (later)
-- Notifications/worker jobs (later)
+The uploaded talent review reference should be used as inspiration for content fields and prompts, but not copied rigidly as product structure.
 
 ---
 
-### Phase 1 — Data Model + Cycle Scorecard Config (schema + migration)
-- [x] Add `dimension_key` + rating question type support for competency questions (SCALE 1–5)
-- [x] Add support for **N/A / Not Observed** rating state (stored, excluded from score by default)
-- [x] Add scorecard config tables tied to the cycle:
-  - [x] metric_key, weight_percent (must sum to 100)
-- [x] Add packet fields (or derived tables) for storing:
-  - [x] total_scorecard_percent
-  - [x] scorecard_overall_rating (1–5)
-  - [x] final_rating_source (SCORECARD | CALIBRATION)
-- [x] Add per-metric breakdown storage (analytics-ready):
-  - [x] scorecard_metric_result: packet_id, metric_key, self_rating, manager_rating, blended_rating, weight_percent, weighted_percent
-- [x] Add snapshot fields for org attributes at cycle time (department/title/manager) (to prevent reporting drift)
-- [x] Migration committed and tests updated if needed
+## 6.3 9-Box Calibration
 
-Validation rules (Phase 1)
-- [x] Weights sum-to-100 enforced server-side (not just UI)
-- [x] Metric keys validated against an allowed list
-- [x] N/A behavior documented and consistent
+### Rules
+- calibration occurs after reviews
+- calibration is led by Super Admin
+- managers participate in relevant calibration sessions
+- only Super Admin can view restricted leadership-team review cycles
+- finalized calibration results become read-only
+- calibration generates downstream outputs for succession and risk
 
-**Acceptance criteria**
-- [x] Schema supports competency ratings and scorecard weights
-- [x] Per-metric breakdown results are persistable
-- [x] Weights sum to 100 enforced at validation layer
-- [x] `lint/typecheck/test/build` pass
-- Completed in PR #11 (dev -> main Milestone 5 Phase 1)
+### Model
+- X-axis: Performance
+- Y-axis: Potential / Leadership Potential
+
+### Intent
+This is a restricted, high-trust workflow. It must be tightly permissioned and auditable.
 
 ---
 
-### Phase 2 — Scorecard Computation Engine + Tests
-- [x] Compute blended ratings from self + manager submissions
-- [x] Apply weights and compute total percent + mapped overall rating
-- [x] Persist derived results on packet
-- [x] Persist per-metric results into scorecard_metric_result (required for later charts)
-- [x] Recompute trigger on manager submit and/or cycle lock (choose one and document)
-  - [x] Chosen trigger: recompute on manager submission submit
-- [x] Calibration override behavior:
-  - [x] If calibration finalized, final rating source can become CALIBRATION (store both)
-- [x] Unit tests:
-  - [x] blended formula correctness
-  - [x] weighted sum correctness
-  - [x] rating threshold mapping correctness
-  - [x] recompute trigger behavior
-  - [x] boundary cases: 79/80/89/90 and <60 handling
-  - [x] N/A behavior correctness (documented rule)
+## 6.4 Succession Planning Outputs
 
-**Acceptance criteria**
-- [x] Scorecard results computed deterministically and persisted
-- [x] Tests prove formula correctness and mapping thresholds
-- Completed in PR #12 (dev -> main Milestone 5 Phase 2)
+Succession planning is part of the vanilla build only as an output of calibration.
+
+### Required Outputs
+- emergency backup
+- ready now
+- ready future
+- readiness notes
+- development actions before readiness
+
+### Intent
+This is not a broad workforce planning module in vanilla. It is a structured talent outcome captured after calibration.
 
 ---
 
-### Phase 3 — Peer/Upward Reviews as Reference Input (No weighting)
-- [x] Allow peer/upward submissions to include the same competency ratings/comments (1–5 + Not Observed)
-- [x] Clearly label these as “Reference input” in manager view
-- [x] Ensure scorecard computation ignores peer/upward by default
-- [x] Permission tests for peer/upward visibility rules
+## 6.5 Risk Assessment Outputs
 
-**Acceptance criteria**
-- [x] Peer/upward data can be collected and viewed where allowed
-- [x] Scorecard totals unaffected by peer/upward by default
-- Completed in PR #13 (dev -> main Milestone 5 Phase 3)
+Calibration should also capture risk insights.
 
----
+### Required Outputs
+- organizational risk level
+- individual retention risk level
+- concern summary
+- suggested action
 
-### Phase 4 — Demo Mode UI + Sample Role Logins (No scripts)
-- [x] Add DEMO_MODE guard (only in development)
-- [x] Add demo-first login route `/login` with role tiles (HR Admin, Calibrator, Manager, Employee)
-- [x] Add demo reset endpoint `POST /api/demo/reset` with typed confirmation (`RESET`) before wipe + seed
-- [x] Seed realistic construction-company walkthrough data (org hierarchy, cycle, submissions, evidence, calibration, improvement plan)
-- [x] Refine seeded demo narratives so reviews, evidence links, scorecard outcomes, and calibration placements are coherent for walkthroughs/reporting
-- [x] Remove Demo Setup / Demo Login clutter from app navigation (legacy `/demo/*` routes redirect to `/login`)
-- [x] Update Playwright smoke suite to use `/api/demo/reset` + `/login` role tiles and run core flows
-
-**Acceptance criteria**
-- [x] HR can demo everything from `/login` (reset + role sign-in) without scripts
-- [x] Demo reset/auth is disabled outside `DEMO_MODE=true` and development runtime
-- [x] E2E suite still passes
-- Completed in PR #14 (initial) and refined in PR #15 (demo-first login hardening)
-- Seed coherence refinement completed in PR #20.
+### Intent
+These outputs help leadership identify talent concerns and intervene appropriately.
 
 ---
 
-## Milestone 5 Follow-on UI Polish
+## 6.6 PIP
 
-- [x] Presentation Mode hide redundant hub sections (`PRESENTATION_MODE`) by hiding Home “Workflow Modules” and Help role quick-link cards.
-- Completed in PR #15 (dev -> main docs + presentation mode polish)
+### Rules
+- PIP begins after review and/or calibration identifies the need
+- manager owns performance feedback
+- HR oversees the process
+- employee participates in the process
+- standard checkpoints happen at:
+  - 30 days
+  - 60 days
+  - 90 days
 
+### Required Data
+- employee
+- manager
+- HR owner
+- expectations
+- start date
+- checkpoint dates
+- checkpoint notes
+- status
+- final outcome
 
-## Milestone 6 — Reporting Module (HR KPIs + Lattice-style Insights)
-
-**Status:** Phase 1, Phase 2, Phase 3, and Phase 4 completed in PRs #16, #17, #18, and #19.  
-**Objective:** Deliver an HR-facing Reporting module that tracks cycle progress + rating distributions + competency breakdowns by Department and Position Title, using our analytics-ready data (dimension_key, scorecard outputs, snapshots). Provide Lattice-like UX: filterable dashboards, distributions, heatmaps, and downloadable tables.
-
-### Why this milestone
-HR needs to track:
-- # forms not started / in progress / completed
-- in progress with employee vs manager
-- summary of employees in each rating
-- breakdown by Department and Position Title
-- performance ratings by competency (Values/Culture, Judgment, Safety, etc.)
-
-We will follow proven patterns:
-- Progress reporting states Completed/In progress/Not started with filtering (Lattice-style).
-- Results analytics for ratings/competencies/weighted scores with bar/heatmap/distribution and employee table exports. 
-
----
-
-### Scope
-
-#### In scope
-- New HR reporting area in the app shell (Admin-only initially)
-- Cycle selector + filter bar (Department, Position Title; optional Manager)
-- Progress KPIs: not started / in progress / completed, plus employee vs manager splits
-- Overall rating distributions (scorecard baseline and final rating source)
-- Competency breakdown reports for the HR competency list (dimension_key-based)
-- “Employee table” drilldown view + CSV exports
-- Small-N suppression to avoid leaking info in tiny groups (configurable threshold)
-
-#### Out of scope
-- Advanced “Explorer” / ad-hoc reporting builder
-- Multi-cycle trend lines (optional later)
-- AI sentiment analytics for open-ended text
+### Statuses
+- Draft
+- Active
+- Completed
+- Extended
+- Cancelled
 
 ---
 
-### UX design (Lattice-inspired)
-- Reporting entry point: **Admin → Reporting**
-- Structure:
-  - **Progress** tab: KPI cards + segmented bars + “reviewee status” rollups
-  - **Results** tab: rating distribution + histogram + employee table
-  - **Competencies** tab: heatmap + distribution drilldowns
-  - **Scorecard** tab: weighted metric breakdown (8 metrics) + gap views
-- Always show:
-  - Cycle selector (required)
-  - Filters (Department, Position Title; Manager optional)
-  - “Export CSV” for tables; “Download PNG” for charts later (optional) 
+## 7. Deployment Strategy
+
+## Immediate Sandbox Strategy
+To hit the HR testing deadline, Trellis will first be deployed as a sandbox environment on Azure.
+
+### Sandbox decisions
+- sandbox authentication will use Supabase Auth
+- sandbox will behave like a real system, not a fake demo mode
+- users will have real accounts
+- org structure, roles, review cycles, and workflows should behave as close to production as possible
+- dev-only demo login, role-switching, or reset flows must not be used in the shared sandbox
+
+## Production Direction Later
+After sandbox validation:
+- auth moves to Microsoft Entra ID
+- database moves to Azure Database for PostgreSQL
+- production infrastructure remains Azure-based
 
 ---
 
-## Phase 1 — Reporting data layer (APIs + tests)
+## 8. Workstreams
 
-### Server module
-- [x] Create `apps/web/src/server/reporting/*` for reporting queries and aggregation
-- [x] Add permission gating: HR_ADMIN only (expand later to managers)
-- [x] Enforce org scoping + snapshot fields (department/title) to prevent drift
+## Workstream 1 — Product Scope Alignment
+Goal: align the prototype to the vanilla build.
 
-### Endpoints (HR admin)
-- [x] `GET /api/admin/reporting/cycles` (list cycles)
-- [x] `GET /api/admin/reporting/progress?cycleId=...&department=&title=`  
-  Returns:
-  - totals: notStarted/inProgress/completed
-  - splits: self(notStarted/inProgress/completed), manager(notStarted/inProgress/completed)
-- [x] `GET /api/admin/reporting/ratings?cycleId=...&department=&title=&ratingSource=`  
-  ratingSource:
-  - `FINAL` (final_rating_source applied)
-  - `SCORECARD` (baseline)
-  Returns distribution of rating 1–5 + counts
-- [x] `GET /api/admin/reporting/competencies?cycleId=...&department=&title=`  
-  Returns per competency (dimension_key):
-  - distribution (1–5 + notObserved)
-  - optional avg (exclude notObserved)
-  - optional self vs manager gap stats
-- [x] `GET /api/admin/reporting/people?cycleId=...&department=&title=&status=&ratingSource=`  
-  Returns paginated employee rows:
-  - employeeName, dept, title
-  - selfStatus, managerStatus
-  - finalRating + source
-  - scorecardPercent
-  - links: packet, calibration session (if exists), improvement plan (if exists)
-
-### Small-N suppression
-- [x] Implement threshold (default 5) for grouped charts/tables:
-  - if group size < threshold → show “Insufficient data” or roll into “Other”
-
-### Tests
-- [x] Unit tests for aggregation correctness (progress + distribution)
-- [x] Permission tests (HR only)
-- [x] Snapshot drift test: reporting uses snapshot_department/title (not live employee field)
-
-**Acceptance criteria**
-- [x] APIs return all KPI data needed for UI without recomputing on client
-- [x] Permission/scoping correct
-- [x] lint/typecheck/test/build pass
-- Completed in PR #16 (dev -> main Milestone 6 Phase 1)
+### Tasks
+- lock vanilla scope
+- remove ambiguity around roles
+- remove peer/upward reviews from visible scope
+- collapse succession into calibration outputs
+- reframe goals into governed annual workflow
+- tighten PIP flow
 
 ---
 
-## Phase 2 — Reporting UI (Progress + Results)
+## Workstream 2 — Auth and Access
+Goal: make sandbox login safe and usable.
 
-### Routes
-- [x] `apps/web/src/app/admin/performance/reporting/page.tsx` (entry)
-- [x] Tabs: Progress, Results (Competencies/Scorecard come in Phase 3)
-
-### Progress tab (HR KPIs)
-- [x] KPI cards:
-  - not started
-  - in progress
-  - completed
-  - in progress (employee/self)
-  - in progress (manager)
-- [x] Segmented bar showing Completed/In progress/Not started totals 
-- [x] Filters: Department + Position Title
-- [x] Drilldown table: employees by status (pagination)
-- [x] Interactive chart behaviors:
-  - [x] Hover tooltips with clear labels
-  - [x] Clickable legend toggles
-  - [x] Chart/segment controls that drill down into the employee table
-
-### Results tab (overall rating)
-- [x] Rating distribution chart (1–5) with toggle:
-  - Final (calibration override where applicable)
-  - Scorecard baseline
-- [x] “Distribution / histogram” view to detect leniency/harshness patterns 
-- [x] Employee table with CSV export 
-
-**Acceptance criteria**
-- [x] HR can filter by dept/title and see progress + rating distributions
-- [x] Export CSV works for employee table
-- [x] UI uses shared primitives (PageHeader, Card, Table, EmptyState, Skeleton)
-- [x] Playwright smoke suite extended with 1 reporting test (page loads + filters apply)
-- Completed in PR #17 (dev -> main Milestone 6 Phase 2)
-- Interactive Progress/Results polish completed in PR #21.
+### Tasks
+- replace dev-only demo auth path for sandbox
+- implement sandbox-safe login flow
+- create sandbox users
+- assign application roles correctly
+- verify access boundaries by role
 
 ---
 
-## Phase 3 — Competency & Scorecard insights (HR-required list)
+## Workstream 3 — Data Model and Permissions
+Goal: ensure the product model supports vanilla requirements.
 
-### Competencies tab
-- [x] Heatmap: Department × Competency (avg or median; exclude Not Observed)
-- [x] Click a competency to drill into distribution (self vs manager comparison)
-- [x] Show “Self vs Manager gap” summary (where differences are largest)
-
-### Scorecard tab
-- [x] 8 weighted metrics:
-  - per metric distribution / average by dept/title
-  - optional “gap” view (self vs manager)
-- [x] Show count of Not Observed per metric (data quality)
-- [x] Visual polish for competency/scorecard interactions:
-  - [x] Heatmap intensity styling for competency cells
-  - [x] Self-vs-manager chart presentation for scorecard metrics
-
-**Acceptance criteria**
-- [x] HR can see competency breakdown for all requested competencies
-- [x] HR can break down by dept/title and drill to employee list
-- [x] UI remains fast (pagination/caching where needed)
-- Completed in PR #18 (dev -> main Milestone 6 Phase 3)
-- Competency/scorecard interaction polish completed in PR #21.
+### Tasks
+- confirm role model
+- add or revise goal approval states
+- enforce goal locking rules
+- confirm review packet structure
+- confirm calibration output structure
+- confirm PIP checkpoint model
+- verify audit logging for sensitive actions
 
 ---
 
-## Phase 4 — Exports + polish (Lattice-like finishing touches)
+## Workstream 4 — Reviews and Templates
+Goal: make review workflows usable for HR pilot.
 
-- [x] Add “Download PNG” for charts
-- [x] Add CSV exports:
-  - progress summary
-  - rating distribution table
-  - competency breakdown table
-- [x] Add tooltips explaining:
-  - what counts as “in progress”
-  - what “Final vs Scorecard baseline” means
-  - Not Observed handling
-- [x] Performance hardening:
-  - indexes for reporting queries
-  - server-side pagination enforced
-
-**Acceptance criteria**
-- [x] Reporting is demo-ready and trustworthy for HR decision meetings
-- [x] Exports are usable for presentations and follow-up analysis
-- Completed in PR #19 (dev -> main Milestone 6 Phase 4)
-- Download PNG chart exports completed in PR #21.
-
-
-## Milestone 7 — UX Refinement + People Admin + Progressive Reviews (Lattice-inspired)
-
-**Status:** Completed in PRs #22, #23, #24, #25, #26, #27, and #28.  
-**Objective:** Improve the product’s usability and visual polish to feel modern and lively (Lattice-inspired), reduce cognitive overload (progressive disclosure), and add essential HR/Manager workflow surfaces: User Management + Team Reviews + better Cycle setup clarity.
-
-### Scope
-
-#### In scope
-- Visual refresh (“skin”): color, hierarchy, spacing, icons, status styling
-- Role-based UI: hide irrelevant modules per role (clean nav + home)
-- HR Admin:
-  - User Management (org structure)
-  - Cycle setup/wizard improvements (assign review types/rules + due dates)
-- Manager:
-  - Team Reviews dashboard (direct reports + progress + drill-ins)
-- Review writing UX:
-  - Convert long scroll (14+ questions) into progressive sections/accordion/stepper
-  - Keep autosave + evidence context intact
-- Update seed/demo data to ensure screens aren’t empty (so UI looks real)
-- Update Playwright smoke tests for new flows/structure (stable selectors)
-
-#### Out of scope
-- Production SSO/identity integration (later)
-- Enterprise directory sync/import (later)
-- Notifications/email reminders (later)
-- New analytics beyond what Milestone 6 already shipped
+### Tasks
+- finalize self review questions
+- finalize manager review questions
+- connect review content to goal progress
+- ensure packet release rules are implemented
+- validate review completion flow
 
 ---
 
-### Phase 1 — Visual design refresh (skin + components + tokens)
+## Workstream 5 — Calibration and Talent Outputs
+Goal: make the 9-box workflow operational.
 
-**Goal:** Make the entire product feel less “black/white” and more modern, while keeping consistency.
-
-- [x] Define/adjust **visual tokens**:
-  - accent colors (primary + secondary), success/warn/error, subtle background tints
-  - chart palette (consistent, not random per chart)
-  - card elevation, border radius, shadows, typography scale
-- [x] Update shared primitives to support a more lively UI:
-  - [x] Status chips (color-coded by state)
-  - [x] Section containers with optional tinted backgrounds
-  - [x] Icon badges for KPI cards (subtle)
-  - [x] Empty states with richer “next step” guidance and visuals
-- [x] Apply to core surfaces (minimal refactor):
-  - [x] Home
-  - [x] Reviews tasks list
-  - [x] Reporting dashboard header + filters
-  - [x] Admin cycle list
-
-**Acceptance criteria**
-- [x] Product-wide palette and hierarchy feels cohesive
-- [x] No page looks “unstyled” relative to the others
-- [x] `lint/typecheck/test/build` pass and Playwright still passes
-- Completed in PR #22.
+### Tasks
+- finalize 9-box placement model
+- define placement prompts
+- implement rationale capture
+- capture succession outputs
+- capture risk outputs
+- restrict leadership visibility
 
 ---
 
-### Phase 2 — Role-based navigation + home surfaces (clean IA)
+## Workstream 6 — PIP
+Goal: support the improvement process after calibration.
 
-**Goal:** Employees should not see calibration/admin/reporting modules. UI becomes clean and role-relevant.
-
-- [x] Implement nav config by role (single source of truth):
-  - EMPLOYEE: Home, Reviews, Help (optional: Improvement Plans only if visible)
-  - MANAGER: Home, Team Reviews, Reviews, Packets, Calibration (only if participant), Help
-  - HR_ADMIN: Home, Reporting, Admin Cycles, Admin Calibration, User Management, Help
-  - CALIBRATOR: Calibration (+ packets), Help
-- [x] Home page becomes role-specific:
-  - Employee: “My tasks due soon” + “Continue draft”
-  - Manager: “Team status snapshot” + “Reviews to complete”
-  - HR: “Cycle progress snapshot” + “Reporting entry”
-- [x] Add consistent route guarding (server-side already, but ensure UX doesn’t expose links)
-
-**Acceptance criteria**
-- [x] UI looks “right” for each role (no irrelevant modules)
-- [x] Protected routes are not accessible by unauthorized roles
-- [x] Playwright: add 1 test verifying employee nav does not show admin/calibration
-- Completed in PR #23.
+### Tasks
+- implement create/edit/manage PIP
+- support 30/60/90 checkpoints
+- support manager and HR ownership
+- ensure employee-facing visibility is appropriate
+- verify audit trail
 
 ---
 
-### Phase 3 — HR Admin: User Management + Org structure
+## Workstream 7 — Sandbox Launch
+Goal: deploy a usable HR pilot environment.
 
-**Goal:** HR can manage people and structure (like your screenshot) so assignments and reporting make sense.
-
-- [x] Add HR-only page: `/admin/users` (or `/admin/people`)
-  - [x] KPI cards: total users, HR admins, calibrators, managers, employees
-  - [x] Search by name/email
-  - [x] Table columns: user, role, department, title, manager, #reports, actions
-- [x] Add “Add User” + “Edit User” (modal or page)
-  - [x] set role, department, title, manager
-  - [x] prevent impossible org loops (manager cannot report to self)
-- [x] Ensure changes affect:
-  - manager direct report lists
-  - cycle assignment generation (manager relationship)
-  - reporting breakdowns (department/title)
-
-**Acceptance criteria**
-- [x] HR can create/update users and manager relationships
-- [x] Manager/team views reflect updated structure
-- [x] Permission tests for HR-only access
-- Completed in PR #24.
+### Tasks
+- stand up sandbox environment
+- configure secrets and env vars
+- provision database
+- create org and users
+- load reporting lines
+- create one review cycle
+- validate end-to-end flow
+- hand off testing instructions to HR
 
 ---
 
-### Phase 4 — HR Admin: Cycle setup wizard improvements (assignment + due dates)
+## Workstream 8 — UX + QA Hardening
+Goal: validate the current dev build and improve the HR-facing experience before sandbox handoff.
 
-**Goal:** Make it obvious how tasks are created and who is responsible (like Lattice’s multi-step setup).
+### Tasks
+- review the dev branch/build end-to-end
+- use Playwright-based flows to inspect critical workflows
+- identify broken, incomplete, or inconsistent states
+- improve workflow clarity, layout, and usability
+- polish the UI for HR pilot readiness
 
-- [x] Replace/upgrade cycle create page into a **wizard**:
-  - Step 1: Basics (name, cycle dates)
-  - Step 2: Review types (self/manager/peer/upward toggles)
-  - Step 3: Reviewer rules:
-    - peers: nomination vs HR assigned, count per employee
-    - upward: enabled for managers? minimum N? visibility policy (draft now)
-  - Step 4: Visibility + schedule (due dates per type if needed)
-  - Step 5: Verify (summary of what will be generated)
-- [x] “Generate submissions” uses wizard config to create ReviewSubmissions with `dueAt`
-- [x] Add a “Progress summary” panel per cycle:
-  - counts by status (not started / in progress / submitted)
-  - counts by type (self/manager/peer/upward)
-  - quick links to reporting
+## 8A. Execution Model
 
-**Acceptance criteria**
-- [x] HR can explain “who owes what” from the UI
-- [x] Generated tasks have correct due dates and types
-- [x] UI mirrors Lattice pattern: structured steps, not a long form
-- Completed in PR #25.
+Trellis should be executed through milestone-based delivery, not through one large autonomous implementation pass.
 
----
+### How execution works
+- `PLAN.md` defines the active milestone sequence
+- `docs/engineering/IMPLEMENTATION_CHECKLIST.md` defines the detailed task backlog within those milestones
+- work should be completed one implementation slice at a time
+- each slice should be small enough to implement, review, and validate cleanly
+- after each slice, the result should be verified before moving to the next one
 
-### Phase 5 — Manager: Team Reviews dashboard (direct reports + progress)
+### Why this approach is used
+This keeps the project:
+- fast-moving
+- reviewable
+- lower risk
+- easier to steer
+- less wasteful than broad autonomous execution
 
-**Goal:** Managers need a “control panel” like Lattice’s Team Reviews.
+### Slice rules
+Each implementation slice should be:
+- coherent
+- high-leverage
+- testable
+- aligned with the current docs
+- narrow enough to avoid unnecessary file churn
 
-- [x] Add manager page: `/performance/team-reviews`
-  - KPI cards: awaiting review, in progress, completed
-  - Progress bar segmented by status
-  - List of direct reports with status chips per review type:
-    - self status
-    - manager status
-    - peer/upward status (if relevant)
-  - Drill-in action: open packet or open manager review task
-- [ ] Add “Show reviewers” / “who owes what” popover (optional MVP)
-- [x] Ensure data sources use org hierarchy (manager → directs)
+Examples of good slices:
+- sandbox auth integration
+- sandbox DB cutover
+- sandbox bootstrap users and org mapping
+- hide non-vanilla navigation
+- align calibration role model
+- tighten reviews to self + manager only
 
-**Acceptance criteria**
-- [x] Manager can instantly see team progress and what to do next
-- [x] Drill-ins work and respect permissions
-- [x] Playwright: add 1 test for manager team page loads + shows direct reports
-- Completed in PR #26.
+### Relationship to the implementation checklist
+The implementation checklist is the detailed working backlog.
+The milestone plan defines the order in which that backlog should be executed.
 
----
+## 8B. Active Milestone Sequence
 
-### Phase 6 — Review writing UX: progressive disclosure (fix the “horrendous scroll”)
+The current Trellis execution sequence is milestone-based.
 
-**Goal:** Keep the same content, but present it like Lattice: sections, visuals, context.
+Only one milestone should be treated as the active implementation focus at a time.
 
-- [x] Convert write screen to progressive sections:
-  - Use left-side stepper or grouped accordion sections
-  - Group questions by competency category or template section
-  - Show 3–5 questions at a time instead of 14 in one scroll
-- [x] Add “section progress”:
-  - completed vs remaining
-  - show validation errors within section
-  - “Next section” CTA
-- [x] Keep evidence panel but improve readability:
-  - evidence summary card at top
-  - pinned “attached evidence” under each question
-- [x] Improve “feedback summary” style:
-  - small callouts (like Lattice side panel cards)
-- [x] Preserve autosave behavior; show saved status per section
+### Milestone 1 — Sandbox Identity and Data Foundation
+Goal: make the sandbox real, shared, and role-testable.
 
-**Acceptance criteria**
-- [x] Review writing feels structured and non-overwhelming
-- [x] Required validation still works (focus first missing in a section)
-- [x] No regressions in autosave/submit/evidence attach
-- [x] Playwright: update write-review test to handle new layout
-- Completed in PR #27.
+Includes:
+- sandbox auth integration
+- Supabase Postgres cutover
+- sandbox bootstrap data
+- user to app-user mapping
+- org memberships
+- roles
+- reporting lines
+- basic role-based access verification
 
----
+### Milestone 2 — Vanilla Scope Containment
+Goal: make the app feel intentional and safe for HR sandbox use.
 
-### Phase 7 — Seed/demo data refinement for UI realism
+Includes:
+- hide non-vanilla navigation and modules
+- remove peer and upward review surfaces
+- hide standalone succession, tracks, and reporting surfaces where out of scope
+- remove visible demo-only entry points
 
-**Goal:** Prevent empty states that make the UI look unfinished during demos.
+### Milestone 3 — Role and Permission Alignment
+Goal: align the implementation with the current Trellis role model and restricted access rules.
 
-- [x] Ensure seeded demo dataset includes:
-  - mix of statuses (not started/in progress/completed)
-  - evidence attached to some answers
-  - at least one completed manager review so competency charts aren’t empty
-  - at least one manager with directs for Team Reviews view
-- [x] Ensure reporting shows meaningful distributions
+Includes:
+- align roles to Employee, Manager, HR Admin, and Super Admin
+- replace lingering Calibrator semantics where necessary
+- tighten calibration restrictions
+- tighten leadership-team access rules
+- verify server-side enforcement of sensitive permissions
 
-**Acceptance criteria**
-- [x] Demo looks “alive” across HR, Manager, Employee journeys
-- Completed in PR #28.
+### Milestone 4 — Workflow Tightening
+Goal: make the implemented workflows match the Vanilla Build definition.
 
----
+Includes:
+- goals workflow tightening
+- review scope tightening
+- calibration output tightening
+- succession and risk output alignment
+- PIP alignment to the 30/60/90-day model
 
-### Testing & QA (applies to all phases)
-- [ ] Update unit tests where logic changes
-- [ ] Update Playwright smoke suite for:
-  - role-based navigation
-  - manager team reviews
-  - write-review progressive sections
-  - reporting still loads
-- [ ] Ensure `lint/typecheck/test/build/test:e2e` pass
+### Milestone 5 — QA and UX Hardening
+Goal: make the product trustworthy and usable for the HR pilot.
 
+Includes:
+- Playwright-based validation
+- role-based browser walkthroughs
+- fixing trust-breaking workflow issues
+- critical-path UX polish
+- final sandbox handoff readiness review
 
-## Milestone 8 — Premium UX Hardening + Content Audit + Reporting Polish
+## 8C. Current Active Milestone
 
-**Status:** Completed (Phases 1–7 via PRs #30–#36)  
-**Objective:** Resolve UX regressions and premium-ize the experience: fix nav selection bugs, reclaim wasted space on work screens, simplify manager workflow into “My Team”, redesign evidence panel for readability, remove/replace broken review-task nav, improve reporting exports + add meaningful chart types, and standardize typography/spacing. Add a Playwright-driven UX audit loop to prevent regressions.
+### Active milestone
+Milestone 1 — Sandbox Identity and Data Foundation
 
-### Why this milestone
-Feedback observed:
-1) Manager mode shows multiple nav items active (Reviews + Packets).
-2) Write/Review pages waste space with heavy sidebars/duplicate nav.
-3) Evidence panel is cramped and noisy; content isn’t prioritized.
-4) “Review Tasks” phase nav appears broken/redundant.
-5) Team Reviews should be “Manage my team” first, include total count, and provide drilldowns.
-6) Reporting PNG export is unreliable; charts can be more meaningful (heatmaps, etc.).
-7) Overall typography/spacing needs to feel premium and consistent.
+### Current implementation slice
+Sandbox bootstrap data and role mapping
 
----
+### Definition of success for the current slice
+- authenticated users map to Trellis app users
+- app users map to organization memberships
+- organization memberships map to roles
+- at least one manager/direct-report relationship exists
+- the sandbox supports realistic role-based testing without demo-only identity shortcuts
 
-## Scope
+### Next slice after this
+Basic role-based access verification
 
-### In scope
-- Navigation active-state correctness + role-based nav cleanup
-- Layout improvements for deep-work screens (write review, packet, calibration)
-- Evidence panel content redesign (progressive disclosure + spacing)
-- Manager “Team Reviews” redesign into “My Team” hub with drilldowns
-- Reporting export fix + add KPI-appropriate chart types (heatmap + donut where appropriate)
-- Typography/spacing/microinteraction polish across core routes
-- Playwright UX audit suite (screenshots + checks) to catch regressions
+## 9. Immediate 2-Day Launch Plan
 
-### Out of scope
-- Production SSO/Entra integration
-- Notifications/email reminders
-- Org-wide directory import/sync
-- Multi-cycle trend analytics (line charts only if trend data exists)
+## Day 1
+### Platform
+- create sandbox deployment environment on Azure
+- configure sandbox database
+- set all required environment variables
+- confirm successful deployment
 
----
+### Auth
+- implement Supabase Auth for the sandbox
+- disable dev-only demo access in deployed sandbox
+- create HR test users and role assignments
+- verify login flow for each role
 
-## Phase 1 — Navigation correctness + Focus layout
+### Data Setup
+- create sandbox org
+- create managers, employees, HR admin, and super admin
+- load reporting lines
+- verify permissions
 
-### 1A) Fix multi-selected nav items (active route logic)
-- [x] Audit sidebar/nav active matching logic (route matching precedence)
-- [x] Ensure exactly one item is active at a time for any route
-- [x] Add unit test for nav active computation (paths -> active item)
+### Scope Control
+- hide unfinished or out-of-scope modules
+- expose only vanilla build workflows
+- ensure navigation is clean and trustworthy
 
-### 1B) Focus layout for deep-work pages (reclaim space)
-- [x] Introduce “Focus Layout” variant for deep-work routes:
-  - [x] write review
-  - [x] packet view
-  - [x] calibration session
-- [x] Focus layout behavior:
-  - [x] collapse sidebar by default (icon-only) OR hide and show breadcrumb/back action
-  - [x] preserve keyboard access and nav discoverability
-- [x] Ensure no regressions in routing, drawer behavior, or page headers
+## Day 2
+### Workflow Setup
+- create one active annual review cycle
+- configure goal-setting window
+- configure check-in / review windows
+- configure self and manager review templates
 
-**Acceptance criteria**
-- [x] Only one nav item is active at a time
-- [x] Deep-work pages have noticeably more usable center width
-- [x] `lint/typecheck/test/build/test:e2e` pass
-- Completed in PR #30.
+### End-to-End QA
+- review the dev build against vanilla scope
+- use Playwright-based flows to validate critical workflows
+- employee creates goals
+- manager requests changes
+- employee resubmits
+- manager approves
+- employee submits self review
+- manager submits review
+- super admin runs calibration
+- super admin records succession and risk outputs
+- HR and manager create a PIP
 
----
+### HR Handoff
+- provide login instructions
+- provide testing guide
+- provide known limitations
+- provide issue collection path
 
-## Phase 2 — Content audit + Evidence panel redesign (progressive disclosure)
+## 10. What Will Be Hidden or Deferred
 
-### 2A) Content inventory and decisions (what belongs on each page)
-- [x] Create `/docs/ux/CONTENT_AUDIT.md` containing a table for each core page:
-  - Reviews list
-  - Write review
-  - Packet view
-  - Calibration
-  - My Team (manager)
-  - Reporting
-- [x] For each page define:
-  - [x] primary goal
-  - [x] primary content required
-  - [x] secondary/supporting content
-  - [x] content to hide behind “details”
-  - [x] content to remove
-- [x] Implement changes that eliminate redundant/broken UI surfaced by audit
+The following should be hidden from sandbox users or deferred from active implementation unless already required for core flows:
 
-### 2B) Evidence panel redesign (less cramped, more useful)
-- [x] Introduce two modes:
-  - [x] Compact mode (default): only essential context + evidence tabs/counts
-  - [x] Details mode (expandable): full cycle/subject/reviewer metadata + packet link
-- [x] Spacing improvements:
-  - [x] consistent vertical rhythm, headings, card grouping
-- [x] Evidence browsing improvements:
-  - [x] search/filter within evidence list (minimal)
-  - [x] show preview snippet + date/source
-- [x] Keep “Selected answer” compact (1 line + expand)
-- [x] Ensure attach/detach flow remains simple and auditable
-
-**Acceptance criteria**
-- [x] Evidence panel is scannable and no longer cramped
-- [x] Non-essential metadata is hidden behind “details”
-- [x] No regressions in evidence attach/detach
-- [x] `lint/typecheck/test/build/test:e2e` pass
-- Completed in PR #31.
+- peer review
+- upward review
+- broad succession module beyond calibration outputs
+- continuous feedback feed
+- non-essential analytics surfaces
+- advanced settings not needed for HR pilot
+- premium or future-state modules not required for vanilla
 
 ---
 
-## Phase 3 — Review tasks/phase nav cleanup + write-review progressive UX fixes
+## 11. Risks
 
-### 3A) Remove/replace broken “Review Tasks” phase navigation
-- [x] Identify the broken “Review Tasks” nav component (the one shown in screenshot)
-- [x] Decide and implement:
-  - [x] Remove if redundant, OR
-  - [x] Replace with a simple breadcrumb: Reviews → Cycle → Subject
-- [x] Ensure no dead UI elements remain
+### Risk 1 — Current prototype includes broader scope than vanilla
+This may create confusion in UI, docs, and implementation priorities.
 
-### 3B) Write-review page layout cleanup
-- [x] Remove duplicated navigation elements on write-review screen
-- [x] Ensure the center workspace dominates:
-  - [x] questions area readable, consistent max-width
-  - [x] evidence drawer not overwhelming
-- [x] Ensure progress indicator remains visible but compact
+### Mitigation
+- hide non-vanilla features
+- update docs to reflect current truth
+- treat vanilla PRD as source of truth
 
-**Acceptance criteria**
-- [x] No broken/unused phase nav remains
-- [x] Write-review screen has clear hierarchy and breathing room
-- [x] Playwright write-review test updated if necessary and passes
-- Completed in PR #32.
+### Risk 2 — Dev-only demo auth is not suitable for shared sandbox
+This could create unsafe or confusing pilot access.
 
----
+### Mitigation
+- implement sandbox-safe auth path
+- use real user accounts
+- disable dev-only shortcuts in sandbox
 
-## Phase 4 — Manager experience redesign: Team Reviews → My Team hub
+### Risk 3 — Roles and permission boundaries may be inconsistent
+Because Trellis includes sensitive data, any permission leak is serious.
 
-### 4A) Rename and reshape manager page
-- [x] Rename “Team Reviews” to “My Team” (or “Team”) in nav and header
-- [x] Page structure:
-  - [x] Header with cycle selector and team size (total direct reports)
-  - [x] KPI cards:
-    - [x] Total direct reports
-    - [x] Awaiting manager review
-    - [x] Self not started (optional)
-    - [x] Overdue (optional if due dates exist)
-  - [x] Direct reports table always visible:
-    - name, title, department
-    - status chips by direction (self/manager/peer/upward)
-    - primary action: “Open profile” (drawer)
-    - secondary actions: “Open review” / “Open packet”
-- [x] Add drilldown drawer for a direct report:
-  - [x] quick actions + snapshot of review statuses
-  - [x] link to packet
-  - [ ] minimal “insights” if available (optional)
+### Mitigation
+- review all server-side authorization
+- test each role explicitly
+- verify restricted leadership and calibration access
 
-### 4B) Progress bar simplification
-- [x] Keep segmented progress bar, but show totals + % clearly
-- [x] Ensure labels reflect a single goal: “manager review completion” or “cycle completion”
+### Risk 4 — 2-day timeline is short
+There may not be time to perfect every workflow.
 
-**Acceptance criteria**
-- [x] Manager sees team total count
-- [x] Manager can drill into a direct report without being forced into reviews list
-- [x] “Open review” is contextual and not the primary navigation flow
-- [x] Add 1 Playwright test: manager My Team loads and shows direct reports
-- Completed in PR #33.
+### Mitigation
+- prioritize usability over completeness
+- lock scope hard
+- ship only workflows HR needs for mock runs
 
 ---
 
-## Phase 5 — Reporting polish: reliable exports + meaningful chart types + manager mini-insights
+## 12. Decisions Locked
 
-### 5A) Fix Download PNG
-- [x] Standardize chart export pipeline:
-  - [x] ChartContainer with stable ref and background
-  - [x] Export works for all chart types used in reporting
-- [x] Add Playwright test: click download PNG and assert download succeeds (non-empty)
+The following decisions are now locked for the vanilla build unless explicitly changed:
 
-### 5B) Add meaningful chart types (not decorative)
-- [x] Competency heatmap:
-  - [x] Department × Competency (avg/median excluding Not Observed)
-  - [x] click cell -> drilldown table filter
-- [x] Donut/pie for completion status (only if it improves comprehension vs bar)
-- [x] Add additional charts only where they clarify KPIs:
-  - [x] distributions for ratings 1–5
-  - [x] scorecard metric breakdowns
+- Roles are Employee, Manager, HR Admin, and Super Admin
+- Goals are annual and governed
+- Maximum 5 goals per employee per cycle
+- Goal types are Performance and Development
+- Reviews are Self + Manager only
+- Calibration is 9-box and Super-Admin-led
+- Only Super Admin can access restricted leadership-team calibration and review visibility
+- Succession planning is a calibration output
+- Risk assessment is a calibration output
+- PIP uses a 30/60/90-day structure
+- Sandbox is deployed first on Azure
+- Sandbox authentication uses Supabase Auth
+- Sandbox must behave like a real system, not a fake demo mode
+- Entra ID comes later for production
+- Production database target is Azure PostgreSQL
+- The dev build must be validated end-to-end before HR sandbox handoff
 
-### 5C) Manager mini-analytics (within My Team)
-- [x] Add a small “Insights” section:
-  - [x] rating distribution for directs (final vs baseline)
-  - [ ] top 3 lowest competencies average (optional)
-  - [x] completion snapshot
 
-**Acceptance criteria**
-- [x] PNG export reliable
-- [x] Heatmap works and supports drilldown
-- [x] Manager gets basic insights without needing HR reporting page
-- [x] `lint/typecheck/test/build/test:e2e` pass
-- Completed in PR #34.
 
----
+## 13. Definition of Done for This Milestone
 
-## Phase 6 — Premium typography + spacing + interaction polish
+This milestone is complete when:
 
-### 6A) Typography system pass
-- [x] Standardize:
-  - [x] page titles/subtitles
-  - [x] section headers
-  - [x] table header/body sizes
-  - [x] line-heights and content widths
-- [x] Reduce “dense” areas and add consistent spacing rhythm
-
-### 6B) Microinteractions and states
-- [x] Hover/focus states consistent across buttons, tabs, chips
-- [x] Drawer transitions smooth, no layout jump
-- [x] Empty/loading/error states polished and actionable
-
-**Acceptance criteria**
-- [x] Core flows feel cohesive and premium (visual consistency)
-- [x] Accessibility baseline preserved (focus rings visible, keyboard usable)
-- Completed in PR #35.
+- Trellis sandbox is deployed
+- HR can log in with sandbox-safe accounts
+- role-based permissions work correctly
+- one review cycle can be run end-to-end
+- employees can set goals and managers can approve them
+- self and manager reviews can be completed
+- super admin can run 9-box calibration
+- succession and risk outputs can be captured
+- PIP can be created and tracked
+- HR can conduct realistic mock runs without relying on spreadsheets or manual workaround docs
 
 ---
 
-## Phase 7 — Playwright “UX Audit” loop (CDO mode)
-
-### 7A) Add a UX audit suite (non-blocking at first)
-- [x] Add `npm run test:e2e:ux` that:
-  - [x] navigates core routes for each role
-  - [x] captures screenshots
-  - [x] checks for:
-    - multiple active nav items
-    - layout overflow/clipping
-    - missing page headers
-    - broken empty states
-  - [x] outputs `/docs/ux/UX_AUDIT_REPORT.md` or uploads artifacts in CI
-
-### 7B) Integrate into CI (optional)
-- [x] Run on demand or nightly until stable
-- [x] Once stable, include as PR gate for UX-related PRs
-
-**Acceptance criteria**
-- [x] UX audit suite provides repeatable feedback and artifacts
-- [x] Prevents regression of nav/layout issues going forward
-- Completed in PR #36.
-
----
-
-## Definition of Done (Milestone 8)
-- [x] All phases complete and checked off in PLAN.md
-- [x] `lint/typecheck/test/build/test:e2e` pass
-- [x] Key UI complaints addressed:
-  - [x] single active nav item
-  - [x] less wasted space on write review
-  - [x] evidence panel readable
-  - [x] broken phase nav removed/replaced
-  - [x] manager “My Team” works with totals + drilldown
-  - [x] reporting PNG export fixed + heatmap added
-  - [x] typography/premium feel improved
-- [x] Playwright UX audit loop added and usable
-- Milestone 8 completed in PR #36.
-
-
-# Milestone 9 — Premium Shell + Lattice-style UI Patterns + UX Rationalization
-
-**Status:** Not started  
-**Objective:** Upgrade the product to feel premium and modern with cohesive UI patterns inspired by Lattice-style interaction (without copying branding): global header with org + profile, collapsible sidebar, standardized right context drawer with tabs, filter chips, avatars stack, status chips, and a content-first information architecture. Fix page density, remove redundant UI, improve manager and HR workflows, and harden reporting exports/visualizations. Add a Playwright UX audit loop to prevent regressions.
-
----
-
-## Why this milestone
-
-**Current pain points (from feedback + screenshots):**
-- Nav glitches (multiple items active), cramped layouts, wasted space on work pages
-- Evidence panel is dense/noisy; too much metadata up front
-- Review writing still feels heavy; progressive disclosure needs to be “product-grade”
-- Manager experience should be “manage my team” first; reviews are drilldowns
-- Reporting should feel premium: interactive charts, heatmaps, reliable PNG exports
-- Product lacks enterprise polish elements: org/profile in header, avatars, chips, filters
-- Need a “CDO/UX audit loop” using Playwright + screenshots to catch regressions
-
----
-
-## Scope
-
-### In scope
-
-#### Global premium shell
-- AppHeader with org pill + user profile menu
-- Collapsible sidebar (expanded + icon-only mode)
-- Consistent PageHeader + actions layout
-
-#### Reusable UI patterns
-- RightDrawer with tabs (Overview / Timeline / Audit Log)
-- FilterBar + FilterChips + Group-by controls
-- StatusChip system (review statuses + cycle statuses)
-- AvatarsStack component
-- Segmented progress bar component
-
-#### UX rationalization
-- Content audit per page and removal of redundant blocks
-- Focus layout for deep work screens
-- Evidence panel redesign (compact vs details)
-- Progressive disclosure review writing (sections/stepper)
-- Manager “My Team” hub with drilldowns + mini analytics
-
-#### Reporting polish
-- Fix PNG export reliably
-- Add heatmaps + appropriate chart variety (only where helpful)
-- Typography + spacing + microinteraction polish
-
-#### Quality guardrails
-- Playwright UX audit suite (screenshots + checks)
-
-### Out of scope
-- Production SSO (Entra)
-- Org directory import/sync
-- Notifications/worker jobs
-- New modules beyond existing (Goals, Engagement) — UI patterns should be reusable for future modules
-
----
-
-## Phase 1 — Design tokens + Premium Shell (Header + Org/Profile + Collapsible Nav)
-
-### 1) Tokens & theme foundation
-- [x] Define/confirm design tokens in one place:
-  - [x] Brand accents (primary/secondary)
-  - [x] Success/warn/error/neutral
-  - [x] Background tints
-  - [x] Typography scale + line-height
-  - [x] Radii + shadows
-  - [x] Chart palette constants (semantic mapping)
-- [x] Ensure tokens are consumed via shared primitives (avoid scattered styles)
-
-### 2) AppHeader (top bar)
-- [x] Add a global header on authenticated routes:
-  - [x] Left: collapse/expand sidebar button
-  - [x] Center: global search input (UI-only stub OK)
-  - [x] Right: org pill + user profile menu
-- [x] Org pill/switcher:
-  - [x] Show current org name
-  - [x] If multi-org not supported, keep as disabled dropdown stub (still visible)
-- [x] Profile menu:
-  - [x] Avatar + name/initials
-  - [x] Items: Profile (stub route OK), Sign out
-  - [x] **DEMO_MODE only:** “Switch role”
-
-### 3) Collapsible sidebar
-- [x] Sidebar supports expanded + icon-only collapsed mode
-- [x] Tooltips appear when collapsed
-- [x] Fix active-state route matching (single active item always)
-
-#### Acceptance criteria
-- [x] Header shows org + profile on all authenticated pages
-- [x] Sidebar collapses/expands smoothly; only one active item
-- [x] `lint/typecheck/test/build/test:e2e` pass
-- [x] Playwright: verify profile menu opens and org pill visible
-- Completed in PR #37 (dev -> main Milestone 9 Phase 1).
-
----
-
-## Phase 2 — Shared UI patterns (RightDrawer + FilterBar + Chips + Avatars + Progress)
-
-### 1) RightDrawer standard (context panel)
-- [x] Create reusable RightDrawer:
-  - [x] Sticky header (title/subtitle + actions)
-  - [x] Tabs: Overview / Timeline / Audit Log
-  - [x] Close + expand controls
-- [x] Apply to at least 2 surfaces:
-  - [x] My Team drilldown
-  - [x] Reporting drilldown **OR** Write Review evidence/context
-
-### 2) FilterBar + FilterChips + Group-by
-- [x] Add FilterChip component (pill with clear “x”)
-- [x] Add FilterBar component (cycle selector + dept/title + group-by)
-- [x] Standardize across Reporting views
-
-### 3) AvatarsStack + StatusChip + SegmentedProgress
-- [x] AvatarsStack: show N avatars + “+X”
-- [x] StatusChip: consistent colors for statuses
-  - [x] Review statuses: Not started / In progress / Submitted
-  - [x] Cycle statuses: Draft / Active / Locked / Released
-- [x] SegmentedProgress bar component + legend
-
-#### Acceptance criteria
-- [x] RightDrawer used consistently and is accessible (keyboard/focus)
-- [x] Reporting filter UX uses chips + consistent layout
-- [x] Components are used on at least 2 pages (not just built)
-- [x] Playwright: drawer open/close and filter apply/clear
-- Completed in PR #38 (dev -> main Milestone 9 Phase 2).
-
----
-
-## Phase 3 — Content audit + Focus layout (stop wasting space)
-
-### 1) Content audit doc
-- [x] Create `/docs/ux/CONTENT_AUDIT.md` for:
-  - [x] Reviews list
-  - [x] Write review
-  - [x] Packet view
-  - [x] Calibration
-  - [x] My Team
-  - [x] Reporting
-- [x] For each page define:
-  - [x] Primary goal
-  - [x] Primary content
-  - [x] Secondary/supporting content
-  - [x] Hide behind “details”
-  - [x] Remove
-
-### 2) Focus layout for deep work pages
-- [x] Implement “focus layout” on:
-  - [x] Write review
-  - [x] Packet view
-  - [x] Calibration session
-- [x] Reduce redundant navigation blocks; keep breadcrumb/compact controls
-
-#### Acceptance criteria
-- [x] Deep work pages have more usable center width
-- [x] No redundant nav blocks remain
-- [x] Content audit exists and matches implemented decisions
-- Completed in PR #39 (dev -> main Milestone 9 Phase 3).
-
----
-
-## Phase 4 — Review Writing modernization (Progressive disclosure done right)
-
-### 1) Replace “giant scroll” with structured sections
-- [x] Group questions into sections (3–5 prompts visible at a time):
-  - [x] Impact/Results
-  - [x] Competencies (grouped)
-  - [x] Growth/Development
-  - [x] Goals (if present)
-  - [x] Final summary
-- [x] UI pattern:
-  - [x] Left stepper **OR** accordion sections with per-section progress
-  - [x] Next/previous navigation
-- [x] Per-section validation:
-  - [x] Focus first missing required within section
-  - [x] Show “X remaining” and completion indicators
-
-### 2) Evidence panel redesign (compact + details)
-- [x] Evidence becomes drawer-driven:
-  - [x] Compact summary (counts + tabs)
-  - [x] Details expandable (cycle/subject/reviewer)
-- [x] Improve spacing and readability
-
-#### Acceptance criteria
-- [x] Review writing feels structured, not overwhelming
-- [x] Autosave + submit + evidence attach still work
-- [x] Playwright write-review test updated and passing
-- Completed in PR #40 (dev -> main Milestone 9 Phase 4).
-
----
-
-## Phase 5 — Manager experience: “My Team” hub (drilldowns + mini insights)
-
-### 1) My Team page (manager cockpit)
-- [x] Primary view: direct reports list (always visible)
-- [x] Team size shown prominently
-- [x] KPI cards: awaiting manager review, self not started, in progress, completed (as appropriate)
-- [x] Drilldown drawer per employee:
-  - [x] Quick actions: open review, open packet
-  - [x] Status summary by direction
-  - [x] Mini insights (rating distribution + top gaps optional)
-
-### 2) Simplify manager navigation
-- [x] Managers start from My Team; Reviews becomes secondary utility
-
-#### Acceptance criteria
-- [x] Manager can manage team without being forced into reviews list
-- [x] Drilldown is useful and fast
-- [x] Playwright: My Team loads, drilldown opens, action works
-- Completed in PR #41 (dev -> main Milestone 9 Phase 5).
-
----
-
-## Phase 6 — Reporting polish (exports + heatmaps + interaction)
-
-### 1) Fix Download PNG
-- [x] Standardize chart export container and reliably export PNG
-- [x] Add Playwright download test (file exists and >0 bytes)
-
-### 2) Add meaningful charts (only where they improve comprehension)
-- [x] Competency heatmap (dept × competency)
-- [x] Rating distribution bars (1–5) with tooltips and drilldown to employee table
-- [x] Donut/pie for status only if it clarifies faster than bars
-- [x] Scorecard metric breakdown charts (8 metrics)
-- [x] Click interactions filter employee table and/or open drilldown drawer
-
-#### Acceptance criteria
-- [x] Exports are reliable
-- [x] Heatmap exists and drills down
-- [x] Charts are interactive and useful (not decorative)
-- Completed in PR #42 (dev -> main Milestone 9 Phase 6).
-
----
-
-## Phase 7 — Typography + spacing + microinteractions (premium feel)
-
-- [x] Standardize typography:
-  - [x] PageHeader size, subtitle, section headers, table headers/body
-- [x] Spacing rhythm:
-  - [x] Consistent padding/margins, less cramped panels
-- [x] Microinteractions:
-  - [x] Hover/focus states consistent
-  - [x] Drawer transitions smooth
-  - [x] Button hierarchy consistent
-
-#### Acceptance criteria
-- [x] Core pages feel cohesive and premium visually
-- [x] Accessibility baseline preserved
-- Completed in PR #43 (dev -> main Milestone 9 Phase 7).
-
----
-
-## Phase 8 — Playwright UX audit loop (CDO mode)
-
-- [x] Add `npm run test:e2e:ux`:
-  - [x] Navigates core routes for each role
-  - [x] Captures screenshots
-  - [x] Checks:
-    - [x] Only one active nav item
-    - [x] No overflow/clipping
-    - [x] Key headers present
-    - [x] Drawer open/close works
-  - [x] Outputs `docs/ux/UX_AUDIT_REPORT.md` or CI artifacts
-- [x] Integrate as nightly or optional PR step until stable
-
-#### Acceptance criteria
-- [x] Repeatable UX audit artifacts exist
-- [x] Prevents regression of nav/layout issues going forward
-- Completed in PR #44 (dev -> main Milestone 9 Phase 8).
-
----
-
-## Definition of Done (Milestone 9)
-
-- [x] All phase checkboxes completed and updated in `PLAN.md`
-- [x] `lint/typecheck/test/build/test:e2e` pass for each phase PR
-- [x] UX issues resolved:
-  - [x] Nav active state correct
-  - [x] Deep-work screens not cramped
-  - [x] Evidence panel readable
-  - [x] Manager “My Team” is primary and useful
-  - [x] Reporting exports + heatmaps work
-  - [x] Typography/spacing premium and consistent
-  - [x] Playwright UX audit loop added
-
----
-
-## Milestone 10 — Succession Planning (MVP)
-
-**Status:** Phase 1 completed in PR #47. Phases 2, 3, 4, and 5 completed locally on 2026-03-10 (PR pending).  
-**Objective:** Add a permissioned succession planning module for HR Admins and scoped Managers with premium UX, audit logging, reporting, and demo-ready data.
-
-### Scope
-
-#### In scope
-- Succession positions, plans, candidates, notes, and candidate performance snapshots
-- Strict server-side scope enforcement for HR Admin and Manager access
-- HR-only sensitive fields by default (`risk_of_loss`, `confidence`)
-- Succession reporting and CSV export for HR
-- Demo seed data and walkthrough coverage
-
-#### Out of scope
-- Employee or Calibrator self-service access
-- Org-wide succession configuration beyond the MVP feature flag for manager risk visibility
-- Advanced forecasting or AI-based talent recommendations
-
-### Phase 0 — Docs, planning, and architecture alignment
-- [x] Add Succession Planning MVP milestone and phase breakdown to `PLAN.md`
-- [x] Update `docs/product/PRD.md` with succession concepts, access model, sensitive fields, and audit expectations
-- [x] Update `docs/architecture/ARCHITECTURE.md` with `server/succession/*` and permission-scoping notes
-- [x] Run applicable local quality gates for the docs-only PR
-
-#### Acceptance criteria
-- [x] The locked access model is documented in both product and architecture docs
-- [x] Future phases are sequenced as one phase per PR
-
-Completed in PR #46.
-
-### Phase 1 — Data model + migrations (DB foundation)
-- [x] Add Prisma models for `Position`, `SuccessionPlan`, `SuccessionCandidate`, `SuccessionNote`
-- [x] Add `SuccessionCandidateSnapshot` for performance/calibration snapshotting
-- [x] Add indexes for org, position, candidate, incumbent, and department list queries
-- [x] Commit Prisma migration(s) for the succession schema
-
-#### Acceptance criteria
-- [x] Migrations apply cleanly
-- [x] Model supports manager proposals and HR-only sensitive fields
-
-Completed in PR #47.
-
-### Phase 2 — Server services + APIs + tests (secure CRUD)
-- [x] Add `apps/web/src/server/succession/*` domain services and permission helpers
-- [x] Add thin Route Handlers for HR admin succession management endpoints
-- [x] Add thin Route Handlers for scoped manager succession endpoints
-- [x] Validate all succession inputs with Zod
-- [x] Add audit events for all sensitive succession mutations
-- [x] Add permission and audit coverage tests for HR, Manager, and Employee access
-
-#### Acceptance criteria
-- [x] HR can manage all succession data in-org
-- [x] Managers can only view scoped plans and propose successors within scope
-- [x] Managers cannot view risk/confidence unless `ALLOW_MANAGER_RISK_VIEW=true`
-- [x] Employees and Calibrators have no succession access in MVP
-
-### Phase 3 — UI: HR Dashboard + Manager “My Area” view
-- [x] Add HR routes:
-  - [x] `/admin/talent/succession`
-  - [x] `/admin/talent/succession/positions`
-  - [x] `/admin/talent/succession/positions/new`
-  - [x] `/admin/talent/succession/positions/:id`
-- [x] Add Manager routes:
-  - [x] `/talent/succession`
-  - [x] `/talent/succession/positions/:id`
-- [x] Build HR dashboard KPI cards, filters, coverage table, and plan detail workspace
-- [x] Build Manager “My Area” scoped view with candidate slate and propose-successor flow
-- [x] Hide risk/confidence in manager UI unless feature flag is enabled
-- [x] Add Playwright coverage for HR create/add-candidate and Manager scoped proposal flows
-
-#### Acceptance criteria
-- [x] HR sees org-wide succession dashboard and plan management UX
-- [x] Managers see only in-scope positions and can propose candidates where allowed
-- [x] Plan detail uses drawer-driven progressive disclosure for candidate context
-
-### Phase 4 — Performance signals + exports + reporting
-- [x] Add candidate performance signal snapshots from reviews and calibration
-- [x] Add HR CSV export for positions and candidate slates
-- [x] Add reporting views for department coverage, critical-role gaps, and manager proposals awaiting HR review
-- [x] Apply small-N suppression to grouped reporting views
-
-#### Acceptance criteria
-- [x] HR can export succession coverage data
-- [x] Reporting views honor privacy rules and reuse reporting conventions
-
-### Phase 5 — Demo data + walkthrough
-- [x] Seed 5–10 critical positions with incumbents and varied candidate slates
-- [x] Include at least one manager-proposed candidate and one role with no successor
-- [x] Align seeded performance signals with reviews and calibration demo data
-- [x] Update `docs/demo/WALKTHROUGH.md` with HR and Manager succession walkthrough steps
-
-#### Acceptance criteria
-- [x] Demo mode showcases both HR and Manager succession journeys realistically
-- [x] Walkthrough documentation is sufficient for local demo and Playwright setup
-
-
-
-## Milestone 10 — Goals & OKRs + Grow Tracks + Competencies (Analytics-ready, Review-integrated)
-
-**Status:** Not started  
-**Objective:** Add Goals/OKRs as a first-class module with cascading alignment (goal tree) and ongoing updates, while introducing a minimal “Grow” foundation (Career Tracks + Competency Library + employee track assignment). Tie Goals into Tracks/Competencies and integrate goal progress into Reviews and Reporting.
-
-### Product principles (inspired by Lattice patterns)
-- Goals are *continuous work*, not a one-time form (list, filters, status, updates, visibility). :contentReference[oaicite:8]{index=8}
-- Cascading alignment (goal tree) is the core alignment mechanic. :contentReference[oaicite:9]{index=9}
-- Tracks/Competencies provide “what good looks like” per role/level and should be visible during performance workflows. :contentReference[oaicite:10]{index=10}
-
----
-
-## Scope
-
-### In scope
-- Goals/OKRs:
-  - Objective + Key Results model
-  - cascading alignment (parent/child) + goal tree view
-  - status + progress + check-ins (updates)
-  - visibility controls (public/team/private) + watchers
-- Grow foundation:
-  - Track Groups, Tracks, Levels, Competencies, Expectations
-  - Employee track assignment (manual first; optional job-architecture mapping later)
-  - Manager/employee “align on expectations” comments + strength/opportunity labels (MVP-lite)
-- Integrations:
-  - Reviews: show goal progress + goal updates context during review writing
-  - Evidence: treat goal updates as an evidence source (attachable to review answers)
-  - Reporting: goal adoption + progress dashboards by dept/title/track/competency
-- Demo data: realistic goals/OKRs tied to seeded reviews and competencies
-
-### Out of scope (for this milestone)
-- Automated reminders/notifications (worker) beyond basic UI prompts
-- Deep integrations (Jira/Salesforce/Slack)
-- Full-blown “Development plans / Growth areas” module (can follow after)
-- Multi-org org-switching logic (UI may exist from Milestone 9, but scope here is goal/grow data)
-
----
-
-## Phase 1 — Data model + migration (Grow + Goals foundations)
-
-### Grow (Tracks/Competencies)
-- [x] Add TrackGroup, Track, TrackLevel
-- [x] Add Competency + CompetencyTheme (optional)
-- [x] Add TrackLevelCompetencyExpectation (text expectations per level/competency)
-- [x] Add EmployeeTrackAssignment (employee -> track + level)
-- [x] Add CompetencyAlignmentComment + label (NONE | STRENGTH | OPPORTUNITY) for employee/manager alignment notes
-
-### Goals & OKRs
-- [x] Add GoalCycle (Quarterly/Annual; start/end; status)
-- [x] Add Goal (Objective):
-  - org_id, owner_employee_id
-  - title, description
-  - cycle_id
-  - status (NOT_STARTED | ON_TRACK | AT_RISK | OFF_TRACK | COMPLETE | CANCELED)
-  - progress_percent (0-100) (stored)
-  - visibility (ORG | TEAM | PRIVATE)
-  - parent_goal_id (nullable) for cascade
-- [x] Add KeyResult:
-  - goal_id
-  - title
-  - type (PERCENT | NUMBER | BOOLEAN)
-  - start_value, target_value, current_value
-  - weight (optional; default equal)
-- [x] Add GoalUpdate (check-in):
-  - goal_id
-  - author_employee_id
-  - note
-  - progress_delta / snapshot_current_values
-  - created_at
-- [x] Add GoalCompetencyLink (goal -> competency tags)
-- [x] Add GoalWatcher (users who follow a goal)
-- [ ] Add audit events for all mutations (create/update/archive/align/update)
-
-**Acceptance criteria**
-- [x] Prisma migration committed and clean
-- [x] Indexes for common queries: org_id, owner_employee_id, cycle_id, parent_goal_id
-- [x] `lint/typecheck/test/build` pass
-- Completed in PR #49
-
----
-
-## Phase 2 — Server services + APIs + tests (permissions + audit + core rules)
-
-### Permissions (server-side)
-- HR_ADMIN: full access org-wide
-- MANAGER: can view team goals (direct reports + goals aligned under their team’s goals); can comment/update if permitted
-- EMPLOYEE: can view own goals + public/org goals; can edit own goals; can comment on goals they can see
-
-### APIs (thin route handlers + server services)
-- [x] Goal cycles:
-  - GET/POST/PATCH /api/goals/cycles
-- [x] Goals:
-  - GET /api/goals?cycleId=&ownerId=&status=&visibility=
-  - POST /api/goals
-  - GET /api/goals/:goalId
-  - PATCH /api/goals/:goalId
-  - DELETE (archive) /api/goals/:goalId
-- [x] Cascading:
-  - POST /api/goals/:goalId/align (set parent)
-  - POST /api/goals/:goalId/unlink
-  - GET /api/goals/:goalId/tree (ancestors + children)
-- [x] Key results:
-  - POST/PATCH/DELETE /api/goals/:goalId/key-results/*
-- [x] Updates:
-  - POST /api/goals/:goalId/updates
-  - GET /api/goals/:goalId/updates
-- [x] Track/Grow:
-  - GET /api/grow/tracks (published)
-  - GET /api/grow/tracks/:trackId
-  - POST/PATCH admin track endpoints
-  - POST/PATCH /api/grow/assignments (assign employee to track/level)
-  - POST /api/grow/competencies/:competencyId/comments (align on expectations)
-- [x] Audit events written for all mutations (goal, KR, update, track edits, assignments, competency comments)
-
-### Tests
-- [x] Permission gating (HR vs manager vs employee)
-- [x] Cascade alignment rules (no cycles, no self-parent, prevent loops)
-- [x] Progress math for KRs -> goal progress (deterministic)
-- [x] Audit events emitted for sensitive changes
-
-**Acceptance criteria**
-- [x] All endpoints have Zod validation + authz
-- [x] Unit tests pass and cover the core invariants
-- [x] `lint/typecheck/test/build` pass
-- Completed locally on `dev`; PR pending after branch stabilization
-
----
-
-## Phase 3 — Admin UI for Tracks + Goal Cycles (setup flows)
-
-### Admin: Grow
-- [x] /admin/grow/tracks (list + create)
-- [x] /admin/grow/tracks/new (track + levels)
-- [x] /admin/grow/tracks/:id (edit competencies + expectations matrix)
-- [x] /admin/grow/assignments (assign employees to track/level; search + bulk optional)
-
-### Admin: Goals
-- [x] /admin/goals/cycles (create/manage cycles)
-- [x] Ensure cycle selector is available in Goals UI
-
-**Acceptance criteria**
-- [x] HR can create tracks + assign employees
-- [x] HR can create a goal cycle
-- [x] Loading/empty/error states present
-- [ ] Playwright: create cycle + create track smoke test
-- UI implemented locally on `dev`; Playwright deferred to end-of-milestone validation per demo workflow
-
----
-
-## Phase 4 — Goals UI (employee + manager) + goal details drawer + goal tree
-
-### Goals home + list
-- [x] /goals (employee/manager view)
-- [x] Summary cards: on track / progressing / off track / no update
-- [x] Filters: owner, status, cycle, visibility (use FilterChips/FilterBar pattern)
-- [x] “Create goal” CTA
-
-### Goal create/edit
-- [x] Objective form + KR builder
-- [x] Visibility controls (ORG/TEAM/PRIVATE)
-- [x] Tag competencies (from competency library)
-- [x] Align to parent goal (cascading)
-
-### Goal detail (RightDrawer pattern)
-- [x] Overview tab: objective, owner, status, progress
-- [x] Timeline tab: check-ins/updates
-- [x] Audit tab: mutation log (from AuditEvent)
-- [x] Goal tree mini-view: parent breadcrumb + children list (tree view later)
-
-**Acceptance criteria**
-- [x] Users can create goal + KRs + post updates
-- [x] Users can align a goal to a parent and see the relationship
-- [ ] Playwright: create goal + add KR + post update + align goal
-- Phase 4 implemented locally on `dev`; Playwright deferred to end-of-milestone validation per demo workflow
-
----
-
-## Phase 5 — Integrations: Reviews + Evidence + Track/Competency context
-
-### Reviews integration
-- [x] In write-review context drawer: show “Goals for this cycle” summary (progress + last update)
-- [x] For “goals met?” prompts: show quick picker of relevant goals (optional; not required to answer)
-
-### Evidence integration
-- [x] Add Evidence type: GOAL_UPDATE
-- [x] Goal updates become attachable evidence items (with visibility rules)
-- [x] Evidence panel can filter to “Goals” bucket
-
-### Track/Competency context integration
-- [x] Add “Current Track” card in relevant work drawers (write review, packet view)
-- [x] “View competencies” opens competency expectations view for assigned level
-
-**Acceptance criteria**
-- [x] Goal updates appear as evidence and can be attached/detached (audited)
-- [x] Review writing shows goals context and track/competency linkouts
-- Phase 5 implemented locally on `dev`; Playwright deferred to end-of-milestone validation per demo workflow
-
----
-
-## Phase 6 — Reporting (Goals + Competencies + Tracks)
-
-### Reporting views (HR + Manager scoped)
-- [ ] Goals adoption dashboard:
-  - # goals active, # off track, # no update, completion rate
-  - filters: cycle, department, position title, track
-- [ ] Competency linkage report:
-  - goals tagged to competencies (counts + progress distribution)
-- [ ] Track coverage report:
-  - employees assigned to tracks/levels by department/title
-- [ ] Export CSV for goals list + KR progress
-
-**Acceptance criteria**
-- [ ] Reporting works with permissions and small-N privacy conventions
-- [ ] Exports function reliably
-- [ ] Playwright: export/download smoke test
-
----
-
-## Phase 7 — Demo data + walkthrough
-
-- [ ] Update demo setup to seed:
-  - one active GoalCycle (e.g., Q4 2026)
-  - realistic company/team/personal goals with cascading
-  - KRs with meaningful progress
-  - goal updates (some stale/no-update goals)
-  - employee track assignments + competency expectations
-  - goals tagged to competencies that match seeded review dimensions
-- [ ] Add docs walkthrough: /docs/demo/GOALS_OKRS_WALKTHROUGH.md
-
-**Acceptance criteria**
-- [ ] Demo experience is “alive” and coherent across Goals + Reviews + Reporting
-- [ ] All gates pass (`lint/typecheck/test/build/test:e2e`)
+## 14. Next Step After This Milestone
+
+After the sandbox pilot is validated, the next milestone will be:
+
+## Milestone: Production Hardening
+- move auth to Entra ID
+- move DB to Azure PostgreSQL
+- harden infra and secrets management
+- tighten audit and permissions
+- prepare production rollout path

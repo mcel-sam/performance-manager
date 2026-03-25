@@ -109,11 +109,9 @@ export default function AppShell({
     setPendingProfileAction(action);
 
     try {
-      if (demoModeEnabled) {
-        await fetch("/api/demo/logout", {
-          method: "POST",
-        });
-      }
+      await fetch("/api/auth/logout", {
+        method: "POST",
+      });
     } finally {
       setPendingProfileAction(null);
       setIsProfileMenuOpen(false);

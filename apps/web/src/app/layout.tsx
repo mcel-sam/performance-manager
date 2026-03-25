@@ -46,7 +46,7 @@ async function RootLayoutShell({ children }: { children: React.ReactNode }) {
         <AppShell
           navItems={[]}
           viewer={null}
-          demoModeEnabled={appEnv.nextPublicDemoMode}
+          demoModeEnabled={appEnv.demoModeEnabled}
         >
           {children}
         </AppShell>
@@ -74,7 +74,7 @@ async function RootLayoutShell({ children }: { children: React.ReactNode }) {
       <AppShell
         navItems={navItems}
         viewer={viewer}
-        demoModeEnabled={appEnv.nextPublicDemoMode}
+        demoModeEnabled={appEnv.demoModeEnabled}
       >
         {children}
       </AppShell>

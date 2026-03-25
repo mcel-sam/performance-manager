@@ -120,7 +120,41 @@ Performance Management System monorepo for reviews, calibration, and improvement
   - Demo reset endpoint (`POST /api/demo/reset`) with typed confirmation and full reseed
   - Playwright smoke suite switched to demo reset + `/login` role tile sign-in flow
 
-## Local setup
+## Sandbox / Supabase Postgres setup
+
+1. In `apps/web/.env.local`, set:
+
+```bash
+DATABASE_URL=...   # Supabase pooled connection string
+DIRECT_URL=...     # Supabase direct/session connection string for Prisma CLI
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+DEMO_MODE=false
+NEXT_PUBLIC_DEMO_MODE=false
+```
+
+2. Install app dependencies, apply schema to the sandbox database, and seed the app data:
+
+```bash
+cd apps/web
+npm install
+npm run db:migrate:deploy
+npm run db:seed
+```
+
+3. Run the app:
+
+```bash
+npm run dev
+```
+
+4. Validate the sandbox path:
+
+- `http://localhost:3000/login`
+- `http://localhost:3000/api/health`
+
+## Optional local Postgres setup
 
 1. Start Postgres from repo root:
 
@@ -135,7 +169,7 @@ cd apps/web
 cp .env.example .env.local
 npm install
 npx prisma migrate dev
-npm run db:seed # optional: legacy terminal seed path
+npm run db:seed
 ```
 
 3. Run the app:

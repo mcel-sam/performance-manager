@@ -2,6 +2,8 @@ import { UserRole } from "@prisma/client";
 import { cookies } from "next/headers";
 
 import { prisma } from "@/server/db/prisma";
+import { resolveRequestContextFromAuthIdentity } from "@/server/auth/app-user-mapping";
+import { getSupabaseSessionIdentity } from "@/server/auth/supabase-server";
 import { decodeDemoSession, DEMO_SESSION_COOKIE, isDemoModeEnabled } from "@/server/demo/demo-mode";
 import { AppError } from "@/server/http/errors";
 
@@ -11,6 +13,49 @@ interface AuthDb {
       where: { id: string; orgId: string };
       select: { id: true; orgId: true; role: true };
     }) => Promise<{ id: string; orgId: string; role: UserRole } | null>;
+    findUnique?: (args: {
+      where: { authIdentityId: string };
+      select: {
+        id: true;
+        orgId: true;
+        role: true;
+        authIdentityId: true;
+      };
+    }) => Promise<{
+      id: string;
+      orgId: string;
+      role: UserRole;
+      authIdentityId: string | null;
+    } | null>;
+    findMany?: (args: {
+      where: { email: { equals: string; mode: "insensitive" } };
+      select: {
+        id: true;
+        orgId: true;
+        role: true;
+        authIdentityId: true;
+      };
+    }) => Promise<Array<{
+      id: string;
+      orgId: string;
+      role: UserRole;
+      authIdentityId: string | null;
+    }>>;
+    update?: (args: {
+      where: { id: string };
+      data: { authIdentityId: string };
+      select: {
+        id: true;
+        orgId: true;
+        role: true;
+        authIdentityId: true;
+      };
+    }) => Promise<{
+      id: string;
+      orgId: string;
+      role: UserRole;
+      authIdentityId: string | null;
+    }>;
   };
 }
 
@@ -21,34 +66,29 @@ export interface RequestContext {
 }
 
 export async function getRequestContext(
-  headers: Headers,
+  _headers?: Headers,
   db: AuthDb = prisma,
 ): Promise<RequestContext> {
-  const userId = headers.get("x-user-id");
-  const orgId = headers.get("x-org-id");
+  const supabaseIdentity = await getSupabaseSessionIdentity();
+  if (supabaseIdentity) {
+    if (!db.user.findUnique || !db.user.findMany || !db.user.update) {
+      throw new AppError(
+        "INTERNAL_SERVER_ERROR",
+        "Auth user mapping database interface is incomplete.",
+        500,
+      );
+    }
 
-  if (!userId || !orgId) {
-    throw new AppError(
-      "UNAUTHORIZED",
-      "x-user-id and x-org-id headers are required",
-      401,
-    );
+    return resolveRequestContextFromAuthIdentity(supabaseIdentity, {
+      user: {
+        findUnique: db.user.findUnique,
+        findMany: db.user.findMany,
+        update: db.user.update,
+      },
+    });
   }
 
-  const user = await db.user.findFirst({
-    where: { id: userId, orgId },
-    select: { id: true, orgId: true, role: true },
-  });
-
-  if (!user) {
-    throw new AppError("UNAUTHORIZED", "User is not a member of this org", 401);
-  }
-
-  return {
-    userId: user.id,
-    orgId: user.orgId,
-    role: user.role,
-  };
+  return getLocalRequestContext(db);
 }
 
 export function requireRole(context: RequestContext, role: UserRole): void {
@@ -58,6 +98,23 @@ export function requireRole(context: RequestContext, role: UserRole): void {
 }
 
 export async function getDevRequestContext(
+  db: AuthDb = prisma,
+): Promise<RequestContext> {
+  const supabaseIdentity = await getSupabaseSessionIdentity();
+  if (supabaseIdentity && db.user.findUnique && db.user.findMany && db.user.update) {
+    return resolveRequestContextFromAuthIdentity(supabaseIdentity, {
+      user: {
+        findUnique: db.user.findUnique,
+        findMany: db.user.findMany,
+        update: db.user.update,
+      },
+    });
+  }
+
+  return getLocalRequestContext(db);
+}
+
+async function getLocalRequestContext(
   db: AuthDb = prisma,
 ): Promise<RequestContext> {
   if (isDemoModeEnabled()) {

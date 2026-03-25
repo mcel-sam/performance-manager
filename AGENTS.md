@@ -1,489 +1,594 @@
-# AGENTS.md — Repo instructions for coding agents (Codex-first repo)
+# AGENTS.md
 
-This repository is optimized for building with coding agents (Codex). Follow this file for **how** to work in this codebase.
-If a subdirectory contains its own `AGENTS.md`, follow the **closest** one first, then fall back to this root file.
+# Trellis — Agent Operating Guide
 
----
+## 1. Purpose
 
-## 0) Product context (brief)
+This document defines how AI agents should operate inside the Trellis repository.
 
-We are building a **Performance Management System** (reviews, review packets, evidence panel, calibration 9-box, improvement plans).  
-Primary UX pattern: **left nav + main workspace + right context drawer**.  
-Full product requirements live in: **/docs/product/PRD.md**
+Trellis is in a rapid development phase. Agents should optimize for:
+- fast iteration
+- correct implementation
+- strong permission discipline
+- polished UX on core workflows
+- low process overhead
+- cost-aware tool and sub-agent usage
 
-Non-goals for MVP: payroll and benefits administration.
-
----
-
-## 1) Non-negotiables (Azure-native)
-
-### Secrets & identity (HARD RULES)
-
-- **Never commit secrets** (keys, tokens, connection strings) to git.
-- Deployed environments must use **Managed Identity + Azure Key Vault** for secrets.
-- CI/CD must authenticate to Azure using **OIDC / Workload Identity Federation** (avoid long-lived client secrets).
-- Local dev uses `.env.local` (gitignored) or developer secret tooling.
-
-### Logging & telemetry
-
-- Use structured logs. Include a correlation/request ID on server logs.
-- Do not log sensitive values or PII unnecessarily; redact when in doubt.
-- Design to be compatible with Azure Application Insights / Log Analytics.
-
-### Data/privacy guardrails
-
-- Treat performance data as sensitive. Never expose org-wide or manager-level aggregates to unauthorized roles.
-- For analytics-like slices, avoid showing results for very small groups (small-N privacy) unless explicitly required and approved.
+The goal is not maximal agent orchestration. The goal is effective progress with a good balance between speed, quality, and cost.
 
 ---
 
-## 2) Stack & architecture (locked defaults)
+## 2. Operating Mode
 
-### Web + API (initial MVP)
+Trellis is currently being built in a fast-moving phase for the Vanilla Build and HR sandbox rollout.
 
-- **Next.js (App Router)** in `/apps/web`
-- Use **Route Handlers** under `/apps/web/src/app/api/*` for the API initially.
-- Keep server logic in `/apps/web/src/server/*` so it can be split to a separate service later without a rewrite.
+### Working assumptions
+- scope is now clearer, but implementation is still evolving
+- UX still needs refinement
+- sandbox readiness matters more than perfect process
+- the immediate goal is to make the product coherent, usable, and trustworthy
 
-### Database
+### Therefore
+Agents should favor:
+- direct progress
+- vertical implementation
+- selective delegation
+- frequent validation
+- minimal overhead
 
-- **PostgreSQL**
-- **Prisma** for schema + migrations + type-safe DB access
-
-### Infrastructure as Code (LOCKED)
-
-- **Terraform** is the IaC tool for this repo.
-- Do not introduce Bicep/ARM templates unless explicitly requested.
-
-### Deployment (LOCKED)
-
-- **Azure Container Apps** (Docker)
-- **Azure Container Registry (ACR)** for images
-- **GitHub Actions** deploy on merge to `main` (image tag = commit SHA; do not use `latest`)
-
----
-
-## 3) Expected repo layout (monorepo-ready)
-
-Top-level:
-
-- `/apps/web` — Next.js app (UI + API routes for MVP)
-- `/packages/types` — shared DTOs/types (single source of truth for DTOs/contracts)
-- `/infra/terraform` — Terraform modules + environment stacks
-- `/docs` — product/architecture/ADRs
-- `/.github/workflows` — CI/CD pipelines
-
-Agents must not invent new top-level folders without a clear reason.
-
-Recommended docs structure:
-
-- `/docs/product/PRD.md`
-- `/docs/architecture/ARCHITECTURE.md`
-- `/docs/adr/0001-stack.md` (and more ADRs as needed)
+Agents should avoid:
+- over-orchestration
+- unnecessary sub-agent fan-out
+- creating multiple parallel deep dives for small tasks
+- process-heavy branching and PR behavior during active build mode
 
 ---
 
-## 4) Scaffold checklist (Day-0 / Day-1 repo bootstrap)
+## 3. Branch and PR Strategy
 
-If the repo is empty or missing these, agents should create them first (minimal but correct versions):
+## 3.1 Current rule
+Do **not** require a new PR for every phase of work.
 
-### Root files
+During rapid development, agents should work on the active development branch unless explicitly instructed otherwise.
 
-- `AGENTS.md` (this file)
-- `README.md` (how to run, high-level architecture, links to docs)
-- `.gitignore` (must include `.env*`, `.terraform/`, build outputs)
-- `.editorconfig`
-- `.gitattributes` (optional)
+### Default workflow
+- work directly on the active dev path
+- make logically grouped changes
+- validate before moving on
+- batch changes into meaningful checkpoints
+- use PRs only when a body of work is stable enough for real review
 
-### Docs
+## 3.2 Use PRs when
+- a feature is stable and reviewable
+- a refactor is risky
+- auth/security-sensitive changes need formal review
+- infra/deployment changes need traceability
+- production hardening begins
 
+Agents should not block progress by insisting on PR creation unless explicitly told to do so.
+
+---
+
+## 4. Core Principles
+
+### 4.1 Use the latest source of truth
+Agents must align work to:
+- `PLAN.md`
+- `ARCHITECTURE.md`
+- the active Vanilla Build PRD
+
+If older docs conflict with newer docs, use the newer source of truth. [refer section 5]
+
+### 4.2 Prefer evolution over rebuild
+Unless explicitly instructed otherwise, agents should evolve the existing Trellis codebase.
+
+### 4.3 Work in complete slices
+Prefer meaningful vertical slices:
+- UI
+- API
+- domain logic
+- permissions
+- state handling
+- validation
+- browser verification
+
+Avoid shipping UI-only or API-only fragments that look complete but are not usable.
+
+### 4.4 Preserve architecture while moving fast
+Even in rapid development:
+- route handlers stay thin
+- business logic stays in services/domain code
+- permissions are enforced server-side
+- module boundaries are respected
+- sensitive changes are auditable
+
+### 4.5 Hide incomplete surfaces
+If a workflow is incomplete or out of vanilla scope, hide or disable it rather than exposing broken UI.
+
+---
+
+## 5. Document Routing Guide
+
+Agents should use the following documents as the source of truth depending on the task.
+
+### Product scope and behavior
+Use:
 - `docs/product/PRD.md`
-- `docs/architecture/ARCHITECTURE.md`
-- `docs/adr/0001-stack.md`
+- `docs/product/REVIEW_CONTENT_MODEL.md`
+- `docs/product/ROLE_PERMISSIONS.md`
+- `docs/product/SANDBOX_PILOT.md`
 
-### App
+Use these for:
+- what Trellis should do
+- what is in scope vs out of scope
+- what content should be captured in reviews/calibration/succession/risk
+- what each role should and should not be able to do
+- what the sandbox is intended to validate
 
-- `apps/web/` Next.js app scaffold (TypeScript, App Router)
-- `packages/types/` shared types package scaffold
-- `apps/web/.env.example` (no secrets; placeholders only)
+### Execution and sequencing
+Use:
+- `PLAN.md`
+- `docs/engineering/IMPLEMENTATION_CHECKLIST.md`
 
-### Local dev infra
+Use these for:
+- what phase the project is in
+- what the current milestone is
+- what should be built next
+- what is required for sandbox readiness
+- what is deferred
 
-- `docker-compose.yml` at repo root for local Postgres (preferred)
-- `apps/web/prisma/schema.prisma` + initial migration
+### Technical architecture
+Use:
+- `ARCHITECTURE.md`
+- `docs/engineering/ENVIRONMENT_MATRIX.md`
 
-### Containerization
+Use these for:
+- system boundaries
+- environment strategy
+- auth and database direction
+- module boundaries
+- deployment model
+- security and authorization architecture
 
-- `Dockerfile` (root or `apps/web/Dockerfile`; document choice in README)
-- `.dockerignore`
+### Agent workflow and cost-aware execution
+Use:
+- `AGENTS.md`
 
-### CI/CD
+Use this for:
+- how to operate in the repo
+- when to use sub-agents
+- when to stay single-agent
+- PR and branch expectations
+- how to balance speed, validation, and cost
 
-- `.github/workflows/ci.yml` (lint/typecheck/test)
-- `.github/workflows/deploy-dev.yml` (deploy on merge to main)
+### Quality and validation
+Use:
+- `docs/engineering/QUALITY_STRATEGY.md`
 
-### Terraform
+Use this for:
+- what level of validation is required
+- when to use targeted checks
+- when to use Playwright
+- when to run recursive browser reviews
+- what should block sandbox handoff
 
-- `infra/terraform/README.md` (how to plan/apply, environments)
-- `infra/terraform/modules/` (reusable modules)
-- `infra/terraform/env/dev/` (dev stack)
-- Optional: `infra/terraform/env/staging/`, `infra/terraform/env/prod/`
+### Frontend and UX
+Use:
+- `docs/engineering/FRONTEND_STANDARDS.md`
 
----
+Use this for:
+- how Trellis should feel
+- layout and interaction standards
+- role-aware navigation expectations
+- form, workflow, and state presentation quality
 
-## 5) Local development (keep current)
+### Conflict-resolution order
+If documents appear to conflict, use this priority order:
 
-> If you change commands, update this section immediately.
+1. `PLAN.md` for current phase and milestone truth
+2. `ARCHITECTURE.md` for technical constraints and system shape
+3. `docs/product/PRD.md` for product scope and intended behavior
+4. supporting docs for implementation detail within their domain
 
-### Install & run web
+### Default agent behavior
+Before making significant changes, agents should usually read:
+- `PLAN.md`
+- `ARCHITECTURE.md`
+- the most relevant domain-specific supporting doc(s)
 
-```bash
-cd apps/web
-npm install
-npm run dev
-```
+Agents should not load every doc for every task.
+They should read only the documents relevant to the work being performed.
 
-### Local database (preferred)
+## 6. Cost-Aware Agent Strategy
 
-Use Docker Compose at repo root (to be added early). The app reads DATABASE_URL.
+## 6.1 Default behavior
+Use **one primary agent** by default.
 
-Expected local compose:
+The primary agent should:
+- understand the task
+- inspect the current implementation
+- make the plan
+- implement the change
+- run lightweight validation
+- decide whether specialist help is worth the cost
 
-- Postgres exposed on localhost:5432
-- DB name like perf
-- User/pass like postgres/postgres (local only)
+Do not automatically spawn sub-agents for every task.
 
-Prisma migrations (DB schema migrations)
+## 6.2 Escalation model
+Start cheap. Escalate only when needed.
 
-“Migrations” in this repo means database schema migrations generated by Prisma.
+### Level 1 — Single-agent mode
+Use for:
+- small edits
+- straightforward refactors
+- copy changes
+- wiring existing components
+- basic bug fixes
+- normal documentation updates
+- small UI polish tasks
 
-Any schema change MUST include a committed migration folder.
+### Level 2 — Single specialist sub-agent
+Use when one area clearly needs deeper focus, such as:
+- end-to-end browser validation
+- UI/UX refinement
+- data model review
+- permission debugging
 
-Never “fix” schema drift by manually editing the DB.
+### Level 3 — Multi-sub-agent workflow
+Use only for high-value or high-risk work, such as:
+- large feature delivery across multiple layers
+- auth/permission redesign
+- deployment readiness review
+- major UX and flow cleanup before HR pilot handoff
 
-Common commands:
+Multi-sub-agent work should be deliberate, not default.
 
-```bash
-cd apps/web
-npx prisma migrate dev
-npx prisma studio
-```
+## 6.3 Delegation rule
+Only delegate when the expected gain is higher than the coordination cost.
 
-Quality gates:
-
-```bash
-cd apps/web
-npm run lint
-npm run typecheck
-npm test
-npm run format
-```
-
----
-
-## 6) MVP-first milestone (what “getting started” means)
-
-The first engineering milestone is a working vertical slice that proves the stack:
-
-- Next.js app boots locally (`npm run dev`)
-- Local Postgres runs via Docker Compose
-- Prisma migration works (`npx prisma migrate dev`)
-- `GET /api/health` returns:
-  - `{ ok: true, db: "ok" }` when DB reachable
-- `GET /performance/reviews` loads:
-  - shows an empty state if no cycles exist
-  - does not error if DB is empty
-
-Agents should prioritize this vertical slice before implementing deeper product features.
-
----
-
-## 7) Engineering standards (agents must follow)
-
-### TypeScript
-
-- TypeScript strict mode; avoid any.
-- Prefer small, composable modules over large files.
-- Keep UI components presentational; keep data access in server layer.
-
-### API design
-
-- Validate all inputs with Zod (or equivalent).
-- Never trust client-submitted identifiers (orgId, employeeId, etc.) without permission checks.
-- Use consistent error objects: `{ code, message, details? }`.
-
-### Permissions (server-side enforcement required)
-
-All reads and writes must enforce authorization using:
-
-- org membership
-- role: `EMPLOYEE | MANAGER | HR_ADMIN | CALIBRATOR`
-- relationship to subject (self/manager/peer/upward)
-- review cycle visibility rules
-- evidence visibility rules (do not expose hidden items)
-
-Do not rely on client-side filtering for security.
-
-### Audit logging (required)
-
-Every meaningful mutation must create an `audit_event`, including:
-
-- cycle created/updated/status changed
-- submission saved/submitted/returned
-- evidence attached/detached
-- calibration placement moved/finalized
-- improvement plan status changed/check-in added
-
-### Database rules
-
-- All schema changes via Prisma migrations.
-- Add indexes for:
-  - foreign keys used in list queries
-  - frequent filters (cycle status, subject_employee_id, reviewer_employee_id)
-- Avoid N+1 queries; prefer joins/includes.
-
-## Testing policy (required)
-
-### Test tooling (LOCKED)
-- Use **Vitest** for unit tests (preferred) OR **Jest** if already installed. Pick one and keep consistent.
-- Use **@testing-library/react** for component tests (when needed).
-- Use **Playwright** for a **small number of critical E2E smoke flows** (not for everything). E2E tests should be stable and focus on core user journeys.
-
-### E2E (Playwright) policy
-- Use Playwright for a **small number of critical end-to-end (E2E) flows** to prevent UX regressions.
-- E2E tests live in: `apps/web/e2e/*`
-- Prefer stable selectors:
-  - Use `data-testid` on key interactive elements (buttons, tabs, drawers, submit actions).
-  - Avoid brittle CSS selectors.
-- Commands (must exist in `apps/web/package.json` once Playwright is added):
-  - `npm run test:e2e` (headless)
-  - `npm run test:e2e:ui` (interactive)
-- Minimum E2E smoke suite targets (keep to ~5–8 tests):
-  1) Home loads + navigation works
-  2) Review tasks list loads
-  3) Write review: autosave works + submit locks
-  4) Packet page renders
-  5) Calibration: open drawer + move placement
-  6) Improvement plan: add check-in and see timeline entry
-- CI strategy:
-  - Initially run Playwright on demand or nightly until stable.
-  - Once stable, run E2E smoke suite on PRs to `main`.
-
-## Demo mode and test accounts (development-only)
-
-To support HR demos and Playwright E2E tests, this repo may include a **demo mode**.
-
-### Demo mode guardrails (HARD RULES)
-- Demo endpoints/pages must be enabled **only** when:
-  - `DEMO_MODE=true`, and
-  - the environment is development (e.g., `NODE_ENV=development`)
-- Demo mode must never be enabled by default in production deployments.
-- Demo features must never require committing secrets; demo credentials are for local use only.
-
-### Demo accounts (for local use)
-- Provide sample credentials for: Employee, Manager, HR_ADMIN, CALIBRATOR.
-- Prefer a “Log in as” demo UI (demo-only) or a minimal demo login page.
-- Demo setup should allow creating:
-  - demo org + employees + manager hierarchy
-  - demo review cycle + generated submissions
-  - demo calibration session
-  - demo improvement plan
-
-### Playwright E2E expectations
-- Playwright smoke tests should use demo mode for stable authentication and data setup.
-- E2E tests must rely on stable selectors (`data-testid`) and avoid brittle CSS selectors.
-- Keep the E2E smoke suite small and stable; focus on core flows only.
-
-### Minimum test expectations
-For any PR that adds or changes behavior:
-- Add/adjust **unit tests** for business logic and state transitions.
-- Add tests for permission checks where feasible (at least one positive + one negative case).
-- Add tests for validation rules (e.g., required questions on submit).
-- If a UI flow is complex, add at least one integration-style test for the server action/route handler.
-
-### Must-test areas (MVP)
-- Review cycle status transitions (Draft→Active→Locked→Released)
-- Review submission submit validation (required questions)
-- Evidence attach/detach (creates link + audit event)
-- Calibration finalize (snapshot created + locked)
-- Improvement plan status transitions + audit events
-
-### Test placement
-- Server/domain tests: `apps/web/src/server/**/__tests__/*`
-- Route handler tests: `apps/web/src/app/api/**/__tests__/*` (or test server functions directly)
-- UI component tests: `apps/web/src/components/**/__tests__/*`
-
-### Running tests
-- `npm test` must run all tests and fail on errors.
----
-
-## 8) UX / Design guardrails (minimal but strict)
-
-- Provide loading, empty, and error states for every page.
-- Review-writing experiences require autosave (debounced) with visible “Saving/Saved” state.
-- Use right-side drawers for contextual inspection (employee/packet/evidence) to preserve user context.
-- Accessibility: semantic HTML, keyboard navigation, ARIA labels for interactive controls.
+Do not create sub-agents just because a tool exists.
 
 ---
 
-## 9) CI/CD expectations (GitHub Actions)
+## 7. Recommended Sub-Agent Roles
 
-### CI workflow (`ci.yml`)
+The following sub-agent roles are allowed and encouraged when appropriate.
 
-Must run on PRs and on push to `dev`:
-- CI must run on `pull_request` and on `push` to `dev` for fast feedback during implementation.
-- lint
-- typecheck
-- tests
-- build (optional but recommended)
+## 7.1 Implementation sub-agent
+Use for:
+- isolated feature implementation
+- refactors within one module
+- service-layer changes
+- schema-adjacent changes
 
-### Deploy workflow (`deploy-dev.yml`)
+Best when:
+- the task is well-defined
+- architecture is already clear
+- the work does not need a broad repo-wide decision
 
-Runs on merges to `main`:
+## 7.2 Browser QA sub-agent
+Use for:
+- Playwright-based validation
+- recursive inspection of the dev build
+- regression checks on critical flows
+- role-based workflow verification
+- navigation and state validation
 
-- Build Docker image
-- Push to ACR with tag = commit SHA
-- Update Azure Container App image to that tag (new revision)
+Best when:
+- a flow is already implemented
+- a sandbox handoff is approaching
+- a UI appears wired but needs real-world validation
 
-Do not use `latest` tag.
+## 7.3 UI / UX refinement sub-agent
+Use for:
+- layout cleanup
+- hierarchy improvement
+- form usability
+- reducing friction in workflows
+- aligning serious HR-product visual tone
+- turning rough functionality into polished usability
 
-### Azure auth (OIDC) conventions
+Best when:
+- the flow already works technically
+- user trust and clarity matter
+- the product is approaching HR-facing review
 
-Workflows authenticate using OIDC and expect these secrets to exist in GitHub:
+## 7.4 Architecture / systems review sub-agent
+Use for:
+- checking whether changes violate architecture
+- identifying module-boundary drift
+- permission model review
+- reviewing data/state transition design
 
-- `AZURE_CLIENT_ID`
-- `AZURE_TENANT_ID`
-- `AZURE_SUBSCRIPTION_ID`
+Best when:
+- the task touches multiple modules
+- a refactor is getting broad
+- the implementation may be becoming messy
 
-Workflows should use repo/environment variables (or secrets if required) for:
+## 7.5 Product consistency sub-agent
+Use for:
+- checking alignment with the PRD
+- verifying that new behavior matches vanilla scope
+- catching out-of-scope features leaking into the app
 
-- `AZURE_RESOURCE_GROUP`
-- `AZURE_CONTAINERAPP_NAME`
-- `AZURE_ACR_NAME`
-- `AZURE_LOCATION` (optional)
-
-Never print secrets in logs.
-
-## Branching & PR workflow (required)
-
-### Branch model
-- Default working branch: `dev`
-- Protected release branch: `main`
-- All merges into `main` must happen via PR from `dev` (no direct pushes).
-
-### Phase delivery rule
-- Each phase should be completed on `dev` (or a short-lived branch off `dev`) and then merged into `main` via PR.
-- Do not start the next phase until the PR to `main` is merged and CI is green.
-
-### PR requirements to merge to main
-- CI must pass (`CI / web`)
-- PR description must include the PR completion summary format (see Section 11)
-- `/PLAN.md` must be updated for completed items in the phase
-
-### Auto-merge (optional but recommended)
-- If auto-merge is enabled in the repo, enable auto-merge on phase PRs after verification.
-
----
-
-## 10) Terraform conventions (`infra/terraform`)
-
-### Layout
-
-- `infra/terraform/modules/*` reusable modules (acr, containerapp, postgres, keyvault, observability)
-- `infra/terraform/env/dev/*` composition for dev environment
-- Use `terraform fmt` and `terraform validate` in CI (later)
-
-### Azure resources expected (dev baseline)
-
-- Resource Group
-- Log Analytics (and/or App Insights)
-- Azure Container Registry
-- Container Apps Environment
-- Container App (web)
-- Postgres Flexible Server
-- Key Vault
-
-### Identity/RBAC needed for
-
-- GitHub OIDC deploy identity
-- Container App managed identity to read Key Vault
-
-### State
-
-- Use remote state (Azure Storage backend) when ready; local state only for initial experimentation.
-- Do not commit state files.
+Best when:
+- a feature started broadening beyond intended scope
+- the current implementation may reflect older plans
 
 ---
 
-## 11) PR completion summary format (required)
+## 8. Sub-Agent Usage Rules
 
-When finishing work, provide:
+## 8.1 When not to use sub-agents
+Do not use sub-agents for:
+- trivial text changes
+- obvious bug fixes
+- tiny component edits
+- simple route wiring
+- work where context transfer would cost more than direct execution
 
-- What changed (bullets)
-- Why (link to PRD section)
-- How to test locally (exact commands)
-- Screenshots for UI changes
-- DB migrations included? (yes/no)
-- Security notes (permissions, secrets, logging)
-- Infra notes (terraform changes, apply steps)
+## 8.2 Maximum recommended fan-out
+Default maximum: **one sub-agent at a time**
 
-### Commit discipline (required)
-Make incremental commits grouped by feature/slice so PRs are easy to review and revert.
+Use two sub-agents only when there is a clear split, for example:
+- one agent implements
+- one agent validates in browser
 
-**Rules**
-- Group commits by slice, in this order whenever possible: `db` → `api` → `ui` → `tests` → `docs/infra`.
-- Avoid mixing unrelated changes in a single commit (no “kitchen sink” commits).
-- Each commit should leave the repo in a buildable state whenever practical (especially after `db:` and `api:` commits).
-- Prefer **3–8 commits per phase** (do not create many tiny/noisy commits).
+Avoid broad parallel fan-out unless the task is genuinely large and time-critical.
 
-**Commit message convention**
-Use one of these prefixes:
-- `db:` schema/migrations, seed data, Prisma changes
-- `api:` route handlers, server services, validation, authz
-- `ui:` pages, components, styling, UX states
-- `tests:` unit/integration tests
-- `infra:` Terraform, workflows, docker
-- `docs:` PRD/ADR/Architecture/README/PLAN updates
-- `chore:` formatting, dependency bumps, non-functional cleanup
+## 8.3 Integration responsibility
+The primary agent remains responsible for:
+- final synthesis
+- conflict resolution
+- architectural alignment
+- deciding what actually ships
 
-**Examples**
-- `db: add review cycle core tables + migration`
-- `api: add admin endpoints to create cycle and generate packets`
-- `ui: add admin review cycle list + empty state`
-- `tests: add cycle creation + generation permission tests`
-- `docs: update PLAN.md checkboxes for Milestone 1 Phase 1`
+Sub-agents are helpers, not the final authority.
 
-### Plan tracking (required)
-At the end of each phase/PR, update `/PLAN.md`:
-- Check off completed items
-- Add a short note like “Completed in PR #123”
-- Do not mark future-phase tasks as complete
-- If a milestone’s acceptance criteria are marked complete, but some work-breakdown items remain, move the remaining items into a follow-on milestone (e.g., “Milestone 1.1” or “Milestone 1.5”) instead of leaving them unchecked under the completed milestone.
-
-
-### Reinforcement loop gates (required)
-For phased work:
-- Implement only the next incomplete phase from `/PLAN.md`.
-- Run and pass quality gates: `lint`, `typecheck`, `test`, `build`.
-- Push changes to `dev`, open a PR from `dev` → `main`, and ensure `CI / web` is green.
-- Update `/PLAN.md` only for items completed in this PR.
-- Stop after the PR is ready (or merged). Do not proceed to the next phase until the PR is merged into `main`.
-
-### Default interpretation of “proceed”
-When the user says “proceed”, “next phase”, or “continue”, interpret it as:
-1) find the next incomplete phase in `/PLAN.md`
-2) implement only that phase
-3) pass quality gates + open PR `dev` → `main`
-4) update `/PLAN.md`
-5) stop
+## 8.4 Reuse before respawn
+If a specialist context already exists, prefer continuing with it rather than spawning a fresh equivalent sub-agent repeatedly.
 
 ---
 
-## 12) Common failure modes (avoid)
+## 9. Expected Agent Workflow
 
-- Do not add secrets to repo or workflow outputs.
-- Do not bypass permission checks “temporarily.”
-- Do not change DB schema without migrations.
-- Do not ship UI without empty/loading/error states.
-- Do not deploy images tagged `latest`.
-- Do not introduce Bicep when Terraform is the chosen IaC tool.
+For most tasks, agents should follow this path:
+
+1. understand the request
+2. inspect current code and docs
+3. decide whether single-agent mode is enough
+4. implement the smallest complete solution
+5. run low-cost validation
+6. escalate to a specialist sub-agent only if needed
+7. summarize changes, risks, and next steps
+
+This keeps the workflow efficient and cost-aware.
+
+---
+
+## 10. Browser and End-to-End Validation
+
+## 10.1 Preferred browser validation
+Playwright is the preferred approach for browser-level validation.
+
+Use browser validation for:
+- critical workflow testing
+- role-based access checks
+- recursive review of the dev build
+- catching broken navigation and trust-breaking UI states
+- final checks before HR sandbox handoff
+
+## 10.2 Validation priority
+The browser QA sub-agent should prioritize:
+- login
+- landing dashboards by role
+- goals workflow
+- reviews workflow
+- calibration workflow
+- PIP workflow
+- empty states
+- error states
+- restricted visibility boundaries
+
+## 10.3 Cost-aware browser testing
+Do not run full recursive browser sweeps after every tiny code change.
+
+Instead:
+- use targeted validation during development
+- batch larger browser checks after meaningful changes
+- run broader recursive inspection before milestone handoff
+
+---
+
+## 11. UI / UX Quality Strategy
+
+## 11.1 UX is part of correctness
+A flow is not done if it technically works but is confusing, rough, or hard to trust.
+
+## 11.2 Preferred refinement pattern
+Use this order:
+1. make the flow work
+2. make the permissions correct
+3. make the states understandable
+4. polish the layout and interactions
+5. validate the experience in browser
+
+## 11.3 UI / UX refinement expectations
+The UI / UX refinement sub-agent should improve:
+- information hierarchy
+- spacing consistency
+- form ergonomics
+- CTA clarity
+- role-specific relevance
+- readability
+- calm, structured presentation
+
+Trellis should feel:
+- professional
+- serious
+- trustworthy
+- low-friction
+- clear under pressure
+
+## 11.4 Cost-aware design iteration
+Do not do massive aesthetic redesigns during active delivery unless explicitly requested.
+
+Prefer:
+- focused improvements to high-frequency workflows
+- consistency improvements
+- clarity improvements
+- removal of rough edges
+
+---
+
+## 12. Repo Awareness Expectations
+
+Before making changes, agents should inspect:
+- current implementation in the dev branch
+- active architecture and plan
+- whether the feature already exists partially
+- whether the requested work is already possible with adaptation
+- whether the product surface should be hidden rather than expanded
+
+Agents should not assume the repo still reflects earlier prototype-era plans.
+
+---
+
+## 13. Coding Expectations
+
+Agents must:
+- keep code readable
+- prefer explicit logic over clever abstractions
+- keep modules focused
+- preserve naming consistency
+- use types/interfaces where appropriate
+- keep workflow transitions clear
+- write code that another engineer can continue easily
+
+Agents should avoid:
+- premature generic abstractions
+- duplicated business rules across layers
+- deeply tangled component logic
+- overengineering for hypothetical future use cases
+
+---
+
+## 14. Data and Permission Safety
+
+Trellis contains sensitive talent data.
+
+Agents must treat these as high-sensitivity domains:
+- reviews
+- calibration
+- succession outputs
+- risk outputs
+- PIP
+- leadership-team records
+
+### Required rules
+- never trust the client for authorization
+- verify org scope on sensitive records
+- verify manager/report relationships where required
+- keep privileged actions auditable
+- avoid leaking restricted info through summaries, counts, or side panels
+
+If a change touches access control, prefer an architecture/permissions review before considering it done.
+
+---
+
+## 15. Workflow and State Discipline
+
+Trellis is workflow-heavy. Agents must respect explicit state transitions.
+
+Agents should:
+- implement transitions in service/domain logic
+- validate preconditions before mutation
+- prevent illegal transitions
+- preserve immutability where required
+- avoid UI-only “fake progression”
+
+If a workflow has multiple states, agents should model them clearly rather than inferring state from scattered UI conditions.
+
+---
+
+## 16. Sandbox Build Rules
+
+For the HR sandbox, agents should assume:
+- this is a real test environment, not a toy demo
+- sandbox auth must be safe and realistic
+- developer shortcuts must not appear in shared environments
+- unfinished modules should be hidden
+- core flows must feel believable and trustworthy
+
+Before sandbox handoff, prefer one broad validation pass rather than many fragmented partial checks.
+
+---
+
+## 17. Definition of Done for Agent Work
+
+A task is usually done only when:
+- implementation works
+- permissions are correct
+- major states are handled
+- the UI is understandable
+- the change has been validated appropriately for its risk level
+- the result is summarized clearly
+
+For user-facing workflow work, “done” usually means:
+- built
+- wired
+- permissioned
+- validated
+- polished enough not to break trust
+
+---
+
+## 18. Communication Expectations
+
+Agents should:
+- surface risks early
+- summarize findings clearly
+- propose the smallest strong next step
+- avoid creating unnecessary bottlenecks
+- keep momentum without becoming sloppy
+
+Agents should not:
+- insist on unnecessary ceremony
+- over-explain routine work
+- repeatedly restate stable project context
+- spawn sub-agents without clear reason
+
+---
+
+## 19. Priority Order
+
+When deciding what to improve next, agents should generally prioritize:
+
+1. broken core workflows
+2. auth and permission correctness
+3. sandbox readiness
+4. review/calibration/PIP usability
+5. browser-validated UX polish
+6. cleanup and refactor
+7. future-facing enhancements
+
+---
+
+## 20. Active Biases for Trellis
+
+Agents working on Trellis should bias toward:
+- shipping usable vertical slices
+- validating real browser behavior
+- improving HR-facing UX quality
+- using specialist sub-agents selectively
+- keeping cost proportional to task value
+- hiding incomplete features
+- preserving trust in sensitive workflows
+
+Agents should bias against:
+- unnecessary PR churn
+- wide sub-agent fan-out
+- speculative infra work
+- broad redesigns without validation
+- exposing half-finished product areas
+- expensive validation passes after every minor edit

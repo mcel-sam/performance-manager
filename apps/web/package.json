@@ -12,10 +12,14 @@
     "test:e2e": "playwright test --grep-invert @ux",
     "test:e2e:ux": "playwright test --grep @ux",
     "test:e2e:ui": "playwright test --ui",
-    "db:seed": "node prisma/seed.mjs"
+    "db:migrate:deploy": "node scripts/run-with-next-env.mjs prisma migrate deploy",
+    "db:migrate:status": "node scripts/run-with-next-env.mjs prisma migrate status",
+    "db:seed": "node scripts/run-with-next-env.mjs node prisma/seed.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.100.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
