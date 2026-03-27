@@ -1,36 +1,24 @@
 import Link from "next/link";
 
 import { UserRole } from "@prisma/client";
+import { redirect } from "next/navigation";
 
 import CalibrationSessionCreateForm from "@/components/admin/calibration-session-create-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { SectionHeader } from "@/components/layout/section-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getCalibrationSessionCreateOptions } from "@/server/calibration/calibration-admin-options-service";
 
 export const dynamic = "force-dynamic";
 
-const allowedRoles = new Set<UserRole>([UserRole.HR_ADMIN, UserRole.CALIBRATOR]);
+const allowedRoles = new Set<UserRole>([UserRole.HR_ADMIN, UserRole.SUPER_ADMIN]);
 
 export default async function NewAdminCalibrationSessionPage() {
   const context = await getDevRequestContext();
 
   if (!allowedRoles.has(context.role)) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin access required</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-slate-700">
-            Set <code>DEV_USER_ID=user_hr_admin_1</code> in <code>apps/web/.env.local</code> and
-            restart the dev server.
-          </p>
-        </CardContent>
-      </Card>
-    );
+    redirect("/");
   }
 
   const options = await getCalibrationSessionCreateOptions(context);
@@ -54,7 +42,7 @@ export default async function NewAdminCalibrationSessionPage() {
 
       <CalibrationSessionCreateForm
         options={options}
-        auth={{ userId: context.userId, orgId: context.orgId }}
+        auth={{ userId: context.userId, orgId: context.orgId, role: context.role }}
       />
     </div>
   );

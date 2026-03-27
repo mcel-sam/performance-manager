@@ -1,0 +1,38 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Calibration" [ref=e18] [cursor=pointer]:
+            - /url: /performance/calibration
+            - img [ref=e20]
+            - generic [ref=e27]: Calibration
+            - tooltip "Calibration"
+          - link "Help" [ref=e28] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e30]
+            - generic [ref=e34]: Help
+            - tooltip "Help"
+    - main [ref=e35]:
+      - generic [ref=e37]:
+        - button "Current organization" [disabled] [ref=e38]:
+          - generic [ref=e39]: O
+          - generic [ref=e40]: MCEL Sandbox Organization
+          - img [ref=e41]
+        - button "Lisa Letto Lisa Letto Super Admin" [ref=e44]:
+          - generic "Lisa Letto" [ref=e45]: LL
+          - generic [ref=e46]:
+            - generic [ref=e47]: Lisa Letto
+            - generic [ref=e48]: Super Admin
+  - button "Open Next.js Dev Tools" [ref=e57] [cursor=pointer]:
+    - img [ref=e58]
+  - alert [ref=e62]

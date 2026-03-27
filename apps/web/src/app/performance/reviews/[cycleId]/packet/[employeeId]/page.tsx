@@ -47,7 +47,8 @@ export default async function ReviewPacketPage({
         label="Packet visibility"
         buttonLabel="Toggle review packet visibility guidance"
       >
-        Managers and HR can view in-progress packets. Employees can view packet content after
+        Review packets aggregate the self review and direct-manager review only. Direct managers can
+        view in-progress packets for their reports, and employees can view packet content after
         release when cycle policy allows.
       </HelpHint>
 

@@ -11,6 +11,7 @@ import {
   TableRow,
   TableWrapper,
 } from "@/components/ui/table";
+import { formatUserRoleLabel } from "@/lib/users/role-labels";
 import type { UserDirectoryListItem } from "@/server/users/user-management-service";
 
 interface UserManagementTableProps {
@@ -19,7 +20,7 @@ interface UserManagementTableProps {
 
 const roleTone = {
   HR_ADMIN: "info",
-  CALIBRATOR: "warning",
+  SUPER_ADMIN: "warning",
   MANAGER: "success",
   EMPLOYEE: "neutral",
 } as const;
@@ -47,7 +48,7 @@ export default function UserManagementTable({ users }: UserManagementTableProps)
                 <p className="text-xs text-slate-600">{user.email}</p>
               </TableCell>
               <TableCell>
-                <StatusChip tone={roleTone[user.role]}>{user.role}</StatusChip>
+                <StatusChip tone={roleTone[user.role]}>{formatUserRoleLabel(user.role)}</StatusChip>
               </TableCell>
               <TableCell className="text-slate-700">{user.department ?? "—"}</TableCell>
               <TableCell className="text-slate-700">{user.title ?? "—"}</TableCell>

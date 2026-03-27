@@ -1,10 +1,17 @@
 import {
+  CycleStatus,
+  ImprovementPlanCheckInType,
   ImprovementPlanOutcome,
   ImprovementPlanStatus,
+  ImprovementPlanTrigger,
   UserRole,
 } from "@prisma/client";
 import { z } from "zod";
 
+import {
+  canManageImprovementPlans,
+  hasHrAdminAccess,
+} from "@/lib/users/role-capabilities";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
@@ -22,6 +29,9 @@ interface ImprovementPlanListRecord {
   subjectEmployeeId: string;
   managerEmployeeId: string;
   hrOwnerEmployeeId: string | null;
+  triggerSource: ImprovementPlanTrigger;
+  reviewCycleId: string | null;
+  calibrationSessionId: string | null;
   title: string;
   startDate: Date;
   endDate: Date;
@@ -43,11 +53,20 @@ interface ImprovementPlanListRecord {
     firstName: string;
     lastName: string;
   } | null;
+  reviewCycle: {
+    id: string;
+    name: string;
+  } | null;
+  calibrationSession: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 interface ImprovementPlanCheckInRecord {
   id: string;
   content: string;
+  checkInType: ImprovementPlanCheckInType;
   status: ImprovementPlanStatus | null;
   outcome: ImprovementPlanOutcome | null;
   checkInAt: Date;
@@ -81,6 +100,9 @@ interface ImprovementPlanAccessRecord {
   subjectEmployeeId: string;
   managerEmployeeId: string;
   hrOwnerEmployeeId: string | null;
+  triggerSource: ImprovementPlanTrigger;
+  reviewCycleId: string | null;
+  calibrationSessionId: string | null;
   status: ImprovementPlanStatus;
   outcome: ImprovementPlanOutcome | null;
 }
@@ -91,6 +113,16 @@ interface ImprovementPlanEditRecord extends ImprovementPlanAccessRecord {
   goals: {
     id: string;
     sortOrder: number;
+  }[];
+}
+
+interface ImprovementPlanCheckInContextRecord extends ImprovementPlanAccessRecord {
+  startDate: Date;
+  endDate: Date;
+  checkIns: {
+    id: string;
+    checkInType: ImprovementPlanCheckInType;
+    checkInAt: Date;
   }[];
 }
 
@@ -114,6 +146,9 @@ interface ImprovementPlanAuditRecord {
 interface CreatedImprovementPlanRecord {
   id: string;
   title: string;
+  triggerSource: ImprovementPlanTrigger;
+  reviewCycleId: string | null;
+  calibrationSessionId: string | null;
   status: ImprovementPlanStatus;
   startDate: Date;
   endDate: Date;
@@ -162,6 +197,9 @@ interface ImprovementPlanDb {
         managerEmployeeId: string;
         hrOwnerEmployeeId: string | null;
         createdByUserId: string;
+        triggerSource: ImprovementPlanTrigger;
+        reviewCycleId: string | null;
+        calibrationSessionId: string | null;
         title: string;
         expectations: string;
         startDate: Date;
@@ -178,6 +216,9 @@ interface ImprovementPlanDb {
       select: {
         id: true;
         title: true;
+        triggerSource: true;
+        reviewCycleId: true;
+        calibrationSessionId: true;
         status: true;
         startDate: true;
         endDate: true;
@@ -195,7 +236,13 @@ interface ImprovementPlanDb {
     findFirst: (args: {
       where: Record<string, unknown>;
       select: Record<string, unknown>;
-    }) => Promise<ImprovementPlanDetailRecord | ImprovementPlanAccessRecord | null>;
+    }) => Promise<
+      | ImprovementPlanDetailRecord
+      | ImprovementPlanAccessRecord
+      | ImprovementPlanEditRecord
+      | ImprovementPlanCheckInContextRecord
+      | null
+    >;
     update: (args: {
       where: {
         id: string;
@@ -211,12 +258,40 @@ interface ImprovementPlanDb {
         planId: string;
         authorUserId: string;
         content: string;
+        checkInType: ImprovementPlanCheckInType;
         status: ImprovementPlanStatus | null;
         outcome: ImprovementPlanOutcome | null;
         checkInAt: Date;
       };
       select: Record<string, unknown>;
     }) => Promise<ImprovementPlanCheckInRecord>;
+  };
+  reviewCycle: {
+    findFirst: (args: {
+      where: {
+        id: string;
+        orgId: string;
+      };
+      select: {
+        id: true;
+        name: true;
+        status: true;
+      };
+    }) => Promise<{ id: string; name: string; status: CycleStatus } | null>;
+  };
+  calibrationSession: {
+    findFirst: (args: {
+      where: {
+        id: string;
+        orgId: string;
+      };
+      select: {
+        id: true;
+        name: true;
+        cycleId: true;
+        isFinalized: true;
+      };
+    }) => Promise<{ id: string; name: string; cycleId: string; isFinalized: boolean } | null>;
   };
   auditEvent: {
     create: (args: {
@@ -250,6 +325,8 @@ const createImprovementPlanSchema = z
     subjectEmployeeId: z.string().trim().min(1),
     managerEmployeeId: z.string().trim().min(1).optional(),
     hrOwnerEmployeeId: z.string().trim().min(1).optional().nullable(),
+    reviewCycleId: z.string().trim().min(1).optional(),
+    calibrationSessionId: z.string().trim().min(1).optional(),
     title: z.string().trim().min(3).max(160),
     expectations: z.string().trim().min(1).max(12000),
     startDate: z.string().datetime(),
@@ -271,6 +348,22 @@ const createImprovementPlanSchema = z
         message: "endDate must be later than startDate",
       });
     }
+
+    if (endDate.getTime() - startDate.getTime() < NINETY_DAY_WINDOW_MS) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endDate"],
+        message: "PIP date range must cover the standard 90-day checkpoint window",
+      });
+    }
+
+    if (!value.reviewCycleId && !value.calibrationSessionId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["reviewCycleId"],
+        message: "A PIP must be linked to a review cycle and/or finalized calibration session",
+      });
+    }
   });
 
 const planIdSchema = z.object({
@@ -280,6 +373,7 @@ const planIdSchema = z.object({
 const createImprovementPlanCheckInSchema = z.object({
   note: z.string().trim().min(1).max(12000),
   checkInAt: z.string().datetime().optional(),
+  checkInType: z.nativeEnum(ImprovementPlanCheckInType).optional(),
 });
 
 const transitionImprovementPlanStatusSchema = z.object({
@@ -295,12 +389,16 @@ const updateImprovementPlanSchema = z.object({
 });
 
 const allowedStatusTransitions: Record<ImprovementPlanStatus, ImprovementPlanStatus[]> = {
-  [ImprovementPlanStatus.DRAFT]: [ImprovementPlanStatus.ACTIVE],
-  [ImprovementPlanStatus.ACTIVE]: [ImprovementPlanStatus.COMPLETED],
-  [ImprovementPlanStatus.COMPLETED]: [
-    ImprovementPlanStatus.EXTENDED,
+  [ImprovementPlanStatus.DRAFT]: [
+    ImprovementPlanStatus.ACTIVE,
     ImprovementPlanStatus.CANCELED,
   ],
+  [ImprovementPlanStatus.ACTIVE]: [
+    ImprovementPlanStatus.EXTENDED,
+    ImprovementPlanStatus.COMPLETED,
+    ImprovementPlanStatus.CANCELED,
+  ],
+  [ImprovementPlanStatus.COMPLETED]: [],
   [ImprovementPlanStatus.EXTENDED]: [
     ImprovementPlanStatus.COMPLETED,
     ImprovementPlanStatus.CANCELED,
@@ -308,11 +406,30 @@ const allowedStatusTransitions: Record<ImprovementPlanStatus, ImprovementPlanSta
   [ImprovementPlanStatus.CANCELED]: [],
 };
 
+const checkpointTypes = [
+  ImprovementPlanCheckInType.CHECKPOINT_30,
+  ImprovementPlanCheckInType.CHECKPOINT_60,
+  ImprovementPlanCheckInType.CHECKPOINT_90,
+] as const;
+
+const checkpointTypeMetadata = {
+  [ImprovementPlanCheckInType.CHECKPOINT_30]: { label: "30-day checkpoint", offsetDays: 30 },
+  [ImprovementPlanCheckInType.CHECKPOINT_60]: { label: "60-day checkpoint", offsetDays: 60 },
+  [ImprovementPlanCheckInType.CHECKPOINT_90]: { label: "90-day checkpoint", offsetDays: 90 },
+} as const;
+
+const NINETY_DAY_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
+
 export interface ImprovementPlanListItem {
   id: string;
   subjectEmployeeId: string;
   managerEmployeeId: string;
   hrOwnerEmployeeId: string | null;
+  triggerSource: ImprovementPlanTrigger;
+  reviewCycleId: string | null;
+  reviewCycleName: string | null;
+  calibrationSessionId: string | null;
+  calibrationSessionName: string | null;
   title: string;
   startDate: string;
   endDate: string;
@@ -329,9 +446,20 @@ export interface ImprovementPlanTimelineEntry {
   authorName: string;
   authorUserId: string;
   note: string;
+  checkInType: ImprovementPlanCheckInType;
   timestamp: string;
   status: ImprovementPlanStatus | null;
   outcome: ImprovementPlanOutcome | null;
+}
+
+type StructuredCheckpointType = (typeof checkpointTypes)[number];
+
+export interface ImprovementPlanCheckpointScheduleItem {
+  type: StructuredCheckpointType;
+  label: string;
+  targetDate: string;
+  completedAt: string | null;
+  completedByName: string | null;
 }
 
 export interface ImprovementPlanAuditEvent {
@@ -348,6 +476,11 @@ export interface ImprovementPlanDetail {
   subjectEmployeeId: string;
   managerEmployeeId: string;
   hrOwnerEmployeeId: string | null;
+  triggerSource: ImprovementPlanTrigger;
+  reviewCycleId: string | null;
+  reviewCycleName: string | null;
+  calibrationSessionId: string | null;
+  calibrationSessionName: string | null;
   title: string;
   expectations: string;
   startDate: string;
@@ -366,12 +499,16 @@ export interface ImprovementPlanDetail {
     sortOrder: number;
   }[];
   checkInCount: number;
+  checkpointSchedule: ImprovementPlanCheckpointScheduleItem[];
   timeline: ImprovementPlanTimelineEntry[];
 }
 
 export interface CreatedImprovementPlan {
   id: string;
   title: string;
+  triggerSource: ImprovementPlanTrigger;
+  reviewCycleId: string | null;
+  calibrationSessionId: string | null;
   status: ImprovementPlanStatus;
   startDate: string;
   endDate: string;
@@ -411,7 +548,7 @@ export async function createImprovementPlan(
   context: RequestContext,
   db: ImprovementPlanDb = prisma as unknown as ImprovementPlanDb,
 ): Promise<CreatedImprovementPlan> {
-  if (context.role !== UserRole.HR_ADMIN && context.role !== UserRole.MANAGER) {
+  if (!canManageImprovementPlans(context.role)) {
     throw new AppError("FORBIDDEN", "Only HR admins and managers can create plans", 403);
   }
 
@@ -461,6 +598,77 @@ export async function createImprovementPlan(
     throw new AppError("FORBIDDEN", "User is not mapped to an employee profile", 403);
   }
 
+  const reviewCycle = parsed.data.reviewCycleId
+    ? await db.reviewCycle.findFirst({
+        where: {
+          id: parsed.data.reviewCycleId,
+          orgId: context.orgId,
+        },
+        select: {
+          id: true,
+          name: true,
+          status: true,
+        },
+      })
+    : null;
+
+  if (parsed.data.reviewCycleId && !reviewCycle) {
+    throw new AppError("NOT_FOUND", "Review cycle not found for this PIP", 404);
+  }
+
+  if (
+    reviewCycle &&
+    reviewCycle.status !== CycleStatus.LOCKED &&
+    reviewCycle.status !== CycleStatus.RELEASED
+  ) {
+    throw new AppError(
+      "INVALID_CYCLE_STATE",
+      "PIPs can only be created after the linked review cycle is locked or released",
+      409,
+      { cycleStatus: reviewCycle.status },
+    );
+  }
+
+  const calibrationSession = parsed.data.calibrationSessionId
+    ? await db.calibrationSession.findFirst({
+        where: {
+          id: parsed.data.calibrationSessionId,
+          orgId: context.orgId,
+        },
+        select: {
+          id: true,
+          name: true,
+          cycleId: true,
+          isFinalized: true,
+        },
+      })
+    : null;
+
+  if (parsed.data.calibrationSessionId && !calibrationSession) {
+    throw new AppError("NOT_FOUND", "Calibration session not found for this PIP", 404);
+  }
+
+  if (calibrationSession && !calibrationSession.isFinalized) {
+    throw new AppError(
+      "INVALID_WORKFLOW_STATE",
+      "PIPs linked to calibration can only be created from finalized calibration sessions",
+      409,
+    );
+  }
+
+  if (reviewCycle && calibrationSession && calibrationSession.cycleId !== reviewCycle.id) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "The linked calibration session must belong to the linked review cycle",
+      400,
+    );
+  }
+
+  const triggerSource = deriveTriggerSource(
+    reviewCycle?.id ?? null,
+    calibrationSession?.id ?? null,
+  );
+
   let managerEmployeeId = parsed.data.managerEmployeeId ?? subjectEmployee.managerId;
   if (context.role === UserRole.MANAGER) {
     if (subjectEmployee.managerId !== viewerEmployee.id) {
@@ -496,13 +704,29 @@ export async function createImprovementPlan(
     throw new AppError("NOT_FOUND", "Manager employee not found", 404);
   }
 
+  if (managerEmployee.id === subjectEmployee.id) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "The plan manager must be different from the subject employee",
+      400,
+    );
+  }
+
   if (context.role === UserRole.MANAGER && managerEmployee.id !== viewerEmployee.id) {
     throw new AppError("FORBIDDEN", "Managers cannot assign a different manager owner", 403);
   }
 
   let hrOwnerEmployeeId = parsed.data.hrOwnerEmployeeId ?? null;
-  if (context.role === UserRole.HR_ADMIN && !hrOwnerEmployeeId) {
+  if (hasHrAdminAccess(context.role) && !hrOwnerEmployeeId) {
     hrOwnerEmployeeId = viewerEmployee.id;
+  }
+
+  if (context.role === UserRole.MANAGER && !hrOwnerEmployeeId) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Managers must assign an HR owner so the PIP has explicit HR oversight",
+      400,
+    );
   }
 
   if (hrOwnerEmployeeId) {
@@ -532,6 +756,9 @@ export async function createImprovementPlan(
       managerEmployeeId: managerEmployee.id,
       hrOwnerEmployeeId,
       createdByUserId: context.userId,
+      triggerSource,
+      reviewCycleId: reviewCycle?.id ?? null,
+      calibrationSessionId: calibrationSession?.id ?? null,
       title: parsed.data.title,
       expectations: parsed.data.expectations,
       startDate: new Date(parsed.data.startDate),
@@ -548,6 +775,9 @@ export async function createImprovementPlan(
     select: {
       id: true,
       title: true,
+      triggerSource: true,
+      reviewCycleId: true,
+      calibrationSessionId: true,
       status: true,
       startDate: true,
       endDate: true,
@@ -566,6 +796,10 @@ export async function createImprovementPlan(
       metadata: {
         subjectEmployeeId: subjectEmployee.id,
         managerEmployeeId: managerEmployee.id,
+        hrOwnerEmployeeId,
+        triggerSource,
+        reviewCycleId: reviewCycle?.id ?? null,
+        calibrationSessionId: calibrationSession?.id ?? null,
         goalCount: parsed.data.goals.length,
         status: createdPlan.status,
       },
@@ -575,6 +809,9 @@ export async function createImprovementPlan(
   return {
     id: createdPlan.id,
     title: createdPlan.title,
+    triggerSource: createdPlan.triggerSource,
+    reviewCycleId: createdPlan.reviewCycleId,
+    calibrationSessionId: createdPlan.calibrationSessionId,
     status: createdPlan.status,
     startDate: createdPlan.startDate.toISOString(),
     endDate: createdPlan.endDate.toISOString(),
@@ -596,6 +833,9 @@ export async function listImprovementPlans(
       subjectEmployeeId: true,
       managerEmployeeId: true,
       hrOwnerEmployeeId: true,
+      triggerSource: true,
+      reviewCycleId: true,
+      calibrationSessionId: true,
       title: true,
       startDate: true,
       endDate: true,
@@ -623,6 +863,18 @@ export async function listImprovementPlans(
           lastName: true,
         },
       },
+      reviewCycle: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      calibrationSession: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
     orderBy: {
       updatedAt: "desc",
@@ -634,6 +886,11 @@ export async function listImprovementPlans(
     subjectEmployeeId: plan.subjectEmployeeId,
     managerEmployeeId: plan.managerEmployeeId,
     hrOwnerEmployeeId: plan.hrOwnerEmployeeId,
+    triggerSource: plan.triggerSource,
+    reviewCycleId: plan.reviewCycleId,
+    reviewCycleName: plan.reviewCycle?.name ?? null,
+    calibrationSessionId: plan.calibrationSessionId,
+    calibrationSessionName: plan.calibrationSession?.name ?? null,
     title: plan.title,
     startDate: plan.startDate.toISOString(),
     endDate: plan.endDate.toISOString(),
@@ -674,6 +931,9 @@ export async function getImprovementPlanDetail(
       subjectEmployeeId: true,
       managerEmployeeId: true,
       hrOwnerEmployeeId: true,
+      triggerSource: true,
+      reviewCycleId: true,
+      calibrationSessionId: true,
       title: true,
       expectations: true,
       startDate: true,
@@ -701,6 +961,18 @@ export async function getImprovementPlanDetail(
           id: true,
           firstName: true,
           lastName: true,
+        },
+      },
+      reviewCycle: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      calibrationSession: {
+        select: {
+          id: true,
+          name: true,
         },
       },
       goals: {
@@ -738,6 +1010,11 @@ export async function getImprovementPlanDetail(
     subjectEmployeeId: plan.subjectEmployeeId,
     managerEmployeeId: plan.managerEmployeeId,
     hrOwnerEmployeeId: plan.hrOwnerEmployeeId,
+    triggerSource: plan.triggerSource,
+    reviewCycleId: plan.reviewCycleId,
+    reviewCycleName: plan.reviewCycle?.name ?? null,
+    calibrationSessionId: plan.calibrationSessionId,
+    calibrationSessionName: plan.calibrationSession?.name ?? null,
     title: plan.title,
     expectations: plan.expectations,
     startDate: plan.startDate.toISOString(),
@@ -758,6 +1035,7 @@ export async function getImprovementPlanDetail(
       sortOrder: goal.sortOrder,
     })),
     checkInCount: plan.checkIns.length,
+    checkpointSchedule: buildCheckpointSchedule(plan.startDate, plan.checkIns),
     timeline: plan.checkIns.map(mapCheckInRecord),
   };
 }
@@ -780,11 +1058,55 @@ export async function createImprovementPlanCheckIn(
     );
   }
 
-  const plan = await loadPlanAccessRecord(parsedPlanId, context.orgId, db);
+  const plan = await loadPlanCheckInContextRecord(parsedPlanId, context.orgId, db);
   const viewerEmployeeId = await resolveViewerEmployeeId(context, db);
 
   if (!canAccessPlan(plan, context, viewerEmployeeId)) {
     throw new AppError("FORBIDDEN", "You are not allowed to create a check-in for this plan", 403);
+  }
+
+  if (
+    plan.status !== ImprovementPlanStatus.ACTIVE &&
+    plan.status !== ImprovementPlanStatus.EXTENDED
+  ) {
+    throw new AppError(
+      "INVALID_WORKFLOW_STATE",
+      "Check-ins can only be recorded when the PIP is active or extended",
+      409,
+    );
+  }
+
+  const checkInType = parsed.data.checkInType ?? ImprovementPlanCheckInType.NOTE;
+  if (checkInType === ImprovementPlanCheckInType.STATUS_CHANGE) {
+    throw new AppError("VALIDATION_ERROR", "STATUS_CHANGE check-ins are system-generated only", 400);
+  }
+
+  if (checkpointTypes.includes(checkInType as (typeof checkpointTypes)[number])) {
+    if (!canManageImprovementPlans(context.role)) {
+      throw new AppError(
+        "FORBIDDEN",
+        "Only the plan manager or HR can record structured checkpoints",
+        403,
+      );
+    }
+
+    if (context.role === UserRole.MANAGER && viewerEmployeeId !== plan.managerEmployeeId) {
+      throw new AppError("FORBIDDEN", "Only the plan manager can record structured checkpoints", 403);
+    }
+
+    const structuredCheckInType = checkInType as StructuredCheckpointType;
+    const existingCheckpoint = plan.checkIns.find(
+      (entry) => entry.checkInType === structuredCheckInType,
+    );
+    if (existingCheckpoint) {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        `This ${checkpointTypeMetadata[structuredCheckInType].label.toLowerCase()} has already been recorded`,
+        400,
+      );
+    }
+
+    enforceCheckpointSequence(plan.checkIns, structuredCheckInType);
   }
 
   const checkInAt = parsed.data.checkInAt ? new Date(parsed.data.checkInAt) : new Date();
@@ -795,6 +1117,7 @@ export async function createImprovementPlanCheckIn(
       planId: plan.id,
       authorUserId: context.userId,
       content: parsed.data.note,
+      checkInType,
       status: plan.status,
       outcome: plan.outcome,
       checkInAt,
@@ -811,6 +1134,7 @@ export async function createImprovementPlanCheckIn(
       entityId: plan.id,
       metadata: {
         checkInId: createdCheckIn.id,
+        checkInType: createdCheckIn.checkInType,
         status: createdCheckIn.status,
         outcome: createdCheckIn.outcome,
         noteLength: parsed.data.note.length,
@@ -847,7 +1171,7 @@ export async function transitionImprovementPlanStatus(
     throw new AppError("FORBIDDEN", "You are not allowed to change this plan status", 403);
   }
 
-  if (context.role !== UserRole.HR_ADMIN && context.role !== UserRole.MANAGER) {
+  if (!canManageImprovementPlans(context.role)) {
     throw new AppError("FORBIDDEN", "Only managers and HR admins can change plan status", 403);
   }
 
@@ -886,6 +1210,7 @@ export async function transitionImprovementPlanStatus(
       planId: plan.id,
       authorUserId: context.userId,
       content: transitionNote,
+      checkInType: ImprovementPlanCheckInType.STATUS_CHANGE,
       status: updatedPlan.status,
       outcome: updatedPlan.outcome,
       checkInAt: new Date(),
@@ -952,7 +1277,7 @@ export async function updateImprovementPlanGoalsAndDates(
     throw new AppError("FORBIDDEN", "You are not allowed to edit this improvement plan", 403);
   }
 
-  if (context.role !== UserRole.HR_ADMIN && context.role !== UserRole.MANAGER) {
+  if (!canManageImprovementPlans(context.role)) {
     throw new AppError("FORBIDDEN", "Only managers and HR admins can edit plans", 403);
   }
 
@@ -975,6 +1300,18 @@ export async function updateImprovementPlanGoalsAndDates(
       startDate: nextStartDate.toISOString(),
       endDate: nextEndDate.toISOString(),
     });
+  }
+
+  if (nextEndDate.getTime() - nextStartDate.getTime() < NINETY_DAY_WINDOW_MS) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "PIP date range must cover the standard 90-day checkpoint window",
+      400,
+      {
+        startDate: nextStartDate.toISOString(),
+        endDate: nextEndDate.toISOString(),
+      },
+    );
   }
 
   const datesUpdated =
@@ -1166,7 +1503,7 @@ async function resolveViewerEmployeeId(
   context: RequestContext,
   db: ImprovementPlanDb,
 ): Promise<string | null> {
-  if (context.role === UserRole.HR_ADMIN) {
+  if (hasHrAdminAccess(context.role)) {
     return null;
   }
 
@@ -1195,7 +1532,7 @@ function buildPlanScopeWhere(
   context: RequestContext,
   viewerEmployeeId: string | null,
 ): Record<string, unknown> {
-  if (context.role === UserRole.HR_ADMIN) {
+  if (hasHrAdminAccess(context.role)) {
     return {
       orgId: context.orgId,
     };
@@ -1230,7 +1567,7 @@ function canAccessPlan(
   context: RequestContext,
   viewerEmployeeId: string | null,
 ): boolean {
-  if (context.role === UserRole.HR_ADMIN) {
+  if (hasHrAdminAccess(context.role)) {
     return true;
   }
 
@@ -1275,6 +1612,9 @@ async function loadPlanAccessRecord(
       subjectEmployeeId: true,
       managerEmployeeId: true,
       hrOwnerEmployeeId: true,
+      triggerSource: true,
+      reviewCycleId: true,
+      calibrationSessionId: true,
       status: true,
       outcome: true,
     },
@@ -1304,6 +1644,9 @@ async function loadPlanEditRecord(
       subjectEmployeeId: true,
       managerEmployeeId: true,
       hrOwnerEmployeeId: true,
+      triggerSource: true,
+      reviewCycleId: true,
+      calibrationSessionId: true,
       status: true,
       outcome: true,
       startDate: true,
@@ -1321,6 +1664,50 @@ async function loadPlanEditRecord(
   });
 
   const plan = planRecord as ImprovementPlanEditRecord | null;
+  if (!plan) {
+    throw new AppError("NOT_FOUND", "Improvement plan not found", 404);
+  }
+
+  return plan;
+}
+
+async function loadPlanCheckInContextRecord(
+  planId: string,
+  orgId: string,
+  db: ImprovementPlanDb,
+): Promise<ImprovementPlanCheckInContextRecord> {
+  const planRecord = await db.improvementPlan.findFirst({
+    where: {
+      id: planId,
+      orgId,
+    },
+    select: {
+      id: true,
+      orgId: true,
+      subjectEmployeeId: true,
+      managerEmployeeId: true,
+      hrOwnerEmployeeId: true,
+      triggerSource: true,
+      reviewCycleId: true,
+      calibrationSessionId: true,
+      status: true,
+      outcome: true,
+      startDate: true,
+      endDate: true,
+      checkIns: {
+        select: {
+          id: true,
+          checkInType: true,
+          checkInAt: true,
+        },
+        orderBy: {
+          checkInAt: "asc",
+        },
+      },
+    },
+  });
+
+  const plan = planRecord as ImprovementPlanCheckInContextRecord | null;
   if (!plan) {
     throw new AppError("NOT_FOUND", "Improvement plan not found", 404);
   }
@@ -1385,6 +1772,7 @@ function mapCheckInRecord(record: ImprovementPlanCheckInRecord): ImprovementPlan
       : record.authorUser.email,
     authorUserId: record.authorUser.id,
     note: record.content,
+    checkInType: record.checkInType,
     timestamp: record.checkInAt.toISOString(),
     status: record.status,
     outcome: record.outcome,
@@ -1415,6 +1803,17 @@ function buildAuditDescription(
   }
 
   if (action === "IMPROVEMENT_PLAN_CHECKIN_CREATED") {
+    const checkInType =
+      typeof metadata?.checkInType === "string" ? metadata.checkInType : ImprovementPlanCheckInType.NOTE;
+
+    if (
+      checkInType === ImprovementPlanCheckInType.CHECKPOINT_30 ||
+      checkInType === ImprovementPlanCheckInType.CHECKPOINT_60 ||
+      checkInType === ImprovementPlanCheckInType.CHECKPOINT_90
+    ) {
+      return `Recorded the ${checkpointTypeMetadata[checkInType].label.toLowerCase()}.`;
+    }
+
     return "Added a timeline check-in update.";
   }
 
@@ -1444,6 +1843,7 @@ function buildAuditDescription(
 const checkInSelection = {
   id: true,
   content: true,
+  checkInType: true,
   status: true,
   outcome: true,
   checkInAt: true,
@@ -1461,3 +1861,73 @@ const checkInSelection = {
     },
   },
 };
+
+function deriveTriggerSource(
+  reviewCycleId: string | null,
+  calibrationSessionId: string | null,
+): ImprovementPlanTrigger {
+  if (reviewCycleId && calibrationSessionId) {
+    return ImprovementPlanTrigger.REVIEW_AND_CALIBRATION;
+  }
+
+  if (calibrationSessionId) {
+    return ImprovementPlanTrigger.CALIBRATION;
+  }
+
+  return ImprovementPlanTrigger.REVIEW;
+}
+
+function enforceCheckpointSequence(
+  existingCheckIns: ImprovementPlanCheckInContextRecord["checkIns"],
+  nextType: StructuredCheckpointType,
+): void {
+  if (nextType === ImprovementPlanCheckInType.CHECKPOINT_30) {
+    return;
+  }
+
+  if (
+    nextType === ImprovementPlanCheckInType.CHECKPOINT_60 &&
+    !existingCheckIns.some((entry) => entry.checkInType === ImprovementPlanCheckInType.CHECKPOINT_30)
+  ) {
+    throw new AppError(
+      "INVALID_WORKFLOW_STATE",
+      "Record the 30-day checkpoint before recording the 60-day checkpoint",
+      409,
+    );
+  }
+
+  if (
+    nextType === ImprovementPlanCheckInType.CHECKPOINT_90 &&
+    !existingCheckIns.some((entry) => entry.checkInType === ImprovementPlanCheckInType.CHECKPOINT_60)
+  ) {
+    throw new AppError(
+      "INVALID_WORKFLOW_STATE",
+      "Record the 60-day checkpoint before recording the 90-day checkpoint",
+      409,
+    );
+  }
+}
+
+function buildCheckpointSchedule(
+  startDate: Date,
+  checkIns: ImprovementPlanCheckInRecord[],
+): ImprovementPlanCheckpointScheduleItem[] {
+  return checkpointTypes.map((type) => {
+    const matchingCheckIn = checkIns.find((entry) => entry.checkInType === type);
+    const metadata = checkpointTypeMetadata[type];
+
+    return {
+      type,
+      label: metadata.label,
+      targetDate: new Date(
+        startDate.getTime() + metadata.offsetDays * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+      completedAt: matchingCheckIn?.checkInAt.toISOString() ?? null,
+      completedByName: matchingCheckIn
+        ? matchingCheckIn.authorUser.employee
+          ? `${matchingCheckIn.authorUser.employee.firstName} ${matchingCheckIn.authorUser.employee.lastName}`
+          : matchingCheckIn.authorUser.email
+        : null,
+    };
+  });
+}

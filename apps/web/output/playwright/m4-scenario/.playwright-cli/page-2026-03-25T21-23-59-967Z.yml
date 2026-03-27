@@ -1,0 +1,188 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Calibration" [ref=e18] [cursor=pointer]:
+            - /url: /performance/calibration
+            - img [ref=e20]
+            - generic [ref=e27]: Calibration
+            - tooltip "Calibration"
+          - link "Help" [ref=e28] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e30]
+            - generic [ref=e34]: Help
+            - tooltip "Help"
+    - main [ref=e35]:
+      - generic [ref=e37]:
+        - button "Current organization" [disabled] [ref=e38]:
+          - generic [ref=e39]: O
+          - generic [ref=e40]: MCEL Sandbox Organization
+          - img [ref=e41]
+        - button "Lisa Letto Lisa Letto Super Admin" [ref=e44]:
+          - generic "Lisa Letto" [ref=e45]: LL
+          - generic [ref=e46]:
+            - generic [ref=e47]: Lisa Letto
+            - generic [ref=e48]: Super Admin
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - paragraph [ref=e53]: Calibration Session
+            - heading "Sandbox Workflow Validation Session" [level=1] [ref=e54]
+            - paragraph [ref=e55]: Calibration aligns managers on how performance and potential are evaluated across the cohort after review submissions are locked.
+            - generic [ref=e57]:
+              - generic [ref=e58]: Sandbox 2026 Calibration Ready
+              - generic [ref=e59]: In progress
+          - generic [ref=e61]:
+            - button "Export Snapshot" [ref=e62]
+            - button "Finalize Session" [ref=e63]
+        - status [ref=e64]: Calibration aligns reviewers on performance and potential placements for this cycle before outcomes are finalized.
+        - generic [ref=e65]:
+          - button "Toggle finalized and locked guidance" [ref=e66]:
+            - generic [ref=e67]:
+              - generic [ref=e68]: i
+              - generic [ref=e69]: What finalized/locked means
+            - generic [ref=e70]:
+              - text: Tips
+              - img [ref=e71]
+          - generic [ref=e73]: Finalizing captures an immutable snapshot and locks placement controls. Context links remain viewable after lock, and Super Admin downstream succession/risk outputs become available from the finalized snapshot.
+        - generic [ref=e74]:
+          - generic [ref=e75]:
+            - generic [ref=e78]:
+              - heading "Succession outputs" [level=2] [ref=e79]
+              - paragraph [ref=e80]: Finalize the session to capture restricted succession outputs.
+            - generic [ref=e82]:
+              - heading "No finalized succession outputs" [level=2] [ref=e83]
+              - paragraph [ref=e84]: Succession outputs are derived only from the finalized calibration snapshot.
+          - generic [ref=e85]:
+            - generic [ref=e88]:
+              - heading "Risk outputs" [level=2] [ref=e89]
+              - paragraph [ref=e90]: Finalize the session to capture restricted risk outputs.
+            - generic [ref=e92]:
+              - heading "No finalized risk outputs" [level=2] [ref=e93]
+              - paragraph [ref=e94]: Risk outputs are reserved for restricted Super Admin follow-up after finalization.
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - button "Toggle performance definitions" [ref=e97]:
+              - generic [ref=e98]:
+                - generic [ref=e99]: i
+                - generic [ref=e100]: Performance definitions
+              - generic [ref=e101]:
+                - text: Tips
+                - img [ref=e102]
+            - list [ref=e105]:
+              - listitem [ref=e106]:
+                - generic [ref=e107]: "Needs support:"
+                - text: Consistently below this cycle's expectations.
+              - listitem [ref=e108]:
+                - generic [ref=e109]: "Meets expectations:"
+                - text: Delivers solid results at the expected level.
+              - listitem [ref=e110]:
+                - generic [ref=e111]: "Exceeds expectations:"
+                - text: Delivers standout results beyond expected scope.
+          - generic [ref=e112]:
+            - button "Toggle potential definitions" [ref=e113]:
+              - generic [ref=e114]:
+                - generic [ref=e115]: i
+                - generic [ref=e116]: Potential definitions
+              - generic [ref=e117]:
+                - text: Tips
+                - img [ref=e118]
+            - list [ref=e121]:
+              - listitem [ref=e122]:
+                - generic [ref=e123]: "Current scope:"
+                - text: Effective in the current scope with limited near-term expansion.
+              - listitem [ref=e124]:
+                - generic [ref=e125]: "Growth ready:"
+                - text: Can take broader scope with coaching and support.
+              - listitem [ref=e126]:
+                - generic [ref=e127]: "Accelerated growth:"
+                - text: Shows strong readiness for larger and more complex scope.
+        - generic [ref=e128]:
+          - generic [ref=e130]:
+            - generic [ref=e133]:
+              - heading "9-box matrix" [level=2] [ref=e134]
+              - paragraph [ref=e135]: Select a cohort member to view context and adjust placement.
+            - table [ref=e138]:
+              - rowgroup [ref=e139]:
+                - row "Potential \\ Performance Needs support Meets expectations Exceeds expectations" [ref=e140]:
+                  - columnheader "Potential \\ Performance" [ref=e141]
+                  - columnheader "Needs support" [ref=e142]
+                  - columnheader "Meets expectations" [ref=e143]
+                  - columnheader "Exceeds expectations" [ref=e144]
+              - rowgroup [ref=e145]:
+                - row "Accelerated growth No members No members Select Ted Tederoff placement" [ref=e213]:
+                  - rowheader "Accelerated growth" [ref=e147]
+                  - cell "No members" [ref=e148]:
+                    - paragraph [ref=e149]: No members
+                  - cell "No members" [ref=e150]:
+                    - paragraph [ref=e151]: No members
+                  - cell "Select Ted Tederoff placement" [ref=e214]:
+                    - button "Select Ted Tederoff placement" [ref=e216]:
+                      - paragraph [ref=e217]: Ted Tederoff
+                      - paragraph [ref=e218]: "Manager: Elliot Mah"
+                - row "Growth ready No members No members No members" [ref=e219]:
+                  - rowheader "Growth ready" [ref=e155]
+                  - cell "No members" [ref=e156]:
+                    - paragraph [ref=e157]: No members
+                  - cell "No members" [ref=e220]:
+                    - paragraph [ref=e221]: No members
+                  - cell "No members" [ref=e163]:
+                    - paragraph [ref=e164]: No members
+                - row "Current scope No members No members No members" [ref=e165]:
+                  - rowheader "Current scope" [ref=e166]
+                  - cell "No members" [ref=e167]:
+                    - paragraph [ref=e168]: No members
+                  - cell "No members" [ref=e169]:
+                    - paragraph [ref=e170]: No members
+                  - cell "No members" [ref=e171]:
+                    - paragraph [ref=e172]: No members
+          - complementary [ref=e173]:
+            - heading "Participant Context" [level=2] [ref=e174]
+            - paragraph [ref=e175]: Review participant context and adjust placement.
+            - generic [ref=e177]:
+              - generic [ref=e178]:
+                - heading "Ted Tederoff" [level=2] [ref=e179]
+                - paragraph [ref=e180]: "Manager: Elliot Mah"
+              - tablist "Calibration drawer tabs" [ref=e181]:
+                - tab "This cycle" [selected] [ref=e182]
+                - tab "Previous cycles" [ref=e183]
+              - generic [ref=e184]:
+                - generic [ref=e186]:
+                  - heading "Submission summary" [level=3] [ref=e187]
+                  - paragraph [ref=e188]: 2 of 2 submissions completed.
+                - generic [ref=e190]:
+                  - generic [ref=e191]:
+                    - heading "Move to box" [level=3] [ref=e192]
+                    - paragraph [ref=e193]: Set performance and potential buckets for this participant.
+                  - generic [ref=e194]:
+                    - generic [ref=e195]:
+                      - text: Performance
+                      - combobox "Performance" [ref=e196]:
+                        - option "Needs support"
+                        - option "Meets expectations"
+                        - option "Exceeds expectations" [selected]
+                    - generic [ref=e197]:
+                      - text: Potential
+                      - combobox "Potential" [ref=e198]:
+                        - option "Accelerated growth" [selected]
+                        - option "Growth ready"
+                        - option "Current scope"
+                    - generic [ref=e199]:
+                      - text: Justification notes
+                      - textbox "Justification notes" [ref=e200]:
+                        - /placeholder: Capture rationale for this placement...
+                        - text: Validated in the sandbox as a high-performing employee with stronger readiness for broader ownership after review completion.
+                    - button "Save placement" [ref=e201]
+  - button "Open Next.js Dev Tools" [ref=e207] [cursor=pointer]:
+    - img [ref=e208]
+  - alert [ref=e212]

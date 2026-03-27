@@ -10,7 +10,7 @@ import { Modal } from "@/components/ui/modal";
 import { Toast } from "@/components/ui/toast";
 
 interface DemoRoleTile {
-  role: "HR_ADMIN" | "CALIBRATOR" | "MANAGER" | "EMPLOYEE";
+  role: "HR_ADMIN" | "SUPER_ADMIN" | "MANAGER" | "EMPLOYEE";
   label: string;
   subtitle: string;
   testId: string;

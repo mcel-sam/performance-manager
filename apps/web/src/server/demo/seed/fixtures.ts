@@ -59,10 +59,10 @@ export const demoPeople: DemoPerson[] = [
     storyKey: "MANAGER_SOLID",
   },
   {
-    userId: "user_calibrator_1",
-    employeeId: "emp_calibrator_1",
+    userId: "user_super_admin_1",
+    employeeId: "emp_super_admin_1",
     email: "casey.romero@ironcrest.example",
-    role: UserRole.CALIBRATOR,
+    role: UserRole.SUPER_ADMIN,
     firstName: "Casey",
     lastName: "Romero",
     department: "Admin/Finance",
@@ -310,7 +310,7 @@ export const demoPeople: DemoPerson[] = [
 export const demoQuestions: DemoQuestion[] = [
   {
     id: "template_q_1",
-    prompt: "What impact did this employee deliver this year?",
+    prompt: "What were your most meaningful accomplishments and business results this cycle?",
     questionType: ReviewQuestionType.TEXT,
     dimensionKey: null,
     isRequired: true,
@@ -318,7 +318,8 @@ export const demoQuestions: DemoQuestion[] = [
   },
   {
     id: "template_q_2",
-    prompt: "What growth priorities should this employee focus on next year?",
+    prompt:
+      "What strengths, development priorities, and future growth interests should shape the next cycle?",
     questionType: ReviewQuestionType.TEXT,
     dimensionKey: null,
     isRequired: true,
@@ -763,7 +764,7 @@ export const demoStoryProfiles: Record<DemoStoryKey, DemoStoryProfile> = {
 
 export const calibrationParticipants = [
   "user_hr_admin_1",
-  "user_calibrator_1",
+  "user_super_admin_1",
   "user_manager_1",
   "user_manager_2",
 ] as const;
@@ -938,8 +939,8 @@ export const demoCycleConfig = {
   visibilityPolicy: CycleVisibilityPolicy.EMPLOYEE_AFTER_RELEASE,
   startDate: new Date("2026-01-01T00:00:00.000Z"),
   endDate: new Date("2026-12-31T00:00:00.000Z"),
-  peerReviewCount: 1,
-  upwardReviewCount: 1,
+  peerReviewCount: 0,
+  upwardReviewCount: 0,
 } as const;
 
 export const demoCalibrationConfig = {

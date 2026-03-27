@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
 import GrowTrackForm from "@/components/admin/grow-track-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getGrowAdminCatalog } from "@/server/grow/grow-service";
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminGrowTrackNewPage() {
   const context = await getDevRequestContext();
-  if (context.role !== UserRole.HR_ADMIN) {
+  if (!hasHrAdminAccess(context.role)) {
     redirect("/");
   }
 

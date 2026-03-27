@@ -1,0 +1,132 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e33]:
+    - complementary [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - generic [ref=e38]: PM
+          - button "Expand navigation" [ref=e39]:
+            - img [ref=e40]
+        - navigation [ref=e42]:
+          - link "Home" [ref=e43] [cursor=pointer]:
+            - /url: /
+            - img [ref=e45]
+            - generic [ref=e47]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e48] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e50]
+            - generic [ref=e57]: Goals
+            - tooltip "Goals"
+          - link "My Team" [ref=e58] [cursor=pointer]:
+            - /url: /performance/team-reviews
+            - img [ref=e60]
+            - generic [ref=e65]: My Team
+            - tooltip "My Team"
+          - link "Reviews" [ref=e66] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e68]
+            - generic [ref=e71]: Reviews
+            - tooltip "Reviews"
+          - link "Improvement Plans" [ref=e72] [cursor=pointer]:
+            - /url: /performance/improvement-plans
+            - img [ref=e74]
+            - generic [ref=e77]: Improvement Plans
+            - tooltip "Improvement Plans"
+          - link "Help" [ref=e78] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e80]
+            - generic [ref=e84]: Help
+            - tooltip "Help"
+    - main [ref=e85]:
+      - generic [ref=e86]:
+        - generic [ref=e87]:
+          - generic [ref=e88]: Workspace
+          - generic [ref=e89]: Home
+        - generic [ref=e90]:
+          - button "Current organization" [disabled] [ref=e91]:
+            - generic [ref=e92]: O
+            - generic [ref=e93]: MCEL Sandbox Organization
+            - img [ref=e94]
+          - button "Elliot Mah Elliot Mah Manager" [ref=e97]:
+            - generic "Elliot Mah" [ref=e98]: EM
+            - generic [ref=e99]:
+              - generic [ref=e100]: Elliot Mah
+              - generic [ref=e101]: Manager
+      - generic [ref=e103]:
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - generic "Elliot Mah" [ref=e107]: EM
+            - generic [ref=e108]:
+              - heading "Performance workflows by role" [level=2] [ref=e109]
+              - heading "Hi, Elliot!" [level=1] [ref=e110]
+              - paragraph [ref=e111]: Manager, Enterprise Applications • Information Technology
+          - generic [ref=e112]:
+            - generic [ref=e113]: Manager
+            - generic [ref=e114]: 0 reviews waiting
+            - generic [ref=e115]: 1 direct report
+        - generic [ref=e117]:
+          - generic [ref=e118]: Home
+          - link "My team" [ref=e119] [cursor=pointer]:
+            - /url: /performance/team-reviews
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - generic [ref=e123]:
+              - generic [ref=e124]:
+                - heading "Start here" [level=3] [ref=e125]
+                - paragraph [ref=e126]: Manage direct reports from My Team first, then complete review tasks, calibration, and coaching follow-through.
+              - generic [ref=e127]: 2 suggested
+            - generic [ref=e128]:
+              - link "Team workspace My Team Track direct reports, packets, and next review steps from one place. My Team first" [ref=e129] [cursor=pointer]:
+                - /url: /performance/team-reviews
+                - img [ref=e131]
+                - generic [ref=e136]:
+                  - generic [ref=e138]: Team workspace
+                  - paragraph [ref=e140]: My Team
+                  - paragraph [ref=e141]: Track direct reports, packets, and next review steps from one place.
+                  - generic [ref=e143]: My Team first
+                - generic [ref=e144]: ›
+              - link "Task queue Review queue Open every assigned manager review in one queue. My Team first" [ref=e145] [cursor=pointer]:
+                - /url: /performance/reviews
+                - img [ref=e147]
+                - generic [ref=e154]:
+                  - generic [ref=e156]: Task queue
+                  - paragraph [ref=e158]: Review queue
+                  - paragraph [ref=e159]: Open every assigned manager review in one queue.
+                  - generic [ref=e161]: My Team first
+                - generic [ref=e162]: ›
+          - generic [ref=e163]:
+            - generic [ref=e164]:
+              - generic [ref=e165]:
+                - heading "My team" [level=3] [ref=e166]
+                - generic [ref=e167]: Live snapshot
+              - generic [ref=e168]:
+                - generic [ref=e169]:
+                  - text: Direct reports
+                  - paragraph [ref=e170]: "1"
+                - generic [ref=e171]:
+                  - text: Awaiting manager review
+                  - paragraph [ref=e172]: "0"
+                - generic [ref=e173]:
+                  - text: Self reviews not started
+                  - paragraph [ref=e174]: "0"
+            - generic [ref=e175]:
+              - heading "Org snapshot" [level=3] [ref=e176]
+              - paragraph [ref=e177]: Keep the people behind the work visible while you move through reviews.
+              - generic [ref=e178]:
+                - generic "Freddie Martinez" [ref=e179]: FM
+                - generic [ref=e180]:
+                  - paragraph [ref=e181]: Manager
+                  - paragraph [ref=e182]: Freddie Martinez
+                  - paragraph [ref=e183]: Chief Technology Officer
+              - group [ref=e184]:
+                - generic "Team 1 teammates Ted Tederoff View all" [ref=e185] [cursor=pointer]:
+                  - generic [ref=e186]:
+                    - generic [ref=e187]:
+                      - paragraph [ref=e188]: Team
+                      - paragraph [ref=e189]: 1 teammates
+                    - generic [ref=e190]:
+                      - generic "Ted Tederoff" [ref=e192]: TT
+                      - generic [ref=e193]: View all
+  - button "Open Next.js Dev Tools" [ref=e27] [cursor=pointer]:
+    - img [ref=e28]
+  - alert [ref=e32]

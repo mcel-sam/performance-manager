@@ -84,7 +84,7 @@ export default async function GoalsPage({
 
   return (
     <GoalsWorkspace
-      auth={{ userId: context.userId, orgId: context.orgId }}
+      auth={{ userId: context.userId, orgId: context.orgId, role: context.role }}
       cycles={cycles}
       selectedCycleId={selectedCycleId}
       filters={{

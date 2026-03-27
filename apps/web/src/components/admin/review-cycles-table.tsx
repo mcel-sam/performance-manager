@@ -17,6 +17,7 @@ import {
   TableWrapper,
 } from "@/components/ui/table";
 import { Toast } from "@/components/ui/toast";
+import { formatStableDate } from "@/lib/dates/stable-format";
 
 interface ReviewCycleRow {
   id: string;
@@ -130,7 +131,7 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
             : row,
         ),
       );
-      setMessage(`Cycle moved to ${payload.status}.`);
+      setMessage(`Cycle moved to ${humanizeCycleStatus(payload.status)}.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to transition cycle status");
     } finally {
@@ -162,17 +163,20 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
                   <TableRow key={cycle.id}>
                     <TableCell>
                       <p className="font-semibold text-slate-900">{cycle.name}</p>
-                      <p className="text-xs text-slate-500">{cycle.id}</p>
+                      <p className="text-xs text-slate-500">
+                        {humanizeCycleStatus(cycle.status)} cycle
+                      </p>
                     </TableCell>
                     <TableCell className="text-slate-700">
-                      {new Date(cycle.startDate).toLocaleDateString()} -{" "}
-                      {new Date(cycle.endDate).toLocaleDateString()}
+                      {formatStableDate(cycle.startDate)} - {formatStableDate(cycle.endDate)}
                     </TableCell>
                     <TableCell>
-                      <StatusChip tone={getCycleStatusTone(cycle.status)}>{cycle.status}</StatusChip>
+                      <StatusChip tone={getCycleStatusTone(cycle.status)}>
+                        {humanizeCycleStatus(cycle.status)}
+                      </StatusChip>
                     </TableCell>
                     <TableCell className="text-slate-700">
-                      Peer: {cycle.peerReviewCount} | Upward: {cycle.upwardReviewCount}
+                      Self + Manager
                       <p className="mt-1 text-xs text-slate-500">
                         Self due: {formatDueDate(cycle.selfReviewDueAt)}
                       </p>
@@ -188,9 +192,7 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
                       </p>
                       <p>
                         Types: Self {cycle.submissionRelationshipCounts.SELF} / Manager{" "}
-                        {cycle.submissionRelationshipCounts.MANAGER} / Peer{" "}
-                        {cycle.submissionRelationshipCounts.PEER} / Upward{" "}
-                        {cycle.submissionRelationshipCounts.UPWARD}
+                        {cycle.submissionRelationshipCounts.MANAGER}
                       </p>
                     </TableCell>
                     <TableCell>
@@ -208,7 +210,7 @@ export default function ReviewCyclesTable({ cycles, auth }: ReviewCyclesTablePro
                           disabled={isBusy || !nextStatus}
                           onClick={() => void handleTransition(cycle.id, cycle.status)}
                         >
-                          {nextStatus ? `Move to ${nextStatus}` : "Final"}
+                          {nextStatus ? getCycleTransitionLabel(nextStatus) : "Final"}
                         </Button>
                         <Link href={`/admin/performance/reporting?cycleId=${cycle.id}&tab=progress`}>
                           <Button size="sm" variant="outline">
@@ -242,5 +244,33 @@ function formatDueDate(value: string | null): string {
     return "—";
   }
 
-  return new Date(value).toLocaleDateString();
+  return formatStableDate(value);
+}
+
+function humanizeCycleStatus(status: CycleStatus): string {
+  switch (status) {
+    case CycleStatus.DRAFT:
+      return "Draft";
+    case CycleStatus.ACTIVE:
+      return "Active";
+    case CycleStatus.LOCKED:
+      return "Locked";
+    case CycleStatus.RELEASED:
+      return "Released";
+    default:
+      return status;
+  }
+}
+
+function getCycleTransitionLabel(status: CycleStatus): string {
+  switch (status) {
+    case CycleStatus.ACTIVE:
+      return "Launch cycle";
+    case CycleStatus.LOCKED:
+      return "Lock cycle";
+    case CycleStatus.RELEASED:
+      return "Release packets";
+    default:
+      return `Move to ${humanizeCycleStatus(status)}`;
+  }
 }

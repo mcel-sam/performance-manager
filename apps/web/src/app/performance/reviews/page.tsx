@@ -14,6 +14,7 @@ import { withReturnTo } from "@/lib/navigation/return-to";
 import {
   getReviewRelationshipAudienceLabel,
   getReviewRelationshipHelpText,
+  isVanillaReviewRelationship,
 } from "@/lib/reviews/review-copy";
 import {
   Table,
@@ -51,7 +52,7 @@ const statusLabel = {
 } as const;
 
 const statusFilterOptions: StatusFilter[] = ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED", "RETURNED"];
-const relationshipFilterOptions: RelationshipFilter[] = ["SELF", "MANAGER", "PEER", "UPWARD"];
+const relationshipFilterOptions: RelationshipFilter[] = ["SELF", "MANAGER"];
 
 export default async function PerformanceReviewsPage({
   searchParams,
@@ -61,7 +62,9 @@ export default async function PerformanceReviewsPage({
   const context = await getDevRequestContext();
   const rawSearchParams = await searchParams;
   const filters = parseReviewTaskFilters(rawSearchParams);
-  const tasks = await listAssignedReviewTasks(context);
+  const tasks = (await listAssignedReviewTasks(context)).filter((task) =>
+    isVanillaReviewRelationship(task.relationship),
+  );
   const filteredTasks = tasks.filter((task) => matchesTaskFilters(task, filters));
   const statusSummary = summarizeTaskStatuses(filteredTasks);
   const selectedTaskId = filters.taskId;
@@ -73,12 +76,11 @@ export default async function PerformanceReviewsPage({
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 text-slate-900">
       <PageHeader
         title="Performance Reviews"
-        description="Review the submissions assigned to you, filter the queue, and continue the next task that needs attention."
+        description="Review the submissions assigned to you, filter the list, and either continue work in progress or reference submitted reviews."
       />
 
       <FilterBar
         method="get"
-        description="Search by subject or cycle, then narrow the queue by status or who you're reviewing."
         chips={
           filterChips.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2" data-testid="reviews-filter-chips">
@@ -143,46 +145,14 @@ export default async function PerformanceReviewsPage({
         </div>
       </FilterBar>
 
-      <Card>
-        <CardContent className="flex flex-wrap items-center gap-2 px-4 py-3 text-xs text-slate-600 sm:px-5">
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-semibold text-slate-700">
-            {filteredTasks.length} tasks
-          </span>
-          <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 font-semibold text-amber-800">
-            {statusSummary.returned} returned
-          </span>
-          <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 font-semibold text-sky-800">
-            {statusSummary.inProgress} in progress
-          </span>
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800">
-            {statusSummary.submitted} submitted
-          </span>
-          {selectedTask ? (
-            <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-800">
-              Selected: {selectedTask.subjectName}
-            </span>
-          ) : null}
-        </CardContent>
-      </Card>
+      <TaskStatusSummaryCard selectedTask={selectedTask} statusSummary={statusSummary} taskCount={filteredTasks.length} />
 
       {tasks.length === 0 ? (
         <EmptyState
           aria-label="Empty review task state"
           title="No assigned review tasks"
-          description="Assigned submissions appear after HR generates cycle assignments. Use the help center for next steps and visibility rules."
+          description="Assigned submissions appear after HR generates cycle assignments for an active review cycle."
           icon={<span aria-hidden="true">🗂</span>}
-          nextSteps={[
-            "Ask HR to generate assignments for an active cycle.",
-            "Review cycle status and visibility expectations in the help center.",
-          ]}
-          action={
-            <Link
-              href="/help"
-              className="text-sm font-medium text-slate-700 underline underline-offset-4 transition hover:text-slate-900"
-            >
-              Review help center
-            </Link>
-          }
         />
       ) : filteredTasks.length === 0 ? (
         <EmptyState
@@ -200,11 +170,11 @@ export default async function PerformanceReviewsPage({
         />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-          <Card aria-label="My review tasks" className="overflow-hidden">
+          <Card aria-label="My review activity" className="overflow-hidden">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-lg">My review tasks</CardTitle>
+              <CardTitle className="text-lg">My review activity</CardTitle>
               <CardDescription>
-                Assigned submissions stay in one queue. Open a row for task details or launch the review directly.
+                Open a row to check the status, due date, and next action for each assigned review.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -249,7 +219,6 @@ export default async function PerformanceReviewsPage({
                               className="inline-flex flex-col rounded-[var(--radius-sm)] px-2 py-1 text-left transition hover:bg-white"
                             >
                               <span className="text-sm font-semibold text-slate-900">{task.subjectName}</span>
-                              <span className="text-xs text-slate-500">Open details</span>
                             </Link>
                           </TableCell>
                           <TableCell>
@@ -279,7 +248,7 @@ export default async function PerformanceReviewsPage({
                                 }),
                               )}
                             >
-                              <Button size="sm">Open Review</Button>
+                              <Button size="sm">{getReviewActionLabel(task.status)}</Button>
                             </Link>
                           </TableCell>
                         </TableRow>
@@ -356,7 +325,7 @@ export default async function PerformanceReviewsPage({
                         )}
                       >
                         <Button size="sm" className="w-full" data-testid="reviews-drawer-open-review">
-                          Open Review
+                          {getReviewActionLabel(selectedTask.status)}
                         </Button>
                       </Link>
                     </div>
@@ -406,7 +375,7 @@ export default async function PerformanceReviewsPage({
               <CardHeader className="space-y-2">
                 <CardTitle className="text-lg">Task details</CardTitle>
                 <CardDescription>
-                  Select a task from the queue to review its status, due date, and next action.
+                  Select a task to view its status, due date, and next step.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -490,6 +459,63 @@ function summarizeTaskStatuses(tasks: ReviewTaskListItem[]): {
   );
 }
 
+function TaskStatusSummaryCard({
+  selectedTask,
+  statusSummary,
+  taskCount,
+}: {
+  selectedTask: ReviewTaskListItem | null;
+  statusSummary: ReturnType<typeof summarizeTaskStatuses>;
+  taskCount: number;
+}) {
+  const statusBadges = [
+    statusSummary.returned > 0
+      ? {
+          key: "returned",
+          label: `${statusSummary.returned} returned`,
+          className:
+            "rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 font-semibold text-amber-800",
+        }
+      : null,
+    statusSummary.inProgress > 0
+      ? {
+          key: "in-progress",
+          label: `${statusSummary.inProgress} in progress`,
+          className:
+            "rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 font-semibold text-sky-800",
+        }
+      : null,
+    statusSummary.submitted > 0
+      ? {
+          key: "submitted",
+          label: `${statusSummary.submitted} submitted`,
+          className:
+            "rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800",
+        }
+      : null,
+  ].filter(Boolean) as Array<{ key: string; label: string; className: string }>;
+
+  return (
+    <Card>
+      <CardContent className="flex flex-wrap items-center gap-2 px-4 py-3 text-xs text-slate-600 sm:px-5">
+        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-semibold text-slate-700">
+          {taskCount} tasks
+        </span>
+        {statusBadges.map((badge) => (
+          <span key={badge.key} className={badge.className}>
+            {badge.label}
+          </span>
+        ))}
+        {selectedTask ? (
+          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-800">
+            Selected: {selectedTask.subjectName}
+          </span>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 function buildFilterChips(filters: ReviewTaskFilters): Array<{
   key: string;
   label: string;
@@ -565,6 +591,20 @@ function toReviewsHref(filters: {
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(value));
+}
+
+function getReviewActionLabel(status: ReviewSubmissionStatus): string {
+  switch (status) {
+    case "NOT_STARTED":
+      return "Start review";
+    case "IN_PROGRESS":
+    case "RETURNED":
+      return "Continue review";
+    case "SUBMITTED":
+      return "View review";
+    default:
+      return "Open review";
+  }
 }
 
 function buildTaskTimeline(task: ReviewTaskListItem): Array<{ label: string; time: string }> {

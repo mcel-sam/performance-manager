@@ -117,7 +117,7 @@ To reduce training/support burden, the product must include:
 - EMPLOYEE
 - MANAGER
 - HR_ADMIN
-- CALIBRATOR (optional)
+- SUPER_ADMIN
 
 ### Relationship-based access
 - Employees can access:
@@ -150,7 +150,7 @@ Succession planning is a restricted module with locked access rules for the MVP.
 - HR_ADMIN
 - MANAGER
 - EMPLOYEE
-- CALIBRATOR
+- SUPER_ADMIN
 
 **HR Admin**
 - Full read/write access to all succession data within the org
@@ -172,8 +172,9 @@ Succession planning is a restricted module with locked access rules for the MVP.
 **Employee**
 - No access to succession planning in MVP
 
-**Calibrator**
-- No succession planning access in MVP unless explicitly added in a later release
+**Super Admin**
+- Access to restricted succession and risk outputs is governed through calibration and other restricted talent workflows
+- Broad standalone succession administration remains out of vanilla scope
 
 **Sensitive succession fields**
 - Candidate `risk_of_loss` and `confidence` are stored in the data model but are HR-only by default
@@ -302,7 +303,7 @@ The reference flow shows a 9-box grid with avatars, filters for axes, and a righ
 - Configure axes:
   - X: performance rating buckets
   - Y: potential buckets
-- Add participants (HR, managers, calibrators)
+- Add participants (HR admins, managers, super admins)
 
 ## D2. Calibration workspace (Participants)
 **Requirements**

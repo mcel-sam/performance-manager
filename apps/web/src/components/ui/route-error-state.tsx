@@ -29,13 +29,13 @@ export function RouteErrorState({
 
   return (
     <div {...props} className={cn("mx-auto w-full", maxWidthClassName, className)}>
-      <Card className="border-rose-200 bg-rose-50/45">
+      <Card className="border-[var(--color-status-danger-border)] bg-[var(--color-status-danger-surface)]">
         <CardHeader>
-          <CardTitle className="text-rose-900">{title}</CardTitle>
-          {description ? <CardDescription className="text-rose-800">{description}</CardDescription> : null}
+          <CardTitle className="text-[var(--color-status-danger)]">{title}</CardTitle>
+          {description ? <CardDescription className="text-[var(--color-status-danger)]">{description}</CardDescription> : null}
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm leading-6 text-rose-800">{errorMessage}</p>
+          <p className="text-sm leading-6 text-[var(--color-status-danger)]">{errorMessage}</p>
           <Button type="button" variant="danger" onClick={onRetry}>
             {retryLabel}
           </Button>
@@ -44,4 +44,3 @@ export function RouteErrorState({
     </div>
   );
 }
-

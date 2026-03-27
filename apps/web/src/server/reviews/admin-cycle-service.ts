@@ -8,6 +8,7 @@ import {
 } from "@prisma/client";
 import { z } from "zod";
 
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
 import {
@@ -318,7 +319,7 @@ const nextCycleStatusMap: Record<CycleStatus, CycleStatus | null> = {
 };
 
 function requireHrAdmin(context: AdminContext): void {
-  if (context.role !== UserRole.HR_ADMIN) {
+  if (!hasHrAdminAccess(context.role)) {
     throw new AppError("FORBIDDEN", "Only HR admins can perform this action", 403);
   }
 }
@@ -490,6 +491,10 @@ export async function createReviewCycle(
 
   const scorecardMetrics = resolveScorecardMetricConfig(parsed.data.scorecardMetrics);
   const endDate = new Date(parsed.data.endDate);
+  const selfReviewDueAt = parsed.data.selfReviewDueAt ? new Date(parsed.data.selfReviewDueAt) : endDate;
+  const managerReviewDueAt = parsed.data.managerReviewDueAt
+    ? new Date(parsed.data.managerReviewDueAt)
+    : endDate;
   const cycle = await db.reviewCycle.create({
     data: {
       orgId: context.orgId,
@@ -500,18 +505,14 @@ export async function createReviewCycle(
       visibilityPolicy: parsed.data.visibilityPolicy,
       selfReviewRequired: parsed.data.selfReviewRequired,
       managerReviewRequired: parsed.data.managerReviewRequired,
-      peerReviewCount: parsed.data.peerReviewCount,
-      peerAssignmentMode: parsed.data.peerAssignmentMode,
-      upwardReviewCount: parsed.data.upwardReviewCount,
-      upwardReviewsForManagersOnly: parsed.data.upwardReviewsForManagersOnly,
-      selfReviewDueAt: parsed.data.selfReviewDueAt ? new Date(parsed.data.selfReviewDueAt) : endDate,
-      managerReviewDueAt: parsed.data.managerReviewDueAt
-        ? new Date(parsed.data.managerReviewDueAt)
-        : endDate,
-      peerReviewDueAt: parsed.data.peerReviewDueAt ? new Date(parsed.data.peerReviewDueAt) : endDate,
-      upwardReviewDueAt: parsed.data.upwardReviewDueAt
-        ? new Date(parsed.data.upwardReviewDueAt)
-        : endDate,
+      peerReviewCount: 0,
+      peerAssignmentMode: PeerAssignmentMode.HR_ASSIGNED,
+      upwardReviewCount: 0,
+      upwardReviewsForManagersOnly: true,
+      selfReviewDueAt,
+      managerReviewDueAt,
+      peerReviewDueAt: null,
+      upwardReviewDueAt: null,
       scorecardMetrics: {
         create: scorecardMetrics.map((metric) => ({
           orgId: context.orgId,
@@ -533,7 +534,7 @@ export async function createReviewCycle(
         name: cycle.name,
         status: cycle.status,
         scorecardMetricCount: scorecardMetrics.length,
-        peerAssignmentMode: cycle.peerAssignmentMode,
+        reviewMix: ["SELF", "MANAGER"],
       },
     },
   });
@@ -633,8 +634,6 @@ export async function generateCycleArtifacts(
   });
 
   const packetBySubject = new Map(packets.map((packet) => [packet.subjectEmployeeId, packet.id]));
-  const directReportsByManager = buildDirectReportsMap(employees);
-
   const submissions: {
     orgId: string;
     cycleId: string;
@@ -653,13 +652,6 @@ export async function generateCycleArtifacts(
     }
 
     const dedupe = new Set<string>();
-    const dueAtByRelationship: Record<ReviewRelationship, Date | null> = {
-      [ReviewRelationship.SELF]: cycle.selfReviewDueAt,
-      [ReviewRelationship.MANAGER]: cycle.managerReviewDueAt,
-      [ReviewRelationship.PEER]: cycle.peerReviewDueAt,
-      [ReviewRelationship.UPWARD]: cycle.upwardReviewDueAt,
-    };
-
     const addSubmission = (reviewerEmployeeId: string, relationship: ReviewRelationship) => {
       const key = `${subject.id}:${reviewerEmployeeId}:${relationship}`;
       if (dedupe.has(key)) {
@@ -675,7 +667,10 @@ export async function generateCycleArtifacts(
         reviewerEmployeeId,
         relationship,
         status: ReviewSubmissionStatus.NOT_STARTED,
-        dueAt: dueAtByRelationship[relationship],
+        dueAt:
+          relationship === ReviewRelationship.SELF
+            ? cycle.selfReviewDueAt
+            : cycle.managerReviewDueAt,
       });
     };
 
@@ -685,23 +680,6 @@ export async function generateCycleArtifacts(
 
     if (cycle.managerReviewRequired && subject.managerId) {
       addSubmission(subject.managerId, ReviewRelationship.MANAGER);
-    }
-
-    if (cycle.peerReviewCount > 0 && cycle.peerAssignmentMode === PeerAssignmentMode.HR_ASSIGNED) {
-      const peers = employees
-        .filter((candidate) => candidate.id !== subject.id && candidate.id !== subject.managerId)
-        .slice(0, cycle.peerReviewCount);
-
-      for (const peer of peers) {
-        addSubmission(peer.id, ReviewRelationship.PEER);
-      }
-    }
-
-    if (cycle.upwardReviewCount > 0) {
-      const directReports = directReportsByManager.get(subject.id) ?? [];
-      for (const directReport of directReports.slice(0, cycle.upwardReviewCount)) {
-        addSubmission(directReport.id, ReviewRelationship.UPWARD);
-      }
     }
   }
 
@@ -829,20 +807,4 @@ export async function transitionReviewCycleStatus(
     previousStatus: cycle.status,
     status: updatedCycle.status,
   };
-}
-
-function buildDirectReportsMap(employees: EmployeeSummary[]): Map<string, EmployeeSummary[]> {
-  const map = new Map<string, EmployeeSummary[]>();
-
-  for (const employee of employees) {
-    if (!employee.managerId) {
-      continue;
-    }
-
-    const reports = map.get(employee.managerId) ?? [];
-    reports.push(employee);
-    map.set(employee.managerId, reports);
-  }
-
-  return map;
 }

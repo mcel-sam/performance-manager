@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import {
+  ImprovementPlanCheckInType,
   ImprovementPlanOutcome,
   ImprovementPlanStatus,
+  ImprovementPlanTrigger,
   UserRole,
 } from "@prisma/client";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -21,8 +23,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Toast } from "@/components/ui/toast";
+import { formatStableDate, formatStableDateTime } from "@/lib/dates/stable-format";
+import { canManageImprovementPlans } from "@/lib/users/role-capabilities";
 import type {
   ImprovementPlanAuditEvent,
+  ImprovementPlanCheckpointScheduleItem,
   ImprovementPlanDetail,
   ImprovementPlanTimelineEntry,
 } from "@/server/improvement-plans/improvement-plan-service";
@@ -41,6 +46,12 @@ interface ImprovementPlanDetailViewProps {
 type ActivityView = "timeline" | "audit";
 type AuditLoadState = "idle" | "loading" | "loaded" | "error";
 
+const structuredCheckpointTypes = new Set<ImprovementPlanCheckInType>([
+  ImprovementPlanCheckInType.CHECKPOINT_30,
+  ImprovementPlanCheckInType.CHECKPOINT_60,
+  ImprovementPlanCheckInType.CHECKPOINT_90,
+]);
+
 const statusLabel: Record<ImprovementPlanStatus, string> = {
   DRAFT: "Draft",
   ACTIVE: "Active",
@@ -52,6 +63,20 @@ const statusLabel: Record<ImprovementPlanStatus, string> = {
 const outcomeLabel: Record<ImprovementPlanOutcome, string> = {
   SUCCESSFUL: "Successful",
   UNSUCCESSFUL: "Unsuccessful",
+};
+
+const triggerSourceLabel: Record<ImprovementPlanTrigger, string> = {
+  REVIEW: "Post-review",
+  CALIBRATION: "Post-calibration",
+  REVIEW_AND_CALIBRATION: "Post-review and calibration",
+};
+
+const checkInTypeLabel: Record<ImprovementPlanCheckInType, string> = {
+  NOTE: "General update",
+  CHECKPOINT_30: "30-day checkpoint",
+  CHECKPOINT_60: "60-day checkpoint",
+  CHECKPOINT_90: "90-day checkpoint",
+  STATUS_CHANGE: "Status change",
 };
 
 const transitionOptionsByStatus: Record<
@@ -76,6 +101,9 @@ export default function ImprovementPlanDetailView({
   const [activityView, setActivityView] = useState<ActivityView>("timeline");
 
   const [checkInNote, setCheckInNote] = useState("");
+  const [checkInType, setCheckInType] = useState<ImprovementPlanCheckInType>(
+    ImprovementPlanCheckInType.NOTE,
+  );
   const [checkInMessage, setCheckInMessage] = useState<string | null>(null);
   const [isSavingCheckIn, setIsSavingCheckIn] = useState(false);
 
@@ -89,15 +117,15 @@ export default function ImprovementPlanDetailView({
   const [auditLoadState, setAuditLoadState] = useState<AuditLoadState>("idle");
   const [auditError, setAuditError] = useState<string | null>(null);
 
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportMessage, setExportMessage] = useState<string | null>(null);
-
   const availableTransitions = useMemo(
     () => transitionOptionsByStatus[plan.status],
     [plan.status],
   );
 
-  const canChangeStatus = auth.role === UserRole.HR_ADMIN || auth.role === UserRole.MANAGER;
+  const canChangeStatus = canManageImprovementPlans(auth.role);
+  const canRecordStructuredCheckpoints = canManageImprovementPlans(auth.role);
+  const canAddCheckIn =
+    plan.status === ImprovementPlanStatus.ACTIVE || plan.status === ImprovementPlanStatus.EXTENDED;
 
   const loadAuditEvents = useCallback(async () => {
     setAuditLoadState("loading");
@@ -154,6 +182,7 @@ export default function ImprovementPlanDetailView({
         },
         body: JSON.stringify({
           note: checkInNote.trim(),
+          checkInType,
         }),
       });
 
@@ -166,13 +195,17 @@ export default function ImprovementPlanDetailView({
         throw new Error(payload.message ?? "Unable to create check-in");
       }
 
-      setTimeline((previous) => [payload.checkIn as ImprovementPlanTimelineEntry, ...previous]);
+      const createdCheckIn = payload.checkIn;
+
+      setTimeline((previous) => [createdCheckIn, ...previous]);
       setPlan((previous) => ({
         ...previous,
         checkInCount: previous.checkInCount + 1,
+        checkpointSchedule: applyCheckpointToSchedule(previous.checkpointSchedule, createdCheckIn),
       }));
       setAuditLoadState("idle");
       setCheckInNote("");
+      setCheckInType(ImprovementPlanCheckInType.NOTE);
       setCheckInMessage("Check-in added.");
     } catch (error) {
       setCheckInMessage(error instanceof Error ? error.message : "Unable to create check-in");
@@ -240,46 +273,12 @@ export default function ImprovementPlanDetailView({
     }
   }
 
-  async function handleExportRequest() {
-    setIsExporting(true);
-    setExportMessage(null);
-
-    try {
-      const response = await fetch(`/api/performance/improvement-plans/${planId}/export`, {
-        method: "GET",
-        headers: {
-          "x-user-id": auth.userId,
-          "x-org-id": auth.orgId,
-        },
-      });
-
-      const payload = (await response.json()) as {
-        message?: string;
-      };
-
-      if (response.status === 501) {
-        setExportMessage(payload.message ?? "Export is not implemented yet.");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(payload.message ?? "Unable to process export request");
-      }
-
-      setExportMessage(payload.message ?? "Export request accepted.");
-    } catch (error) {
-      setExportMessage(error instanceof Error ? error.message : "Unable to process export request");
-    } finally {
-      setIsExporting(false);
-    }
-  }
-
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 text-slate-900">
       <PageHeader
         eyebrow="Improvement Plan"
         title={plan.title}
-        description={`${new Date(plan.startDate).toLocaleDateString()} - ${new Date(plan.endDate).toLocaleDateString()}`}
+        description={`${formatStableDate(plan.startDate)} - ${formatStableDate(plan.endDate)}`}
         action={
           <div className="flex flex-wrap items-center gap-2">
             <Link href={returnHref}>
@@ -287,9 +286,6 @@ export default function ImprovementPlanDetailView({
                 Back
               </Button>
             </Link>
-            <Button onClick={() => void handleExportRequest()} disabled={isExporting}>
-              {isExporting ? "Requesting..." : "Export"}
-            </Button>
           </div>
         }
         metadata={
@@ -314,20 +310,39 @@ export default function ImprovementPlanDetailView({
         }
       />
 
-      {exportMessage ? (
-        <Toast variant={exportMessage.includes("Unable") ? "error" : "info"}>{exportMessage}</Toast>
-      ) : null}
-
       <HelpHint
         label="Visibility and audit rules"
         buttonLabel="Toggle visibility and audit guidance"
       >
-        Access is limited to the subject, manager chain, and HR. Check-ins and status transitions
-        are recorded in the audit log.
+        Access is limited to the subject employee, the assigned manager owner, and HR oversight.
+        Check-ins and status transitions are recorded in the audit log, and standard 30/60/90-day
+        checkpoints should be captured as the plan progresses.
       </HelpHint>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <SectionHeader
+                title="Plan context"
+                description="Keep the PIP grounded in the review or calibration decision that triggered it."
+              />
+            </CardHeader>
+            <CardContent className="space-y-4 pt-0">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="info">{triggerSourceLabel[plan.triggerSource]}</Badge>
+                {plan.reviewCycleName ? <Badge variant="neutral">Review cycle: {plan.reviewCycleName}</Badge> : null}
+                {plan.calibrationSessionName ? (
+                  <Badge variant="warning">Calibration: {plan.calibrationSessionName}</Badge>
+                ) : null}
+              </div>
+              <p className="text-sm text-slate-700">
+                The manager owns day-to-day feedback, HR oversees the plan process, and the employee
+                can participate through plan updates and checkpoint conversations.
+              </p>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <SectionHeader
@@ -353,6 +368,38 @@ export default function ImprovementPlanDetailView({
                   ))}
                 </ul>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <SectionHeader
+                title="Standard checkpoints"
+                description="The active vanilla PIP path tracks the standard 30 / 60 / 90-day cadence explicitly."
+              />
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              {plan.checkpointSchedule.map((checkpoint) => (
+                <div
+                  key={checkpoint.type}
+                  className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-900">{checkpoint.label}</p>
+                    <Badge variant={checkpoint.completedAt ? "success" : "neutral"}>
+                      {checkpoint.completedAt ? "Recorded" : "Pending"}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Target date {formatStableDate(checkpoint.targetDate)}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">
+                    {checkpoint.completedAt
+                      ? `Completed by ${checkpoint.completedByName ?? "an authorized participant"} on ${formatStableDate(checkpoint.completedAt)}.`
+                      : "Not recorded yet."}
+                  </p>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
@@ -394,10 +441,11 @@ export default function ImprovementPlanDetailView({
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="text-sm font-semibold text-slate-900">{entry.authorName}</p>
                           <p className="text-xs text-slate-500">
-                            {new Date(entry.timestamp).toLocaleString()}
+                            {formatStableDateTime(entry.timestamp)}
                           </p>
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <Badge variant="neutral">{checkInTypeLabel[entry.checkInType]}</Badge>
                           {entry.status ? (
                             <Badge variant="neutral">Status: {statusLabel[entry.status]}</Badge>
                           ) : null}
@@ -414,7 +462,6 @@ export default function ImprovementPlanDetailView({
                           ) : null}
                         </div>
                         <p className="mt-3 whitespace-pre-wrap text-sm text-slate-700">{entry.note}</p>
-                        <p className="mt-3 text-xs text-slate-500">Attachments: coming soon.</p>
                       </li>
                     ))}
                   </ol>
@@ -449,7 +496,7 @@ export default function ImprovementPlanDetailView({
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-sm font-semibold text-slate-900">{event.actorName}</p>
                         <p className="text-xs text-slate-500">
-                          {new Date(event.timestamp).toLocaleString()}
+                          {formatStableDateTime(event.timestamp)}
                         </p>
                       </div>
                       <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -474,20 +521,51 @@ export default function ImprovementPlanDetailView({
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 pt-0">
-                <Textarea
-                  value={checkInNote}
-                  onChange={(event) => setCheckInNote(event.target.value)}
-                  className="min-h-28"
-                  placeholder="Add a timeline update..."
-                  data-testid="improvement-checkin-input"
-                />
-                <Button
-                  onClick={() => void handleCreateCheckIn()}
-                  disabled={isSavingCheckIn}
-                  data-testid="improvement-checkin-submit"
-                >
-                  {isSavingCheckIn ? "Saving..." : "Add Check-in"}
-                </Button>
+                {!canAddCheckIn ? (
+                  <Toast variant="info">
+                    Check-ins become available when the PIP is active or extended.
+                  </Toast>
+                ) : (
+                  <>
+                    {canRecordStructuredCheckpoints ? (
+                      <Select
+                        value={checkInType}
+                        onChange={(event) =>
+                          setCheckInType(event.target.value as ImprovementPlanCheckInType)
+                        }
+                      >
+                        <option value={ImprovementPlanCheckInType.NOTE}>General update</option>
+                        <option value={ImprovementPlanCheckInType.CHECKPOINT_30}>
+                          30-day checkpoint
+                        </option>
+                        <option value={ImprovementPlanCheckInType.CHECKPOINT_60}>
+                          60-day checkpoint
+                        </option>
+                        <option value={ImprovementPlanCheckInType.CHECKPOINT_90}>
+                          90-day checkpoint
+                        </option>
+                      </Select>
+                    ) : null}
+                    <Textarea
+                      value={checkInNote}
+                      onChange={(event) => setCheckInNote(event.target.value)}
+                      className="min-h-28"
+                      placeholder={
+                        checkInType === ImprovementPlanCheckInType.NOTE
+                          ? "Add a timeline update..."
+                          : `Capture the ${checkInTypeLabel[checkInType].toLowerCase()} discussion, commitments, and next steps.`
+                      }
+                      data-testid="improvement-checkin-input"
+                    />
+                    <Button
+                      onClick={() => void handleCreateCheckIn()}
+                      disabled={isSavingCheckIn}
+                      data-testid="improvement-checkin-submit"
+                    >
+                      {isSavingCheckIn ? "Saving..." : "Add Check-in"}
+                    </Button>
+                  </>
+                )}
                 {checkInMessage ? (
                   <Toast variant={checkInMessage.includes("Unable") ? "error" : "info"}>
                     {checkInMessage}
@@ -500,7 +578,7 @@ export default function ImprovementPlanDetailView({
               <CardHeader>
                 <CardTitle>Change Status</CardTitle>
                 <CardDescription>
-                  Move the plan through the defined status workflow.
+                  Move the plan through the structured PIP status workflow.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 pt-0">
@@ -564,5 +642,24 @@ export default function ImprovementPlanDetailView({
         </Drawer>
       </div>
     </div>
+  );
+}
+
+function applyCheckpointToSchedule(
+  schedule: ImprovementPlanCheckpointScheduleItem[],
+  checkIn: ImprovementPlanTimelineEntry,
+): ImprovementPlanCheckpointScheduleItem[] {
+  if (!structuredCheckpointTypes.has(checkIn.checkInType)) {
+    return schedule;
+  }
+
+  return schedule.map((checkpoint) =>
+    checkpoint.type === checkIn.checkInType
+      ? {
+          ...checkpoint,
+          completedAt: checkIn.timestamp,
+          completedByName: checkIn.authorName,
+        }
+      : checkpoint,
   );
 }

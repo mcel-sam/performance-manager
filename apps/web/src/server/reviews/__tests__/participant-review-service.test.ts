@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   getWriteReviewData,
+  listAssignedReviewTasks,
   submitReviewSubmission,
 } from "@/server/reviews/participant-review-service";
 
@@ -51,6 +52,12 @@ const reviewerContext = {
   role: UserRole.EMPLOYEE,
 };
 
+const hrAdminContext = {
+  userId: "user_hr_admin_1",
+  orgId: "org_demo_1",
+  role: UserRole.HR_ADMIN,
+};
+
 const submissionRecord = {
   id: "submission_seed_employee_self_1",
   orgId: "org_demo_1",
@@ -68,6 +75,7 @@ const submissionRecord = {
   },
   subjectEmployee: {
     id: "emp_employee_1",
+    managerId: "emp_manager_1",
     firstName: "Elliot",
     lastName: "Employee",
     department: "Projects",
@@ -76,7 +84,7 @@ const submissionRecord = {
   cycle: {
     id: "cycle_seed_draft_1",
     name: "Seed Draft Cycle",
-    status: CycleStatus.DRAFT,
+    status: CycleStatus.ACTIVE,
     endDate: new Date("2026-03-31T00:00:00.000Z"),
     template: {
       id: "template_default_1",
@@ -319,6 +327,94 @@ describe("submitReviewSubmission", () => {
   });
 });
 
+describe("listAssignedReviewTasks", () => {
+  it("keeps HR admins scoped to reviews actually assigned to them", async () => {
+    const db = buildDbMock();
+    db.reviewSubmission.findMany.mockResolvedValue([]);
+
+    await listAssignedReviewTasks(hrAdminContext, db as never);
+
+    expect(db.reviewSubmission.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          orgId: "org_demo_1",
+          reviewerEmployee: {
+            userId: "user_hr_admin_1",
+          },
+        },
+      }),
+    );
+  });
+
+  it("limits the active queue to vanilla review types on non-draft cycles", async () => {
+    const db = buildDbMock();
+    db.reviewSubmission.findMany.mockResolvedValue([
+      {
+        id: "submission_self",
+        cycleId: "cycle_active",
+        relationship: ReviewRelationship.SELF,
+        status: ReviewSubmissionStatus.NOT_STARTED,
+        updatedAt: new Date("2026-03-15T10:00:00.000Z"),
+        submittedAt: null,
+        cycle: {
+          id: "cycle_active",
+          name: "Annual 2026",
+          endDate: new Date("2026-12-31T00:00:00.000Z"),
+          status: CycleStatus.ACTIVE,
+        },
+        subjectEmployee: {
+          firstName: "Ted",
+          lastName: "Tederoff",
+          avatarUrl: null,
+        },
+      },
+      {
+        id: "submission_peer",
+        cycleId: "cycle_active",
+        relationship: ReviewRelationship.PEER,
+        status: ReviewSubmissionStatus.NOT_STARTED,
+        updatedAt: new Date("2026-03-15T11:00:00.000Z"),
+        submittedAt: null,
+        cycle: {
+          id: "cycle_active",
+          name: "Annual 2026",
+          endDate: new Date("2026-12-31T00:00:00.000Z"),
+          status: CycleStatus.ACTIVE,
+        },
+        subjectEmployee: {
+          firstName: "Ted",
+          lastName: "Tederoff",
+          avatarUrl: null,
+        },
+      },
+      {
+        id: "submission_manager_draft",
+        cycleId: "cycle_draft",
+        relationship: ReviewRelationship.MANAGER,
+        status: ReviewSubmissionStatus.NOT_STARTED,
+        updatedAt: new Date("2026-03-15T12:00:00.000Z"),
+        submittedAt: null,
+        cycle: {
+          id: "cycle_draft",
+          name: "Draft 2026",
+          endDate: new Date("2026-12-31T00:00:00.000Z"),
+          status: CycleStatus.DRAFT,
+        },
+        subjectEmployee: {
+          firstName: "Ted",
+          lastName: "Tederoff",
+          avatarUrl: null,
+        },
+      },
+    ]);
+
+    const tasks = await listAssignedReviewTasks(reviewerContext, db as never);
+
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0]?.relationship).toBe(ReviewRelationship.SELF);
+  });
+});
+
 describe("getWriteReviewData permissions", () => {
   it("returns subject role context for the write-review workspace", async () => {
     const db = buildDbMock();
@@ -412,9 +508,12 @@ describe("getWriteReviewData permissions", () => {
     });
     expect(result.goalContext?.goals[0]?.title).toBe("Improve project handoff reliability");
     expect(result.trackContext?.trackLabel).toBe("Projects");
+    expect(result.questions[0]?.prompt).toBe(
+      "What were your most meaningful accomplishments and business results this cycle?",
+    );
   });
 
-  it("denies access when reviewer does not match and user is not HR admin", async () => {
+  it("denies access when reviewer does not match", async () => {
     const db = buildDbMock();
     db.reviewSubmission.findFirst.mockResolvedValue({
       ...submissionRecord,
@@ -422,6 +521,91 @@ describe("getWriteReviewData permissions", () => {
         ...submissionRecord.reviewerEmployee,
         userId: "user_other_reviewer",
       },
+    });
+
+    await expect(
+      getWriteReviewData(
+        "cycle_seed_draft_1",
+        "submission_seed_employee_self_1",
+        reviewerContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+  });
+
+  it("denies HR admin access when they are not the assigned reviewer", async () => {
+    const db = buildDbMock();
+    db.reviewSubmission.findFirst.mockResolvedValue({
+      ...submissionRecord,
+      reviewerEmployee: {
+        ...submissionRecord.reviewerEmployee,
+        userId: "user_other_reviewer",
+      },
+    });
+
+    await expect(
+      getWriteReviewData(
+        "cycle_seed_draft_1",
+        "submission_seed_employee_self_1",
+        hrAdminContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+  });
+
+  it("denies manager review access until the self review is submitted", async () => {
+    const db = buildDbMock();
+    db.reviewSubmission.findFirst
+      .mockResolvedValueOnce({
+        ...submissionRecord,
+        id: "submission_manager_1",
+        relationship: ReviewRelationship.MANAGER,
+        reviewerEmployee: {
+          id: "emp_manager_1",
+          userId: "user_manager_1",
+          firstName: "Elliot",
+          lastName: "Mah",
+        },
+        subjectEmployee: {
+          ...submissionRecord.subjectEmployee,
+          managerId: "emp_manager_1",
+        },
+      })
+      .mockResolvedValueOnce({
+        ...submissionRecord,
+        id: "submission_self_1",
+        relationship: ReviewRelationship.SELF,
+        status: ReviewSubmissionStatus.IN_PROGRESS,
+      });
+
+    await expect(
+      getWriteReviewData(
+        "cycle_seed_draft_1",
+        "submission_manager_1",
+        {
+          userId: "user_manager_1",
+          orgId: "org_demo_1",
+          role: UserRole.MANAGER,
+        },
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
+  });
+
+  it("denies non-vanilla review submissions in the active workflow", async () => {
+    const db = buildDbMock();
+    db.reviewSubmission.findFirst.mockResolvedValue({
+      ...submissionRecord,
+      relationship: ReviewRelationship.PEER,
     });
 
     await expect(

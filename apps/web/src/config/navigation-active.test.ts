@@ -8,7 +8,7 @@ describe("getActiveNavKey", () => {
     canAccessCalibration: true,
     includeImprovementPlans: true,
     includePackets: true,
-    includeSuccession: true,
+    includeSuccession: false,
     includeTeamReviews: true,
     includeUserManagement: false,
   });
@@ -36,15 +36,24 @@ describe("getActiveNavKey", () => {
     );
   });
 
-  it("maps manager succession routes to Succession", () => {
-    expect(getActiveNavKey("/talent/succession", managerNav)).toBe("succession");
-    expect(getActiveNavKey("/talent/succession/positions/position_1", managerNav)).toBe(
-      "succession",
-    );
-  });
-
   it("returns null for routes not visible in role navigation", () => {
     expect(getActiveNavKey("/admin/performance/review-cycles", managerNav)).toBeNull();
     expect(isRouteInNavigation("/admin/performance/review-cycles", managerNav)).toBe(false);
+    expect(getActiveNavKey("/talent/succession", managerNav)).toBeNull();
+    expect(isRouteInNavigation("/talent/succession", managerNav)).toBe(false);
+  });
+
+  it("maps admin calibration routes to Admin Calibration when both calibration links exist", () => {
+    const superAdminNav = getRoleNavigation(UserRole.SUPER_ADMIN, {
+      canAccessCalibration: true,
+      includeImprovementPlans: true,
+      includePackets: false,
+      includeSuccession: false,
+      includeTeamReviews: true,
+      includeUserManagement: true,
+    });
+
+    expect(getActiveNavKey("/admin/performance/calibration", superAdminNav)).toBe("adminCalibration");
+    expect(getActiveNavKey("/performance/calibration", superAdminNav)).toBe("calibration");
   });
 });

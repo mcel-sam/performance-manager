@@ -1,12 +1,13 @@
 "use client";
 
-import { CalibrationBucket, CycleStatus } from "@prisma/client";
+import { CalibrationBucket, CycleStatus, UserRole } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { formatUserRoleLabel } from "@/lib/users/role-labels";
 import { Select } from "@/components/ui/select";
 import type { CalibrationSessionCreateOptionData } from "@/server/calibration/calibration-admin-options-service";
 
@@ -15,6 +16,7 @@ interface CalibrationSessionCreateFormProps {
   auth: {
     userId: string;
     orgId: string;
+    role: UserRole;
   };
 }
 
@@ -78,11 +80,21 @@ export default function CalibrationSessionCreateForm({
   auth,
 }: CalibrationSessionCreateFormProps) {
   const router = useRouter();
+  const initialCycleId = useMemo(
+    () =>
+      options.cycles.find(
+        (cycle) => cycle.status === CycleStatus.LOCKED || cycle.status === CycleStatus.RELEASED,
+      )?.id ??
+      options.cycles[0]?.id ??
+      "",
+    [options.cycles],
+  );
 
   const [name, setName] = useState("Q2 2026 Calibration Session");
   const [roleGroup, setRoleGroup] = useState("Core Engineering");
   const [description, setDescription] = useState("");
-  const [cycleId, setCycleId] = useState(options.cycles[0]?.id ?? "");
+  const [isRestricted, setIsRestricted] = useState(false);
+  const [cycleId, setCycleId] = useState(initialCycleId);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   const [selectedParticipantUserIds, setSelectedParticipantUserIds] = useState<string[]>([
     auth.userId,
@@ -157,6 +169,7 @@ export default function CalibrationSessionCreateForm({
           name,
           roleGroup,
           description: description.trim() || null,
+          isRestricted,
           cohortEmployeeIds: selectedEmployeeIds,
           participantUserIds: selectedParticipantUserIds,
           performanceAxis: performanceAxis.map((entry) => ({
@@ -239,6 +252,29 @@ export default function CalibrationSessionCreateForm({
                 placeholder="Context for this calibration session"
               />
             </label>
+
+            <label className="flex items-start gap-3 rounded-md border border-slate-200 px-3 py-3 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={isRestricted}
+                onChange={(event) => setIsRestricted(event.target.checked)}
+                disabled={auth.role !== UserRole.SUPER_ADMIN}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+              />
+              <span className="space-y-1">
+                <span className="block text-sm font-medium text-slate-700">
+                  Restricted leadership session
+                </span>
+                <span className="block text-xs text-slate-600">
+                  Restricted calibration sessions are reserved for Super Admin talent-governance work.
+                </span>
+                {auth.role !== UserRole.SUPER_ADMIN ? (
+                  <span className="block text-xs text-slate-500">
+                    Only Super Admins can mark a session as restricted.
+                  </span>
+                ) : null}
+              </span>
+            </label>
           </div>
 
           <div className="rounded-lg border border-slate-200 p-4">
@@ -271,7 +307,7 @@ export default function CalibrationSessionCreateForm({
           <div className="rounded-lg border border-slate-200 p-4">
             <h3 className="text-sm font-semibold text-slate-900">Participants</h3>
             <p className="mt-1 text-xs text-slate-600">
-              Select HR, managers, and calibrators who can participate.
+              Select HR, managers, and super admins who can participate.
             </p>
             <div className="mt-3 grid max-h-48 gap-2 overflow-y-auto pr-2 md:grid-cols-2">
               {options.participants.length === 0 ? (
@@ -289,7 +325,7 @@ export default function CalibrationSessionCreateForm({
                       className="h-4 w-4 rounded border-slate-300"
                     />
                     <span>
-                      {participant.name} ({participant.role})
+                      {participant.name} ({formatUserRoleLabel(participant.role)})
                     </span>
                   </label>
                 ))

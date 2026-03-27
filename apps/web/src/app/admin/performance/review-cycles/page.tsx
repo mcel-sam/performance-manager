@@ -1,19 +1,13 @@
 import Link from "next/link";
 
-import { UserRole } from "@prisma/client";
+import { redirect } from "next/navigation";
 
 import ReviewCyclesTable from "@/components/admin/review-cycles-table";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionContainer } from "@/components/ui/section-container";
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { listReviewCycles } from "@/server/reviews/admin-cycle-service";
 
@@ -22,23 +16,8 @@ export const dynamic = "force-dynamic";
 export default async function AdminReviewCyclesPage() {
   const context = await getDevRequestContext();
 
-  if (context.role !== UserRole.HR_ADMIN) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin access required</CardTitle>
-          <CardDescription>
-            Review cycle management is restricted to HR admins.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-slate-700">
-            Set <code>DEV_USER_ID=user_hr_admin_1</code> in <code>apps/web/.env.local</code> and
-            restart the dev server.
-          </p>
-        </CardContent>
-      </Card>
-    );
+  if (!hasHrAdminAccess(context.role)) {
+    redirect("/");
   }
 
   const cycles = await listReviewCycles(context);
@@ -61,7 +40,7 @@ export default async function AdminReviewCyclesPage() {
           description="Start by creating your first cycle for this organization."
           icon={<span aria-hidden="true">📆</span>}
           nextSteps={[
-            "Define the cycle window and required review types.",
+            "Define the cycle window and self/manager review timing.",
             "Generate submissions after setup to create participant tasks.",
           ]}
           action={

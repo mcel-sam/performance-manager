@@ -6,8 +6,9 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { appEnv } from "@/config/env";
+import { hasHrAdminAccess, hasManagerAccess } from "@/lib/users/role-capabilities";
 import { getDevRequestContext } from "@/server/auth/request-context";
+import { getManagerHomeSnapshot } from "@/server/home/home-dashboard-service";
 
 export const dynamic = "force-dynamic";
 
@@ -24,22 +25,22 @@ const employeeLinks: HelpLinkItem[] = [
     href: "/performance/reviews",
   },
   {
-    label: "Write and submit",
-    description: "Draft answers, attach evidence, and submit your review.",
-    href: "/performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_self_1",
+    label: "Goals",
+    description: "Keep your goal plan visible before you complete your self review.",
+    href: "/goals",
   },
   {
-    label: "Track progress",
-    description: "Check submission progress and status updates.",
-    href: "/performance/reviews",
+    label: "Improvement plans",
+    description: "Review plan milestones and check-ins if you are on an active plan.",
+    href: "/performance/improvement-plans",
   },
 ];
 
 const managerLinks: HelpLinkItem[] = [
   {
-    label: "Calibration session",
-    description: "Review cohort placements and move participants.",
-    href: "/performance/calibration/calibration_session_seed_1",
+    label: "My Team",
+    description: "Open the direct-report workspace for manager reviews and packet context.",
+    href: "/performance/team-reviews",
   },
   {
     label: "Review participation",
@@ -55,24 +56,59 @@ const managerLinks: HelpLinkItem[] = [
 
 const hrLinks: HelpLinkItem[] = [
   {
+    label: "Review queue",
+    description: "Complete your own assigned review work alongside cycle operations.",
+    href: "/performance/reviews",
+  },
+  {
+    label: "Goals",
+    description: "Keep your own goals visible while you operate review cycles.",
+    href: "/goals",
+  },
+  {
     label: "Cycle setup",
     description: "Create review cycles and configure participant mix.",
     href: "/admin/performance/review-cycles",
+  },
+  {
+    label: "Operational reporting",
+    description: "Monitor completion and operational status for active review cycles.",
+    href: "/admin/performance/reporting",
   },
   {
     label: "Calibration admin",
     description: "Create and monitor calibration sessions by cycle and cohort.",
     href: "/admin/performance/calibration",
   },
+];
+
+const superAdminLinks: HelpLinkItem[] = [
   {
-    label: "Audit and exports",
-    description: "Review plan audit logs and export placeholders.",
+    label: "Calibration workspace",
+    description: "Run the restricted 9-box workflow and capture downstream talent outputs.",
+    href: "/performance/calibration",
+  },
+  {
+    label: "Review queue",
+    description: "Inspect review context from the main review workspace when needed.",
+    href: "/performance/reviews",
+  },
+  {
+    label: "Goals",
+    description: "Keep your own goals current while you manage restricted talent decisions.",
+    href: "/goals",
+  },
+  {
+    label: "Improvement plans",
+    description: "Review active performance plans that may require executive visibility.",
     href: "/performance/improvement-plans",
   },
 ];
 
 export default async function HelpPage() {
   const context = await getDevRequestContext();
+  const managerSnapshot = await getManagerHomeSnapshot(context);
+  const hasDirectReports = managerSnapshot.directReportCount > 0;
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -82,50 +118,30 @@ export default async function HelpPage() {
         description="Use these quick references to complete common workflows without external documentation."
         metadata={
           <span>
-            Current role: <code>{context.role}</code>
+            Current role: <code>{getRoleHelpTitle(context.role)}</code>
           </span>
         }
       />
 
-      {!appEnv.presentationMode ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Getting started by role</CardTitle>
-            <CardDescription>
-              Pick a section below. Each link opens the in-app flow directly.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Getting started by role</CardTitle>
+          <CardDescription>
+            Open the workflows available to your current role without leaving the app.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-1">
+          {getHelpSections(context.role, hasDirectReports).map((section) => (
             <RoleHelpSection
-              role={UserRole.EMPLOYEE}
+              key={section.title}
+              role={section.role}
               activeRole={context.role}
-              title="Employee"
-              items={employeeLinks}
+              title={section.title}
+              items={section.items}
             />
-            <RoleHelpSection
-              role={UserRole.MANAGER}
-              activeRole={context.role}
-              title="Manager"
-              items={managerLinks}
-            />
-            <RoleHelpSection
-              role={UserRole.HR_ADMIN}
-              activeRole={context.role}
-              title="HR Admin"
-              items={hrLinks}
-            />
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Presentation mode active</CardTitle>
-            <CardDescription>
-              Role quick-link cards are hidden. Use the left navigation to open workflows.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -159,4 +175,93 @@ function RoleHelpSection({ role, activeRole, title, items }: RoleHelpSectionProp
       </ul>
     </section>
   );
+}
+
+function getRoleHelpTitle(role: UserRole): string {
+  switch (role) {
+    case UserRole.MANAGER:
+      return "Manager";
+    case UserRole.HR_ADMIN:
+      return "HR Admin";
+    case UserRole.SUPER_ADMIN:
+      return "Super Admin";
+    case UserRole.EMPLOYEE:
+    default:
+      return "Employee";
+  }
+}
+
+function getRoleHelpItems(role: UserRole): HelpLinkItem[] {
+  switch (role) {
+    case UserRole.MANAGER:
+      return managerLinks;
+    case UserRole.HR_ADMIN:
+      return hrLinks;
+    case UserRole.SUPER_ADMIN:
+      return superAdminLinks;
+    case UserRole.EMPLOYEE:
+    default:
+      return employeeLinks;
+  }
+}
+
+function getHelpSections(role: UserRole, hasDirectReports: boolean): Array<{
+  role: UserRole;
+  title: string;
+  items: HelpLinkItem[];
+}> {
+  if (role === UserRole.SUPER_ADMIN) {
+    return [
+      {
+        role: UserRole.SUPER_ADMIN,
+        title: getRoleHelpTitle(UserRole.SUPER_ADMIN),
+        items: superAdminLinks,
+      },
+      ...(hasManagerAccess(role)
+        ? [
+            {
+              role: UserRole.MANAGER,
+              title: getRoleHelpTitle(UserRole.MANAGER),
+              items: managerLinks,
+            },
+          ]
+        : []),
+      ...(hasHrAdminAccess(role)
+        ? [
+            {
+              role: UserRole.HR_ADMIN,
+              title: getRoleHelpTitle(UserRole.HR_ADMIN),
+              items: hrLinks,
+            },
+          ]
+        : []),
+    ];
+  }
+
+  if (role === UserRole.HR_ADMIN) {
+    return [
+      {
+        role,
+        title: getRoleHelpTitle(role),
+        items: getRoleHelpItems(role),
+      },
+      ...(hasDirectReports
+        ? [
+            {
+              role: UserRole.MANAGER,
+              title: getRoleHelpTitle(UserRole.MANAGER),
+              items: managerLinks,
+            },
+          ]
+        : []),
+    ];
+  }
+
+  return [
+    {
+      role,
+      title: getRoleHelpTitle(role),
+      items: getRoleHelpItems(role),
+    },
+  ];
 }

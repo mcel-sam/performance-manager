@@ -9,10 +9,11 @@ const variantClasses: Record<ButtonVariant, string> = {
   primary:
     "bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary-strong)] hover:shadow-[var(--shadow-sm)] active:translate-y-px",
   secondary:
-    "bg-[var(--brand-secondary)] text-white hover:brightness-95 hover:shadow-[var(--shadow-sm)] active:translate-y-px",
+    "bg-[var(--brand-secondary)] text-white hover:opacity-92 hover:shadow-[var(--shadow-sm)] active:translate-y-px",
   outline:
-    "border border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50 hover:shadow-[var(--shadow-sm)] active:translate-y-px",
-  danger: "bg-rose-700 text-white hover:bg-rose-600 hover:shadow-[var(--shadow-sm)] active:translate-y-px",
+    "border border-[var(--color-border-default)] bg-[var(--color-surface-default)] text-[var(--color-text-primary)] hover:border-[var(--color-focus-border)] hover:bg-[var(--surface-muted)] hover:shadow-[var(--shadow-sm)] active:translate-y-px",
+  danger:
+    "bg-[var(--color-status-danger)] text-white hover:opacity-92 hover:shadow-[var(--shadow-sm)] active:translate-y-px",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -37,7 +38,7 @@ export function Button({
       {...props}
       type={type}
       className={cn(
-        "rounded-[var(--radius-md)] font-medium shadow-[var(--shadow-xs)] transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none",
+        "rounded-[var(--radius-md)] font-medium shadow-[var(--shadow-xs)] transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none",
         variantClasses[variant],
         sizeClasses[size],
         className,

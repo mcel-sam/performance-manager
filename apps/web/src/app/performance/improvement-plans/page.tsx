@@ -51,7 +51,7 @@ export default async function ImprovementPlansListPage() {
               href="/help"
               className="text-sm font-medium text-slate-700 underline underline-offset-4 transition hover:text-slate-900"
             >
-              Review help center
+              Open help center
             </Link>
           }
         />

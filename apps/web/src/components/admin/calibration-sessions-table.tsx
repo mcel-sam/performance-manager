@@ -39,7 +39,10 @@ export default function CalibrationSessionsTable({ sessions }: CalibrationSessio
               {sessions.map((session) => (
                 <tr key={session.id}>
                   <td className="px-4 py-3">
-                    <p className="font-semibold text-slate-900">{session.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-slate-900">{session.name}</p>
+                      {session.isRestricted ? <Badge variant="warning">Restricted</Badge> : null}
+                    </div>
                     <p className="text-xs text-slate-500">{session.roleGroup ?? "No role group"}</p>
                   </td>
                   <td className="px-4 py-3 text-slate-700">

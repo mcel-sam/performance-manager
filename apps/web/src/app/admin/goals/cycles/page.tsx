@@ -1,9 +1,9 @@
-import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
 import GoalCyclesManager from "@/components/admin/goal-cycles-manager";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { listGoalCycles } from "@/server/goals/goal-service";
 
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminGoalCyclesPage() {
   const context = await getDevRequestContext();
-  if (context.role !== UserRole.HR_ADMIN) {
+  if (!hasHrAdminAccess(context.role)) {
     redirect("/");
   }
 
@@ -22,7 +22,6 @@ export default async function AdminGoalCyclesPage() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <PageHeader
-        eyebrow="Goals Admin"
         title="Goal cycles"
         description="Open and close goal windows independently from review cycles so OKRs can run on their own cadence."
       />
@@ -30,7 +29,7 @@ export default async function AdminGoalCyclesPage() {
       <section className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Goal cycles</CardTitle>
+            <CardTitle className="text-base">Total cycles</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold text-slate-900">{cycles.length}</p>

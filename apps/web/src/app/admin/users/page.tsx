@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import UserManagementTable from "@/components/admin/user-management-table";
 import { PageHeader } from "@/components/layout/page-header";
@@ -7,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { SectionContainer } from "@/components/ui/section-container";
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { listOrgUsers } from "@/server/users/user-management-service";
 
@@ -20,6 +22,9 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
   const context = await getDevRequestContext();
+  if (!hasHrAdminAccess(context.role)) {
+    redirect("/");
+  }
   const { search } = await searchParams;
   const directory = await listOrgUsers(context, { search });
 
@@ -38,7 +43,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
       <section className="grid gap-4 md:grid-cols-5">
         <SummaryCard label="Total users" value={directory.summary.totalUsers} />
         <SummaryCard label="HR admins" value={directory.summary.hrAdmins} />
-        <SummaryCard label="Calibrators" value={directory.summary.calibrators} />
+        <SummaryCard label="Super admins" value={directory.summary.superAdmins} />
         <SummaryCard label="Managers" value={directory.summary.managers} />
         <SummaryCard label="Employees" value={directory.summary.employees} />
       </section>

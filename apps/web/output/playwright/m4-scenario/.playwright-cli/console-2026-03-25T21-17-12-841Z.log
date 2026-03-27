@@ -1,0 +1,113 @@
+[    9340ms] TypeError: Error in input stream
+
+[  108666ms] Error: Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <InnerLayoutRouter url="/performan..." tree={[...]} params={{cycleId:"s...", ...}} cacheNode={{rsc:<Fragment>, ...}} ...>
+      <SegmentViewNode type="page" pagePath="performanc...">
+        <SegmentTrieNode>
+        <ReviewPacketPage>
+          <div className="mx-auto w-...">
+            <header>
+            <HelpHint>
+            <div>
+            <ReviewPacketView data={{...}}>
+              <section className="space-y-4">
+                <Tabs>
+                <div>
+                <Card>
+                <section aria-label="Review pac..." className="space-y-4">
+                  <Card>
+                    <div className="rounded-[v...">
+                      <CardHeader className="space-y-3">
+                        <div className="border-b b...">
+                          <div className="flex flex-...">
+                            <div>
+                            <div className="text-right...">
+                              <Badge>
+                              <p className="mt-2">
++                               Submitted 24/11/2025
+-                               Submitted 11/24/2025
+                      ...
+                  ...
+      ...
+
+    at throwOnHydrationMismatch (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:3348:56)
+    at prepareToHydrateHostInstance (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:3402:23)
+    at completeWork (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6934:88)
+    at runWithFiberInDEV (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:131)
+    at completeUnitOfWork (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9627:23)
+    at performUnitOfWork (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9564:28)
+    at workLoopConcurrentByScheduler (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9558:75)
+    at renderRootConcurrent (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9541:71)
+    at performWorkOnRoot (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9068:150)
+    at performWorkOnRootViaSchedulerTask (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10230:26)
+    at performWorkUntilDeadline (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2647:72)
+    at EventHandlerNonNull* (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2752:9)
+    at  (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2859:2)
+    at instantiateModule/< (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateModuleFromParent (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:830:12)
+    at commonJsRequire (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:259:12)
+    at  (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2869:44)
+    at instantiateModule/< (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateModuleFromParent (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:830:12)
+    at commonJsRequire (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:259:12)
+    at  (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:13306:43)
+    at  (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:16499:2)
+    at instantiateModule/< (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateModuleFromParent (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:830:12)
+    at commonJsRequire (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:259:12)
+    at  (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:16532:44)
+    at instantiateModule/< (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateModuleFromParent (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:830:12)
+    at commonJsRequire (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:259:12)
+    at  (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:12441:80)
+    at instantiateModule/< (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateModuleFromParent (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:830:12)
+    at commonJsRequire (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:259:12)
+    at  (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:12703:47)
+    at appBootstrap/< (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:177:16)
+    at loadScriptsInSequence (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:141:16)
+    at appBootstrap (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:170:26)
+    at  (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:12702:32)
+    at instantiateModule/< (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:879:26)
+    at runModuleExecutionHooks (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:904:26)
+    at instantiateModule (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:877:32)
+    at getOrInstantiateRuntimeModule (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:808:12)
+    at registerChunk (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:1626:50)
+    at async*registerChunk (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:1564:20)
+    at  (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:1853:18)
+    at  (http://127.0.0.1:3000/_next/static/chunks/turbopack-_23a915ee._.js:1857:3)
+[ 7810614ms] [ERROR] [JavaScript Error: "The connection to ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns was interrupted while the page was loading." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7811680ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7812685ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7813690ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7814694ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7815940ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7820946ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7825949ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7830956ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7837267ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7846706ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7860864ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879
+[ 7882115ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr?id=2iKuncL09rQsFgOAUG6Ns." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js" line: 10879}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10879

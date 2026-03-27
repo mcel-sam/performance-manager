@@ -19,6 +19,7 @@ const portrait = (group, index) => `https://randomuser.me/api/portraits/${group}
 async function main() {
   const orgId = "org_demo_1";
   const users = {
+    superAdmin: "user_super_admin_1",
     hrAdmin: "user_hr_admin_1",
     manager: "user_manager_1",
     employee: "user_employee_1",
@@ -26,6 +27,7 @@ async function main() {
   };
 
   const employees = {
+    superAdmin: "emp_super_admin_1",
     hrAdmin: "emp_hr_admin_1",
     manager: "emp_manager_1",
     employee: "emp_employee_1",
@@ -38,6 +40,17 @@ async function main() {
     create: {
       id: orgId,
       name: "Demo Performance Org",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { id: users.superAdmin },
+    update: { orgId, email: "super-admin@example.com", role: UserRole.SUPER_ADMIN },
+    create: {
+      id: users.superAdmin,
+      orgId,
+      email: "super-admin@example.com",
+      role: UserRole.SUPER_ADMIN,
     },
   });
 
@@ -82,6 +95,126 @@ async function main() {
       orgId,
       email: "peer@example.com",
       role: UserRole.EMPLOYEE,
+    },
+  });
+
+  await prisma.orgMembership.upsert({
+    where: {
+      orgId_userId: {
+        orgId,
+        userId: users.superAdmin,
+      },
+    },
+    update: {
+      role: UserRole.SUPER_ADMIN,
+      isActive: true,
+    },
+    create: {
+      orgId,
+      userId: users.superAdmin,
+      role: UserRole.SUPER_ADMIN,
+      isActive: true,
+    },
+  });
+
+  await prisma.orgMembership.upsert({
+    where: {
+      orgId_userId: {
+        orgId,
+        userId: users.hrAdmin,
+      },
+    },
+    update: {
+      role: UserRole.HR_ADMIN,
+      isActive: true,
+    },
+    create: {
+      orgId,
+      userId: users.hrAdmin,
+      role: UserRole.HR_ADMIN,
+      isActive: true,
+    },
+  });
+
+  await prisma.orgMembership.upsert({
+    where: {
+      orgId_userId: {
+        orgId,
+        userId: users.manager,
+      },
+    },
+    update: {
+      role: UserRole.MANAGER,
+      isActive: true,
+    },
+    create: {
+      orgId,
+      userId: users.manager,
+      role: UserRole.MANAGER,
+      isActive: true,
+    },
+  });
+
+  await prisma.orgMembership.upsert({
+    where: {
+      orgId_userId: {
+        orgId,
+        userId: users.employee,
+      },
+    },
+    update: {
+      role: UserRole.EMPLOYEE,
+      isActive: true,
+    },
+    create: {
+      orgId,
+      userId: users.employee,
+      role: UserRole.EMPLOYEE,
+      isActive: true,
+    },
+  });
+
+  await prisma.orgMembership.upsert({
+    where: {
+      orgId_userId: {
+        orgId,
+        userId: users.peer,
+      },
+    },
+    update: {
+      role: UserRole.EMPLOYEE,
+      isActive: true,
+    },
+    create: {
+      orgId,
+      userId: users.peer,
+      role: UserRole.EMPLOYEE,
+      isActive: true,
+    },
+  });
+
+  await prisma.employee.upsert({
+    where: { id: employees.superAdmin },
+    update: {
+      orgId,
+      userId: users.superAdmin,
+      firstName: "Sage",
+      lastName: "Steward",
+      department: "Executive",
+      title: "Super Admin",
+      avatarUrl: portrait("women", 24),
+      managerId: null,
+    },
+    create: {
+      id: employees.superAdmin,
+      orgId,
+      userId: users.superAdmin,
+      firstName: "Sage",
+      lastName: "Steward",
+      department: "Executive",
+      title: "Super Admin",
+      avatarUrl: portrait("women", 24),
+      managerId: null,
     },
   });
 
@@ -208,7 +341,7 @@ async function main() {
     update: {
       orgId,
       templateId,
-      prompt: "What impact did this employee create this cycle?",
+      prompt: "What were your most meaningful accomplishments and business results this cycle?",
       questionType: ReviewQuestionType.TEXT,
       dimensionKey: null,
       isRequired: true,
@@ -218,7 +351,7 @@ async function main() {
       id: "template_q_1",
       orgId,
       templateId,
-      prompt: "What impact did this employee create this cycle?",
+      prompt: "What were your most meaningful accomplishments and business results this cycle?",
       questionType: ReviewQuestionType.TEXT,
       dimensionKey: null,
       isRequired: true,
@@ -231,7 +364,8 @@ async function main() {
     update: {
       orgId,
       templateId,
-      prompt: "What growth areas should this employee focus on?",
+      prompt:
+        "What strengths, development priorities, and future growth interests should shape the next cycle?",
       questionType: ReviewQuestionType.TEXT,
       dimensionKey: null,
       isRequired: true,
@@ -241,7 +375,8 @@ async function main() {
       id: "template_q_2",
       orgId,
       templateId,
-      prompt: "What growth areas should this employee focus on?",
+      prompt:
+        "What strengths, development priorities, and future growth interests should shape the next cycle?",
       questionType: ReviewQuestionType.TEXT,
       dimensionKey: null,
       isRequired: true,
@@ -348,7 +483,7 @@ async function main() {
       visibilityPolicy: CycleVisibilityPolicy.EMPLOYEE_AFTER_RELEASE,
       selfReviewRequired: true,
       managerReviewRequired: true,
-      peerReviewCount: 1,
+      peerReviewCount: 0,
       upwardReviewCount: 0,
       templateId,
     },
@@ -362,7 +497,7 @@ async function main() {
       visibilityPolicy: CycleVisibilityPolicy.EMPLOYEE_AFTER_RELEASE,
       selfReviewRequired: true,
       managerReviewRequired: true,
-      peerReviewCount: 1,
+      peerReviewCount: 0,
       upwardReviewCount: 0,
       templateId,
     },

@@ -1,0 +1,113 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e33]:
+    - complementary [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - generic [ref=e38]: PM
+          - button "Expand navigation" [ref=e39]:
+            - img [ref=e40]
+        - navigation [ref=e42]:
+          - link "Home" [ref=e43] [cursor=pointer]:
+            - /url: /
+            - img [ref=e45]
+            - generic [ref=e47]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e48] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e50]
+            - generic [ref=e57]: Goals
+            - tooltip "Goals"
+          - link "Reviews" [ref=e58] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e60]
+            - generic [ref=e63]: Reviews
+            - tooltip "Reviews"
+          - link "Help" [ref=e64] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e66]
+            - generic [ref=e70]: Help
+            - tooltip "Help"
+    - main [ref=e71]:
+      - generic [ref=e72]:
+        - generic [ref=e73]:
+          - generic [ref=e74]: Workspace
+          - generic [ref=e75]: Home
+        - generic [ref=e76]:
+          - button "Current organization" [disabled] [ref=e77]:
+            - generic [ref=e78]: O
+            - generic [ref=e79]: MCEL Sandbox Organization
+            - img [ref=e80]
+          - button "Ted Tederoff Ted Tederoff Employee" [ref=e83]:
+            - generic "Ted Tederoff" [ref=e84]: TT
+            - generic [ref=e85]:
+              - generic [ref=e86]: Ted Tederoff
+              - generic [ref=e87]: Employee
+      - generic [ref=e89]:
+        - generic [ref=e91]:
+          - generic [ref=e92]:
+            - generic "Ted Tederoff" [ref=e93]: TT
+            - generic [ref=e94]:
+              - heading "Performance workflows by role" [level=2] [ref=e95]
+              - heading "Hi, Ted!" [level=1] [ref=e96]
+              - paragraph [ref=e97]: Application Support and Development • Information Technology
+          - generic [ref=e98]:
+            - generic [ref=e99]: Employee
+            - generic [ref=e100]: 0 items due soon
+            - generic [ref=e101]: 0 total review tasks
+        - generic [ref=e103]:
+          - generic [ref=e104]: Home
+          - link "My tasks" [ref=e105] [cursor=pointer]:
+            - /url: /performance/reviews
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - generic [ref=e110]:
+                - heading "Start here" [level=3] [ref=e111]
+                - paragraph [ref=e112]: Start with your review tasks, support answers with evidence, and submit before the cycle closes.
+              - generic [ref=e113]: 2 suggested
+            - generic [ref=e114]:
+              - link "Task queue Review queue See every assigned review in one place instead of jumping between screens. Complete assigned reviews" [ref=e115] [cursor=pointer]:
+                - /url: /performance/reviews
+                - img [ref=e117]
+                - generic [ref=e124]:
+                  - generic [ref=e126]: Task queue
+                  - paragraph [ref=e128]: Review queue
+                  - paragraph [ref=e129]: See every assigned review in one place instead of jumping between screens.
+                  - generic [ref=e131]: Complete assigned reviews
+                - generic [ref=e132]: ›
+              - link "Personal draft Self review Pick up your active self review from the review queue and keep it moving toward submission. Complete assigned reviews" [ref=e133] [cursor=pointer]:
+                - /url: /performance/reviews
+                - img [ref=e135]
+                - generic [ref=e140]:
+                  - generic [ref=e142]: Personal draft
+                  - paragraph [ref=e144]: Self review
+                  - paragraph [ref=e145]: Pick up your active self review from the review queue and keep it moving toward submission.
+                  - generic [ref=e147]: Complete assigned reviews
+                - generic [ref=e148]: ›
+          - generic [ref=e149]:
+            - generic [ref=e150]:
+              - generic [ref=e151]:
+                - heading "At a glance" [level=3] [ref=e152]
+                - generic [ref=e153]: Live snapshot
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - text: Due soon
+                  - paragraph [ref=e156]: "0"
+                - generic [ref=e157]:
+                  - text: Open draft
+                  - paragraph [ref=e158]: None
+                - generic [ref=e159]:
+                  - text: Submitted
+                  - paragraph [ref=e160]: "0"
+            - generic [ref=e161]:
+              - heading "Org snapshot" [level=3] [ref=e162]
+              - paragraph [ref=e163]: Keep your reporting context visible while you move through reviews.
+              - generic [ref=e164]:
+                - generic "Elliot Mah" [ref=e165]: EM
+                - generic [ref=e166]:
+                  - paragraph [ref=e167]: Manager
+                  - paragraph [ref=e168]: Elliot Mah
+                  - paragraph [ref=e169]: Manager, Enterprise Applications
+  - button "Open Next.js Dev Tools" [ref=e27] [cursor=pointer]:
+    - img [ref=e28]
+  - alert [ref=e32]

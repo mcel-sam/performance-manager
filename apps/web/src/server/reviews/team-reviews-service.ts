@@ -6,6 +6,7 @@ import {
   UserRole,
 } from "@prisma/client";
 
+import { hasManagerAccess } from "@/lib/users/role-capabilities";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
@@ -14,8 +15,31 @@ interface TeamReviewsDb {
   employee: {
     findFirst: (args: {
       where: { orgId: string; userId: string };
-      select: { id: true };
-    }) => Promise<{ id: string } | null>;
+      select: {
+        id: true;
+        directReports: {
+          select: {
+            id: true;
+            firstName: true;
+            lastName: true;
+            title: true;
+            department: true;
+          };
+        };
+      };
+    }) => Promise<
+      | {
+          id: string;
+          directReports: Array<{
+            id: string;
+            firstName: string;
+            lastName: string;
+            title: string | null;
+            department: string | null;
+          }>;
+        }
+      | null
+    >;
   };
   reviewSubmission: {
     findMany: (args: {
@@ -158,8 +182,8 @@ export async function getManagerTeamReviewDashboard(
   options: { cycleId?: string } = {},
   db: TeamReviewsDb = prisma as unknown as TeamReviewsDb,
 ): Promise<TeamReviewDashboard> {
-  if (context.role !== UserRole.MANAGER) {
-    throw new AppError("FORBIDDEN", "Only managers can access team reviews", 403);
+  if (!hasManagerAccess(context.role) && context.role !== UserRole.HR_ADMIN) {
+    throw new AppError("FORBIDDEN", "Only people leaders can access team reviews", 403);
   }
 
   const managerEmployee = await db.employee.findFirst({
@@ -169,6 +193,15 @@ export async function getManagerTeamReviewDashboard(
     },
     select: {
       id: true,
+      directReports: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          title: true,
+          department: true,
+        },
+      },
     },
   });
 
@@ -193,6 +226,16 @@ export async function getManagerTeamReviewDashboard(
       },
     };
   }
+
+  const totalDirectReports = managerEmployee.directReports.length;
+  const directReportRows = managerEmployee.directReports.map((directReport) =>
+    createBaseTeamReviewRow({
+      employeeId: directReport.id,
+      employeeName: `${directReport.firstName} ${directReport.lastName}`,
+      title: directReport.title,
+      department: directReport.department,
+    }),
+  );
 
   const submissions = await db.reviewSubmission.findMany({
     where: {
@@ -234,14 +277,14 @@ export async function getManagerTeamReviewDashboard(
       cycles: [],
       cycle: null,
       kpis: {
-        totalDirectReports: 0,
+        totalDirectReports,
         awaitingManagerReview: 0,
         inProgressManagerReview: 0,
         completedManagerReview: 0,
         selfNotStarted: 0,
         overdueManagerReview: 0,
       },
-      rows: [],
+      rows: directReportRows,
       insights: {
         finalDistribution: createEmptyRatingDistribution(),
         scorecardDistribution: createEmptyRatingDistribution(),
@@ -309,27 +352,22 @@ export async function getManagerTeamReviewDashboard(
   const cycleSubmissions = submissions.filter((submission) => submission.cycleId === selectedCycleId);
   const cycle = cycleSubmissions[0].cycle;
 
-  const rowByEmployeeId = new Map<
-    string,
-    TeamReviewRow
-  >();
+  const rowByEmployeeId = new Map<string, TeamReviewRow>(
+    directReportRows.map((row): [string, TeamReviewRow] => [row.employeeId, row]),
+  );
 
   for (const submission of cycleSubmissions) {
     const existing: TeamReviewRow =
       rowByEmployeeId.get(submission.subjectEmployeeId) ??
-      {
+      createBaseTeamReviewRow({
         employeeId: submission.subjectEmployeeId,
         employeeName: `${submission.subjectEmployee.firstName} ${submission.subjectEmployee.lastName}`,
         title: submission.subjectEmployee.title,
         department: submission.subjectEmployee.department,
-        statuses: {},
-        managerSubmissionId: null,
-        managerDueAt: null,
-        packetHref: `/performance/reviews/${submission.cycleId}/packet/${submission.subjectEmployeeId}`,
-        managerReviewHref: null,
-      };
+      });
 
     existing.statuses[submission.relationship] = submission.status;
+    existing.packetHref = `/performance/reviews/${submission.cycleId}/packet/${submission.subjectEmployeeId}`;
     if (submission.relationship === ReviewRelationship.MANAGER) {
       existing.managerSubmissionId = submission.id;
       existing.managerReviewHref = `/performance/reviews/${submission.cycleId}/write/${submission.id}`;
@@ -342,6 +380,12 @@ export async function getManagerTeamReviewDashboard(
   const rows = Array.from(rowByEmployeeId.values()).sort((a, b) =>
     a.employeeName.localeCompare(b.employeeName),
   );
+
+  for (const row of rows) {
+    if (row.statuses[ReviewRelationship.SELF] !== ReviewSubmissionStatus.SUBMITTED) {
+      row.managerReviewHref = null;
+    }
+  }
 
   let awaitingManagerReview = 0;
   let inProgressManagerReview = 0;
@@ -418,7 +462,7 @@ export async function getManagerTeamReviewDashboard(
       status: cycle.status,
     },
     kpis: {
-      totalDirectReports: rows.length,
+      totalDirectReports,
       awaitingManagerReview,
       inProgressManagerReview,
       completedManagerReview,
@@ -442,5 +486,24 @@ function createEmptyRatingDistribution(): RatingDistribution {
     "3": 0,
     "4": 0,
     "5": 0,
+  };
+}
+
+function createBaseTeamReviewRow(input: {
+  employeeId: string;
+  employeeName: string;
+  title: string | null;
+  department: string | null;
+}): TeamReviewRow {
+  return {
+    employeeId: input.employeeId,
+    employeeName: input.employeeName,
+    title: input.title,
+    department: input.department,
+    statuses: {},
+    managerSubmissionId: null,
+    managerDueAt: null,
+    packetHref: null,
+    managerReviewHref: null,
   };
 }

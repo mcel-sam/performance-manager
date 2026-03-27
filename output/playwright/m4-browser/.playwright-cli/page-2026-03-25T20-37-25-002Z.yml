@@ -1,0 +1,28 @@
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: Performance Manager
+        - heading "Sign in to Trellis" [level=1] [ref=e8]
+        - paragraph [ref=e9]: Use your sandbox account to access Trellis with server-owned session identity.
+        - generic [ref=e10]: Sandbox auth is enabled.
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - heading "Sandbox sign in" [level=3] [ref=e13]
+          - paragraph [ref=e14]: Use your sandbox account email and password to access Trellis.
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - text: Email
+            - textbox "Email" [ref=e18]: emah@mcel.ca
+          - generic [ref=e19]:
+            - text: Password
+            - textbox "Password" [ref=e20]: Trellis@2026!
+          - button "Sign in" [ref=e21]
+  - button "Open Next.js Dev Tools" [ref=e33] [cursor=pointer]:
+    - generic [ref=e36]:
+      - text: Rendering
+      - generic [ref=e37]:
+        - generic [ref=e38]: .
+        - generic [ref=e39]: .
+        - generic [ref=e40]: .
+  - alert [ref=e32]

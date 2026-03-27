@@ -75,8 +75,8 @@ function humanizeRole(role: UserRole): string {
   switch (role) {
     case "HR_ADMIN":
       return "HR Admin";
-    case "CALIBRATOR":
-      return "Calibrator";
+    case "SUPER_ADMIN":
+      return "Super Admin";
     case "MANAGER":
       return "Manager";
     case "EMPLOYEE":

@@ -1,0 +1,53 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e18] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e20]
+            - generic [ref=e27]: Goals
+            - tooltip "Goals"
+          - link "Reviews" [ref=e28] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e30]
+            - generic [ref=e33]: Reviews
+            - tooltip "Reviews"
+          - link "Help" [ref=e34] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e36]
+            - generic [ref=e40]: Help
+            - tooltip "Help"
+    - main [ref=e41]:
+      - generic [ref=e43]:
+        - button "Current organization" [disabled] [ref=e44]:
+          - generic [ref=e45]: O
+          - generic [ref=e46]: MCEL Sandbox Organization
+          - img [ref=e47]
+        - button "Ted Tederoff Ted Tederoff Employee" [ref=e50]:
+          - generic "Ted Tederoff" [ref=e51]: TT
+          - generic [ref=e52]:
+            - generic [ref=e53]: Ted Tederoff
+            - generic [ref=e54]: Employee
+      - generic [ref=e55]:
+        - generic [ref=e57]:
+          - paragraph [ref=e58]: Improvement Plans
+          - heading "Coaching plans and check-ins" [level=1] [ref=e59]
+          - paragraph [ref=e60]: Track active plans, due timelines, and status progress.
+        - generic [ref=e61]:
+          - heading "No improvement plans yet" [level=2] [ref=e62]
+          - paragraph [ref=e63]: Plans created by managers or HR appear here. Use the help center for setup guidance.
+          - link "Open help center" [ref=e65] [cursor=pointer]:
+            - /url: /help
+  - button "Open Next.js Dev Tools" [ref=e71] [cursor=pointer]:
+    - img [ref=e72]
+  - alert [ref=e76]

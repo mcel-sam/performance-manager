@@ -1,0 +1,156 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e18] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e20]
+            - generic [ref=e27]: Goals
+            - tooltip "Goals"
+          - link "Reviews" [ref=e28] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e30]
+            - generic [ref=e33]: Reviews
+            - tooltip "Reviews"
+          - link "Improvement Plans" [ref=e34] [cursor=pointer]:
+            - /url: /performance/improvement-plans
+            - img [ref=e36]
+            - generic [ref=e39]: Improvement Plans
+            - tooltip "Improvement Plans"
+          - link "Help" [ref=e40] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e42]
+            - generic [ref=e46]: Help
+            - tooltip "Help"
+    - main [ref=e47]:
+      - generic [ref=e49]:
+        - button "Current organization" [disabled] [ref=e50]:
+          - generic [ref=e51]: O
+          - generic [ref=e52]: MCEL Sandbox Organization
+          - img [ref=e53]
+        - button "Ted Tederoff Ted Tederoff Employee" [ref=e56]:
+          - generic "Ted Tederoff" [ref=e57]: TT
+          - generic [ref=e58]:
+            - generic [ref=e59]: Ted Tederoff
+            - generic [ref=e60]: Employee
+      - generic [ref=e61]:
+        - generic [ref=e63]:
+          - heading "Performance Reviews" [level=1] [ref=e64]
+          - paragraph [ref=e65]: Review the submissions assigned to you, filter the queue, and continue the next task that needs attention.
+        - generic [ref=e66]:
+          - paragraph [ref=e67]: Search by subject or cycle, then narrow the queue by status or who you're reviewing.
+          - generic [ref=e68]:
+            - generic [ref=e69]:
+              - text: Search task
+              - searchbox "Search task" [ref=e70]
+            - generic [ref=e71]:
+              - text: Status
+              - combobox "Status" [ref=e72]:
+                - option "All statuses" [selected]
+                - option "Not started"
+                - option "In progress"
+                - option "Submitted"
+                - option "Returned"
+            - generic [ref=e73]:
+              - text: Who you're reviewing
+              - combobox "Who you're reviewing" [ref=e74]:
+                - option "All review types" [selected]
+                - option "Self"
+                - option "Direct report"
+            - button "Apply filters" [ref=e76]
+        - generic [ref=e78]:
+          - generic [ref=e79]: 4 tasks
+          - generic [ref=e80]: 0 returned
+          - generic [ref=e81]: 0 in progress
+          - generic [ref=e82]: 4 submitted
+        - generic [ref=e83]:
+          - generic "My review tasks" [ref=e84]:
+            - generic [ref=e85]:
+              - heading "My review tasks" [level=3] [ref=e86]
+              - paragraph [ref=e87]: Assigned submissions stay in one queue. Open a row for task details or launch the review directly.
+            - table [ref=e90]:
+              - rowgroup [ref=e91]:
+                - row "Cycle Subject Who you're reviewing Status Due Action" [ref=e92]:
+                  - columnheader "Cycle" [ref=e93]
+                  - columnheader "Subject" [ref=e94]
+                  - columnheader "Who you're reviewing" [ref=e95]
+                  - columnheader "Status" [ref=e96]
+                  - columnheader "Due" [ref=e97]
+                  - columnheader "Action" [ref=e98]
+              - rowgroup [ref=e99]:
+                - row "Sandbox 2026 Self Review Ted Tederoff Open details Self Submitted Mar 30 Open Review" [ref=e100]:
+                  - cell "Sandbox 2026 Self Review" [ref=e101]
+                  - cell "Ted Tederoff Open details" [ref=e102]:
+                    - link "Ted Tederoff Open details" [ref=e103] [cursor=pointer]:
+                      - /url: /performance/reviews?taskId=sandbox_submission_self_active_ted_self
+                      - generic [ref=e104]: Ted Tederoff
+                      - generic [ref=e105]: Open details
+                  - cell "Self" [ref=e106]
+                  - cell "Submitted" [ref=e107]:
+                    - generic [ref=e110]: Submitted
+                  - cell "Mar 30" [ref=e111]
+                  - cell "Open Review" [ref=e112]:
+                    - link "Open Review" [ref=e113] [cursor=pointer]:
+                      - /url: /performance/reviews/sandbox_review_cycle_self_active_1/write/sandbox_submission_self_active_ted_self?returnTo=%2Fperformance%2Freviews%3FtaskId%3Dsandbox_submission_self_active_ted_self
+                      - button "Open Review" [ref=e114]
+                - row "Sandbox 2026 Calibration Ready Ted Tederoff Open details Self Submitted Feb 27 Open Review" [ref=e115]:
+                  - cell "Sandbox 2026 Calibration Ready" [ref=e116]
+                  - cell "Ted Tederoff Open details" [ref=e117]:
+                    - link "Ted Tederoff Open details" [ref=e118] [cursor=pointer]:
+                      - /url: /performance/reviews?taskId=sandbox_submission_locked_ted_self
+                      - generic [ref=e119]: Ted Tederoff
+                      - generic [ref=e120]: Open details
+                  - cell "Self" [ref=e121]
+                  - cell "Submitted" [ref=e122]:
+                    - generic [ref=e125]: Submitted
+                  - cell "Feb 27" [ref=e126]
+                  - cell "Open Review" [ref=e127]:
+                    - link "Open Review" [ref=e128] [cursor=pointer]:
+                      - /url: /performance/reviews/sandbox_review_cycle_locked_calibration_1/write/sandbox_submission_locked_ted_self?returnTo=%2Fperformance%2Freviews%3FtaskId%3Dsandbox_submission_locked_ted_self
+                      - button "Open Review" [ref=e129]
+                - row "Sandbox 2025 Released Packet Ted Tederoff Open details Self Submitted Dec 14 Open Review" [ref=e130]:
+                  - cell "Sandbox 2025 Released Packet" [ref=e131]
+                  - cell "Ted Tederoff Open details" [ref=e132]:
+                    - link "Ted Tederoff Open details" [ref=e133] [cursor=pointer]:
+                      - /url: /performance/reviews?taskId=sandbox_submission_released_ted_self
+                      - generic [ref=e134]: Ted Tederoff
+                      - generic [ref=e135]: Open details
+                  - cell "Self" [ref=e136]
+                  - cell "Submitted" [ref=e137]:
+                    - generic [ref=e140]: Submitted
+                  - cell "Dec 14" [ref=e141]
+                  - cell "Open Review" [ref=e142]:
+                    - link "Open Review" [ref=e143] [cursor=pointer]:
+                      - /url: /performance/reviews/sandbox_review_cycle_released_packet_1/write/sandbox_submission_released_ted_self?returnTo=%2Fperformance%2Freviews%3FtaskId%3Dsandbox_submission_released_ted_self
+                      - button "Open Review" [ref=e144]
+                - row "Sandbox 2026 Manager Review Ted Tederoff Open details Self Submitted Apr 29 Open Review" [ref=e145]:
+                  - cell "Sandbox 2026 Manager Review" [ref=e146]
+                  - cell "Ted Tederoff Open details" [ref=e147]:
+                    - link "Ted Tederoff Open details" [ref=e148] [cursor=pointer]:
+                      - /url: /performance/reviews?taskId=sandbox_submission_manager_active_ted_self
+                      - generic [ref=e149]: Ted Tederoff
+                      - generic [ref=e150]: Open details
+                  - cell "Self" [ref=e151]
+                  - cell "Submitted" [ref=e152]:
+                    - generic [ref=e155]: Submitted
+                  - cell "Apr 29" [ref=e156]
+                  - cell "Open Review" [ref=e157]:
+                    - link "Open Review" [ref=e158] [cursor=pointer]:
+                      - /url: /performance/reviews/sandbox_review_cycle_manager_active_1/write/sandbox_submission_manager_active_ted_self?returnTo=%2Fperformance%2Freviews%3FtaskId%3Dsandbox_submission_manager_active_ted_self
+                      - button "Open Review" [ref=e159]
+          - generic [ref=e161]:
+            - heading "Task details" [level=3] [ref=e162]
+            - paragraph [ref=e163]: Select a task from the queue to review its status, due date, and next action.
+  - button "Open Next.js Dev Tools" [ref=e169] [cursor=pointer]:
+    - img [ref=e170]
+  - alert [ref=e174]

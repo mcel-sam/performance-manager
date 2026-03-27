@@ -62,6 +62,14 @@ The following workflows are highly sensitive and must be tightly controlled:
 ### 3.5 Least privilege
 Users should only see the minimum data and actions required to do their job.
 
+### 3.6 Elevated roles still participate as employees
+Manager, HR Admin, and Super Admin roles add permissions on top of normal performance participation.
+
+If a user is linked to an employee record, they should still be able to:
+- manage their own goals
+- complete their own self review where assigned
+- access their own participant workflow alongside elevated duties
+
 ---
 
 ## 4. Role Definitions
@@ -129,6 +137,9 @@ Cannot:
 
 ## 6.2 Manager
 Can:
+- create and manage own goals
+- submit own goals
+- update own goal progress during allowed windows
 - view goals for direct reports
 - approve goals for direct reports
 - request changes to goals for direct reports
@@ -142,6 +153,9 @@ Cannot:
 
 ## 6.3 HR Admin
 Can:
+- create and manage own goals
+- submit own goals
+- update own goal progress during allowed windows
 - view cycle-level goal progress and operational state where permitted
 - monitor completion and process status
 
@@ -151,6 +165,9 @@ Cannot by default:
 
 ## 6.4 Super Admin
 Can:
+- create and manage own goals
+- submit own goals
+- update own goal progress during allowed windows
 - view goals where access is permitted by org-level role
 - override locked goals in exceptional scope-change cases
 - audit and investigate goal state where required
@@ -181,6 +198,7 @@ Cannot:
 
 ## 7.2 Manager
 Can:
+- complete own self review when assigned
 - complete manager reviews for direct reports
 - view self review content for direct reports where workflow allows
 - access review packets for direct reports within scope
@@ -192,6 +210,7 @@ Cannot:
 
 ## 7.3 HR Admin
 Can:
+- complete own self review when assigned
 - create and manage review cycles
 - configure review templates
 - monitor review completion
@@ -204,6 +223,7 @@ Cannot by default:
 
 ## 7.4 Super Admin
 Can:
+- complete own self review when assigned
 - access reviews across the organization where required
 - access restricted leadership-team review cycles
 - investigate review outcomes in sensitive workflows

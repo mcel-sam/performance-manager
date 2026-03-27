@@ -24,6 +24,7 @@ import {
   TableRow,
   TableWrapper,
 } from "@/components/ui/table";
+import { formatStableDateTime } from "@/lib/dates/stable-format";
 import type {
   CalibrationAxisDefinition,
   CalibrationSessionData,
@@ -59,6 +60,7 @@ export default function CalibrationSessionView({
 }: CalibrationSessionViewProps) {
   const [session, setSession] = useState(initialData.session);
   const [placements, setPlacements] = useState(initialData.placements);
+  const [downstreamOutputs, setDownstreamOutputs] = useState(initialData.downstreamOutputs);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState(
     initialData.placements[0]?.employeeId ?? null,
   );
@@ -76,8 +78,6 @@ export default function CalibrationSessionView({
   const [isMoving, setIsMoving] = useState(false);
   const [finalizeMessage, setFinalizeMessage] = useState<string | null>(null);
   const [isFinalizing, setIsFinalizing] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   const performanceLabels = useMemo(
     () => buildAxisLabelMap(initialData.guidance.performance),
@@ -198,6 +198,7 @@ export default function CalibrationSessionView({
       const payload = (await response.json()) as {
         message?: string;
         finalizedAt?: string;
+        downstreamOutputs?: CalibrationSessionData["downstreamOutputs"];
       };
 
       if (!response.ok) {
@@ -215,43 +216,15 @@ export default function CalibrationSessionView({
           canMove: false,
         })),
       );
+      if (payload.downstreamOutputs) {
+        setDownstreamOutputs(payload.downstreamOutputs);
+      }
       setFinalizeMessage("Calibration finalized. Placements are now locked.");
       setMoveMessage(null);
     } catch (error) {
       setFinalizeMessage(error instanceof Error ? error.message : "Unable to finalize session");
     } finally {
       setIsFinalizing(false);
-    }
-  }
-
-  async function handleExportSession() {
-    setIsExporting(true);
-    setExportMessage(null);
-
-    try {
-      const response = await fetch(`/api/performance/calibration/${sessionId}/export`, {
-        method: "GET",
-        headers: {
-          "x-user-id": auth.userId,
-          "x-org-id": auth.orgId,
-        },
-      });
-
-      const payload = (await response.json()) as { message?: string };
-      if (response.status === 501) {
-        setExportMessage(payload.message ?? "Export is not implemented yet.");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(payload.message ?? "Unable to export calibration snapshot");
-      }
-
-      setExportMessage(payload.message ?? "Export ready.");
-    } catch (error) {
-      setExportMessage(error instanceof Error ? error.message : "Unable to export calibration snapshot");
-    } finally {
-      setIsExporting(false);
     }
   }
 
@@ -263,9 +236,6 @@ export default function CalibrationSessionView({
         description={initialData.guidance.summary}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={() => void handleExportSession()} disabled={isExporting}>
-              {isExporting ? "Exporting..." : "Export Snapshot"}
-            </Button>
             {!session.isFinalized && initialData.viewer.canFinalize ? (
               <Button onClick={() => void handleFinalizeSession()} disabled={isFinalizing}>
                 {isFinalizing ? "Finalizing..." : "Finalize Session"}
@@ -276,6 +246,7 @@ export default function CalibrationSessionView({
         metadata={
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="info">{session.cycleName}</Badge>
+            {session.isRestricted ? <Badge variant="warning">Restricted cohort</Badge> : null}
             {session.isFinalized ? (
               <Badge variant="warning">Finalized</Badge>
             ) : (
@@ -283,7 +254,7 @@ export default function CalibrationSessionView({
             )}
             {session.finalizedAt ? (
               <span className="text-xs text-slate-500">
-                Finalized on {new Date(session.finalizedAt).toLocaleString()}
+                Finalized on {formatStableDateTime(session.finalizedAt)}
               </span>
             ) : null}
           </div>
@@ -291,8 +262,9 @@ export default function CalibrationSessionView({
       />
 
       <Toast variant="info">
-        Calibration aligns reviewers on performance and potential placements for this cycle before
-        outcomes are finalized.
+        {session.isRestricted
+          ? "This restricted calibration session is reserved for Super Admin review of leadership or sensitive talent cohorts."
+          : "Calibration aligns reviewers on performance and potential placements for this cycle before outcomes are finalized."}
       </Toast>
 
       {finalizeMessage ? (
@@ -300,17 +272,140 @@ export default function CalibrationSessionView({
           {finalizeMessage}
         </Toast>
       ) : null}
-      {exportMessage ? (
-        <Toast variant={exportMessage.includes("Unable") ? "error" : "info"}>{exportMessage}</Toast>
-      ) : null}
 
       <HelpHint
         label="What finalized/locked means"
         buttonLabel="Toggle finalized and locked guidance"
       >
         Finalizing captures an immutable snapshot and locks placement controls. Context links remain
-        viewable after lock.
+        viewable after lock, and Super Admin downstream succession/risk outputs become available from
+        the finalized snapshot.
       </HelpHint>
+
+      {initialData.viewer.canViewDownstreamOutputs ? (
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <SectionHeader
+                title="Succession outputs"
+                description={
+                  downstreamOutputs.available
+                    ? "Recommended succession follow-up from the finalized calibration snapshot."
+                    : "Finalize the session to capture restricted succession outputs."
+                }
+              />
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              {downstreamOutputs.available && downstreamOutputs.succession ? (
+                <>
+                  <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+                    <Badge variant="info">
+                      Emergency backup {downstreamOutputs.succession.emergencyBackupCount}
+                    </Badge>
+                    <Badge variant="info">
+                      Ready now {downstreamOutputs.succession.readyNowCount}
+                    </Badge>
+                    <Badge variant="info">
+                      Ready future {downstreamOutputs.succession.readyFutureCount}
+                    </Badge>
+                  </div>
+                  {downstreamOutputs.succession.candidates.length === 0 ? (
+                    <EmptyState
+                      title="No successor signals yet"
+                      description="No cohort members currently meet the downstream succession thresholds from this finalized calibration."
+                      className="p-4"
+                    />
+                  ) : (
+                    <div className="space-y-2">
+                      {downstreamOutputs.succession.candidates.map((candidate) => (
+                        <div
+                          key={candidate.employeeId}
+                          className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-3"
+                        >
+                          <p className="text-sm font-semibold text-slate-900">{candidate.employeeName}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {candidate.emergencyBackup
+                              ? "Emergency backup"
+                              : candidate.readyNow
+                                ? "Ready now"
+                                : "Ready future"}{" "}
+                            · {candidate.estimatedReadinessTimeframe}
+                          </p>
+                          <p className="mt-2 text-sm text-slate-700">
+                            {candidate.developmentNeeds ?? "No development note captured in this placement."}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <EmptyState
+                  title="No finalized succession outputs"
+                  description="Succession outputs are derived only from the finalized calibration snapshot."
+                  className="p-4"
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <SectionHeader
+                title="Risk outputs"
+                description={
+                  downstreamOutputs.available
+                    ? "Restricted risk follow-up derived from the finalized calibration snapshot."
+                    : "Finalize the session to capture restricted risk outputs."
+                }
+              />
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              {downstreamOutputs.available && downstreamOutputs.risk ? (
+                <>
+                  <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+                    <Badge variant="warning">
+                      Organizational risk {downstreamOutputs.risk.organizationalRiskLevel}
+                    </Badge>
+                    <Badge variant="warning">
+                      Flagged follow-ups {downstreamOutputs.risk.flaggedCount}
+                    </Badge>
+                  </div>
+                  {downstreamOutputs.risk.items.length === 0 ? (
+                    <EmptyState
+                      title="No restricted risk flags"
+                      description="No cohort members currently require restricted risk follow-up from this finalized calibration."
+                      className="p-4"
+                    />
+                  ) : (
+                    <div className="space-y-2">
+                      {downstreamOutputs.risk.items.map((item) => (
+                        <div
+                          key={item.employeeId}
+                          className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-3"
+                        >
+                          <p className="text-sm font-semibold text-slate-900">{item.employeeName}</p>
+                          <p className="mt-1 text-xs text-slate-500">Risk level {item.riskLevel}</p>
+                          <p className="mt-2 text-sm text-slate-700">{item.issueSummary}</p>
+                          <p className="mt-2 text-sm font-medium text-slate-600">
+                            {item.actionRecommendation}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <EmptyState
+                  title="No finalized risk outputs"
+                  description="Risk outputs are reserved for restricted Super Admin follow-up after finalization."
+                  className="p-4"
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
 
       <div className="grid gap-3 text-sm text-slate-700 md:grid-cols-2">
         <HelpHint label="Performance definitions" buttonLabel="Toggle performance definitions">
@@ -545,7 +640,7 @@ export default function CalibrationSessionView({
 
                         {!selectedPlacement.canMove && !session.isFinalized ? (
                           <Toast variant="warning">
-                            You can only move placements for employees you manage.
+                            Manager participation is limited to direct reports that are in this calibration cohort.
                           </Toast>
                         ) : null}
 

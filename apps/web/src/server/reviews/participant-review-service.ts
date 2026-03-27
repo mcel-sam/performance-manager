@@ -10,6 +10,10 @@ import {
 } from "@prisma/client";
 import { z } from "zod";
 
+import {
+  isVanillaReviewRelationship,
+  resolveVanillaReviewPrompt,
+} from "@/lib/reviews/review-copy";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { getGoalReviewContext } from "@/server/goals/goal-service";
@@ -52,6 +56,7 @@ interface SubmissionAccessRecord {
   };
   subjectEmployee: {
     id: string;
+    managerId: string | null;
     firstName: string;
     lastName: string;
     department: string | null;
@@ -324,18 +329,13 @@ export async function listAssignedReviewTasks(
   context: RequestContext,
   db: ParticipantReviewDb = prisma as unknown as ParticipantReviewDb,
 ): Promise<ReviewTaskListItem[]> {
-  const where: Record<string, unknown> = {
-    orgId: context.orgId,
-  };
-
-  if (context.role !== UserRole.HR_ADMIN) {
-    where.reviewerEmployee = {
-      userId: context.userId,
-    };
-  }
-
   const submissions = await db.reviewSubmission.findMany({
-    where,
+    where: {
+      orgId: context.orgId,
+      reviewerEmployee: {
+        userId: context.userId,
+      },
+    },
     select: {
       id: true,
       cycleId: true,
@@ -364,18 +364,24 @@ export async function listAssignedReviewTasks(
     },
   });
 
-  return submissions.map((submission) => ({
-    id: submission.id,
-    cycleId: submission.cycleId,
-    cycleName: submission.cycle.name,
-    cycleEndDate: submission.cycle.endDate.toISOString(),
-    cycleStatus: submission.cycle.status,
-    subjectName: `${submission.subjectEmployee.firstName} ${submission.subjectEmployee.lastName}`,
-    subjectAvatarUrl: submission.subjectEmployee.avatarUrl,
-    relationship: submission.relationship,
-    status: submission.status,
-    submittedAt: submission.submittedAt?.toISOString() ?? null,
-  }));
+  return submissions
+    .filter(
+      (submission) =>
+        submission.cycle.status !== CycleStatus.DRAFT &&
+        isVanillaReviewRelationship(submission.relationship),
+    )
+    .map((submission) => ({
+      id: submission.id,
+      cycleId: submission.cycleId,
+      cycleName: submission.cycle.name,
+      cycleEndDate: submission.cycle.endDate.toISOString(),
+      cycleStatus: submission.cycle.status,
+      subjectName: `${submission.subjectEmployee.firstName} ${submission.subjectEmployee.lastName}`,
+      subjectAvatarUrl: submission.subjectEmployee.avatarUrl,
+      relationship: submission.relationship,
+      status: submission.status,
+      submittedAt: submission.submittedAt?.toISOString() ?? null,
+    }));
 }
 
 export async function getWriteReviewData(
@@ -446,7 +452,11 @@ export async function getWriteReviewData(
 
       return {
         id: question.id,
-        prompt: question.prompt,
+        prompt: resolveVanillaReviewPrompt(
+          question.prompt,
+          submission.relationship,
+          question.sortOrder,
+        ),
         questionType: question.questionType,
         dimensionKey: question.dimensionKey,
         isRequired: question.isRequired,
@@ -495,6 +505,11 @@ export async function autosaveReviewAnswer(
   }
 
   const submission = await getSubmissionForAccess(parsed.data.cycleId, parsed.data.submissionId, context, db);
+  if (submission.cycle.status !== CycleStatus.ACTIVE) {
+    throw new AppError("READ_ONLY", "Reviews can only be edited while the cycle is active", 409, {
+      cycleStatus: submission.cycle.status,
+    });
+  }
   if (submission.status === ReviewSubmissionStatus.SUBMITTED) {
     throw new AppError("READ_ONLY", "Submitted reviews cannot be edited", 409);
   }
@@ -589,6 +604,12 @@ export async function submitReviewSubmission(
       status: submission.status,
       submittedAt: submission.submittedAt?.toISOString() ?? null,
     };
+  }
+
+  if (submission.cycle.status !== CycleStatus.ACTIVE) {
+    throw new AppError("READ_ONLY", "Reviews can only be submitted while the cycle is active", 409, {
+      cycleStatus: submission.cycle.status,
+    });
   }
 
   const template = await resolveTemplateForSubmission(submission, db);
@@ -728,6 +749,7 @@ async function getSubmissionForAccess(
       subjectEmployee: {
         select: {
           id: true,
+          managerId: true,
           firstName: true,
           lastName: true,
           department: true,
@@ -768,12 +790,104 @@ async function getSubmissionForAccess(
     throw new AppError("NOT_FOUND", "Review submission not found", 404);
   }
 
-  if (context.role !== UserRole.HR_ADMIN && submission.reviewerEmployee.userId !== context.userId) {
+  if (!isVanillaReviewRelationship(submission.relationship)) {
+    throw new AppError("FORBIDDEN", "Only self and manager reviews are available in the vanilla workflow", 403);
+  }
+
+  if (submission.reviewerEmployee.userId !== context.userId) {
     throw new AppError(
       "FORBIDDEN",
-      "You are not allowed to access this review submission",
+      "Only the assigned reviewer can access this review submission",
       403,
     );
+  }
+
+  if (submission.cycle.status === CycleStatus.DRAFT) {
+    throw new AppError("FORBIDDEN", "Review submissions are not visible until the cycle is active", 403, {
+      cycleStatus: submission.cycle.status,
+    });
+  }
+
+  if (
+    submission.relationship === ReviewRelationship.MANAGER &&
+    submission.subjectEmployee.managerId !== submission.reviewerEmployee.id
+  ) {
+    throw new AppError("FORBIDDEN", "Manager review access is limited to current direct reports", 403);
+  }
+
+  if (submission.relationship === ReviewRelationship.MANAGER) {
+    const selfSubmission = await db.reviewSubmission.findFirst({
+      where: {
+        orgId: context.orgId,
+        cycleId,
+        packetId: submission.packetId,
+        subjectEmployeeId: submission.subjectEmployeeId,
+        relationship: ReviewRelationship.SELF,
+      },
+      select: {
+        id: true,
+        orgId: true,
+        cycleId: true,
+        packetId: true,
+        status: true,
+        submittedAt: true,
+        relationship: true,
+        subjectEmployeeId: true,
+        reviewerEmployee: {
+          select: {
+            id: true,
+            userId: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        subjectEmployee: {
+          select: {
+            id: true,
+            managerId: true,
+            firstName: true,
+            lastName: true,
+            department: true,
+            title: true,
+          },
+        },
+        cycle: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            endDate: true,
+            template: {
+              select: {
+                id: true,
+                name: true,
+                questions: {
+                  select: {
+                    id: true,
+                    prompt: true,
+                    questionType: true,
+                    dimensionKey: true,
+                    isRequired: true,
+                    sortOrder: true,
+                  },
+                  orderBy: {
+                    sortOrder: "asc",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!selfSubmission || selfSubmission.status !== ReviewSubmissionStatus.SUBMITTED) {
+      throw new AppError(
+        "FORBIDDEN",
+        "Manager reviews unlock only after the employee submits the self review",
+        403,
+      );
+    }
   }
 
   return submission;

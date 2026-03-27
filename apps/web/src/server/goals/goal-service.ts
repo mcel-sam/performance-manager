@@ -4,13 +4,16 @@ import {
   GoalCycleCadence,
   GoalCycleStatus,
   GoalStatus,
+  GoalType,
   GoalVisibility,
+  GoalWorkflowStatus,
   KeyResultType,
   Prisma,
   UserRole,
 } from "@prisma/client";
 import { z } from "zod";
 
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
@@ -59,8 +62,8 @@ const keyResultInputSchema = z.object({
 });
 
 const createGoalSchema = z.object({
-  ownerEmployeeId: z.string().trim().min(1).optional(),
   cycleId: z.string().trim().min(1),
+  goalType: z.nativeEnum(GoalType).default(GoalType.PERFORMANCE),
   title: z.string().trim().min(2).max(240),
   description: z.string().trim().max(6000).nullable().optional(),
   status: z.nativeEnum(GoalStatus).default(GoalStatus.NOT_STARTED),
@@ -73,6 +76,7 @@ const createGoalSchema = z.object({
 
 const updateGoalSchema = z
   .object({
+    goalType: z.nativeEnum(GoalType).optional(),
     title: z.string().trim().min(2).max(240).optional(),
     description: z.string().trim().max(6000).nullable().optional(),
     status: z.nativeEnum(GoalStatus).optional(),
@@ -103,15 +107,25 @@ const goalUpdateCreateSchema = z.object({
     .default([]),
 });
 
+const goalWorkflowTransitionSchema = z.object({
+  action: z.enum(["submit", "approve", "request_changes", "override"]),
+  note: z.string().trim().max(4000).optional().nullable(),
+});
+
 const goalAccessSelect = {
   id: true,
   orgId: true,
   cycleId: true,
+  goalType: true,
   ownerEmployeeId: true,
   title: true,
   description: true,
   status: true,
   progressPercent: true,
+  workflowStatus: true,
+  workflowNote: true,
+  submittedAt: true,
+  approvedAt: true,
   visibility: true,
   parentGoalId: true,
   createdAt: true,
@@ -358,10 +372,12 @@ export async function createGoal(
 ) {
   const parsed = createGoalSchema.parse(payload);
   const scope = await getViewerScope(context, db);
-  const ownerEmployeeId = parsed.ownerEmployeeId ?? scope.viewerEmployeeId;
-  assertCanManageOwner(ownerEmployeeId, context, scope);
+  assertCanCreateGoal(context);
 
-  await getGoalCycleOrThrow(parsed.cycleId, context, db);
+  const ownerEmployeeId = scope.viewerEmployeeId;
+  const cycle = await getGoalCycleOrThrow(parsed.cycleId, context, db);
+  assertGoalDefinitionWindow(cycle.status);
+  await assertGoalCountWithinLimit(ownerEmployeeId, parsed.cycleId, context, db);
 
   let parentGoal: GoalAccessRecord | null = null;
   if (parsed.parentGoalId) {
@@ -392,10 +408,12 @@ export async function createGoal(
       orgId: context.orgId,
       ownerEmployeeId,
       cycleId: parsed.cycleId,
+      goalType: parsed.goalType,
       title: parsed.title,
       description: normalizeNullableString(parsed.description),
       status: parsed.status,
       progressPercent,
+      workflowStatus: GoalWorkflowStatus.DRAFT,
       visibility: parsed.visibility,
       parentGoalId: parsed.parentGoalId ?? null,
       keyResults: parsed.keyResults.length
@@ -435,6 +453,7 @@ export async function createGoal(
   await writeAuditEvent(db, context, "GOAL_CREATED", "Goal", created.id, {
     ownerEmployeeId,
     cycleId: parsed.cycleId,
+    goalType: parsed.goalType,
     parentGoalId: parsed.parentGoalId ?? null,
     keyResultCount: parsed.keyResults.length,
   });
@@ -450,7 +469,10 @@ export async function getGoal(
   const scope = await getViewerScope(context, db);
   const goal = await getGoalDetailOrThrow(goalId, context, db);
   await assertCanViewGoal(goal, context, scope, db);
-  return mapGoalDetail(goal);
+  return {
+    ...mapGoalDetail(goal),
+    viewer: buildGoalViewerCapabilities(goal, context, scope),
+  };
 }
 
 export async function getGoalFormCatalog(
@@ -672,8 +694,9 @@ export async function updateGoal(
 ) {
   const parsed = updateGoalSchema.parse(payload);
   const scope = await getViewerScope(context, db);
-  const goal = await getGoalAccessOrThrow(goalId, context, db);
-  await assertCanManageGoal(goal, context, scope);
+  const goal = await getGoalDetailOrThrow(goalId, context, db);
+  await assertCanEditGoalDefinition(goal, context, scope);
+  assertGoalDefinitionWindow(goal.cycle.status);
 
   if (parsed.visibility !== undefined && goal.parentGoalId) {
     const parent = await getGoalAccessOrThrow(goal.parentGoalId, context, db);
@@ -683,6 +706,7 @@ export async function updateGoal(
   await db.goal.update({
     where: { id: goalId },
     data: {
+      ...(parsed.goalType !== undefined ? { goalType: parsed.goalType } : {}),
       ...(parsed.title !== undefined ? { title: parsed.title } : {}),
       ...(parsed.description !== undefined
         ? { description: normalizeNullableString(parsed.description) }
@@ -742,8 +766,9 @@ export async function archiveGoal(
   db: GoalDb = prisma,
 ) {
   const scope = await getViewerScope(context, db);
-  const goal = await getGoalAccessOrThrow(goalId, context, db);
-  await assertCanManageGoal(goal, context, scope);
+  const goal = await getGoalDetailOrThrow(goalId, context, db);
+  await assertCanEditGoalDefinition(goal, context, scope);
+  assertGoalDefinitionWindow(goal.cycle.status);
 
   const archived = await db.goal.update({
     where: { id: goalId },
@@ -769,8 +794,9 @@ export async function alignGoal(
 ) {
   const parsed = alignGoalSchema.parse(payload);
   const scope = await getViewerScope(context, db);
-  const goal = await getGoalAccessOrThrow(goalId, context, db);
-  await assertCanManageGoal(goal, context, scope);
+  const goal = await getGoalDetailOrThrow(goalId, context, db);
+  await assertCanEditGoalDefinition(goal, context, scope);
+  assertGoalDefinitionWindow(goal.cycle.status);
 
   if (goalId === parsed.parentGoalId) {
     throw new AppError("VALIDATION_ERROR", "A goal cannot be aligned to itself", 400);
@@ -807,8 +833,9 @@ export async function unlinkGoal(
   db: GoalDb = prisma,
 ) {
   const scope = await getViewerScope(context, db);
-  const goal = await getGoalAccessOrThrow(goalId, context, db);
-  await assertCanManageGoal(goal, context, scope);
+  const goal = await getGoalDetailOrThrow(goalId, context, db);
+  await assertCanEditGoalDefinition(goal, context, scope);
+  assertGoalDefinitionWindow(goal.cycle.status);
 
   const updated = await db.goal.update({
     where: { id: goalId },
@@ -868,8 +895,9 @@ export async function createKeyResult(
 ) {
   const parsed = keyResultInputSchema.parse(payload);
   const scope = await getViewerScope(context, db);
-  const goal = await getGoalAccessOrThrow(goalId, context, db);
-  await assertCanManageGoal(goal, context, scope);
+  const goal = await getGoalDetailOrThrow(goalId, context, db);
+  await assertCanEditGoalDefinition(goal, context, scope);
+  assertGoalDefinitionWindow(goal.cycle.status);
 
   const keyResult = await db.keyResult.create({
     data: {
@@ -918,8 +946,9 @@ export async function updateKeyResult(
     message: "At least one field is required",
   }).parse(payload);
   const scope = await getViewerScope(context, db);
-  const goal = await getGoalAccessOrThrow(goalId, context, db);
-  await assertCanManageGoal(goal, context, scope);
+  const goal = await getGoalDetailOrThrow(goalId, context, db);
+  await assertCanEditGoalDefinition(goal, context, scope);
+  assertGoalDefinitionWindow(goal.cycle.status);
   await assertKeyResultBelongsToGoal(goalId, keyResultId, context, db);
 
   const updated = await db.keyResult.update({
@@ -965,8 +994,9 @@ export async function deleteKeyResult(
   db: GoalDb = prisma,
 ) {
   const scope = await getViewerScope(context, db);
-  const goal = await getGoalAccessOrThrow(goalId, context, db);
-  await assertCanManageGoal(goal, context, scope);
+  const goal = await getGoalDetailOrThrow(goalId, context, db);
+  await assertCanEditGoalDefinition(goal, context, scope);
+  assertGoalDefinitionWindow(goal.cycle.status);
   await assertKeyResultBelongsToGoal(goalId, keyResultId, context, db);
 
   await db.keyResult.delete({
@@ -1038,7 +1068,8 @@ export async function createGoalUpdate(
   const parsed = goalUpdateCreateSchema.parse(payload);
   const scope = await getViewerScope(context, db);
   const goal = await getGoalDetailOrThrow(goalId, context, db);
-  await assertCanUpdateGoalProgress(goal, context, scope, db);
+  await assertCanUpdateGoalProgress(goal, context, scope);
+  assertGoalProgressWindow(goal.cycle.status);
 
   if (parsed.keyResults.length > 0) {
     const keyResultIds = new Set(goal.keyResults.map((keyResult) => keyResult.id));
@@ -1149,6 +1180,82 @@ export async function createGoalUpdate(
   };
 }
 
+export async function transitionGoalWorkflow(
+  goalId: string,
+  payload: unknown,
+  context: RequestContext,
+  db: GoalDb = prisma,
+) {
+  const parsed = goalWorkflowTransitionSchema.parse(payload);
+  const scope = await getViewerScope(context, db);
+  const goal = await getGoalDetailOrThrow(goalId, context, db);
+
+  let nextWorkflowStatus: GoalWorkflowStatus;
+  let submittedAt = goal.submittedAt;
+  let approvedAt = goal.approvedAt;
+  const workflowNote = normalizeNullableString(parsed.note);
+
+  switch (parsed.action) {
+    case "submit":
+      assertCanSubmitGoal(goal, context, scope);
+      assertGoalDefinitionWindow(goal.cycle.status);
+      nextWorkflowStatus = GoalWorkflowStatus.SUBMITTED;
+      submittedAt = new Date();
+      approvedAt = null;
+      break;
+    case "approve":
+      assertCanReviewGoal(goal, context, scope);
+      nextWorkflowStatus = GoalWorkflowStatus.APPROVED;
+      approvedAt = new Date();
+      break;
+    case "request_changes":
+      assertCanReviewGoal(goal, context, scope);
+      if (!workflowNote) {
+        throw new AppError(
+          "VALIDATION_ERROR",
+          "A revision note is required when requesting changes",
+          400,
+        );
+      }
+      nextWorkflowStatus = GoalWorkflowStatus.CHANGES_REQUESTED;
+      approvedAt = null;
+      break;
+    case "override":
+      assertCanOverrideGoal(goal, context);
+      if (!workflowNote) {
+        throw new AppError(
+          "VALIDATION_ERROR",
+          "An override note is required for locked goals",
+          400,
+        );
+      }
+      nextWorkflowStatus = GoalWorkflowStatus.OVERRIDDEN;
+      approvedAt = null;
+      break;
+    default:
+      throw new AppError("VALIDATION_ERROR", "Unsupported goal workflow action", 400);
+  }
+
+  const updated = await db.goal.update({
+    where: { id: goalId },
+    data: {
+      workflowStatus: nextWorkflowStatus,
+      workflowNote,
+      submittedAt,
+      approvedAt,
+    },
+    select: goalDetailSelect,
+  });
+
+  await writeAuditEvent(db, context, `GOAL_${parsed.action.toUpperCase()}_WORKFLOW`, "Goal", goalId, {
+    previousWorkflowStatus: goal.workflowStatus,
+    workflowStatus: nextWorkflowStatus,
+    noteLength: workflowNote?.length ?? 0,
+  });
+
+  return getGoal(goalId, context, db);
+}
+
 function mapGoalVisibilityToEvidenceVisibility(goalVisibility: GoalVisibility): EvidenceVisibility {
   switch (goalVisibility) {
     case GoalVisibility.ORG:
@@ -1190,7 +1297,7 @@ async function getViewerScope(context: RequestContext, db: GoalDb): Promise<View
 }
 
 function requireHrAdmin(context: RequestContext): void {
-  if (context.role !== UserRole.HR_ADMIN) {
+  if (!hasHrAdminAccess(context.role)) {
     throw new AppError("FORBIDDEN", "Insufficient permissions", 403);
   }
 }
@@ -1256,40 +1363,59 @@ async function getGoalDetailOrThrow(goalId: string, context: RequestContext, db:
   return goal;
 }
 
-function assertCanManageOwner(
-  ownerEmployeeId: string,
-  context: RequestContext,
-  scope: ViewerScope,
-): void {
-  if (context.role === UserRole.HR_ADMIN) {
-    return;
+function assertCanCreateGoal(context: RequestContext): void {
+  switch (context.role) {
+    case UserRole.EMPLOYEE:
+    case UserRole.MANAGER:
+    case UserRole.HR_ADMIN:
+    case UserRole.SUPER_ADMIN:
+      return;
+    default:
+      throw new AppError(
+        "FORBIDDEN",
+        "Only users linked to employee records can create goals in the active workflow",
+        403,
+      );
   }
-
-  if (ownerEmployeeId === scope.viewerEmployeeId) {
-    return;
-  }
-
-  if (context.role === UserRole.MANAGER && scope.directReportIds.has(ownerEmployeeId)) {
-    return;
-  }
-
-  throw new AppError("FORBIDDEN", "Insufficient permissions for the requested owner", 403);
 }
 
-async function assertCanManageGoal(
-  goal: GoalAccessRecord,
+async function assertCanEditGoalDefinition(
+  goal: GoalDetailRecord,
   context: RequestContext,
   scope: ViewerScope,
 ): Promise<void> {
-  if (context.role === UserRole.HR_ADMIN) {
-    return;
+  if (goal.workflowStatus === GoalWorkflowStatus.APPROVED) {
+    throw new AppError(
+      "READ_ONLY",
+      "Approved goals are locked. Only Super Admin can override them in exceptional cases.",
+      409,
+    );
+  }
+
+  if (goal.workflowStatus === GoalWorkflowStatus.OVERRIDDEN) {
+    if (context.role === UserRole.SUPER_ADMIN) {
+      return;
+    }
+
+    throw new AppError(
+      "FORBIDDEN",
+      "This goal is under Super Admin override and cannot be edited by other roles",
+      403,
+    );
+  }
+
+  if (
+    goal.workflowStatus !== GoalWorkflowStatus.DRAFT &&
+    goal.workflowStatus !== GoalWorkflowStatus.CHANGES_REQUESTED
+  ) {
+    throw new AppError(
+      "READ_ONLY",
+      "Goals can only be edited while they are drafts or explicitly returned for changes",
+      409,
+    );
   }
 
   if (goal.ownerEmployeeId === scope.viewerEmployeeId) {
-    return;
-  }
-
-  if (context.role === UserRole.MANAGER && scope.directReportIds.has(goal.ownerEmployeeId)) {
     return;
   }
 
@@ -1313,7 +1439,7 @@ async function canViewGoal(
   scope: ViewerScope,
   db: GoalDb,
 ): Promise<boolean> {
-  if (context.role === UserRole.HR_ADMIN) {
+  if (context.role === UserRole.HR_ADMIN || context.role === UserRole.SUPER_ADMIN) {
     return true;
   }
 
@@ -1350,28 +1476,81 @@ async function assertCanUpdateGoalProgress(
   goal: GoalDetailRecord,
   context: RequestContext,
   scope: ViewerScope,
-  db: GoalDb,
 ): Promise<void> {
-  if (context.role === UserRole.HR_ADMIN) {
-    return;
+  if (goal.workflowStatus !== GoalWorkflowStatus.APPROVED) {
+    throw new AppError(
+      "READ_ONLY",
+      "Goal progress updates are only available after the goal has been approved",
+      409,
+    );
   }
 
   if (goal.ownerEmployeeId === scope.viewerEmployeeId) {
     return;
   }
 
-  if (context.role === UserRole.MANAGER && scope.directReportIds.has(goal.ownerEmployeeId)) {
-    return;
+  throw new AppError("FORBIDDEN", "Only the goal owner can post progress updates", 403);
+}
+
+function assertGoalDefinitionWindow(status: GoalCycleStatus): void {
+  if (status === GoalCycleStatus.CLOSED || status === GoalCycleStatus.ARCHIVED) {
+    throw new AppError(
+      "READ_ONLY",
+      "Goal definitions cannot be changed after the cycle is closed",
+      409,
+    );
+  }
+}
+
+function assertGoalProgressWindow(status: GoalCycleStatus): void {
+  if (status !== GoalCycleStatus.ACTIVE) {
+    throw new AppError(
+      "READ_ONLY",
+      "Goal progress updates are only allowed during the active goal cycle window",
+      409,
+    );
+  }
+}
+
+function assertCanSubmitGoal(
+  goal: GoalDetailRecord,
+  context: RequestContext,
+  scope: ViewerScope,
+): void {
+  if (goal.ownerEmployeeId !== scope.viewerEmployeeId) {
+    throw new AppError("FORBIDDEN", "Only the goal owner can submit goals", 403);
   }
 
-  if (context.role === UserRole.MANAGER && goal.parentGoalId) {
-    const hasAncestor = await hasAccessibleAncestor(goal.parentGoalId, context, scope, db);
-    if (hasAncestor) {
-      return;
-    }
+  if (
+    goal.workflowStatus !== GoalWorkflowStatus.DRAFT &&
+    goal.workflowStatus !== GoalWorkflowStatus.CHANGES_REQUESTED
+  ) {
+    throw new AppError("READ_ONLY", "This goal is not available for submission", 409);
+  }
+}
+
+function assertCanReviewGoal(
+  goal: GoalDetailRecord,
+  context: RequestContext,
+  scope: ViewerScope,
+): void {
+  if (context.role !== UserRole.MANAGER || !scope.directReportIds.has(goal.ownerEmployeeId)) {
+    throw new AppError("FORBIDDEN", "Only the direct manager can review this goal", 403);
   }
 
-  throw new AppError("FORBIDDEN", "Insufficient permissions to update this goal", 403);
+  if (goal.workflowStatus !== GoalWorkflowStatus.SUBMITTED) {
+    throw new AppError("READ_ONLY", "Only submitted goals can be reviewed", 409);
+  }
+}
+
+function assertCanOverrideGoal(goal: GoalDetailRecord, context: RequestContext): void {
+  if (context.role !== UserRole.SUPER_ADMIN) {
+    throw new AppError("FORBIDDEN", "Only Super Admin can override locked goals", 403);
+  }
+
+  if (goal.workflowStatus !== GoalWorkflowStatus.APPROVED) {
+    throw new AppError("READ_ONLY", "Only approved goals can be overridden", 409);
+  }
 }
 
 async function hasAccessibleAncestor(
@@ -1524,6 +1703,35 @@ async function listGoalAncestors(
   return ancestors;
 }
 
+async function assertGoalCountWithinLimit(
+  ownerEmployeeId: string,
+  cycleId: string,
+  context: RequestContext,
+  db: GoalDb,
+): Promise<void> {
+  const goals = await db.goal.findMany({
+    where: {
+      orgId: context.orgId,
+      ownerEmployeeId,
+      cycleId,
+      status: {
+        not: GoalStatus.CANCELED,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (goals.length >= 5) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Employees can have a maximum of 5 goals in a cycle",
+      400,
+    );
+  }
+}
+
 async function writeAuditEvent(
   db: GoalDb,
   context: RequestContext,
@@ -1566,12 +1774,17 @@ function mapGoalSummary(goal: GoalAccessRecord) {
   return {
     id: goal.id,
     cycleId: goal.cycleId,
+    goalType: goal.goalType,
     ownerEmployeeId: goal.ownerEmployeeId,
     ownerName: formatPersonName(goal.ownerEmployee.firstName, goal.ownerEmployee.lastName),
     title: goal.title,
     description: goal.description,
     status: goal.status,
     progressPercent: goal.progressPercent,
+    workflowStatus: goal.workflowStatus,
+    workflowNote: goal.workflowNote,
+    submittedAt: goal.submittedAt?.toISOString() ?? null,
+    approvedAt: goal.approvedAt?.toISOString() ?? null,
     visibility: goal.visibility,
     parentGoalId: goal.parentGoalId,
     updateCount: goal._count.updates,
@@ -1618,6 +1831,40 @@ function mapGoalDetail(goal: GoalDetailRecord) {
       userId: watcher.user.id,
       email: watcher.user.email,
     })),
+  };
+}
+
+function buildGoalViewerCapabilities(
+  goal: GoalDetailRecord,
+  context: RequestContext,
+  scope: ViewerScope,
+) {
+  const isOwner = goal.ownerEmployeeId === scope.viewerEmployeeId;
+  const isDirectManager =
+    context.role === UserRole.MANAGER && scope.directReportIds.has(goal.ownerEmployeeId);
+  const isSuperAdmin = context.role === UserRole.SUPER_ADMIN;
+
+  return {
+    canEditDefinition:
+      (isOwner &&
+        (goal.workflowStatus === GoalWorkflowStatus.DRAFT ||
+          goal.workflowStatus === GoalWorkflowStatus.CHANGES_REQUESTED) &&
+        goal.cycle.status !== GoalCycleStatus.CLOSED &&
+        goal.cycle.status !== GoalCycleStatus.ARCHIVED) ||
+      (isSuperAdmin && goal.workflowStatus === GoalWorkflowStatus.OVERRIDDEN),
+    canPostProgressUpdate:
+      isOwner &&
+      goal.workflowStatus === GoalWorkflowStatus.APPROVED &&
+      goal.cycle.status === GoalCycleStatus.ACTIVE,
+    canSubmit:
+      isOwner &&
+      (goal.workflowStatus === GoalWorkflowStatus.DRAFT ||
+        goal.workflowStatus === GoalWorkflowStatus.CHANGES_REQUESTED) &&
+      goal.cycle.status !== GoalCycleStatus.CLOSED &&
+      goal.cycle.status !== GoalCycleStatus.ARCHIVED,
+    canApprove: isDirectManager && goal.workflowStatus === GoalWorkflowStatus.SUBMITTED,
+    canRequestChanges: isDirectManager && goal.workflowStatus === GoalWorkflowStatus.SUBMITTED,
+    canOverride: isSuperAdmin && goal.workflowStatus === GoalWorkflowStatus.APPROVED,
   };
 }
 

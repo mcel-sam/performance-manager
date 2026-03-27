@@ -27,11 +27,9 @@ import {
   demoPeople,
   demoQuestions,
   demoStoryProfiles,
-  peerAssignments,
   performanceAxis,
   potentialAxis,
   scorecardMetrics,
-  upwardAssignments,
 } from "@/server/demo/seed/fixtures";
 import type {
   DemoPerson,
@@ -350,7 +348,7 @@ const portrait = (group: "men" | "women", index: number) =>
 
 const demoAvatarByEmployeeId: Record<string, string> = {
   emp_hr_admin_1: portrait("women", 68),
-  emp_calibrator_1: portrait("women", 44),
+  emp_super_admin_1: portrait("women", 44),
   emp_manager_1: portrait("men", 32),
   emp_manager_2: portrait("men", 45),
   emp_employee_1: portrait("men", 36),
@@ -388,6 +386,15 @@ export async function seedDemoData(): Promise<DemoSeedSummary> {
       orgId: demoOrgId,
       email: person.email,
       role: person.role,
+    })),
+  });
+
+  await prisma.orgMembership.createMany({
+    data: demoPeople.map((person) => ({
+      orgId: demoOrgId,
+      userId: person.userId,
+      role: person.role,
+      isActive: true,
     })),
   });
 
@@ -736,42 +743,6 @@ function buildSubmissions(
         submittedAt: toSubmittedAt(managerStatus, "2026-11-22T16:00:00.000Z"),
       });
     }
-  }
-
-  for (const assignment of peerAssignments) {
-    const packetId = packetIdBySubjectEmployeeId.get(assignment.subjectEmployeeId);
-    if (!packetId) {
-      continue;
-    }
-
-    submissions.push({
-      id: assignment.id,
-      packetId,
-      subjectEmployeeId: assignment.subjectEmployeeId,
-      reviewerEmployeeId: assignment.reviewerEmployeeId,
-      relationship: ReviewRelationship.PEER,
-      status: ReviewSubmissionStatus.SUBMITTED,
-      dueAt: new Date("2026-11-20T23:59:59.999Z"),
-      submittedAt: new Date("2026-11-20T13:15:00.000Z"),
-    });
-  }
-
-  for (const assignment of upwardAssignments) {
-    const packetId = packetIdBySubjectEmployeeId.get(assignment.subjectEmployeeId);
-    if (!packetId) {
-      continue;
-    }
-
-    submissions.push({
-      id: assignment.id,
-      packetId,
-      subjectEmployeeId: assignment.subjectEmployeeId,
-      reviewerEmployeeId: assignment.reviewerEmployeeId,
-      relationship: ReviewRelationship.UPWARD,
-      status: ReviewSubmissionStatus.SUBMITTED,
-      dueAt: new Date("2026-11-23T23:59:59.999Z"),
-      submittedAt: new Date("2026-11-23T10:30:00.000Z"),
-    });
   }
 
   return submissions;

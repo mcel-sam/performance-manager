@@ -36,8 +36,8 @@ export async function loginAsHrAdmin(page: Page) {
   await expect(page).toHaveURL(/\/$/);
 }
 
-export async function loginAsCalibrator(page: Page) {
+export async function loginAsSuperAdmin(page: Page) {
   await page.goto("/login");
-  await page.getByTestId("login-role-calibrator").click();
+  await page.getByTestId("login-role-super-admin").click();
   await expect(page).toHaveURL(/\/$/);
 }

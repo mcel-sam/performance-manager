@@ -17,44 +17,71 @@ interface AuthDb {
       where: { authIdentityId: string };
       select: {
         id: true;
-        orgId: true;
-        role: true;
         authIdentityId: true;
+        memberships: {
+          where: { isActive: true };
+          select: {
+            orgId: true;
+            role: true;
+            isActive: true;
+          };
+        };
       };
     }) => Promise<{
       id: string;
-      orgId: string;
-      role: UserRole;
       authIdentityId: string | null;
+      memberships: Array<{
+        orgId: string;
+        role: UserRole;
+        isActive: boolean;
+      }>;
     } | null>;
     findMany?: (args: {
       where: { email: { equals: string; mode: "insensitive" } };
       select: {
         id: true;
-        orgId: true;
-        role: true;
         authIdentityId: true;
+        memberships: {
+          where: { isActive: true };
+          select: {
+            orgId: true;
+            role: true;
+            isActive: true;
+          };
+        };
       };
     }) => Promise<Array<{
       id: string;
-      orgId: string;
-      role: UserRole;
       authIdentityId: string | null;
+      memberships: Array<{
+        orgId: string;
+        role: UserRole;
+        isActive: boolean;
+      }>;
     }>>;
     update?: (args: {
       where: { id: string };
       data: { authIdentityId: string };
       select: {
         id: true;
-        orgId: true;
-        role: true;
         authIdentityId: true;
+        memberships: {
+          where: { isActive: true };
+          select: {
+            orgId: true;
+            role: true;
+            isActive: true;
+          };
+        };
       };
     }) => Promise<{
       id: string;
-      orgId: string;
-      role: UserRole;
       authIdentityId: string | null;
+      memberships: Array<{
+        orgId: string;
+        role: UserRole;
+        isActive: boolean;
+      }>;
     }>;
   };
 }

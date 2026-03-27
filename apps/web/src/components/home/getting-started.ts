@@ -28,16 +28,23 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
   switch (role) {
     case UserRole.HR_ADMIN:
       return {
-        title: "Cycle and calibration setup",
+        title: "Run the cycle and keep your own work moving",
         description:
-          "Create a review cycle, generate assignments, and prepare calibration sessions before launch.",
+          "Oversee the performance process while still completing your own goals and review tasks in the same workspace.",
         links: [
           {
-            label: "Succession planning",
-            href: "/admin/talent/succession",
-            description: "Review critical-role coverage, successor slates, and manager proposals across the org.",
-            icon: "reviewCycles",
-            metaLabel: "Talent continuity",
+            label: "Review queue",
+            href: "/performance/reviews",
+            description: "Pick up assigned self-review work without leaving the admin experience.",
+            icon: "queue",
+            metaLabel: "Participant workflow",
+          },
+          {
+            label: "Goals",
+            href: "/goals",
+            description: "Keep your own goals visible while you manage cycle operations for everyone else.",
+            icon: "growth",
+            metaLabel: "Personal planning",
           },
           {
             label: "Review cycles",
@@ -52,13 +59,6 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
             description: "Prepare talent discussions and keep calibration sessions moving.",
             icon: "calibration",
             metaLabel: "Facilitator workflow",
-          },
-          {
-            label: "Help center",
-            href: "/help",
-            description: "Reference rollout guidance without leaving the performance workspace.",
-            icon: "help",
-            metaLabel: "Reference",
           },
         ],
       };
@@ -76,13 +76,6 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
             metaLabel: "Team workspace",
           },
           {
-            label: "Succession",
-            href: "/talent/succession",
-            description: "Review in-scope roles, propose successors, and add continuity notes for your area.",
-            icon: "team",
-            metaLabel: "Talent continuity",
-          },
-          {
             label: "Review queue",
             href: "/performance/reviews",
             description: "Open every assigned manager review in one queue.",
@@ -90,11 +83,11 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
             metaLabel: "Task queue",
           },
           {
-            label: "Calibration",
-            href: "/performance/calibration/calibration_session_seed_1",
-            description: "Jump into the active 9-box session when discussion time starts.",
-            icon: "calibration",
-            metaLabel: "Session workspace",
+            label: "Goals",
+            href: "/goals",
+            description: "Keep goal progress visible so manager feedback stays tied to current priorities.",
+            icon: "growth",
+            metaLabel: "Performance context",
           },
           {
             label: "Improvement plans",
@@ -105,6 +98,43 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
           },
         ],
       };
+    case UserRole.SUPER_ADMIN:
+      return {
+        title: "Lead restricted workflows without losing your own context",
+        description:
+          "Use Trellis for calibration and talent governance while still keeping your own goals and review work active.",
+        links: [
+          {
+            label: "Calibration workspace",
+            href: "/performance/calibration",
+            description: "Open the active calibration workspace and keep talent discussions moving.",
+            icon: "calibration",
+            metaLabel: "Restricted workspace",
+          },
+          {
+            label: "Review queue",
+            href: "/performance/reviews",
+            description: "Complete your assigned review work without dropping out of the governance flow.",
+            icon: "queue",
+            metaLabel: "Participant workflow",
+          },
+          {
+            label: "Goals",
+            href: "/goals",
+            description: "Keep your own goals current while you oversee restricted talent decisions.",
+            icon: "growth",
+            metaLabel: "Personal planning",
+          },
+          {
+            label: "Help center",
+            href: "/help",
+            description: "Reference operating guidance without leaving the calibration flow.",
+            icon: "help",
+            metaLabel: "Reference",
+          },
+        ],
+      };
+    case UserRole.EMPLOYEE:
     default:
       return {
         title: "Complete assigned reviews",
@@ -120,17 +150,17 @@ export function getGettingStartedContent(role: UserRole): GettingStartedContent 
           },
           {
             label: "Self review",
-            href: "/performance/reviews/cycle_seed_draft_1/write/submission_seed_employee_self_1",
-            description: "Pick up your draft and keep your self review moving toward submission.",
+            href: "/performance/reviews",
+            description: "Pick up your active self review from the review queue and keep it moving toward submission.",
             icon: "selfReview",
             metaLabel: "Personal draft",
           },
           {
-            label: "Tracks & competencies",
-            href: "/performance/tracks",
-            description: "See your current track, level expectations, and what good looks like in-role.",
+            label: "Goals",
+            href: "/goals",
+            description: "Review your current goals and keep your self review anchored to the work that matters most.",
             icon: "growth",
-            metaLabel: "Career baseline",
+            metaLabel: "Performance context",
           },
           {
             label: "Help center",

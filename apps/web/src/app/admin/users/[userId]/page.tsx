@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import UserManagementForm from "@/components/admin/user-management-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getOrgUser, listManagerCandidates } from "@/server/users/user-management-service";
 
@@ -16,6 +18,9 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminUserEditPage({ params }: AdminUserEditPageProps) {
   const context = await getDevRequestContext();
+  if (!hasHrAdminAccess(context.role)) {
+    redirect("/");
+  }
   const { userId } = await params;
   const [user, managerOptions] = await Promise.all([
     getOrgUser(userId, context),

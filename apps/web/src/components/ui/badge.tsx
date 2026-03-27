@@ -5,10 +5,14 @@ import { cn } from "@/components/ui/cn";
 type BadgeVariant = "neutral" | "success" | "warning" | "info";
 
 const variantClass: Record<BadgeVariant, string> = {
-  neutral: "border border-slate-200 bg-slate-100 text-slate-700",
-  success: "border border-emerald-200 bg-emerald-50 text-emerald-700",
-  warning: "border border-amber-200 bg-amber-50 text-amber-700",
-  info: "border border-sky-200 bg-sky-50 text-sky-700",
+  neutral:
+    "border border-[var(--color-badge-neutral-border)] bg-[var(--color-badge-neutral-bg)] text-[var(--color-badge-neutral-text)]",
+  success:
+    "border border-[var(--color-status-success-border)] bg-[var(--color-status-success-surface)] text-[var(--color-status-success)]",
+  warning:
+    "border border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-surface)] text-[var(--color-status-warning)]",
+  info:
+    "border border-[var(--color-status-info-border)] bg-[var(--color-status-info-surface)] text-[var(--color-status-info)]",
 };
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {

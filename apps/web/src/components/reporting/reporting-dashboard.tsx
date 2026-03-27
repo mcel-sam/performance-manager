@@ -268,22 +268,8 @@ export function ReportingDashboard({
               }),
             }
           : null,
-        selectedTab === "goals" && selectedTrack
-          ? {
-              key: "track",
-              label: `Track: ${
-                trackOptions.find((option) => option.value === selectedTrack)?.label ?? selectedTrack
-              }`,
-              clearHref: toQueryString({
-                ...baseFilterQuery,
-                department: selectedDepartment,
-                title: selectedTitle,
-                track: undefined,
-              }),
-            }
-          : null,
       ].filter((chip): chip is { key: string; label: string; clearHref: string } => chip !== null),
-    [baseFilterQuery, selectedDepartment, selectedTab, selectedTitle, selectedTrack, trackOptions],
+    [baseFilterQuery, selectedDepartment, selectedTitle],
   );
   const currentReportingHref = useMemo(
     () =>
@@ -299,7 +285,7 @@ export function ReportingDashboard({
     <div className="mx-auto w-full max-w-7xl space-y-6" data-testid="reporting-dashboard">
       <PageHeader
         title="Reporting"
-        description="Review completion trends, ratings, and competency outcomes for the selected cycle."
+        description="Monitor cycle progress, manager follow-up, and employee queue status for the selected cycle."
         metadata={
           cycleName ? (
             <span>
@@ -312,7 +298,7 @@ export function ReportingDashboard({
       <FilterBar
         method="get"
         data-testid="reporting-filter-bar"
-        description="Refine the cycle scope, then move between completion, manager follow-up, employee queue, goals adoption, results, competencies, and scorecard views."
+        description="Refine the cycle scope, then move between completion, manager follow-up, and employee queue views."
         chips={
           filterChips.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2" data-testid="reporting-filter-chips">
@@ -380,55 +366,6 @@ export function ReportingDashboard({
           </Select>
         </label>
 
-        {selectedTab === "goals" || selectedTrack ? (
-          <label className="flex flex-col gap-2 text-sm text-slate-700">
-            Track
-            <Select
-              name="track"
-              defaultValue={selectedTrack ?? ""}
-              data-testid="reporting-filter-track"
-            >
-              <option value="">All tracks</option>
-              {trackOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-          </label>
-        ) : null}
-
-        <div className="flex flex-col gap-2">
-          <span className="text-sm text-slate-700">Rating source</span>
-          <div
-            className="inline-flex h-10 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-1"
-            role="group"
-            aria-label="Rating source toggle"
-            data-testid="reporting-rating-source-toggle"
-          >
-            <button
-              type="submit"
-              name="ratingSource"
-              value="FINAL"
-              aria-label="Use final ratings"
-              data-testid="reporting-rating-toggle-final"
-              className={toggleClassName(selectedRatingSource === "FINAL")}
-            >
-              Final
-            </button>
-            <button
-              type="submit"
-              name="ratingSource"
-              value="SCORECARD"
-              aria-label="Use scorecard baseline ratings"
-              data-testid="reporting-rating-toggle-scorecard"
-              className={toggleClassName(selectedRatingSource === "SCORECARD")}
-            >
-              Scorecard baseline
-            </button>
-          </div>
-        </div>
-
         <div className="flex items-end">
           <Button type="submit" className="w-full" data-testid="reporting-apply-filters">
             Apply filters
@@ -459,34 +396,6 @@ export function ReportingDashboard({
           >
             Employee queue
           </Link>
-          <Link
-            href={tabHrefs.goals}
-            data-testid="reporting-tab-goals"
-            className={tabClassName(selectedTab === "goals")}
-          >
-            Goals
-          </Link>
-          <Link
-            href={tabHrefs.results}
-            data-testid="reporting-tab-results"
-            className={tabClassName(selectedTab === "results")}
-          >
-            Results
-          </Link>
-          <Link
-            href={tabHrefs.competencies}
-            data-testid="reporting-tab-competencies"
-            className={tabClassName(selectedTab === "competencies")}
-          >
-            Competencies
-          </Link>
-          <Link
-            href={tabHrefs.scorecard}
-            data-testid="reporting-tab-scorecard"
-            className={tabClassName(selectedTab === "scorecard")}
-          >
-            Scorecard
-          </Link>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
@@ -494,14 +403,6 @@ export function ReportingDashboard({
           <span data-testid="reporting-current-department">{selectedDepartment ?? "All departments"}</span>
           {" • "}
           <span data-testid="reporting-current-title">{selectedTitle ?? "All titles"}</span>
-          {selectedTab === "goals" || selectedTrack ? (
-            <>
-              {" • "}
-              <span data-testid="reporting-current-track">
-                {trackOptions.find((option) => option.value === selectedTrack)?.label ?? "All tracks"}
-              </span>
-            </>
-          ) : null}
         </div>
       </section>
 
@@ -968,14 +869,16 @@ function ManagerAccountabilitySection({
 
                         <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                           <p className="text-xs text-slate-500">
-                            Packet access for the selected direct report.
+                            Review packet detail stays limited to participant and manager workflows.
                           </p>
-                          <Link
-                            href={withReturnTo(report.links.packet, currentReportingHref)}
-                            className="text-xs font-medium text-slate-700 underline underline-offset-2"
-                          >
-                            Open packet
-                          </Link>
+                          {report.links.packet ? (
+                            <Link
+                              href={withReturnTo(report.links.packet, currentReportingHref)}
+                              className="text-xs font-medium text-slate-700 underline underline-offset-2"
+                            >
+                              Open packet
+                            </Link>
+                          ) : null}
                         </div>
                       </article>
                     ))}
@@ -1147,15 +1050,17 @@ function EmployeeQueueTab({
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
                   <p className="text-xs text-slate-500">
-                    Follow-up links for the selected employee record.
+                    Operational follow-up links for the selected employee record.
                   </p>
                   <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-700">
-                    <Link
-                      href={withReturnTo(row.links.packet, currentReportingHref)}
-                      className="underline underline-offset-2"
-                    >
-                      Packet
-                    </Link>
+                    {row.links.packet ? (
+                      <Link
+                        href={withReturnTo(row.links.packet, currentReportingHref)}
+                        className="underline underline-offset-2"
+                      >
+                        Packet
+                      </Link>
+                    ) : null}
                     {row.links.calibrationSession ? (
                       <Link
                         href={withReturnTo(row.links.calibrationSession, currentReportingHref)}

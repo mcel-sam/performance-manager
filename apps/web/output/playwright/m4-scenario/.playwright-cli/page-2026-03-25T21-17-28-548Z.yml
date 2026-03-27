@@ -1,0 +1,249 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e18] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e20]
+            - generic [ref=e27]: Goals
+            - tooltip "Goals"
+          - link "Reviews" [ref=e28] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e30]
+            - generic [ref=e33]: Reviews
+            - tooltip "Reviews"
+          - link "Improvement Plans" [ref=e34] [cursor=pointer]:
+            - /url: /performance/improvement-plans
+            - img [ref=e36]
+            - generic [ref=e39]: Improvement Plans
+            - tooltip "Improvement Plans"
+          - link "Help" [ref=e40] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e42]
+            - generic [ref=e46]: Help
+            - tooltip "Help"
+    - main [ref=e47]:
+      - generic [ref=e49]:
+        - button "Current organization" [disabled] [ref=e50]:
+          - generic [ref=e51]: O
+          - generic [ref=e52]: MCEL Sandbox Organization
+          - img [ref=e53]
+        - button "Ted Tederoff Ted Tederoff Employee" [ref=e56]:
+          - generic "Ted Tederoff" [ref=e57]: TT
+          - generic [ref=e58]:
+            - generic [ref=e59]: Ted Tederoff
+            - generic [ref=e60]: Employee
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - generic [ref=e63]:
+            - paragraph [ref=e64]: Write Review
+            - heading "Sandbox Vanilla Review Template" [level=1] [ref=e65]
+            - paragraph [ref=e66]: Complete all required prompts. Autosave keeps your draft current and submit locks the review.
+            - generic [ref=e67]: "Sandbox 2026 Self Review | Subject: Ted Tederoff | Review type: Self review"
+          - link "Back to Reviews" [ref=e69] [cursor=pointer]:
+            - /url: /performance/reviews
+            - button "Back to Reviews" [ref=e70]
+        - generic [ref=e71]:
+          - complementary [ref=e72]:
+            - generic [ref=e73]:
+              - paragraph [ref=e74]: Review phases
+              - heading "Move section by section" [level=2] [ref=e75]
+              - paragraph [ref=e76]: "Required progress: 1/2 answered."
+              - generic [ref=e77]:
+                - button "1 Competencies 1 remaining 4 prompts" [ref=e78]:
+                  - generic [ref=e79]:
+                    - generic [ref=e80]: "1"
+                    - generic [ref=e81]:
+                      - generic [ref=e82]:
+                        - generic [ref=e83]: Competencies
+                        - generic [ref=e84]: 1 remaining
+                      - generic [ref=e85]: 4 prompts
+                - button "2 Final summary Final step Review completion before submit" [ref=e86]:
+                  - generic [ref=e87]:
+                    - generic [ref=e88]: "2"
+                    - generic [ref=e89]:
+                      - generic [ref=e90]:
+                        - generic [ref=e91]: Final summary
+                        - generic [ref=e92]: Final step
+                      - generic [ref=e93]: Review completion before submit
+              - generic [ref=e94]:
+                - button "Previous" [disabled] [ref=e95]
+                - button "Next" [ref=e96]
+          - generic [ref=e97]:
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - generic [ref=e100]:
+                  - heading "Competencies" [level=2] [ref=e101]
+                  - paragraph [ref=e102]: Describe how the work was done across the competency areas in scope.
+                - generic [ref=e104]:
+                  - generic [ref=e105]: Draft
+                  - generic [ref=e106]: "Current: Competencies"
+              - generic [ref=e107]:
+                - generic [ref=e108]: Phase 1 of 2
+                - generic [ref=e109]: 1 remaining
+                - generic [ref=e110]: 4 prompts
+              - generic [ref=e111]:
+                - button "Toggle submission tips" [ref=e112]:
+                  - generic [ref=e113]:
+                    - generic [ref=e114]: i
+                    - generic [ref=e115]: Submission notes
+                  - generic [ref=e116]:
+                    - text: Tips
+                    - img [ref=e117]
+                - list [ref=e120]:
+                  - listitem [ref=e121]: Finish every required response in the active cycle template.
+                  - listitem [ref=e122]: Pause for autosave before leaving the page or attaching evidence.
+                  - listitem [ref=e123]: Submit only when the tone, examples, and outcomes reflect your final draft.
+            - generic [ref=e124]:
+              - list [ref=e126]:
+                - listitem [ref=e127]:
+                  - generic [ref=e128]:
+                    - generic [ref=e129]:
+                      - generic [ref=e130]:
+                        - generic [ref=e131]: Results Driven
+                        - generic [ref=e132]: Written response
+                      - generic [ref=e133]: 1. What were your most meaningful accomplishments and business results this cycle?*
+                    - button "Evidence target" [ref=e134]
+                  - textbox "1. What were your most meaningful accomplishments and business results this cycle?*" [ref=e135]:
+                    - /placeholder: Write a focused response with concrete outcomes and examples
+                    - text: I stabilized the highest-volume enterprise application queues and cut repeat escalation time by documenting handoffs.
+                - listitem [ref=e136]:
+                  - generic [ref=e137]:
+                    - generic [ref=e138]:
+                      - generic [ref=e139]:
+                        - generic [ref=e140]: Adaptability
+                        - generic [ref=e141]: Written response
+                      - generic [ref=e142]: 2. What strengths did you demonstrate, and what development priorities or career interests should shape your next cycle?*
+                    - button "Use in overview" [ref=e143]
+                  - textbox "2. What strengths did you demonstrate, and what development priorities or career interests should shape your next cycle?*" [ref=e144]:
+                    - /placeholder: Write a focused response with concrete outcomes and examples
+                - listitem [ref=e145]:
+                  - generic [ref=e146]:
+                    - generic [ref=e147]:
+                      - generic [ref=e148]:
+                        - generic [ref=e149]: Communication
+                        - generic [ref=e150]: Competency rating
+                      - generic [ref=e151]: 3. Rate the consistency of leadership behaviors demonstrated during the cycle.
+                    - button "Use in overview" [ref=e152]
+                  - generic [ref=e153]:
+                    - generic [ref=e154]:
+                      - text: Rating (1-5)
+                      - combobox "Rating (1-5)" [ref=e155]:
+                        - option "Select a rating" [selected]
+                        - option "1 - Unsatisfactory"
+                        - option "2 - Needs Improvement"
+                        - option "3 - Meets"
+                        - option "4 - Exceeds"
+                        - option "5 - Exceptional"
+                    - generic [ref=e156]:
+                      - checkbox "Not observed (exclude from scoring)" [ref=e157]
+                      - text: Not observed (exclude from scoring)
+                  - textbox "3. Rate the consistency of leadership behaviors demonstrated during the cycle." [ref=e158]:
+                    - /placeholder: Support the rating with specific examples, outcomes, and context
+                - listitem [ref=e159]:
+                  - generic [ref=e160]:
+                    - generic [ref=e161]:
+                      - generic [ref=e162]:
+                        - generic [ref=e163]: Judgment Decision Making
+                        - generic [ref=e164]: Competency rating
+                      - generic [ref=e165]: 4. Rate current readiness for broader scope or increased complexity.
+                    - button "Use in overview" [ref=e166]
+                  - generic [ref=e167]:
+                    - generic [ref=e168]:
+                      - text: Rating (1-5)
+                      - combobox "Rating (1-5)" [ref=e169]:
+                        - option "Select a rating" [selected]
+                        - option "1 - Unsatisfactory"
+                        - option "2 - Needs Improvement"
+                        - option "3 - Meets"
+                        - option "4 - Exceeds"
+                        - option "5 - Exceptional"
+                    - generic [ref=e170]:
+                      - checkbox "Not observed (exclude from scoring)" [ref=e171]
+                      - text: Not observed (exclude from scoring)
+                  - textbox "4. Rate current readiness for broader scope or increased complexity." [ref=e172]:
+                    - /placeholder: Support the rating with specific examples, outcomes, and context
+              - generic [ref=e173]:
+                - generic [ref=e174]:
+                  - button "Previous section" [disabled] [ref=e175]
+                  - button "Next section" [ref=e176]
+                - button "Submit Review" [ref=e178]
+          - complementary [ref=e179]:
+            - heading "Evidence" [level=2] [ref=e180]
+            - paragraph [ref=e181]: Attach supporting evidence without leaving the review.
+            - generic [ref=e183]:
+              - generic [ref=e184]:
+                - generic [ref=e185]:
+                  - paragraph [ref=e186]: Evidence workspace
+                  - heading "Ted Tederoff" [level=3] [ref=e187]
+                  - paragraph [ref=e188]: Application Support and Development · Self review
+                - generic [ref=e189]: 0 items available
+              - generic [ref=e190]:
+                - generic [ref=e191]:
+                  - paragraph [ref=e192]: Current context
+                  - generic [ref=e193]:
+                    - generic [ref=e194]:
+                      - term [ref=e195]: Role
+                      - definition [ref=e196]: Application Support and Development
+                    - generic [ref=e197]:
+                      - term [ref=e198]: Department
+                      - definition [ref=e199]: Information Technology
+                    - generic [ref=e200]:
+                      - term [ref=e201]: Current phase
+                      - definition [ref=e202]: Competencies
+                - generic [ref=e203]:
+                  - generic [ref=e204]:
+                    - generic [ref=e205]:
+                      - paragraph [ref=e206]: Role expectations
+                      - paragraph [ref=e207]: General · Associate
+                    - paragraph [ref=e208]: Competencies are listed below for quick reference.
+                  - paragraph [ref=e209]: Use the current role baseline, competency expectations, and company values to shape growth goals.
+                  - generic [ref=e210]:
+                    - generic [ref=e211]: Results Driven
+                    - generic [ref=e212]: Adaptability
+                - generic [ref=e213]:
+                  - generic [ref=e214]:
+                    - generic [ref=e215]:
+                      - paragraph [ref=e216]: Goals for this cycle
+                      - paragraph [ref=e217]: Sandbox 2026 Goals
+                    - generic [ref=e218]: 2 goals
+                  - generic [ref=e219]:
+                    - generic [ref=e220]:
+                      - paragraph [ref=e221]: Strengthen stakeholder communication cadence
+                      - paragraph [ref=e222]: On track · 35%
+                      - paragraph [ref=e223]: Weekly stakeholder summaries are in place, with risk tracking added for the next cycle.
+                    - generic [ref=e224]:
+                      - paragraph [ref=e225]: Improve application incident response time
+                      - paragraph [ref=e226]: On track · 55%
+                      - paragraph [ref=e227]: Critical incident triage now routes through a shared checklist and incident channel.
+                - generic [ref=e228]:
+                  - paragraph [ref=e229]: Attach to
+                  - paragraph [ref=e230]: Competencies
+                  - paragraph [ref=e231]: What were your most meaningful accomplishments and business results this cycle?
+                  - paragraph [ref=e232]: 0 evidence items linked to this answer
+                - generic [ref=e233]:
+                  - paragraph [ref=e234]: Review details
+                  - generic [ref=e235]:
+                    - generic [ref=e236]:
+                      - term [ref=e237]: Cycle
+                      - definition [ref=e238]: Sandbox 2026 Self Review
+                    - generic [ref=e239]:
+                      - term [ref=e240]: Reviewer
+                      - definition [ref=e241]: Ted Tederoff
+                    - generic [ref=e242]:
+                      - term [ref=e243]: Review type
+                      - definition [ref=e244]: Self review
+              - paragraph [ref=e245]: Attach concrete evidence from feedback, updates, goals, and values recognition. Only items visible to your role appear here.
+  - button "Open Next.js Dev Tools" [ref=e255] [cursor=pointer]:
+    - img [ref=e256]
+  - alert [ref=e260]

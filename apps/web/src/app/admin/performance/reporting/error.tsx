@@ -12,7 +12,7 @@ export default function AdminReportingError({
   return (
     <RouteErrorState
       title="Unable to load reporting"
-      description="We could not load reporting metrics for this cycle. Retry to refresh filters and chart data."
+      description="We could not load the operational reporting view for this cycle. Retry to refresh the current filters and queue data."
       error={error}
       onRetry={reset}
       retryLabel="Retry"

@@ -10,6 +10,7 @@ import {
 } from "@prisma/client";
 import { z } from "zod";
 
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { inferGrowthTrackBaseline } from "@/server/growth/growth-track-service";
@@ -325,7 +326,7 @@ export interface ReportingManagerDirectReportRow {
   overallStatus: ProgressStatus;
   managerDueAt: string | null;
   links: {
-    packet: string;
+    packet: string | null;
   };
 }
 
@@ -472,7 +473,7 @@ export interface ReportingPeopleRow {
   finalRatingSource: FinalRatingSource | null;
   scorecardPercent: number | null;
   links: {
-    packet: string;
+    packet: string | null;
     calibrationSession: string | null;
     improvementPlan: string | null;
   };
@@ -838,7 +839,7 @@ export async function getReportingManagerOverview(
       overallStatus,
       managerDueAt: managerSubmission?.dueAt?.toISOString() ?? null,
       links: {
-        packet: `/performance/reviews/${filters.cycleId}/packet/${packet.subjectEmployeeId}`,
+        packet: null,
       },
     });
 
@@ -1381,7 +1382,7 @@ export async function getReportingPeople(
     finalRatingSource: item.packet.finalRatingSource,
     scorecardPercent: item.packet.totalScorecardPercent,
     links: {
-      packet: `/performance/reviews/${filters.cycleId}/packet/${item.packet.subjectEmployeeId}`,
+      packet: null,
       calibrationSession: calibrationByEmployeeId.get(item.packet.subjectEmployeeId)
         ? `/performance/calibration/${calibrationByEmployeeId.get(item.packet.subjectEmployeeId)}`
         : null,
@@ -1853,7 +1854,7 @@ async function loadPacketScope(
 }
 
 function requireReportingAccess(context: RequestContext): void {
-  if (context.role !== UserRole.HR_ADMIN) {
+  if (!hasHrAdminAccess(context.role)) {
     throw new AppError("FORBIDDEN", "Only HR admins can access reporting", 403);
   }
 }

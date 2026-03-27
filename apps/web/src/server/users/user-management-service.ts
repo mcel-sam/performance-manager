@@ -1,6 +1,7 @@
 import { Prisma, UserRole } from "@prisma/client";
 import { z } from "zod";
 
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
@@ -143,6 +144,26 @@ interface UserManagementDb {
       select: { id: true; email: true; role: true };
     }) => Promise<{ id: string; email: string; role: UserRole }>;
   };
+  orgMembership: {
+    upsert: (args: {
+      where: {
+        orgId_userId: {
+          orgId: string;
+          userId: string;
+        };
+      };
+      update: {
+        role: UserRole;
+        isActive: boolean;
+      };
+      create: {
+        orgId: string;
+        userId: string;
+        role: UserRole;
+        isActive: boolean;
+      };
+    }) => Promise<unknown>;
+  };
   employee: {
     findMany: (args: {
       where: {
@@ -262,7 +283,7 @@ const upsertUserSchema = z.object({
 export interface UserDirectorySummary {
   totalUsers: number;
   hrAdmins: number;
-  calibrators: number;
+  superAdmins: number;
   managers: number;
   employees: number;
 }
@@ -324,7 +345,7 @@ export async function listOrgUsers(
     ];
   }
 
-  const [users, totalUsers, hrAdmins, calibrators, managers, employees] = await Promise.all([
+  const [users, totalUsers, hrAdmins, superAdmins, managers, employees] = await Promise.all([
     db.user.findMany({
       where,
       select: {
@@ -358,7 +379,7 @@ export async function listOrgUsers(
     }),
     db.user.count({ where: { orgId: context.orgId } }),
     db.user.count({ where: { orgId: context.orgId, role: UserRole.HR_ADMIN } }),
-    db.user.count({ where: { orgId: context.orgId, role: UserRole.CALIBRATOR } }),
+    db.user.count({ where: { orgId: context.orgId, role: UserRole.SUPER_ADMIN } }),
     db.user.count({ where: { orgId: context.orgId, role: UserRole.MANAGER } }),
     db.user.count({ where: { orgId: context.orgId, role: UserRole.EMPLOYEE } }),
   ]);
@@ -367,7 +388,7 @@ export async function listOrgUsers(
     summary: {
       totalUsers,
       hrAdmins,
-      calibrators,
+      superAdmins,
       managers,
       employees,
     },
@@ -441,7 +462,7 @@ export async function listManagerCandidates(
       orgId: context.orgId,
       user: {
         role: {
-          in: [UserRole.HR_ADMIN, UserRole.MANAGER],
+          in: [UserRole.HR_ADMIN, UserRole.MANAGER, UserRole.SUPER_ADMIN],
         },
       },
     },
@@ -490,6 +511,25 @@ export async function createOrgUser(
         role: parsed.data.role,
       },
       select: { id: true, email: true, role: true },
+    });
+
+    await db.orgMembership.upsert({
+      where: {
+        orgId_userId: {
+          orgId: context.orgId,
+          userId: user.id,
+        },
+      },
+      update: {
+        role: user.role,
+        isActive: true,
+      },
+      create: {
+        orgId: context.orgId,
+        userId: user.id,
+        role: user.role,
+        isActive: true,
+      },
     });
 
     const employee = await db.employee.create({
@@ -581,6 +621,25 @@ export async function updateOrgUser(
       select: { id: true, email: true, role: true },
     });
 
+    await db.orgMembership.upsert({
+      where: {
+        orgId_userId: {
+          orgId: context.orgId,
+          userId: user.id,
+        },
+      },
+      update: {
+        role: user.role,
+        isActive: true,
+      },
+      create: {
+        orgId: context.orgId,
+        userId: user.id,
+        role: user.role,
+        isActive: true,
+      },
+    });
+
     const employee = await db.employee.update({
       where: { id: existingUser.employeeId },
       data: {
@@ -633,7 +692,7 @@ export async function updateOrgUser(
 }
 
 function requireHrAdmin(context: RequestContext): void {
-  if (context.role !== UserRole.HR_ADMIN) {
+  if (!hasHrAdminAccess(context.role)) {
     throw new AppError("FORBIDDEN", "Only HR admins can manage users", 403);
   }
 }

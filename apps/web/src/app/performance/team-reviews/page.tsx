@@ -14,7 +14,11 @@ import { SegmentedProgress } from "@/components/ui/segmented-progress";
 import { Select } from "@/components/ui/select";
 import { getReviewStatusTone, StatusChip } from "@/components/ui/status-chip";
 import { withReturnTo } from "@/lib/navigation/return-to";
-import { getReviewRelationshipLabel } from "@/lib/reviews/review-copy";
+import {
+  getReviewRelationshipLabel,
+  vanillaReviewRelationships,
+} from "@/lib/reviews/review-copy";
+import { hasManagerAccess } from "@/lib/users/role-capabilities";
 import {
   Table,
   TableBody,
@@ -44,7 +48,7 @@ export default async function TeamReviewsPage({
   searchParams: Promise<SearchParamsShape>;
 }) {
   const context = await getDevRequestContext();
-  if (context.role !== UserRole.MANAGER) {
+  if (!hasManagerAccess(context.role) && context.role !== UserRole.HR_ADMIN) {
     redirect("/");
   }
 
@@ -56,6 +60,8 @@ export default async function TeamReviewsPage({
     context,
     selectedCycleId ? { cycleId: selectedCycleId } : {},
   );
+  const hasDirectReports = dashboard.kpis.totalDirectReports > 0;
+  const hasCycleData = dashboard.cycle != null;
   const selectedRow =
     selectedEmployeeId != null
       ? dashboard.rows.find((row) => row.employeeId === selectedEmployeeId) ?? null
@@ -111,10 +117,10 @@ export default async function TeamReviewsPage({
         }
       />
 
-      {dashboard.rows.length === 0 ? (
+      {!hasDirectReports ? (
         <EmptyState
-          title="No team data yet"
-          description="My Team populates after HR generates cycle submissions for your direct reports."
+          title="No direct reports assigned"
+          description="My Team appears once your reporting line includes at least one direct report."
           icon={<span aria-hidden="true">👥</span>}
           action={
             <Link href="/performance/reviews">
@@ -126,132 +132,151 @@ export default async function TeamReviewsPage({
         />
       ) : (
         <>
-          <Card>
-            <CardContent className="flex flex-wrap items-end justify-between gap-4 p-4">
-              <form method="get" className="flex flex-wrap items-end gap-2">
-                <label className="flex flex-col gap-2 text-sm text-slate-700">
-                  Review cycle
-                  <Select
-                    name="cycleId"
-                    defaultValue={dashboard.cycle?.id ?? ""}
-                    data-testid="my-team-cycle-select"
-                    className="min-w-[250px]"
-                  >
-                    {dashboard.cycles.map((cycle) => (
-                      <option key={cycle.id} value={cycle.id}>
-                        {cycle.name}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
-                <Button type="submit" variant="outline" size="sm">
-                  Load cycle
-                </Button>
-              </form>
+          {hasCycleData ? (
+            <>
+              <Card>
+                <CardContent className="flex flex-wrap items-end justify-between gap-4 p-4">
+                  <form method="get" className="flex flex-wrap items-end gap-2">
+                    <label className="flex flex-col gap-2 text-sm text-slate-700">
+                      Review cycle
+                      <Select
+                        name="cycleId"
+                        defaultValue={dashboard.cycle?.id ?? ""}
+                        data-testid="my-team-cycle-select"
+                        className="min-w-[250px]"
+                      >
+                        {dashboard.cycles.map((cycle) => (
+                          <option key={cycle.id} value={cycle.id}>
+                            {cycle.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </label>
+                    <Button type="submit" variant="outline" size="sm">
+                      Load cycle
+                    </Button>
+                  </form>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusChip tone="info">
-                  {dashboard.kpis.awaitingManagerReview + dashboard.kpis.inProgressManagerReview} manager tasks open
-                </StatusChip>
-                {dashboard.kpis.overdueManagerReview > 0 ? (
-                  <StatusChip tone="warning">
-                    {dashboard.kpis.overdueManagerReview} overdue for manager action
-                  </StatusChip>
-                ) : null}
-                <StatusChip tone="info">
-                  {dashboard.kpis.selfNotStarted} self reviews pending
-                </StatusChip>
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusChip tone="info">
+                      {dashboard.kpis.awaitingManagerReview + dashboard.kpis.inProgressManagerReview} manager tasks open
+                    </StatusChip>
+                    {dashboard.kpis.overdueManagerReview > 0 ? (
+                      <StatusChip tone="warning">
+                        {dashboard.kpis.overdueManagerReview} overdue for manager action
+                      </StatusChip>
+                    ) : null}
+                    <StatusChip tone="info">
+                      {dashboard.kpis.selfNotStarted} self reviews pending
+                    </StatusChip>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <KpiCard
-              label="Awaiting review"
-              value={dashboard.kpis.awaitingManagerReview}
-              tone="slate"
-              detail={
-                dashboard.kpis.overdueManagerReview > 0
-                  ? `${dashboard.kpis.overdueManagerReview} already past due.`
-                  : "Reports waiting for a first manager pass."
-              }
-            />
-            <KpiCard
-              label="Self not started"
-              value={dashboard.kpis.selfNotStarted}
-              tone="amber"
-              detail="Employees who have not opened their self review yet."
-            />
-            <KpiCard
-              label="In progress"
-              value={dashboard.kpis.inProgressManagerReview}
-              tone="sky"
-              detail="Manager reviews already underway."
-            />
-            <KpiCard
-              label="Completed"
-              value={dashboard.kpis.completedManagerReview}
-              tone="emerald"
-              detail="Manager reviews submitted for this cycle."
-            />
-          </section>
+              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <KpiCard
+                  label="Awaiting review"
+                  value={dashboard.kpis.awaitingManagerReview}
+                  tone="slate"
+                  detail={
+                    dashboard.kpis.overdueManagerReview > 0
+                      ? `${dashboard.kpis.overdueManagerReview} already past due.`
+                      : "Reports waiting for a first manager pass."
+                  }
+                />
+                <KpiCard
+                  label="Self not started"
+                  value={dashboard.kpis.selfNotStarted}
+                  tone="amber"
+                  detail="Employees who have not opened their self review yet."
+                />
+                <KpiCard
+                  label="In progress"
+                  value={dashboard.kpis.inProgressManagerReview}
+                  tone="sky"
+                  detail="Manager reviews already underway."
+                />
+                <KpiCard
+                  label="Completed"
+                  value={dashboard.kpis.completedManagerReview}
+                  tone="emerald"
+                  detail="Manager reviews submitted for this cycle."
+                />
+              </section>
 
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+              <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Review pipeline</CardTitle>
+                    <CardDescription>
+                      {dashboard.kpis.completedManagerReview} of {dashboard.kpis.totalDirectReports} manager reviews submitted.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <SegmentedProgress
+                      segments={completionSegments}
+                      data-testid="my-team-segmented-progress"
+                    />
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <PipelineStat
+                        label="Awaiting"
+                        value={dashboard.kpis.awaitingManagerReview}
+                        tone="slate"
+                      />
+                      <PipelineStat
+                        label="In progress"
+                        value={dashboard.kpis.inProgressManagerReview}
+                        tone="sky"
+                      />
+                      <PipelineStat
+                        label="Completed"
+                        value={dashboard.kpis.completedManagerReview}
+                        tone="emerald"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card data-testid="my-team-insights">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg">Rating mix</CardTitle>
+                    <CardDescription>
+                      Final ratings and scorecard baselines shown as star bands instead of raw number buckets.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <RatingDistribution
+                      title="Final rating mix"
+                      total={dashboard.insights.finalRatedCount}
+                      distribution={dashboard.insights.finalDistribution}
+                      tone="emerald"
+                    />
+                    <RatingDistribution
+                      title="Scorecard baseline"
+                      total={dashboard.insights.scorecardRatedCount}
+                      distribution={dashboard.insights.scorecardDistribution}
+                      tone="sky"
+                    />
+                  </CardContent>
+                </Card>
+              </section>
+            </>
+          ) : (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Review pipeline</CardTitle>
+                <CardTitle className="text-lg">Review cycle coverage</CardTitle>
                 <CardDescription>
-                  {dashboard.kpis.completedManagerReview} of {dashboard.kpis.totalDirectReports} manager reviews submitted.
+                  Your reporting line is available now. Review status cards will populate after HR generates cycle submissions for these direct reports.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <SegmentedProgress
-                  segments={completionSegments}
-                  data-testid="my-team-segmented-progress"
-                />
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <PipelineStat
-                    label="Awaiting"
-                    value={dashboard.kpis.awaitingManagerReview}
-                    tone="slate"
-                  />
-                  <PipelineStat
-                    label="In progress"
-                    value={dashboard.kpis.inProgressManagerReview}
-                    tone="sky"
-                  />
-                  <PipelineStat
-                    label="Completed"
-                    value={dashboard.kpis.completedManagerReview}
-                    tone="emerald"
-                  />
-                </div>
+              <CardContent className="flex flex-wrap items-center gap-2">
+                <StatusChip tone="info">
+                  {dashboard.kpis.totalDirectReports} direct reports in scope
+                </StatusChip>
+                <StatusChip tone="info">No review cycle loaded yet</StatusChip>
               </CardContent>
             </Card>
-
-            <Card data-testid="my-team-insights">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Rating mix</CardTitle>
-                <CardDescription>
-                  Final ratings and scorecard baselines shown as star bands instead of raw number buckets.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <RatingDistribution
-                  title="Final rating mix"
-                  total={dashboard.insights.finalRatedCount}
-                  distribution={dashboard.insights.finalDistribution}
-                  tone="emerald"
-                />
-                <RatingDistribution
-                  title="Scorecard baseline"
-                  total={dashboard.insights.scorecardRatedCount}
-                  distribution={dashboard.insights.scorecardDistribution}
-                  tone="sky"
-                />
-              </CardContent>
-            </Card>
-          </section>
+          )}
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
             <Card>
@@ -268,8 +293,7 @@ export default async function TeamReviewsPage({
                       <TableRow>
                         <TableHead>Direct report</TableHead>
                         <TableHead>Role</TableHead>
-                        <TableHead>Reviews</TableHead>
-                        <TableHead>Feedback</TableHead>
+                        <TableHead>Review status</TableHead>
                         <TableHead>Next step</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -317,20 +341,6 @@ export default async function TeamReviewsPage({
                               />
                             </TableCell>
                             <TableCell>
-                              <StatusStack
-                                items={[
-                                  {
-                                    label: getReviewRelationshipLabel(ReviewRelationship.PEER),
-                                    status: row.statuses[ReviewRelationship.PEER],
-                                  },
-                                  {
-                                    label: getReviewRelationshipLabel(ReviewRelationship.UPWARD),
-                                    status: row.statuses[ReviewRelationship.UPWARD],
-                                  },
-                                ]}
-                              />
-                            </TableCell>
-                            <TableCell>
                               <div className="space-y-2 text-sm text-slate-600">
                                 {row.managerReviewHref ? (
                                   <Link
@@ -344,7 +354,7 @@ export default async function TeamReviewsPage({
                                       variant="outline"
                                       data-testid={`my-team-open-review-${row.employeeId}`}
                                     >
-                                      Open manager review
+                                      {getManagerReviewActionLabel(row.statuses[ReviewRelationship.MANAGER])}
                                     </Button>
                                   </Link>
                                 ) : (
@@ -397,14 +407,6 @@ export default async function TeamReviewsPage({
                             label={getReviewRelationshipLabel(ReviewRelationship.MANAGER)}
                             status={selectedRow.statuses[ReviewRelationship.MANAGER]}
                           />
-                          <StatusLine
-                            label={getReviewRelationshipLabel(ReviewRelationship.PEER)}
-                            status={selectedRow.statuses[ReviewRelationship.PEER]}
-                          />
-                          <StatusLine
-                            label={getReviewRelationshipLabel(ReviewRelationship.UPWARD)}
-                            status={selectedRow.statuses[ReviewRelationship.UPWARD]}
-                          />
                         </div>
 
                         <div
@@ -436,7 +438,7 @@ export default async function TeamReviewsPage({
                               )}
                             >
                               <Button size="sm" data-testid="my-team-drawer-open-review">
-                                Open manager review
+                                {getManagerReviewActionLabel(selectedRow.statuses[ReviewRelationship.MANAGER])}
                               </Button>
                             </Link>
                           ) : null}
@@ -711,20 +713,16 @@ function createReviewerAvatarItems(employeeName: string): Array<{ id: string; la
   return [
     { id: `${employeeName}-self`, label: `${employeeName} Self review` },
     { id: `${employeeName}-manager`, label: `${employeeName} Manager Review` },
-    { id: `${employeeName}-peer`, label: `${employeeName} Peer review` },
-    { id: `${employeeName}-upward`, label: `${employeeName} Manager feedback` },
   ];
 }
 
 function createStatusTimelineEntries(row: {
   statuses: Partial<Record<ReviewRelationship, ReviewSubmissionStatus>>;
 }): Array<{ key: string; title: string; description: string }> {
-  const relationships: Array<{ key: ReviewRelationship; label: string }> = [
-    { key: ReviewRelationship.SELF, label: getReviewRelationshipLabel(ReviewRelationship.SELF, "full") },
-    { key: ReviewRelationship.MANAGER, label: getReviewRelationshipLabel(ReviewRelationship.MANAGER, "full") },
-    { key: ReviewRelationship.PEER, label: getReviewRelationshipLabel(ReviewRelationship.PEER, "full") },
-    { key: ReviewRelationship.UPWARD, label: getReviewRelationshipLabel(ReviewRelationship.UPWARD, "full") },
-  ];
+  const relationships = vanillaReviewRelationships.map((relationship) => ({
+    key: relationship,
+    label: getReviewRelationshipLabel(relationship, "full"),
+  }));
 
   return relationships.map((entry) => ({
     key: entry.key,
@@ -737,7 +735,7 @@ function createMiniInsights(row: {
   statuses: Partial<Record<ReviewRelationship, ReviewSubmissionStatus>>;
   managerDueAt: Date | null;
 }): string[] {
-  const statuses = Object.values(ReviewRelationship).map(
+  const statuses = vanillaReviewRelationships.map(
     (relationship) => row.statuses[relationship] ?? null,
   );
 
@@ -751,7 +749,7 @@ function createMiniInsights(row: {
   ).length;
 
   const insights = [
-    `Review coverage: ${submittedCount}/4 review channels submitted.`,
+    `Review coverage: ${submittedCount}/2 required reviews submitted.`,
     `Active work: ${inProgressCount} in progress, ${pendingCount} still pending.`,
   ];
 
@@ -767,10 +765,26 @@ function createMiniInsights(row: {
   } else if ((row.statuses[ReviewRelationship.SELF] ?? null) !== ReviewSubmissionStatus.SUBMITTED) {
     insights.push("Next attention: self review follow-through remains open.");
   } else {
-    insights.push("Next attention: peer review and manager feedback drive final context.");
+    insights.push("Next attention: both required reviews are in place for the packet.");
   }
 
   return insights;
+}
+
+function getManagerReviewActionLabel(
+  status: ReviewSubmissionStatus | null | undefined,
+): string {
+  switch (status) {
+    case ReviewSubmissionStatus.NOT_STARTED:
+      return "Start manager review";
+    case ReviewSubmissionStatus.IN_PROGRESS:
+    case ReviewSubmissionStatus.RETURNED:
+      return "Continue manager review";
+    case ReviewSubmissionStatus.SUBMITTED:
+      return "View manager review";
+    default:
+      return "Open manager review";
+  }
 }
 
 function formatCompactDate(value: Date): string {

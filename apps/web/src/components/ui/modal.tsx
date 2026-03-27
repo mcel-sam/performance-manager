@@ -23,27 +23,27 @@ export function Modal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay-scrim)] p-4">
       <div
         role="dialog"
         aria-modal="true"
         className={cn(
-          "w-full max-w-lg rounded-[var(--radius-lg)] border border-slate-200 bg-white p-5 shadow-[var(--shadow-lg)]",
+          "w-full max-w-lg rounded-[var(--radius-lg)] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] p-5 shadow-[var(--shadow-lg)]",
           className,
         )}
         {...props}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            {title ? <h2 className="text-lg font-semibold text-slate-900">{title}</h2> : null}
-            {description ? <p className="mt-1 text-sm text-slate-600">{description}</p> : null}
+            {title ? <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">{title}</h2> : null}
+            {description ? <p className="mt-1 text-sm text-[var(--color-text-muted)]">{description}</p> : null}
           </div>
           {onClose ? (
             <button
               type="button"
               aria-label="Close dialog"
               onClick={onClose}
-              className="rounded-[var(--radius-sm)] px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+              className="rounded-[var(--radius-sm)] px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] hover:bg-[var(--color-shell-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
             >
               Close
             </button>

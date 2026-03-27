@@ -1,0 +1,110 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e18] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e20]
+            - generic [ref=e27]: Goals
+            - tooltip "Goals"
+          - link "Reviews" [ref=e28] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e30]
+            - generic [ref=e33]: Reviews
+            - tooltip "Reviews"
+          - link "Improvement Plans" [ref=e34] [cursor=pointer]:
+            - /url: /performance/improvement-plans
+            - img [ref=e36]
+            - generic [ref=e39]: Improvement Plans
+            - tooltip "Improvement Plans"
+          - link "Help" [ref=e40] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e42]
+            - generic [ref=e46]: Help
+            - tooltip "Help"
+    - main [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]: Workspace
+          - generic [ref=e51]: Home
+        - generic [ref=e52]:
+          - button "Current organization" [disabled] [ref=e53]:
+            - generic [ref=e54]: O
+            - generic [ref=e55]: MCEL Sandbox Organization
+            - img [ref=e56]
+          - button "Ted Tederoff Ted Tederoff Employee" [ref=e59]:
+            - generic "Ted Tederoff" [ref=e60]: TT
+            - generic [ref=e61]:
+              - generic [ref=e62]: Ted Tederoff
+              - generic [ref=e63]: Employee
+      - generic [ref=e65]:
+        - generic [ref=e67]:
+          - generic [ref=e68]:
+            - generic "Ted Tederoff" [ref=e69]: TT
+            - generic [ref=e70]:
+              - heading "Performance workflows by role" [level=2] [ref=e71]
+              - heading "Hi, Ted!" [level=1] [ref=e72]
+              - paragraph [ref=e73]: Application Support and Development • Information Technology
+          - generic [ref=e74]:
+            - generic [ref=e75]: Employee
+            - generic [ref=e76]: 0 items due soon
+            - generic [ref=e77]: 4 total review tasks
+        - generic [ref=e79]:
+          - generic [ref=e80]: Home
+          - link "My tasks" [ref=e81] [cursor=pointer]:
+            - /url: /performance/reviews
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - generic [ref=e85]:
+              - generic [ref=e86]:
+                - heading "You're caught up" [level=3] [ref=e87]
+                - paragraph [ref=e88]: You've already submitted 4 review tasks. The next item will appear here when it needs attention.
+              - generic [ref=e89]: 4 submitted
+            - generic [ref=e91]:
+              - img [ref=e93]
+              - generic [ref=e95]:
+                - generic [ref=e97]: Completed work
+                - paragraph [ref=e99]: No reviews need attention
+                - paragraph [ref=e100]: There are no drafts, returned items, or due-soon tasks waiting on you right now.
+                - generic [ref=e101]:
+                  - generic [ref=e102]: 4 submitted
+                  - generic [ref=e103]: Check back for new assignments
+            - group [ref=e104]:
+              - generic "View 4 submitted tasks" [ref=e105] [cursor=pointer]
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - generic [ref=e108]:
+                - heading "At a glance" [level=3] [ref=e109]
+                - generic [ref=e110]: Live snapshot
+              - generic [ref=e111]:
+                - generic [ref=e112]:
+                  - text: Due soon
+                  - paragraph [ref=e113]: "0"
+                - generic [ref=e114]:
+                  - text: Open draft
+                  - paragraph [ref=e115]: None
+                - generic [ref=e116]:
+                  - text: Submitted
+                  - paragraph [ref=e117]: "4"
+            - generic [ref=e118]:
+              - heading "Org snapshot" [level=3] [ref=e119]
+              - paragraph [ref=e120]: Keep your reporting context visible while you move through reviews.
+              - generic [ref=e121]:
+                - generic "Elliot Mah" [ref=e122]: EM
+                - generic [ref=e123]:
+                  - paragraph [ref=e124]: Manager
+                  - paragraph [ref=e125]: Elliot Mah
+                  - paragraph [ref=e126]: Manager, Enterprise Applications
+  - button "Open Next.js Dev Tools" [ref=e132] [cursor=pointer]:
+    - img [ref=e133]
+  - alert [ref=e137]

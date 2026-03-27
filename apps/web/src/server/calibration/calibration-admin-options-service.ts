@@ -4,13 +4,13 @@ import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
 
-const calibrationAdminRoles = new Set<UserRole>([UserRole.HR_ADMIN, UserRole.CALIBRATOR]);
-const calibrationParticipantRoles = [UserRole.HR_ADMIN, UserRole.MANAGER, UserRole.CALIBRATOR] as const;
+const calibrationAdminRoles = new Set<UserRole>([UserRole.HR_ADMIN, UserRole.SUPER_ADMIN]);
+const calibrationParticipantRoles = [UserRole.HR_ADMIN, UserRole.MANAGER, UserRole.SUPER_ADMIN] as const;
 
 interface CalibrationAdminOptionsDb {
   reviewCycle: {
     findMany: (args: {
-      where: { orgId: string };
+      where: { orgId: string; status: { in: CycleStatus[] } };
       orderBy: { startDate: "desc" };
       select: {
         id: true;
@@ -104,6 +104,9 @@ export async function getCalibrationSessionCreateOptions(
     db.reviewCycle.findMany({
       where: {
         orgId: context.orgId,
+        status: {
+          in: [CycleStatus.LOCKED, CycleStatus.RELEASED],
+        },
       },
       orderBy: {
         startDate: "desc",
@@ -177,7 +180,7 @@ function requireCalibrationAdminRole(context: RequestContext): void {
   if (!calibrationAdminRoles.has(context.role)) {
     throw new AppError(
       "FORBIDDEN",
-      "Only HR admins and calibrators can manage calibration sessions",
+      "Only HR admins and super admins can manage calibration sessions",
       403,
     );
   }

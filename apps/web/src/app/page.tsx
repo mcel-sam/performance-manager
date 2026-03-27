@@ -11,7 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { StatusChip, getReviewStatusTone } from "@/components/ui/status-chip";
 import { withReturnTo } from "@/lib/navigation/return-to";
-import { getReviewRelationshipLabel } from "@/lib/reviews/review-copy";
+import {
+  getReviewRelationshipLabel,
+  isVanillaReviewRelationship,
+} from "@/lib/reviews/review-copy";
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import {
   getHomeViewerOverview,
@@ -28,7 +32,7 @@ export const dynamic = "force-dynamic";
 
 interface HomeTaskRow {
   href: string | null;
-  eyebrow: string | null;
+  eyebrow?: string | null;
   label: string;
   subtitle: string;
   meta: string[];
@@ -49,7 +53,7 @@ interface HomeTaskRow {
 interface HomeTaskSectionContent {
   layout: "default" | "caughtUp";
   title: string;
-  description: string;
+  description?: string;
   badgeLabel: string;
   rows: HomeTaskRow[];
   disclosureLabel?: string;
@@ -76,18 +80,29 @@ interface HomeSummaryContent {
 
 interface HomePeoplePanel {
   title: string;
-  description: string;
+  description?: string;
   manager: {
     name: string;
     avatarUrl: string | null;
     title: string | null;
   } | null;
-  peopleLabel: string;
-  people: Array<{
+  peers: Array<{
     id: string;
     label: string;
     avatarUrl?: string | null;
     title: string | null;
+  }>;
+  directReports: Array<{
+    id: string;
+    label: string;
+    avatarUrl?: string | null;
+    title: string | null;
+    childReports: Array<{
+      id: string;
+      label: string;
+      avatarUrl?: string | null;
+      title: string | null;
+    }>;
   }>;
 }
 
@@ -100,14 +115,12 @@ const actionableHomeTaskStatuses = new Set<ReviewSubmissionStatus>([
 export default async function HomePage() {
   const context = await getDevRequestContext();
   const gettingStarted = getGettingStartedContent(context.role);
-  const tasks = await listAssignedReviewTasks(context);
+  const tasks = (await listAssignedReviewTasks(context)).filter((task) =>
+    isVanillaReviewRelationship(task.relationship),
+  );
   const viewerOverview = await getHomeViewerOverview(context);
-  const managerSnapshot =
-    context.role === UserRole.MANAGER
-      ? await getManagerHomeSnapshot(context)
-      : null;
-  const hrSnapshot =
-    context.role === UserRole.HR_ADMIN ? await getHrHomeSnapshot(context) : null;
+  const managerSnapshot = await getManagerHomeSnapshot(context);
+  const hrSnapshot = hasHrAdminAccess(context.role) ? await getHrHomeSnapshot(context) : null;
 
   const now = getCurrentTimeMs();
   const dueSoonCutoff = now + 14 * 24 * 60 * 60 * 1000;
@@ -124,7 +137,7 @@ export default async function HomePage() {
     tasks.find((task) => task.status === ReviewSubmissionStatus.IN_PROGRESS) ??
     tasks.find((task) => task.status === ReviewSubmissionStatus.NOT_STARTED);
 
-  const secondaryTab = getSecondaryTab(context.role);
+  const secondaryTab = getSecondaryTab(context.role, managerSnapshot, hrSnapshot);
   const taskSection = getHomeTaskSectionContent({
     role: context.role,
     tasks,
@@ -139,15 +152,13 @@ export default async function HomePage() {
     tasks,
   });
   const peoplePanel = getHomePeoplePanel({
-    role: context.role,
     viewerOverview,
-    tasks,
   });
 
   return (
     <div className="mx-auto w-full max-w-6xl">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200/90 bg-white/95 shadow-[var(--shadow-lg)] backdrop-blur">
-        <div className="border-b border-slate-200 bg-gradient-to-r from-white via-teal-50/65 to-amber-50/45 px-5 py-6 sm:px-6 sm:py-7">
+      <section className="overflow-hidden rounded-[28px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] shadow-[var(--shadow-lg)]">
+        <div className="border-b border-[var(--color-shell-divider)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--brand-primary)_5%,white)_0%,white_100%)] px-5 py-6 sm:px-6 sm:py-7">
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="flex min-w-0 items-center gap-4">
               <ProfileAvatar
@@ -157,58 +168,46 @@ export default async function HomePage() {
                 data-testid="home-greeting-avatar"
               />
               <div className="min-w-0 space-y-1">
-                <h2 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  Performance workflows by role
-                </h2>
                 <h1
                   data-testid="home-greeting"
-                  className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-[2.8rem]"
+                  className="text-4xl font-semibold tracking-tight text-[var(--color-text-primary)] sm:text-[2.8rem]"
                 >
                   Hi, {viewerOverview?.firstName ?? getGreetingFallback(context.role)}!
                 </h1>
-                <p className="text-sm text-slate-600 sm:text-[0.95rem]">
+                <p className="text-sm text-[var(--color-text-muted)] sm:text-[0.95rem]">
                   {getViewerSummaryLine(viewerOverview, context.role)}
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="info" className="px-3 py-1.5">
-                {formatRoleLabel(context.role)}
-              </Badge>
-              {getHeroHighlights({
-                role: context.role,
-                tasks,
-                dueSoonReviewCount,
-                managerSnapshot,
-                hrSnapshot,
-              }).map((highlight) => (
-                <span
-                  key={highlight}
-                  className="inline-flex items-center rounded-full border border-white/80 bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-[var(--shadow-xs)]"
+            {context.role !== UserRole.EMPLOYEE ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="neutral"
+                  className="border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] px-3 py-1.5 text-[var(--color-text-primary)]"
                 >
-                  {highlight}
-                </span>
-              ))}
-            </div>
+                  {formatRoleLabel(context.role)}
+                </Badge>
+              </div>
+            ) : null}
           </div>
         </div>
 
-        <div className="border-b border-slate-200 px-5 sm:px-6">
+        <div className="border-b border-[var(--color-shell-divider)] px-5 sm:px-6">
           <div className="flex items-center gap-6">
             <span className="border-b-2 border-[var(--brand-primary)] py-3 text-sm font-semibold text-[var(--brand-primary)]">
               Home
             </span>
             <Link
               href={secondaryTab.href}
-              className="py-3 text-sm font-semibold text-slate-600 transition-colors hover:text-slate-900"
+              className="py-3 text-sm font-semibold text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
             >
               {secondaryTab.label}
             </Link>
           </div>
         </div>
 
-        <div className="bg-slate-50/45 p-5 sm:p-6">
+        <div className="bg-[var(--color-shell-surface-muted)] p-5 sm:p-6">
           <div className="space-y-5">
             <HomeTaskSectionCard taskSection={taskSection} />
             <div className="grid items-start gap-5 lg:grid-cols-2">
@@ -222,7 +221,13 @@ export default async function HomePage() {
   );
 }
 
-function getSecondaryTab(role: UserRole): { label: string; href: string } {
+function getSecondaryTab(
+  role: UserRole,
+  managerSnapshot: Awaited<ReturnType<typeof getManagerHomeSnapshot>> | null,
+  hrSnapshot: Awaited<ReturnType<typeof getHrHomeSnapshot>> | null,
+): { label: string; href: string } {
+  const hasDirectReports = (managerSnapshot?.directReportCount ?? 0) > 0;
+
   switch (role) {
     case UserRole.MANAGER:
       return {
@@ -230,14 +235,32 @@ function getSecondaryTab(role: UserRole): { label: string; href: string } {
         href: "/performance/team-reviews",
       };
     case UserRole.HR_ADMIN:
+      if (hasDirectReports) {
+        return {
+          label: "My team",
+          href: "/performance/team-reviews",
+        };
+      }
       return {
         label: "Reporting",
         href: "/admin/performance/reporting",
       };
-    case UserRole.CALIBRATOR:
+    case UserRole.SUPER_ADMIN:
+      if (hasDirectReports) {
+        return {
+          label: "My team",
+          href: "/performance/team-reviews",
+        };
+      }
+      if ((hrSnapshot?.activeCycleCount ?? 0) > 0 || (hrSnapshot?.draftCycleCount ?? 0) > 0) {
+        return {
+          label: "Reporting",
+          href: "/admin/performance/reporting",
+        };
+      }
       return {
         label: "Calibration",
-        href: "/performance/calibration/calibration_session_seed_1",
+        href: "/performance/calibration",
       };
     default:
       return {
@@ -275,7 +298,6 @@ function getHomeTaskSectionContent(input: {
     return {
       layout: "default",
       title: getHomeTaskSectionTitle(input.role),
-      description: "Jump straight into the next action instead of hunting through the workspace.",
       badgeLabel: `${rows.length} in focus`,
       rows,
     };
@@ -300,17 +322,15 @@ function getHomeTaskSectionContent(input: {
     return {
       layout: "caughtUp",
       title: "You're caught up",
-      description: `You've already submitted ${submittedCount} review ${submittedCount === 1 ? "task" : "tasks"}. The next item will appear here when it needs attention.`,
       badgeLabel: `${submittedCount} submitted`,
       disclosureLabel: `View ${submittedCount} submitted ${submittedCount === 1 ? "task" : "tasks"}`,
       disclosureRows,
       rows: [
         {
           href: null,
-          eyebrow: "Completed work",
           label: "No reviews need attention",
-          subtitle: "There are no drafts, returned items, or due-soon tasks waiting on you right now.",
-          meta: [`${submittedCount} submitted`, "Check back for new assignments"],
+          subtitle: "There are no drafts or returned items waiting on you right now.",
+          meta: [`${submittedCount} submitted`],
           visual: {
             type: "icon",
             icon: "complete",
@@ -350,7 +370,7 @@ function getHomeTaskSectionTitle(role: UserRole): string {
     case UserRole.EMPLOYEE:
     case UserRole.MANAGER:
     case UserRole.HR_ADMIN:
-    case UserRole.CALIBRATOR:
+    case UserRole.SUPER_ADMIN:
       return "Review tasks";
   }
 }
@@ -387,6 +407,25 @@ function getHomeSummaryContent(input: {
         ],
       };
     case UserRole.HR_ADMIN:
+      if ((input.managerSnapshot?.directReportCount ?? 0) > 0) {
+        return {
+          title: "HR and team snapshot",
+          rows: [
+            {
+              label: "Direct reports",
+              value: `${input.managerSnapshot?.directReportCount ?? 0}`,
+            },
+            {
+              label: "Live cycles",
+              value: `${input.hrSnapshot?.activeCycleCount ?? 0}`,
+            },
+            {
+              label: "Open submissions",
+              value: `${input.hrSnapshot?.openSubmissionCount ?? 0}`,
+            },
+          ],
+        };
+      }
       return {
         title: "Cycle overview",
         rows: [
@@ -404,21 +443,21 @@ function getHomeSummaryContent(input: {
           },
         ],
       };
-    case UserRole.CALIBRATOR:
+    case UserRole.SUPER_ADMIN:
       return {
-        title: "Calibration snapshot",
+        title: "Executive snapshot",
         rows: [
           {
-            label: "Assigned tasks",
-            value: `${input.tasks.length}`,
+            label: "Direct reports",
+            value: `${input.managerSnapshot?.directReportCount ?? 0}`,
           },
           {
-            label: "Submitted",
-            value: `${submittedCount}`,
+            label: "Open submissions",
+            value: `${input.hrSnapshot?.openSubmissionCount ?? 0}`,
           },
           {
-            label: "Session",
-            value: "Calibration 9-box",
+            label: "Live cycles",
+            value: `${input.hrSnapshot?.activeCycleCount ?? 0}`,
           },
         ],
       };
@@ -444,39 +483,10 @@ function getHomeSummaryContent(input: {
 }
 
 function getHomePeoplePanel(input: {
-  role: UserRole;
   viewerOverview: HomeViewerOverview | null;
-  tasks: ReviewTaskListItem[];
 }): HomePeoplePanel {
-  const taskPeople = Array.from(new Set(input.tasks.map((task) => task.subjectName)))
-    .slice(0, 4)
-    .map((name, index) => ({
-      id: `task-person-${index}`,
-      label: name,
-      avatarUrl: null,
-      title: "Review subject",
-    }));
-
-  const people =
-    input.viewerOverview?.people.map((person) => ({
-      id: person.id,
-      label: person.name,
-      avatarUrl: person.avatarUrl,
-      title: person.title,
-    })) ?? taskPeople;
-
-  const description =
-    input.role === UserRole.MANAGER
-      ? "Keep the people behind the work visible while you move through reviews."
-      : input.role === UserRole.HR_ADMIN
-        ? "A quick people snapshot keeps the workspace grounded in the org, not just the numbers."
-        : input.role === UserRole.CALIBRATOR
-          ? "Keep the people behind each calibration decision visible while you move through the session."
-          : "Keep your reporting context visible while you move through reviews.";
-
   return {
     title: input.viewerOverview?.manager ? "Org snapshot" : "People context",
-    description,
     manager: input.viewerOverview?.manager
       ? {
           name: input.viewerOverview.manager.name,
@@ -484,42 +494,27 @@ function getHomePeoplePanel(input: {
           title: input.viewerOverview.manager.title,
         }
       : null,
-    peopleLabel: input.viewerOverview?.peopleLabel ?? "People in focus",
-    people,
+    peers:
+      input.viewerOverview?.peers.map((person) => ({
+        id: person.id,
+        label: person.name,
+        avatarUrl: person.avatarUrl,
+        title: person.title,
+      })) ?? [],
+    directReports:
+      input.viewerOverview?.directReports.map((person) => ({
+        id: person.id,
+        label: person.name,
+        avatarUrl: person.avatarUrl,
+        title: person.title,
+        childReports: person.childReports.map((child) => ({
+          id: child.id,
+          label: child.name,
+          avatarUrl: child.avatarUrl,
+          title: child.title,
+        })),
+      })) ?? [],
   };
-}
-
-function getHeroHighlights(input: {
-  role: UserRole;
-  tasks: ReviewTaskListItem[];
-  dueSoonReviewCount: number;
-  managerSnapshot: Awaited<ReturnType<typeof getManagerHomeSnapshot>> | null;
-  hrSnapshot: Awaited<ReturnType<typeof getHrHomeSnapshot>> | null;
-}): string[] {
-  switch (input.role) {
-    case UserRole.MANAGER:
-      return [
-        formatCountLabel(input.managerSnapshot?.awaitingManagerReviewCount ?? 0, "review waiting"),
-        formatCountLabel(input.managerSnapshot?.directReportCount ?? 0, "direct report", "direct reports"),
-      ];
-    case UserRole.HR_ADMIN:
-      return [
-        formatCountLabel(input.hrSnapshot?.activeCycleCount ?? 0, "live cycle"),
-        formatCountLabel(input.hrSnapshot?.openSubmissionCount ?? 0, "open submission"),
-      ];
-    case UserRole.CALIBRATOR:
-      return [formatCountLabel(input.tasks.length, "assigned item"), "Search-free focus mode"];
-    default:
-      return [
-        formatCountLabel(input.dueSoonReviewCount, "item due soon", "items due soon"),
-        formatCountLabel(input.tasks.length, "total review task"),
-      ];
-  }
-}
-
-function formatCountLabel(count: number, singular: string, plural?: string): string {
-  const resolvedPlural = plural ?? `${singular}s`;
-  return `${count} ${count === 1 ? singular : resolvedPlural}`;
 }
 
 function getViewerSummaryLine(
@@ -543,7 +538,7 @@ function getGreetingFallback(role: UserRole): string {
       return "Harper";
     case UserRole.MANAGER:
       return "Manager";
-    case UserRole.CALIBRATOR:
+    case UserRole.SUPER_ADMIN:
       return "there";
     default:
       return "there";
@@ -554,8 +549,8 @@ function formatRoleLabel(role: UserRole): string {
   switch (role) {
     case UserRole.HR_ADMIN:
       return "HR Admin";
-    case UserRole.CALIBRATOR:
-      return "Calibrator";
+    case UserRole.SUPER_ADMIN:
+      return "Super Admin";
     case UserRole.MANAGER:
       return "Manager";
     case UserRole.EMPLOYEE:
@@ -637,23 +632,23 @@ function HomeTaskRowCard({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {task.eyebrow ? (
-            <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-neutral-500)]">
               {task.eyebrow}
             </span>
           ) : null}
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-2">
-          <p className="truncate text-sm font-semibold text-slate-900">{task.label}</p>
+          <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">{task.label}</p>
           {task.statusLabel ? (
             <StatusChip tone={task.statusTone ?? "neutral"}>{task.statusLabel}</StatusChip>
           ) : null}
         </div>
-        <p className="mt-1 truncate text-sm text-slate-600">{task.subtitle}</p>
+        <p className="mt-1 truncate text-sm text-[var(--color-text-muted)]">{task.subtitle}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {task.meta.map((metaItem) => (
             <span
               key={`${task.label}-${metaItem}`}
-              className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500"
+              className="inline-flex items-center rounded-full bg-[var(--color-shell-surface-muted)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-neutral-500)]"
             >
               {metaItem}
             </span>
@@ -665,7 +660,7 @@ function HomeTaskRowCard({
 
   if (task.href == null) {
     return (
-      <div className="flex items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50/85 px-4 py-3">
+      <div className="flex items-center gap-3 rounded-[20px] border border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] px-4 py-3">
         {body}
       </div>
     );
@@ -675,11 +670,11 @@ function HomeTaskRowCard({
     <Link
       href={task.href}
       data-testid={`home-getting-started-link-${index}`}
-      className="group flex items-center gap-3 rounded-[20px] border border-slate-200 bg-white px-4 py-3 transition-[transform,background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-[var(--shadow-sm)]"
+      className="group flex items-center gap-3 rounded-[20px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] px-4 py-3 transition-[transform,background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:border-[var(--color-focus-border)] hover:bg-[var(--color-shell-surface-muted)] hover:shadow-[var(--shadow-sm)]"
     >
       {body}
       <span
-        className="text-lg text-slate-300 transition-colors group-hover:text-slate-700"
+        className="text-lg text-[var(--color-neutral-500)] transition-colors group-hover:text-[var(--brand-primary)]"
         aria-hidden="true"
       >
         ›
@@ -694,15 +689,17 @@ function HomeTaskSectionCard({
   taskSection: HomeTaskSectionContent;
 }) {
   return (
-    <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[var(--shadow-xs)] sm:p-5">
+    <section className="rounded-[24px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] p-4 shadow-[var(--shadow-xs)] sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.11em] text-slate-600">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.11em] text-[var(--color-text-muted)]">
             {taskSection.title}
           </h3>
-          <p className="mt-1 text-sm text-slate-500">{taskSection.description}</p>
+          {taskSection.description ? (
+            <p className="mt-1 text-sm text-[var(--color-neutral-500)]">{taskSection.description}</p>
+          ) : null}
         </div>
-        <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+        <span className="inline-flex items-center rounded-full border border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">
           {taskSection.badgeLabel}
         </span>
       </div>
@@ -716,12 +713,12 @@ function HomeTaskSectionCard({
       {taskSection.disclosureRows?.length ? (
         <details
           data-testid="home-task-disclosure"
-          className="mt-4 overflow-hidden rounded-[20px] border border-slate-200 bg-slate-50/75"
+          className="mt-4 overflow-hidden rounded-[20px] border border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)]"
         >
-          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-[var(--color-text-muted)]">
             {taskSection.disclosureLabel}
           </summary>
-          <div className="space-y-2 border-t border-slate-200 px-4 py-3">
+          <div className="space-y-2 border-t border-[var(--color-shell-divider)] px-4 py-3">
             {taskSection.disclosureRows.map((row) => (
               <HomeDisclosureRowItem key={row.id} row={row} />
             ))}
@@ -740,28 +737,27 @@ function HomeSummaryPanel({
   return (
     <section
       data-testid="home-summary-panel"
-      className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[var(--shadow-xs)] sm:p-5"
+      className="rounded-[24px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] p-4 shadow-[var(--shadow-xs)] sm:p-5"
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
         <h3
           data-testid="home-summary-title"
-          className="text-sm font-semibold uppercase tracking-[0.11em] text-slate-600"
+          className="text-sm font-semibold uppercase tracking-[0.11em] text-[var(--color-text-muted)]"
         >
           {summaryContent.title}
         </h3>
-        <span className="text-xs font-medium text-slate-400">Live snapshot</span>
       </div>
 
       <div className="mt-4 grid gap-3">
         {summaryContent.rows.map((row) => (
           <div
             key={row.label}
-            className="rounded-[18px] border border-slate-200 bg-slate-50/85 px-4 py-3"
+            className="rounded-[18px] border border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] px-4 py-3"
           >
-            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--color-neutral-500)]">
               {row.label}
             </span>
-            <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{row.value}</p>
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--color-text-primary)]">{row.value}</p>
           </div>
         ))}
       </div>
@@ -775,69 +771,174 @@ function HomePeoplePanelCard({
   peoplePanel: HomePeoplePanel;
 }) {
   return (
-    <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[var(--shadow-xs)] sm:p-5">
-      <h3 className="text-sm font-semibold uppercase tracking-[0.11em] text-slate-600">
+    <section className="rounded-[24px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] p-4 shadow-[var(--shadow-xs)] sm:p-5">
+      <h3 className="text-sm font-semibold uppercase tracking-[0.11em] text-[var(--color-text-muted)]">
         {peoplePanel.title}
       </h3>
-      <p className="mt-1 text-sm leading-6 text-slate-500">{peoplePanel.description}</p>
+      {peoplePanel.description ? (
+        <p className="mt-1 text-sm leading-6 text-[var(--color-neutral-500)]">{peoplePanel.description}</p>
+      ) : null}
 
       {peoplePanel.manager ? (
-        <div className="mt-4 flex items-center gap-3 rounded-[18px] border border-slate-200 bg-slate-50/85 px-4 py-3">
+        <div className="mt-4 flex items-center gap-3 rounded-[18px] border border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] px-4 py-3">
           <ProfileAvatar
             name={peoplePanel.manager.name}
             imageUrl={peoplePanel.manager.avatarUrl}
             size="sm"
           />
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--color-neutral-500)]">
               Manager
             </p>
-            <p className="truncate text-sm font-semibold text-slate-900">{peoplePanel.manager.name}</p>
-            <p className="truncate text-xs text-slate-500">
+            <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">{peoplePanel.manager.name}</p>
+            <p className="truncate text-xs text-[var(--color-neutral-500)]">
               {peoplePanel.manager.title ?? "Role not set"}
             </p>
           </div>
         </div>
       ) : null}
 
-      {peoplePanel.people.length > 0 ? (
-        <details
-          data-testid="home-people-disclosure"
-          className="mt-4 overflow-hidden rounded-[18px] border border-slate-200 bg-slate-50/85"
-        >
-          <summary className="cursor-pointer px-4 py-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">
-                  {peoplePanel.peopleLabel}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">
-                  {getPeopleCountSummary(peoplePanel.peopleLabel, peoplePanel.people.length)}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <AvatarsStack items={peoplePanel.people} maxVisible={4} />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
-                  View all
-                </span>
-              </div>
-            </div>
-          </summary>
+      {peoplePanel.peers.length > 0 || peoplePanel.directReports.length > 0 ? (
+        <HomeTeamDisclosure
+          peers={peoplePanel.peers}
+          directReports={peoplePanel.directReports}
+        />
+      ) : null}
+    </section>
+  );
+}
 
-          <div className="space-y-2 border-t border-slate-200 px-4 py-3">
-            {peoplePanel.people.map((person) => (
-              <div key={person.id} className="flex items-center gap-2 text-sm text-slate-600">
-                <ProfileAvatar name={person.label} imageUrl={person.avatarUrl} size="sm" />
+function HomeTeamDisclosure({
+  peers,
+  directReports,
+}: {
+  peers: HomePeoplePanel["peers"];
+  directReports: HomePeoplePanel["directReports"];
+}) {
+  return (
+    <details
+      data-testid="home-team-disclosure"
+      className="mt-4 overflow-hidden rounded-[18px] border border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)]"
+    >
+      <summary className="cursor-pointer px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--color-neutral-500)]">
+              Team
+            </p>
+            <div className="mt-2 flex flex-wrap items-stretch gap-3">
+              {peers.length > 0 ? (
+                <div className="min-w-[120px] rounded-[14px] bg-[var(--color-surface-default)] px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-neutral-500)]">
+                      Peers
+                    </p>
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-shell-surface-muted)] px-1.5 text-[10px] font-semibold text-[var(--color-neutral-500)]">
+                      {peers.length}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <AvatarsStack items={peers} maxVisible={3} />
+                  </div>
+                </div>
+              ) : null}
+
+              {peers.length > 0 && directReports.length > 0 ? (
+                <div className="hidden w-px self-stretch bg-[var(--color-shell-divider)] sm:block" />
+              ) : null}
+
+              {directReports.length > 0 ? (
+                <div className="min-w-[140px] rounded-[14px] bg-[var(--color-surface-default)] px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-neutral-500)]">
+                      Direct reports
+                    </p>
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-shell-surface-muted)] px-1.5 text-[10px] font-semibold text-[var(--color-neutral-500)]">
+                      {directReports.length}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <AvatarsStack items={directReports} maxVisible={3} />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <div className="pt-1 text-[var(--color-neutral-500)]" aria-hidden="true">
+            <span className="text-sm">▸</span>
+          </div>
+        </div>
+      </summary>
+
+      <div className="space-y-4 border-t border-[var(--color-shell-divider)] px-4 py-3">
+        {peers.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--color-neutral-500)]">
+              Peers
+            </p>
+            {peers.map((person) => (
+              <HomePeopleListItem key={person.id} person={person} />
+            ))}
+          </div>
+        ) : null}
+
+        {directReports.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--color-neutral-500)]">
+              Direct reports
+            </p>
+            {directReports.map((person) => (
+              <HomePeopleListItem key={person.id} person={person} />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </details>
+  );
+}
+
+function HomePeopleListItem({
+  person,
+}: {
+  person: HomePeoplePanel["peers"][number] | HomePeoplePanel["directReports"][number];
+}) {
+  return (
+    <div className="rounded-[16px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] px-3 py-3">
+      <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+        <ProfileAvatar name={person.label} imageUrl={person.avatarUrl} size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium text-[var(--color-text-primary)]">{person.label}</p>
+          <p className="truncate text-xs text-[var(--color-neutral-500)]">{person.title ?? "Role not set"}</p>
+        </div>
+      </div>
+
+      {"childReports" in person && person.childReports.length > 0 ? (
+        <div className="mt-3 rounded-[14px] border border-[var(--color-shell-divider)] bg-[var(--color-shell-surface-muted)] px-3 py-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-neutral-500)]">
+              Team below
+            </p>
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-surface-default)] px-1.5 text-[10px] font-semibold text-[var(--color-neutral-500)]">
+              {person.childReports.length}
+            </span>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <AvatarsStack items={person.childReports} maxVisible={4} />
+          </div>
+          <div className="mt-3 space-y-2">
+            {person.childReports.map((child) => (
+              <div key={child.id} className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+                <ProfileAvatar name={child.label} imageUrl={child.avatarUrl} size="sm" />
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-slate-900">{person.label}</p>
-                  <p className="truncate text-xs text-slate-500">{person.title ?? "Role not set"}</p>
+                  <p className="truncate font-medium text-[var(--color-text-primary)]">{child.label}</p>
+                  <p className="truncate text-xs text-[var(--color-neutral-500)]">{child.title ?? "Role not set"}</p>
                 </div>
               </div>
             ))}
           </div>
-        </details>
+        </div>
       ) : null}
-    </section>
+    </div>
   );
 }
 
@@ -848,23 +949,23 @@ function HomeDisclosureRowItem({
 }) {
   const body = (
     <div className="min-w-0">
-      <p className="truncate text-sm font-semibold text-slate-900">{row.label}</p>
-      <p className="truncate text-xs text-slate-500">{row.subtitle}</p>
-      <p className="mt-1 text-[11px] font-medium text-slate-500">{row.meta}</p>
+      <p className="truncate text-sm font-semibold text-[var(--color-text-primary)]">{row.label}</p>
+      <p className="truncate text-xs text-[var(--color-neutral-500)]">{row.subtitle}</p>
+      <p className="mt-1 text-[11px] font-medium text-[var(--color-neutral-500)]">{row.meta}</p>
     </div>
   );
 
   if (row.href == null) {
-    return <div className="rounded-[16px] border border-slate-200 bg-white px-3 py-2">{body}</div>;
+    return <div className="rounded-[16px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] px-3 py-2">{body}</div>;
   }
 
   return (
     <Link
       href={row.href}
-      className="flex items-center justify-between gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2 transition hover:border-slate-300 hover:bg-white"
+      className="flex items-center justify-between gap-3 rounded-[16px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] px-3 py-2 transition hover:border-[var(--color-focus-border)] hover:bg-[var(--color-shell-surface-muted)]"
     >
       {body}
-      <span className="text-base text-slate-300" aria-hidden="true">
+      <span className="text-base text-[var(--color-neutral-500)]" aria-hidden="true">
         ›
       </span>
     </Link>
@@ -891,34 +992,26 @@ function HomeTaskIcon({
 function getHomeTaskIconPalette(icon: GettingStartedIcon | "complete"): string {
   switch (icon) {
     case "queue":
-      return "border-sky-200 bg-sky-50 text-sky-700";
+      return "border-[color-mix(in_srgb,var(--brand-primary)_18%,white)] bg-[var(--color-shell-soft-accent)] text-[var(--brand-primary)]";
     case "selfReview":
-      return "border-amber-200 bg-amber-50 text-amber-700";
+      return "border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-surface)] text-[var(--color-status-warning)]";
     case "growth":
-      return "border-violet-200 bg-violet-50 text-violet-700";
+      return "border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] text-[var(--color-text-primary)]";
     case "help":
-      return "border-teal-200 bg-teal-50 text-teal-700";
+      return "border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] text-[var(--color-text-primary)]";
     case "team":
-      return "border-violet-200 bg-violet-50 text-violet-700";
+      return "border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] text-[var(--color-text-primary)]";
     case "calibration":
-      return "border-indigo-200 bg-indigo-50 text-indigo-700";
+      return "border-[color-mix(in_srgb,var(--brand-primary)_18%,white)] bg-[var(--color-shell-soft-accent)] text-[var(--brand-primary)]";
     case "improvementPlans":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+      return "border-[var(--color-status-success-border)] bg-[var(--color-status-success-surface)] text-[var(--color-status-success)]";
     case "reviewCycles":
-      return "border-cyan-200 bg-cyan-50 text-cyan-700";
+      return "border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] text-[var(--color-text-primary)]";
     case "complete":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+      return "border-[var(--color-status-success-border)] bg-[var(--color-status-success-surface)] text-[var(--color-status-success)]";
     default:
-      return "border-slate-200 bg-slate-50 text-slate-700";
+      return "border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] text-[var(--color-text-primary)]";
   }
-}
-
-function getPeopleCountSummary(peopleLabel: string, count: number): string {
-  if (peopleLabel.toLowerCase().includes("team")) {
-    return `${count} teammates`;
-  }
-
-  return `${count} people in focus`;
 }
 
 function renderHomeTaskIconPath(icon: GettingStartedIcon | "complete") {

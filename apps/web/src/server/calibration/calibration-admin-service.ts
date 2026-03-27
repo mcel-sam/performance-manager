@@ -5,11 +5,11 @@ import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
 
-const calibrationAdminRoles = new Set<UserRole>([UserRole.HR_ADMIN, UserRole.CALIBRATOR]);
+const calibrationAdminRoles = new Set<UserRole>([UserRole.HR_ADMIN, UserRole.SUPER_ADMIN]);
 const allowedParticipantRoles = new Set<UserRole>([
   UserRole.HR_ADMIN,
   UserRole.MANAGER,
-  UserRole.CALIBRATOR,
+  UserRole.SUPER_ADMIN,
 ]);
 
 const axisDefinitionSchema = z.object({
@@ -33,6 +33,7 @@ const createCalibrationSessionSchema = z.object({
   name: z.string().trim().min(3).max(160),
   roleGroup: z.string().trim().min(1).max(120),
   description: z.string().trim().max(500).optional().nullable(),
+  isRestricted: z.boolean().optional(),
   cohortEmployeeIds: z.array(z.string().trim().min(1)).min(1).max(400),
   participantUserIds: z.array(z.string().trim().min(1)).min(1).max(200),
   performanceAxis: axisConfigSchema.optional(),
@@ -79,6 +80,7 @@ interface CalibrationSessionCreateRecord {
   id: string;
   name: string;
   roleGroup: string | null;
+  isRestricted: boolean;
   isFinalized: boolean;
   createdAt: Date;
   cycle: {
@@ -94,6 +96,7 @@ interface CalibrationSessionListRecord {
   id: string;
   name: string;
   roleGroup: string | null;
+  isRestricted: boolean;
   isFinalized: boolean;
   finalizedAt: Date | null;
   createdAt: Date;
@@ -133,6 +136,7 @@ interface CalibrationAdminDb {
         name: string;
         roleGroup: string;
         description: string | null;
+        isRestricted: boolean;
         performanceAxisConfig: CalibrationAxisDefinition[];
         potentialAxisConfig: CalibrationAxisDefinition[];
         placements: {
@@ -154,6 +158,7 @@ interface CalibrationAdminDb {
         id: true;
         name: true;
         roleGroup: true;
+        isRestricted: true;
         isFinalized: true;
         createdAt: true;
         cycle: {
@@ -176,12 +181,13 @@ interface CalibrationAdminDb {
       };
     }) => Promise<CalibrationSessionCreateRecord>;
     findMany: (args: {
-      where: { orgId: string };
+      where: { orgId: string; isRestricted?: boolean };
       orderBy: { createdAt: "desc" };
       select: {
         id: true;
         name: true;
         roleGroup: true;
+        isRestricted: true;
         isFinalized: true;
         finalizedAt: true;
         createdAt: true;
@@ -232,6 +238,7 @@ export interface CreatedCalibrationSession {
   cycleStatus: CycleStatus;
   name: string;
   roleGroup: string | null;
+  isRestricted: boolean;
   isFinalized: boolean;
   cohortCount: number;
   participantCount: number;
@@ -245,6 +252,7 @@ export interface CalibrationSessionListItem {
   cycleStatus: CycleStatus;
   name: string;
   roleGroup: string | null;
+  isRestricted: boolean;
   isFinalized: boolean;
   finalizedAt: string | null;
   cohortCount: number;
@@ -273,6 +281,15 @@ export async function createCalibrationSession(
   const participantUserIds = uniqueIds([...parsed.data.participantUserIds, context.userId]);
   const performanceAxis = parsed.data.performanceAxis ?? defaultPerformanceAxis;
   const potentialAxis = parsed.data.potentialAxis ?? defaultPotentialAxis;
+  const isRestricted = parsed.data.isRestricted ?? false;
+
+  if (isRestricted && context.role !== UserRole.SUPER_ADMIN) {
+    throw new AppError(
+      "FORBIDDEN",
+      "Only super admins can create restricted calibration sessions",
+      403,
+    );
+  }
 
   const cycle = await db.reviewCycle.findFirst({
     where: {
@@ -287,6 +304,15 @@ export async function createCalibrationSession(
   });
   if (!cycle) {
     throw new AppError("NOT_FOUND", "Review cycle not found", 404);
+  }
+
+  if (cycle.status !== CycleStatus.LOCKED && cycle.status !== CycleStatus.RELEASED) {
+    throw new AppError(
+      "INVALID_CYCLE_STATE",
+      "Calibration sessions can only be created after the review cycle is locked",
+      409,
+      { cycleStatus: cycle.status },
+    );
   }
 
   const cohortEmployees = await db.employee.findMany({
@@ -334,7 +360,7 @@ export async function createCalibrationSession(
   if (invalidParticipantIds.length > 0) {
     throw new AppError(
       "VALIDATION_ERROR",
-      "Participants must be HR admins, managers, or calibrators",
+      "Participants must be HR admins, managers, or super admins",
       400,
       { invalidParticipantUserIds: invalidParticipantIds },
     );
@@ -347,6 +373,7 @@ export async function createCalibrationSession(
       name: parsed.data.name,
       roleGroup: parsed.data.roleGroup,
       description: parsed.data.description ?? null,
+      isRestricted,
       performanceAxisConfig: performanceAxis,
       potentialAxisConfig: potentialAxis,
       placements: {
@@ -368,6 +395,7 @@ export async function createCalibrationSession(
       id: true,
       name: true,
       roleGroup: true,
+      isRestricted: true,
       isFinalized: true,
       createdAt: true,
       cycle: {
@@ -400,6 +428,7 @@ export async function createCalibrationSession(
       metadata: {
         cycleId: createdSession.cycle.id,
         roleGroup: createdSession.roleGroup,
+        isRestricted: createdSession.isRestricted,
         cohortCount: createdSession.placements.length,
         participantCount: createdSession.participants.length,
       },
@@ -413,6 +442,7 @@ export async function createCalibrationSession(
     cycleStatus: createdSession.cycle.status,
     name: createdSession.name,
     roleGroup: createdSession.roleGroup,
+    isRestricted: createdSession.isRestricted,
     isFinalized: createdSession.isFinalized,
     cohortCount: createdSession.placements.length,
     participantCount: createdSession.participants.length,
@@ -429,6 +459,7 @@ export async function listCalibrationSessions(
   const sessions = await db.calibrationSession.findMany({
     where: {
       orgId: context.orgId,
+      ...(context.role === UserRole.HR_ADMIN ? { isRestricted: false } : {}),
     },
     orderBy: {
       createdAt: "desc",
@@ -437,6 +468,7 @@ export async function listCalibrationSessions(
       id: true,
       name: true,
       roleGroup: true,
+      isRestricted: true,
       isFinalized: true,
       finalizedAt: true,
       createdAt: true,
@@ -467,6 +499,7 @@ export async function listCalibrationSessions(
     cycleStatus: session.cycle.status,
     name: session.name,
     roleGroup: session.roleGroup,
+    isRestricted: session.isRestricted,
     isFinalized: session.isFinalized,
     finalizedAt: session.finalizedAt?.toISOString() ?? null,
     cohortCount: session.placements.length,
@@ -479,7 +512,7 @@ function requireCalibrationAdminRole(context: RequestContext): void {
   if (!calibrationAdminRoles.has(context.role)) {
     throw new AppError(
       "FORBIDDEN",
-      "Only HR admins and calibrators can manage calibration sessions",
+      "Only HR admins and super admins can manage calibration sessions",
       403,
     );
   }

@@ -57,14 +57,14 @@ describe("createReviewCycle", () => {
       visibilityPolicy: CycleVisibilityPolicy.EMPLOYEE_AFTER_RELEASE,
       selfReviewRequired: true,
       managerReviewRequired: true,
-      peerReviewCount: 1,
+      peerReviewCount: 0,
       peerAssignmentMode: PeerAssignmentMode.HR_ASSIGNED,
       upwardReviewCount: 0,
       upwardReviewsForManagersOnly: true,
       selfReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
       managerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
-      peerReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
-      upwardReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      peerReviewDueAt: null,
+      upwardReviewDueAt: null,
     });
     db.auditEvent.create.mockResolvedValue({ id: "audit_1" });
 
@@ -84,6 +84,10 @@ describe("createReviewCycle", () => {
     expect(db.reviewCycle.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          peerReviewCount: 0,
+          upwardReviewCount: 0,
+          peerReviewDueAt: null,
+          upwardReviewDueAt: null,
           scorecardMetrics: expect.objectContaining({
             create: expect.any(Array),
           }),
@@ -241,6 +245,61 @@ describe("generateCycleArtifacts", () => {
             snapshotManagerEmployeeId: "emp_a",
             snapshotManagerName: "Ava Admin",
           }),
+        ]),
+      }),
+    );
+  });
+
+  it("ignores legacy peer and upward settings when generating vanilla review submissions", async () => {
+    const db = buildDbMock();
+    db.reviewCycle.findFirst.mockResolvedValue({
+      id: "cycle_1",
+      orgId: adminContext.orgId,
+      status: CycleStatus.DRAFT,
+      selfReviewRequired: true,
+      managerReviewRequired: true,
+      peerReviewCount: 2,
+      peerAssignmentMode: PeerAssignmentMode.HR_ASSIGNED,
+      upwardReviewCount: 1,
+      upwardReviewsForManagersOnly: true,
+      selfReviewDueAt: new Date("2026-04-30T23:59:59.999Z"),
+      managerReviewDueAt: new Date("2026-04-29T23:59:59.999Z"),
+      peerReviewDueAt: new Date("2026-04-28T23:59:59.999Z"),
+      upwardReviewDueAt: new Date("2026-04-27T23:59:59.999Z"),
+    });
+    db.employee.findMany.mockResolvedValue([
+      {
+        id: "emp_manager",
+        firstName: "Morgan",
+        lastName: "Manager",
+        department: "Operations",
+        title: "Manager",
+        managerId: null,
+      },
+      {
+        id: "emp_employee",
+        firstName: "Elliot",
+        lastName: "Mah",
+        department: "Operations",
+        title: "Supervisor",
+        managerId: "emp_manager",
+      },
+    ]);
+    db.reviewPacket.createMany.mockResolvedValue({ count: 2 });
+    db.reviewPacket.findMany.mockResolvedValue([
+      { id: "packet_manager", subjectEmployeeId: "emp_manager" },
+      { id: "packet_employee", subjectEmployeeId: "emp_employee" },
+    ]);
+    db.reviewSubmission.createMany.mockResolvedValue({ count: 3 });
+    db.auditEvent.create.mockResolvedValue({ id: "audit_2" });
+
+    await generateCycleArtifacts("cycle_1", adminContext, db as never);
+
+    expect(db.reviewSubmission.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.arrayContaining([
+          expect.objectContaining({ relationship: ReviewRelationship.PEER }),
+          expect.objectContaining({ relationship: ReviewRelationship.UPWARD }),
         ]),
       }),
     );

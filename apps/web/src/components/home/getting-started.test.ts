@@ -7,9 +7,12 @@ describe("getGettingStartedContent", () => {
   it("returns HR admin setup links", () => {
     const content = getGettingStartedContent(UserRole.HR_ADMIN);
 
-    expect(content.title.toLowerCase()).toContain("cycle");
-    expect(content.links.some((link) => link.href === "/admin/talent/succession")).toBe(true);
+    expect(content.links.some((link) => link.href === "/performance/reviews")).toBe(true);
+    expect(content.links.some((link) => link.href === "/goals")).toBe(true);
     expect(content.links.some((link) => link.href === "/admin/performance/review-cycles")).toBe(
+      true,
+    );
+    expect(content.links.some((link) => link.href === "/admin/performance/calibration")).toBe(
       true,
     );
   });
@@ -18,10 +21,7 @@ describe("getGettingStartedContent", () => {
     const content = getGettingStartedContent(UserRole.MANAGER);
 
     expect(content.links[0]?.href).toBe("/performance/team-reviews");
-    expect(content.links.some((link) => link.href === "/talent/succession")).toBe(true);
-    expect(content.links.some((link) => link.href.includes("/performance/calibration"))).toBe(
-      true,
-    );
+    expect(content.links.some((link) => link.href === "/goals")).toBe(true);
     expect(
       content.links.some((link) => link.href.includes("/performance/improvement-plans")),
     ).toBe(true);
@@ -31,7 +31,19 @@ describe("getGettingStartedContent", () => {
     const content = getGettingStartedContent(UserRole.EMPLOYEE);
 
     expect(content.links.some((link) => link.href === "/performance/reviews")).toBe(true);
+    expect(content.links.some((link) => link.href === "/goals")).toBe(true);
     expect(content.links.some((link) => link.href === "/help")).toBe(true);
+  });
+
+  it("returns calibration-first links for super admins", () => {
+    const content = getGettingStartedContent(UserRole.SUPER_ADMIN);
+
+    expect(content.links.map((link) => link.href)).toEqual([
+      "/performance/calibration",
+      "/performance/reviews",
+      "/goals",
+      "/help",
+    ]);
   });
 
   it("uses concise workspace labels instead of repeated open verbs", () => {

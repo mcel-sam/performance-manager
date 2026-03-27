@@ -5,10 +5,14 @@ import { cn } from "@/components/ui/cn";
 type ToastVariant = "info" | "success" | "warning" | "error";
 
 const variantClass: Record<ToastVariant, string> = {
-  info: "border-sky-200 bg-sky-50 text-sky-900",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-900",
-  warning: "border-amber-200 bg-amber-50 text-amber-900",
-  error: "border-rose-200 bg-rose-50 text-rose-900",
+  info:
+    "border-[var(--color-status-info-border)] bg-[var(--color-status-info-surface)] text-[var(--color-status-info)]",
+  success:
+    "border-[var(--color-status-success-border)] bg-[var(--color-status-success-surface)] text-[var(--color-status-success)]",
+  warning:
+    "border-[var(--color-status-warning-border)] bg-[var(--color-status-warning-surface)] text-[var(--color-status-warning)]",
+  error:
+    "border-[var(--color-status-danger-border)] bg-[var(--color-status-danger-surface)] text-[var(--color-status-danger)]",
 };
 
 interface ToastProps extends HTMLAttributes<HTMLDivElement> {

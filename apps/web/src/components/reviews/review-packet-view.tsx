@@ -7,9 +7,9 @@ import { SectionHeader } from "@/components/layout/section-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { formatStableDate } from "@/lib/dates/stable-format";
 import { Tabs } from "@/components/ui/tabs";
 import { getReviewRelationshipLabel } from "@/lib/reviews/review-copy";
-import { Textarea } from "@/components/ui/textarea";
 import type { ReviewPacketData } from "@/server/reviews/review-packet-service";
 
 type PacketTab = "thisCycle" | "previousCycles";
@@ -83,21 +83,21 @@ export default function ReviewPacketView({ data }: ReviewPacketViewProps) {
             <Card>
               <CardHeader>
                 <SectionHeader
-                  title="Current track"
+                  title="Role expectations"
                   description="Role baseline and competency expectations relevant to this packet."
                 />
               </CardHeader>
               <CardContent className="space-y-3 pt-0">
                 <div className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Track</p>
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Role baseline</p>
                   <p className="mt-1 text-sm font-semibold text-slate-900">
                     {data.trackContext
                       ? `${data.trackContext.trackLabel} · ${data.trackContext.levelLabel}`
-                      : "Track not available"}
+                      : "Role baseline not available"}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
                     {data.trackContext?.summary ??
-                      "Track context will appear here when the role baseline is available."}
+                      "Role expectations will appear here when the baseline is available."}
                   </p>
                 </div>
                 {data.trackContext?.competencies.length ? (
@@ -113,12 +113,9 @@ export default function ReviewPacketView({ data }: ReviewPacketViewProps) {
                   </div>
                 ) : null}
                 {data.trackContext ? (
-                  <a
-                    href={data.trackContext.competenciesHref}
-                    className="inline-flex text-sm font-semibold text-teal-700"
-                  >
-                    View competencies
-                  </a>
+                  <p className="text-sm font-medium text-slate-600">
+                    Competency expectations are shown inline for this review packet.
+                  </p>
                 ) : null}
               </CardContent>
             </Card>
@@ -162,24 +159,6 @@ export default function ReviewPacketView({ data }: ReviewPacketViewProps) {
               </CardContent>
             </Card>
           </div>
-
-          <Card>
-            <CardHeader>
-              <SectionHeader
-                title="Summary"
-                description="Summary editing is a placeholder for MVP and will be enabled in a later milestone."
-              />
-            </CardHeader>
-            <CardContent className="pt-0">
-              <Textarea
-                readOnly
-                value=""
-                placeholder="Summary placeholder: no packet summary has been authored yet."
-                className="min-h-24 border-dashed bg-slate-50 text-slate-500"
-                aria-label="Packet summary placeholder"
-              />
-            </CardContent>
-          </Card>
 
           <Card>
             <CardHeader>
@@ -232,7 +211,7 @@ export default function ReviewPacketView({ data }: ReviewPacketViewProps) {
                         <Badge variant="neutral">{statusLabel[submission.status]}</Badge>
                         <p className="mt-2">
                           {submission.submittedAt
-                            ? `Submitted ${new Date(submission.submittedAt).toLocaleDateString()}`
+                            ? `Submitted ${formatStableDate(submission.submittedAt)}`
                             : "Not submitted yet"}
                         </p>
                       </div>

@@ -1,0 +1,173 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e18] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e20]
+            - generic [ref=e27]: Goals
+            - tooltip "Goals"
+          - link "Reviews" [ref=e28] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e30]
+            - generic [ref=e33]: Reviews
+            - tooltip "Reviews"
+          - link "Improvement Plans" [ref=e34] [cursor=pointer]:
+            - /url: /performance/improvement-plans
+            - img [ref=e36]
+            - generic [ref=e39]: Improvement Plans
+            - tooltip "Improvement Plans"
+          - link "Help" [ref=e40] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e42]
+            - generic [ref=e46]: Help
+            - tooltip "Help"
+    - main [ref=e47]:
+      - generic [ref=e49]:
+        - button "Current organization" [disabled] [ref=e50]:
+          - generic [ref=e51]: O
+          - generic [ref=e52]: MCEL Sandbox Organization
+          - img [ref=e53]
+        - button "Ted Tederoff Ted Tederoff Employee" [ref=e56]:
+          - generic "Ted Tederoff" [ref=e57]: TT
+          - generic [ref=e58]:
+            - generic [ref=e59]: Ted Tederoff
+            - generic [ref=e60]: Employee
+      - generic [ref=e61]:
+        - generic [ref=e63]:
+          - paragraph [ref=e64]: Review Packet
+          - heading "Ted Tederoff" [level=1] [ref=e65]
+          - paragraph [ref=e66]: Sandbox 2025 Released Packet · 2 of 2 submitted
+          - generic [ref=e67]: "Status: RELEASED | Visibility: EMPLOYEE_AFTER_RELEASE"
+        - generic [ref=e68]:
+          - button "Toggle review packet visibility guidance" [ref=e69]:
+            - generic [ref=e70]:
+              - generic [ref=e71]: i
+              - generic [ref=e72]: Packet visibility
+            - generic [ref=e73]:
+              - text: Tips
+              - img [ref=e74]
+          - generic [ref=e76]: Review packets aggregate the self review and direct-manager review only. Direct managers can view in-progress packets for their reports, and employees can view packet content after release when cycle policy allows.
+        - generic [ref=e77]:
+          - link "Back to Reviews" [ref=e78] [cursor=pointer]:
+            - /url: /performance/reviews
+            - button "Back to Reviews" [ref=e79]
+          - generic [ref=e82]: Cycle RELEASED
+          - generic [ref=e83]: Packet focus view
+        - generic [ref=e84]:
+          - tablist "Packet tabs" [ref=e85]:
+            - tab "This cycle" [selected] [ref=e86]
+            - tab "Previous cycles" [ref=e87]
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e92]:
+                - heading "Role expectations" [level=2] [ref=e93]
+                - paragraph [ref=e94]: Role baseline and competency expectations relevant to this packet.
+              - generic [ref=e95]:
+                - generic [ref=e96]:
+                  - paragraph [ref=e97]: Role baseline
+                  - paragraph [ref=e98]: General · Associate
+                  - paragraph [ref=e99]: Use the current role baseline, competency expectations, and company values to shape growth goals.
+                - generic [ref=e100]:
+                  - generic [ref=e101]: Results Driven
+                  - generic [ref=e102]: Adaptability
+                - paragraph [ref=e103]: Competency expectations are shown inline for this review packet.
+            - generic [ref=e104]:
+              - generic [ref=e107]:
+                - heading "Goals snapshot" [level=2] [ref=e108]
+                - paragraph [ref=e109]: Current-cycle goals and the latest visible check-ins.
+              - generic [ref=e110]:
+                - generic [ref=e111]:
+                  - generic [ref=e112]: Sandbox 2026 Goals
+                  - generic [ref=e113]: 2 goals
+                - generic [ref=e114]:
+                  - generic [ref=e115]:
+                    - paragraph [ref=e116]: Strengthen stakeholder communication cadence
+                    - paragraph [ref=e117]: 35% · Updated
+                    - paragraph [ref=e118]: Weekly stakeholder summaries are in place, with risk tracking added for the next cycle.
+                  - generic [ref=e119]:
+                    - paragraph [ref=e120]: Improve application incident response time
+                    - paragraph [ref=e121]: 55% · Updated
+                    - paragraph [ref=e122]: Critical incident triage now routes through a shared checklist and incident channel.
+          - generic [ref=e123]:
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - heading "Evidence counts" [level=2] [ref=e127]
+                - paragraph [ref=e128]: Counts by evidence source available in this cycle packet.
+              - generic [ref=e130]: "Total: 0"
+            - generic [ref=e131]:
+              - generic [ref=e132]:
+                - paragraph [ref=e133]: Feedback
+                - paragraph [ref=e134]: "0"
+              - generic [ref=e135]:
+                - paragraph [ref=e136]: Updates
+                - paragraph [ref=e137]: "0"
+              - generic [ref=e138]:
+                - paragraph [ref=e139]: 1:1s
+                - paragraph [ref=e140]: "0"
+              - generic [ref=e141]:
+                - paragraph [ref=e142]: Goals
+                - paragraph [ref=e143]: "0"
+              - generic [ref=e144]:
+                - paragraph [ref=e145]: Values
+                - paragraph [ref=e146]: "0"
+          - region "Review packet submissions" [ref=e147]:
+            - generic [ref=e148]:
+              - generic [ref=e150]:
+                - generic [ref=e151]:
+                  - heading "Ted Tederoff" [level=3] [ref=e152]
+                  - generic [ref=e154]: "Review type: Self review"
+                - generic [ref=e155]:
+                  - generic [ref=e156]: Submitted
+                  - paragraph [ref=e157]: Submitted 2025-11-24
+              - list [ref=e159]:
+                - listitem [ref=e160]:
+                  - paragraph [ref=e161]: What were your most meaningful accomplishments and business results this cycle?*
+                  - paragraph [ref=e162]: I improved incident ownership, kept weekly delivery notes current, and reduced the number of blocked enterprise application items.
+                - listitem [ref=e163]:
+                  - paragraph [ref=e164]: What strengths did you demonstrate, and what development priorities or career interests should shape your next cycle?*
+                  - paragraph [ref=e165]: My strengths were organization and service orientation. I want to grow my confidence in stakeholder-facing decisions and risk framing.
+                - listitem [ref=e166]:
+                  - paragraph [ref=e167]: Rate the consistency of leadership behaviors demonstrated during the cycle.
+                  - paragraph [ref=e168]: Observed consistently through project and stakeholder work this cycle.
+                  - paragraph [ref=e169]: "Rating: 4/5"
+                - listitem [ref=e170]:
+                  - paragraph [ref=e171]: Rate current readiness for broader scope or increased complexity.
+                  - paragraph [ref=e172]: Ready for broader scope with continued coaching and clearer communication routines.
+                  - paragraph [ref=e173]: "Rating: 3/5"
+            - generic [ref=e174]:
+              - generic [ref=e176]:
+                - generic [ref=e177]:
+                  - heading "Elliot Mah" [level=3] [ref=e178]
+                  - generic [ref=e180]: "Review type: Manager review"
+                - generic [ref=e181]:
+                  - generic [ref=e182]: Submitted
+                  - paragraph [ref=e183]: Submitted 2025-12-04
+              - list [ref=e185]:
+                - listitem [ref=e186]:
+                  - paragraph [ref=e187]: What were this employee's most meaningful accomplishments and business results this cycle?*
+                  - paragraph [ref=e188]: Ted delivered stronger reliability across the support queue and improved follow-through on business-critical requests.
+                - listitem [ref=e189]:
+                  - paragraph [ref=e190]: What strengths should this employee continue to build, and what development priorities or growth opportunities should shape the next cycle?*
+                  - paragraph [ref=e191]: Ted should continue building communication rigor and move toward more proactive ownership of stakeholder expectations.
+                - listitem [ref=e192]:
+                  - paragraph [ref=e193]: Rate the consistency of leadership behaviors demonstrated during the cycle.
+                  - paragraph [ref=e194]: Observed consistently through project and stakeholder work this cycle.
+                  - paragraph [ref=e195]: "Rating: 4/5"
+                - listitem [ref=e196]:
+                  - paragraph [ref=e197]: Rate current readiness for broader scope or increased complexity.
+                  - paragraph [ref=e198]: Ready for broader scope with continued coaching and clearer communication routines.
+                  - paragraph [ref=e199]: "Rating: 3/5"
+  - button "Open Next.js Dev Tools" [ref=e205] [cursor=pointer]:
+    - img [ref=e206]
+  - alert [ref=e210]

@@ -6,9 +6,16 @@ import type { UserRole } from "@prisma/client";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { getOrgThemeCssVariables, type OrgTheme } from "@/branding";
 import { cn } from "@/components/ui/cn";
 import { ProfileAvatar } from "@/components/ui/profile-avatar";
-import { getActiveNavKey, type ShellNavItem, type ShellNavKey } from "@/config/navigation";
+import {
+  getActiveNavKey,
+  groupNavigationItems,
+  type ShellNavItem,
+  type ShellNavKey,
+  type ShellNavSection,
+} from "@/config/navigation";
 import { getBackLabelForHref, getReturnToParam, resolveReturnTo } from "@/lib/navigation/return-to";
 
 interface AppShellProps {
@@ -24,36 +31,62 @@ interface AppShellProps {
     initials: string;
   } | null;
   demoModeEnabled: boolean;
+  activeTheme: OrgTheme;
 }
 
 type ProfileAction = "signOut" | "switchRole";
 const SIDEBAR_COLLAPSE_STORAGE_KEY = "pm.shell.sidebarCollapsed";
+const NAV_SECTION_EXPANSION_STORAGE_KEY = "pm.shell.expandedNavSections";
 
 export default function AppShell({
   children,
   navItems,
   viewer,
   demoModeEnabled,
+  activeTheme,
 }: AppShellProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [pendingProfileAction, setPendingProfileAction] = useState<ProfileAction | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [expandedSectionKeys, setExpandedSectionKeys] = useState<string[]>([]);
+  const [openCollapsedSectionKey, setOpenCollapsedSectionKey] = useState<string | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const sidebarRef = useRef<HTMLElement | null>(null);
   const isPublicRoute = pathname === "/login" || pathname.startsWith("/demo/login");
   const focusLayout = useMemo(
     () => getFocusLayoutConfig(pathname, getReturnToParam(searchParams)),
     [pathname, searchParams],
   );
   const activeNavKey = useMemo(() => getActiveNavKey(pathname, navItems), [pathname, navItems]);
+  const homeItem = useMemo(
+    () => navItems.find((item) => item.key === "home") ?? null,
+    [navItems],
+  );
+  const navSections = useMemo(
+    () =>
+      groupNavigationItems(navItems)
+        .map((section) => ({
+          ...section,
+          items: section.items.filter((item) => item.key !== "home"),
+        }))
+        .filter((section) => section.items.length > 0),
+    [navItems],
+  );
+  const activeSectionKey = useMemo(
+    () =>
+      navSections.find((section) => section.items.some((item) => item.key === activeNavKey))?.key ?? null,
+    [activeNavKey, navSections],
+  );
   const headerContext = useMemo(
     () => getShellHeaderContext(activeNavKey, focusLayout),
     [activeNavKey, focusLayout],
   );
   const showExpandedShellHeader = activeNavKey === "home" && focusLayout == null;
   const hasLoadedSidebarPreference = useRef(false);
+  const hasLoadedSectionPreference = useRef(false);
 
   useEffect(() => {
     try {
@@ -69,6 +102,35 @@ export default function AppShell({
   }, []);
 
   useEffect(() => {
+    try {
+      const storedValue = window.localStorage.getItem(NAV_SECTION_EXPANSION_STORAGE_KEY);
+      if (!storedValue) {
+        setExpandedSectionKeys(getDefaultExpandedSectionKeys(navSections, activeNavKey));
+        return;
+      }
+
+      const parsed = JSON.parse(storedValue);
+      if (Array.isArray(parsed)) {
+        const validKeys = navSections.map((section) => section.key);
+        const nextKeys = parsed.filter(
+          (sectionKey): sectionKey is string =>
+            typeof sectionKey === "string" && validKeys.includes(sectionKey as typeof validKeys[number]),
+        );
+        setExpandedSectionKeys(
+          nextKeys.length > 0 ? nextKeys : getDefaultExpandedSectionKeys(navSections, activeNavKey),
+        );
+        return;
+      }
+    } catch {
+      // Fall back to the default expanded sections when storage is unavailable or malformed.
+    } finally {
+      hasLoadedSectionPreference.current = true;
+    }
+
+    setExpandedSectionKeys(getDefaultExpandedSectionKeys(navSections, activeNavKey));
+  }, [activeNavKey, navSections]);
+
+  useEffect(() => {
     if (!hasLoadedSidebarPreference.current) {
       return;
     }
@@ -78,6 +140,31 @@ export default function AppShell({
       isSidebarCollapsed ? "collapsed" : "expanded",
     );
   }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    if (!hasLoadedSectionPreference.current) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      NAV_SECTION_EXPANSION_STORAGE_KEY,
+      JSON.stringify(expandedSectionKeys),
+    );
+  }, [expandedSectionKeys]);
+
+  useEffect(() => {
+    const activeSectionKey = navSections.find((section) =>
+      section.items.some((item) => item.key === activeNavKey),
+    )?.key;
+
+    if (!activeSectionKey) {
+      return;
+    }
+
+    setExpandedSectionKeys((currentKeys) =>
+      currentKeys.includes(activeSectionKey) ? currentKeys : [...currentKeys, activeSectionKey],
+    );
+  }, [activeNavKey, navSections]);
 
   useEffect(() => {
     if (!isProfileMenuOpen) {
@@ -105,6 +192,38 @@ export default function AppShell({
     };
   }, [isProfileMenuOpen]);
 
+  useEffect(() => {
+    if (openCollapsedSectionKey == null) {
+      return;
+    }
+
+    function handleClickOutside(event: MouseEvent) {
+      if (!sidebarRef.current?.contains(event.target as Node)) {
+        setOpenCollapsedSectionKey(null);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpenCollapsedSectionKey(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [openCollapsedSectionKey]);
+
+  useEffect(() => {
+    if (!isSidebarCollapsed) {
+      setOpenCollapsedSectionKey(null);
+    }
+  }, [isSidebarCollapsed]);
+
   async function logoutToLogin(action: ProfileAction) {
     setPendingProfileAction(action);
 
@@ -122,14 +241,30 @@ export default function AppShell({
 
   if (isPublicRoute) {
     return (
-      <div className="min-h-screen bg-slate-100 text-slate-900">
+      <div
+        className="min-h-screen bg-[var(--background)] text-[var(--foreground)]"
+        data-org-theme={activeTheme.id}
+        style={getOrgThemeCssVariables(activeTheme)}
+      >
         <main className="mx-auto w-full max-w-6xl p-6">{children}</main>
       </div>
     );
   }
 
+  function toggleSection(sectionKey: string) {
+    setExpandedSectionKeys((currentKeys) =>
+      currentKeys.includes(sectionKey)
+        ? currentKeys.filter((key) => key !== sectionKey)
+        : [...currentKeys, sectionKey],
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
+    <div
+      className="min-h-screen bg-[var(--background)] text-[var(--foreground)]"
+      data-org-theme={activeTheme.id}
+      style={getOrgThemeCssVariables(activeTheme)}
+    >
       <div
         data-testid="app-shell-layout"
         data-sidebar-state={isSidebarCollapsed ? "collapsed" : "expanded"}
@@ -140,6 +275,7 @@ export default function AppShell({
       >
         <aside
           id="app-shell-sidebar"
+          ref={sidebarRef}
           data-testid="app-shell-sidebar"
           data-collapsed={isSidebarCollapsed ? "true" : "false"}
           data-state={isSidebarCollapsed ? "collapsed" : "expanded"}
@@ -147,13 +283,13 @@ export default function AppShell({
         >
           <div
             className={cn(
-              "relative overflow-visible rounded-[28px] border border-slate-200 bg-white transition-[box-shadow] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none",
+              "relative overflow-visible rounded-[28px] border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] transition-[box-shadow] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none",
               isSidebarCollapsed ? "shadow-[var(--shadow-sm)]" : "shadow-[var(--shadow-lg)]",
             )}
           >
             <div
               className={cn(
-                "relative border-b border-slate-100",
+                "relative border-b border-[var(--color-shell-divider)]",
                 isSidebarCollapsed ? "px-2 py-4" : "px-5 py-5",
               )}
             >
@@ -166,21 +302,19 @@ export default function AppShell({
                 )}
               >
                 {isSidebarCollapsed ? (
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold tracking-[0.12em] text-white">
-                    PM
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-brand-accent)] text-xs font-semibold tracking-[0.12em] text-[var(--color-white)]">
+                    {getBrandMonogram(activeTheme.shortName)}
                   </span>
                 ) : (
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Performance Manager
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                      {activeTheme.shortName}
                     </p>
-                    <h1 className="mt-1.5 text-lg font-semibold tracking-tight text-slate-900">
+                    <h1 className="mt-1.5 text-lg font-semibold tracking-tight text-[var(--color-text-primary)]">
                       Workspace
                     </h1>
                     {viewer ? (
-                      <p className="mt-2 text-[11px] text-slate-500">
-                        {viewer.roleLabel} <span className="text-slate-400">({viewer.userId})</span>
-                      </p>
+                      <p className="mt-2 text-[11px] text-[var(--color-text-muted)]">{viewer.roleLabel}</p>
                     ) : null}
                   </div>
                 )}
@@ -196,7 +330,7 @@ export default function AppShell({
                 aria-label={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
                 title={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
                 className={cn(
-                  "absolute right-0 top-1/2 z-20 inline-flex -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-gradient-to-b from-white to-slate-50 text-slate-500 shadow-[var(--shadow-md)] ring-1 ring-white/80 backdrop-blur transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:border-slate-300 hover:text-slate-700 hover:shadow-[var(--shadow-lg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 motion-reduce:transition-none",
+                  "absolute right-0 top-1/2 z-20 inline-flex -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[var(--color-shell-border)] bg-gradient-to-b from-[var(--color-white)] to-[var(--color-surface-subtle)] text-[var(--color-text-muted)] shadow-[var(--shadow-md)] ring-1 ring-white/80 backdrop-blur transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:border-[var(--color-border-default)] hover:text-[var(--color-text-primary)] hover:shadow-[var(--shadow-lg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-reduce:transition-none",
                   isSidebarCollapsed ? "h-10 w-6" : "h-11 w-7",
                 )}
               >
@@ -220,54 +354,240 @@ export default function AppShell({
               className={cn("space-y-1 p-3", isSidebarCollapsed && "px-2")}
               data-testid="app-shell-nav"
             >
-              {navItems.map((item) => {
-                const isActive = activeNavKey === item.key;
-
-                return (
+              {homeItem ? (
+                <div className={cn("pb-2", navSections.length > 0 && "mb-2 border-b border-[var(--color-shell-divider)]")}>
                   <Link
-                    key={item.key}
-                    href={item.href}
-                    data-testid={item.testId}
-                    aria-current={isActive ? "page" : undefined}
-                    aria-label={item.label}
-                    title={isSidebarCollapsed ? item.label : undefined}
+                    href={homeItem.href}
+                    data-testid={homeItem.testId}
+                    aria-current={activeNavKey === homeItem.key ? "page" : undefined}
+                    aria-label={homeItem.label}
+                    title={isSidebarCollapsed ? homeItem.label : undefined}
                     className={cn(
-                      "group relative flex rounded-[var(--radius-md)] py-2 text-sm font-medium transition-[background-color,color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-1 motion-reduce:transition-none",
+                      "group relative flex rounded-[var(--radius-md)] py-2 text-sm font-medium transition-[background-color,color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-1 motion-reduce:transition-none",
                       isSidebarCollapsed ? "justify-center px-2" : "items-center gap-3 px-3",
-                      isActive
-                        ? "bg-slate-900 text-white"
-                        : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
+                      activeNavKey === homeItem.key
+                        ? "bg-[var(--color-shell-active-bg)] text-[var(--color-shell-active-fg)]"
+                        : "text-[var(--color-text-primary)] hover:bg-[var(--color-shell-hover)] hover:text-[var(--color-text-primary)]",
                     )}
                   >
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "inline-flex h-7 min-w-7 items-center justify-center rounded-[var(--radius-sm)] leading-none",
-                        isActive
-                          ? "bg-white/15 text-white"
-                          : "bg-slate-200 text-slate-700 group-hover:bg-slate-300",
+                        "inline-flex h-8 min-w-8 items-center justify-center rounded-[var(--radius-sm)] leading-none",
+                        activeNavKey === homeItem.key
+                          ? "bg-[var(--color-shell-active-chip)] text-[var(--color-shell-active-fg)]"
+                          : "bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)] group-hover:bg-[var(--color-neutral-200)]",
                       )}
                     >
-                      <NavItemIcon navKey={item.key} className="h-3.5 w-3.5" />
+                      <NavItemIcon navKey={homeItem.key} className="h-4 w-4" />
                     </span>
 
                     {isSidebarCollapsed ? (
                       <>
-                        <span className="sr-only">{item.label}</span>
+                        <span className="sr-only">{homeItem.label}</span>
                         <span
-                          data-testid={`app-shell-sidebar-tooltip-${item.key}`}
+                          data-testid={`app-shell-sidebar-tooltip-${homeItem.key}`}
                           role="tooltip"
-                          className="pointer-events-none absolute left-full top-1/2 z-20 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-sm)] border border-slate-200 bg-slate-900 px-2 py-1 text-xs text-white opacity-0 shadow-[var(--shadow-sm)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
+                          className="pointer-events-none absolute left-full top-1/2 z-20 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-sm)] border border-[var(--color-shell-border)] bg-[var(--color-shell-tooltip-bg)] px-2 py-1 text-xs text-[var(--color-shell-tooltip-fg)] opacity-0 shadow-[var(--shadow-sm)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
                         >
-                          {item.label}
+                          {homeItem.label}
                         </span>
                       </>
                     ) : (
-                      <span className="truncate">{item.label}</span>
+                      <span className="truncate">{homeItem.label}</span>
                     )}
                   </Link>
-                );
-              })}
+                </div>
+              ) : null}
+
+              {navSections.map((section, sectionIndex) => (
+                <div
+                  key={section.key}
+                  data-testid={`app-shell-nav-section-${section.key}`}
+                  className={cn("relative", sectionIndex > 0 && (isSidebarCollapsed ? "pt-2" : "pt-3"))}
+                >
+                  {isSidebarCollapsed ? (
+                    <>
+                      {sectionIndex > 0 ? (
+                        <div className="mx-3 mb-2 border-t border-[var(--color-shell-divider)]" aria-hidden="true" />
+                      ) : null}
+
+                      <button
+                        type="button"
+                        data-testid={`app-shell-nav-section-rail-${section.key}`}
+                        aria-expanded={openCollapsedSectionKey === section.key}
+                        aria-label={section.label}
+                        title={section.label}
+                        onClick={() =>
+                          setOpenCollapsedSectionKey((currentKey) =>
+                            currentKey === section.key ? null : section.key,
+                          )
+                        }
+                        className={cn(
+                          "group relative flex w-full justify-center rounded-[var(--radius-md)] px-2 py-1.5 transition-[background-color,color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-1 motion-reduce:transition-none",
+                          activeSectionKey === section.key || openCollapsedSectionKey === section.key
+                            ? "bg-[var(--color-shell-active-bg)] text-[var(--color-shell-active-fg)] shadow-[var(--shadow-sm)]"
+                            : "text-[var(--color-text-muted)] hover:bg-[var(--color-shell-hover)] hover:text-[var(--color-text-primary)]",
+                        )}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)]",
+                            activeSectionKey === section.key || openCollapsedSectionKey === section.key
+                              ? "bg-[var(--color-shell-active-chip)] text-[var(--color-shell-active-fg)]"
+                              : "bg-transparent",
+                          )}
+                        >
+                          <SectionNavIcon sectionKey={section.key} className="h-4 w-4" />
+                        </span>
+                        <span
+                          role="tooltip"
+                          className={cn(
+                            "pointer-events-none absolute left-full top-1/2 z-20 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-sm)] border border-[var(--color-shell-border)] bg-[var(--color-shell-tooltip-bg)] px-2 py-1 text-xs text-[var(--color-shell-tooltip-fg)] opacity-0 shadow-[var(--shadow-sm)] transition-opacity duration-150 motion-reduce:transition-none",
+                            openCollapsedSectionKey === section.key
+                              ? "hidden"
+                              : "group-hover:opacity-100 group-focus-visible:opacity-100",
+                          )}
+                        >
+                          {section.label}
+                        </span>
+                      </button>
+
+                      {openCollapsedSectionKey === section.key ? (
+                        <div
+                          className="absolute left-full top-0 z-30 ml-3 w-64 rounded-[20px] border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] p-2 shadow-[var(--shadow-lg)]"
+                          data-testid={`app-shell-nav-flyout-${section.key}`}
+                          aria-label={`${section.label} navigation`}
+                        >
+                          <div className="space-y-1">
+                            {section.items.map((item) => {
+                              const isActive = activeNavKey === item.key;
+
+                              return (
+                                <Link
+                                  key={item.key}
+                                  href={item.href}
+                                  data-testid={`${item.testId}-flyout`}
+                                  aria-current={isActive ? "page" : undefined}
+                                  onClick={() => setOpenCollapsedSectionKey(null)}
+                                  className={cn(
+                                    "flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 text-sm font-medium transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-reduce:transition-none",
+                                    isActive
+                                      ? "bg-[var(--color-shell-active-bg)] text-[var(--color-shell-active-fg)]"
+                                      : "text-[var(--color-text-primary)] hover:bg-[var(--color-shell-hover)] hover:text-[var(--color-text-primary)]",
+                                  )}
+                                >
+                                  <span
+                                    aria-hidden="true"
+                                    className={cn(
+                                      "inline-flex h-7 min-w-7 items-center justify-center rounded-[var(--radius-sm)] leading-none",
+                                      isActive
+                                        ? "bg-[var(--color-shell-active-chip)] text-[var(--color-shell-active-fg)]"
+                                        : "bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)]",
+                                    )}
+                                  >
+                                    <NavItemIcon navKey={item.key} className="h-3.5 w-3.5" />
+                                  </span>
+                                  <span className="truncate">{item.label}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      data-testid={`app-shell-nav-section-toggle-${section.key}`}
+                      aria-expanded={expandedSectionKeys.includes(section.key)}
+                      onClick={() => toggleSection(section.key)}
+                      className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-3 pb-2 pt-1 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-neutral-500)] transition-colors duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:text-[var(--color-text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-reduce:transition-none"
+                    >
+                      <span>{section.label}</span>
+                      <svg
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        className={cn(
+                          "h-3.5 w-3.5 transition-transform duration-[var(--transition-base)] ease-[var(--ease-standard)] motion-reduce:transition-none",
+                          expandedSectionKeys.includes(section.key) ? "rotate-90" : "rotate-0",
+                        )}
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M8 5.5L11.5 10L8 14.5"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  )}
+
+                  <div
+                    className={cn(
+                      "space-y-1",
+                      isSidebarCollapsed && "hidden",
+                      !isSidebarCollapsed &&
+                        !expandedSectionKeys.includes(section.key) &&
+                        "hidden",
+                    )}
+                  >
+                    {section.items.map((item) => {
+                      const isActive = activeNavKey === item.key;
+
+                      return (
+                        <Link
+                          key={item.key}
+                          href={item.href}
+                          data-testid={item.testId}
+                          aria-current={isActive ? "page" : undefined}
+                          aria-label={item.label}
+                          title={isSidebarCollapsed ? item.label : undefined}
+                          className={cn(
+                            "group relative flex rounded-[var(--radius-md)] py-2 text-sm font-medium transition-[background-color,color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-1 motion-reduce:transition-none",
+                            isSidebarCollapsed
+                              ? "justify-center px-2"
+                              : "items-center gap-3 px-3 pl-6",
+                            isActive
+                              ? "bg-[var(--color-shell-active-bg)] text-[var(--color-shell-active-fg)]"
+                              : "text-[var(--color-text-primary)] hover:bg-[var(--color-shell-hover)] hover:text-[var(--color-text-primary)]",
+                          )}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              "inline-flex h-7 min-w-7 items-center justify-center rounded-[var(--radius-sm)] leading-none",
+                              isActive
+                                ? "bg-[var(--color-shell-active-chip)] text-[var(--color-shell-active-fg)]"
+                                : "bg-[var(--color-surface-subtle)] text-[var(--color-text-muted)] group-hover:bg-[var(--color-neutral-200)]",
+                            )}
+                          >
+                            <NavItemIcon navKey={item.key} className="h-3.5 w-3.5" />
+                          </span>
+
+                          {isSidebarCollapsed ? (
+                            <>
+                              <span className="sr-only">{item.label}</span>
+                              <span
+                                data-testid={`app-shell-sidebar-tooltip-${item.key}`}
+                                role="tooltip"
+                                className="pointer-events-none absolute left-full top-1/2 z-20 ml-2 -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-sm)] border border-[var(--color-shell-border)] bg-[var(--color-shell-tooltip-bg)] px-2 py-1 text-xs text-[var(--color-shell-tooltip-fg)] opacity-0 shadow-[var(--shadow-sm)] transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
+                              >
+                                {item.label}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="truncate">{item.label}</span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
           </div>
         </aside>
@@ -277,17 +597,17 @@ export default function AppShell({
             className={cn(
               "relative z-20 isolate flex items-center gap-3",
               showExpandedShellHeader
-                ? "mb-4 justify-between rounded-[24px] border border-slate-200 bg-white px-4 py-3 shadow-[var(--shadow-sm)]"
+                ? "mb-4 justify-between rounded-[24px] border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] px-4 py-3 shadow-[var(--shadow-sm)]"
                 : "mb-1 justify-end px-0 py-0",
             )}
             data-testid="app-shell-header"
           >
             {showExpandedShellHeader ? (
               <div className="hidden min-w-0 flex-col sm:flex">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
                   Workspace
                 </span>
-                <span className="truncate text-sm font-semibold text-slate-900">
+                <span className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
                   {headerContext}
                 </span>
               </div>
@@ -301,14 +621,14 @@ export default function AppShell({
                 aria-label="Current organization"
                 title="Organization switching is not enabled in this build"
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50/90 text-slate-700 opacity-90 shadow-[var(--shadow-xs)]",
+                  "inline-flex items-center gap-2 rounded-full border border-[var(--color-shell-border)] bg-[color-mix(in_srgb,var(--color-surface-subtle)_52%,white)] text-[var(--color-text-muted)] opacity-90 shadow-[var(--shadow-xs)]",
                   showExpandedShellHeader ? "h-10 max-w-[240px] px-3.5 text-sm" : "h-9 max-w-[220px] px-3 text-[13px]",
                 )}
               >
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "inline-flex items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_14%,white)] font-semibold text-[var(--brand-primary-strong)]",
+                    "inline-flex items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,white)] font-semibold text-[var(--brand-primary-strong)]",
                     showExpandedShellHeader ? "h-6 w-6 text-[11px]" : "h-5.5 w-5.5 text-[10px]",
                   )}
                 >
@@ -328,7 +648,7 @@ export default function AppShell({
                   aria-expanded={isProfileMenuOpen}
                   aria-haspopup="menu"
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white text-left text-slate-800 shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-50 hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300",
+                    "inline-flex items-center gap-2 rounded-full border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] text-left text-[var(--color-text-primary)] shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-[var(--color-shell-hover)] hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]",
                     showExpandedShellHeader ? "h-10 px-2.5 text-sm" : "h-9 px-2 text-[13px]",
                   )}
                 >
@@ -338,8 +658,8 @@ export default function AppShell({
                     size="sm"
                   />
                   <span className={cn("hidden max-w-[150px] flex-col sm:flex", !showExpandedShellHeader && "max-w-[132px]")}>
-                    <span className="truncate text-xs font-semibold text-slate-900">{viewer?.displayName ?? "User"}</span>
-                    <span className="truncate text-[11px] text-slate-500">{viewer?.roleLabel ?? "Member"}</span>
+                    <span className="truncate text-xs font-semibold text-[var(--color-text-primary)]">{viewer?.displayName ?? "User"}</span>
+                    <span className="truncate text-[11px] text-[var(--color-text-muted)]">{viewer?.roleLabel ?? "Member"}</span>
                   </span>
                 </button>
 
@@ -347,12 +667,12 @@ export default function AppShell({
                   <div
                     role="menu"
                     data-testid="app-header-profile-menu"
-                    className="absolute right-0 top-11 z-40 min-w-[200px] space-y-1 rounded-[var(--radius-md)] border border-slate-200 bg-white p-2 shadow-[var(--shadow-lg)]"
+                    className="absolute right-0 top-11 z-40 min-w-[200px] space-y-1 rounded-[var(--radius-md)] border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] p-2 shadow-[var(--shadow-lg)]"
                   >
                     <Link
                       href="/profile"
                       role="menuitem"
-                      className="block rounded-[var(--radius-sm)] px-3 py-2 text-sm text-slate-700 transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                      className="block rounded-[var(--radius-sm)] px-3 py-2 text-sm text-[var(--color-text-muted)] transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-[var(--color-shell-hover)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       Profile
@@ -363,7 +683,7 @@ export default function AppShell({
                       data-testid="profile-menu-sign-out"
                       onClick={() => void logoutToLogin("signOut")}
                       disabled={pendingProfileAction !== null}
-                      className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-slate-700 transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-[var(--color-text-muted)] transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-[var(--color-shell-hover)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {pendingProfileAction === "signOut" ? "Signing out..." : "Sign out"}
                     </button>
@@ -374,7 +694,7 @@ export default function AppShell({
                         data-testid="profile-menu-switch-role"
                         onClick={() => void logoutToLogin("switchRole")}
                         disabled={pendingProfileAction !== null}
-                        className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-slate-700 transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-[var(--color-text-muted)] transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-[var(--color-shell-hover)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {pendingProfileAction === "switchRole" ? "Switching role..." : "Switch role"}
                       </button>
@@ -390,6 +710,47 @@ export default function AppShell({
       </div>
     </div>
   );
+}
+
+function getBrandMonogram(shortName: string): string {
+  const parts = shortName
+    .split(" ")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return "TW";
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+}
+
+function getDefaultExpandedSectionKeys(
+  navSections: ShellNavSection[],
+  activeNavKey: ShellNavKey | null,
+): string[] {
+  const sectionKeys = new Set<string>();
+  sectionKeys.add("performance");
+
+  if (navSections.some((section) => section.key === "admin")) {
+    sectionKeys.add("admin");
+  }
+
+  const activeSectionKey = navSections.find((section) =>
+    section.items.some((item) => item.key === activeNavKey),
+  )?.key;
+
+  if (activeSectionKey) {
+    sectionKeys.add(activeSectionKey);
+  }
+
+  return navSections
+    .map((section) => section.key)
+    .filter((sectionKey) => sectionKeys.has(sectionKey));
 }
 
 interface FocusLayoutConfig {
@@ -488,6 +849,61 @@ function getShellHeaderContext(
     default:
       return "Home";
   }
+}
+
+function SectionNavIcon({
+  sectionKey,
+  className,
+}: {
+  sectionKey: ShellNavSection["key"];
+  className?: string;
+}) {
+  if (sectionKey === "performance") {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+        <rect x="4" y="3.75" width="12" height="12.5" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M7 7.5H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M7 10H11.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M7 12.5H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (sectionKey === "talent") {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+        <rect x="4" y="4" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="11.5" y="4" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="4" y="11.5" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <rect x="11.5" y="11.5" width="4.5" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="6.25" cy="6.25" r="1" fill="currentColor" />
+        <circle cx="13.75" cy="6.25" r="1" fill="currentColor" />
+        <circle cx="6.25" cy="13.75" r="1" fill="currentColor" />
+        <circle cx="13.75" cy="13.75" r="1" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  if (sectionKey === "admin") {
+    return (
+      <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+        <path d="M5 5.5H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M5 10H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M5 14.5H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="8" cy="5.5" r="1.3" fill="currentColor" />
+        <circle cx="12.25" cy="10" r="1.3" fill="currentColor" />
+        <circle cx="9.25" cy="14.5" r="1.3" fill="currentColor" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+      <circle cx="10" cy="10" r="6.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10 7V10.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="10" cy="13" r="0.9" fill="currentColor" />
+    </svg>
+  );
 }
 
 function NavItemIcon({

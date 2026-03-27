@@ -18,11 +18,20 @@ export type ShellNavKey =
   | "improvementPlans"
   | "help";
 
+export type ShellNavSectionKey = "performance" | "talent" | "admin" | "support";
+
 export interface ShellNavItem {
   key: ShellNavKey;
   href: string;
   label: string;
+  section: ShellNavSectionKey;
   testId: string;
+}
+
+export interface ShellNavSection {
+  key: ShellNavSectionKey;
+  label: string;
+  items: ShellNavItem[];
 }
 
 export interface RoleNavOptions {
@@ -35,93 +44,128 @@ export interface RoleNavOptions {
 }
 
 const allNavItems = {
-  home: { key: "home", href: "/", label: "Home", testId: "nav-link-home" },
+  home: {
+    key: "home",
+    href: "/",
+    label: "Home",
+    section: "performance",
+    testId: "nav-link-home",
+  },
   goals: {
     key: "goals",
     href: "/goals",
     label: "Goals",
+    section: "performance",
     testId: "nav-link-goals",
   },
   growth: {
     key: "growth",
     href: "/performance/tracks",
     label: "Tracks",
+    section: "performance",
     testId: "nav-link-growth",
   },
   reviews: {
     key: "reviews",
     href: "/performance/reviews",
     label: "Reviews",
+    section: "performance",
     testId: "nav-link-reviews",
   },
   packets: {
     key: "packets",
     href: "/performance/reviews",
     label: "Packets",
+    section: "performance",
     testId: "nav-link-packets",
   },
   teamReviews: {
     key: "teamReviews",
     href: "/performance/team-reviews",
     label: "My Team",
+    section: "performance",
     testId: "nav-link-team-reviews",
   },
   succession: {
     key: "succession",
     href: "/talent/succession",
     label: "Succession",
+    section: "talent",
     testId: "nav-link-succession",
   },
   calibration: {
     key: "calibration",
-    href: "/performance/calibration/calibration_session_seed_1",
+    href: "/performance/calibration",
     label: "Calibration",
+    section: "talent",
     testId: "nav-link-calibration",
   },
   adminGoalCycles: {
     key: "adminGoalCycles",
     href: "/admin/goals/cycles",
     label: "Goal Cycles",
+    section: "admin",
     testId: "nav-link-admin-goal-cycles",
   },
   adminCalibration: {
     key: "adminCalibration",
     href: "/admin/performance/calibration",
-    label: "Admin Calibration",
+    label: "Calibration Setup",
+    section: "admin",
     testId: "nav-link-admin-calibration",
   },
   adminReporting: {
     key: "adminReporting",
     href: "/admin/performance/reporting",
     label: "Reporting",
+    section: "admin",
     testId: "nav-link-admin-reporting",
   },
   adminCycles: {
     key: "adminCycles",
     href: "/admin/performance/review-cycles",
-    label: "Admin Cycles",
+    label: "Review Cycles",
+    section: "admin",
     testId: "nav-link-admin-cycles",
   },
   adminUsers: {
     key: "adminUsers",
     href: "/admin/users",
     label: "User Management",
+    section: "admin",
     testId: "nav-link-admin-users",
   },
   adminSuccession: {
     key: "adminSuccession",
     href: "/admin/talent/succession",
-    label: "Succession",
+    label: "Succession Setup",
+    section: "admin",
     testId: "nav-link-admin-succession",
   },
   improvementPlans: {
     key: "improvementPlans",
     href: "/performance/improvement-plans",
     label: "Improvement Plans",
+    section: "performance",
     testId: "nav-link-improvement-plans",
   },
-  help: { key: "help", href: "/help", label: "Help", testId: "nav-link-help" },
+  help: {
+    key: "help",
+    href: "/help",
+    label: "Help",
+    section: "support",
+    testId: "nav-link-help",
+  },
 } as const;
+
+const sectionLabels: Record<ShellNavSectionKey, string> = {
+  performance: "Performance",
+  talent: "Talent",
+  admin: "Admin",
+  support: "Support",
+};
+
+const orderedSections: ShellNavSectionKey[] = ["performance", "talent", "admin", "support"];
 
 export function getRoleNavigation(
   role: UserRole,
@@ -132,50 +176,62 @@ export function getRoleNavigation(
       return [
         allNavItems.home,
         allNavItems.goals,
-        allNavItems.growth,
         allNavItems.reviews,
         ...(options.includeImprovementPlans ? [allNavItems.improvementPlans] : []),
-        allNavItems.help,
       ];
     case UserRole.MANAGER:
       return [
         allNavItems.home,
         allNavItems.goals,
-        allNavItems.growth,
         ...(options.includeTeamReviews ? [allNavItems.teamReviews] : []),
-        ...(options.includeSuccession ? [allNavItems.succession] : []),
         allNavItems.reviews,
         ...(options.includePackets ? [allNavItems.packets] : []),
         ...(options.canAccessCalibration ? [allNavItems.calibration] : []),
         ...(options.includeImprovementPlans ? [allNavItems.improvementPlans] : []),
-        allNavItems.help,
       ];
     case UserRole.HR_ADMIN:
       return [
         allNavItems.home,
         allNavItems.goals,
+        allNavItems.reviews,
+        ...(options.includeImprovementPlans ? [allNavItems.improvementPlans] : []),
         allNavItems.adminGoalCycles,
-        ...(options.includeSuccession ? [allNavItems.adminSuccession] : []),
         allNavItems.adminReporting,
         allNavItems.adminCycles,
         allNavItems.adminCalibration,
         ...(options.includeUserManagement ? [allNavItems.adminUsers] : []),
-        allNavItems.help,
       ];
-    case UserRole.CALIBRATOR:
+    case UserRole.SUPER_ADMIN:
       return [
         allNavItems.home,
+        allNavItems.goals,
+        ...(options.includeTeamReviews ? [allNavItems.teamReviews] : []),
+        allNavItems.reviews,
         ...(options.canAccessCalibration ? [allNavItems.calibration] : []),
-        ...(options.includePackets ? [allNavItems.packets] : []),
-        allNavItems.help,
+        ...(options.includeImprovementPlans ? [allNavItems.improvementPlans] : []),
+        allNavItems.adminGoalCycles,
+        allNavItems.adminReporting,
+        allNavItems.adminCycles,
+        allNavItems.adminCalibration,
+        ...(options.includeUserManagement ? [allNavItems.adminUsers] : []),
       ];
     default:
-      return [allNavItems.home, allNavItems.help];
+      return [allNavItems.home];
   }
 }
 
 export function isRouteInNavigation(pathname: string, navItems: ShellNavItem[]): boolean {
   return getActiveNavKey(pathname, navItems) !== null;
+}
+
+export function groupNavigationItems(navItems: ShellNavItem[]): ShellNavSection[] {
+  return orderedSections
+    .map((sectionKey) => ({
+      key: sectionKey,
+      label: sectionLabels[sectionKey],
+      items: navItems.filter((item) => item.section === sectionKey),
+    }))
+    .filter((section) => section.items.length > 0);
 }
 
 export function getActiveNavKey(
@@ -231,7 +287,10 @@ function matchesPathForKey(key: ShellNavKey, pathname: string): boolean {
     case "succession":
       return pathname === "/talent/succession" || /^\/talent\/succession\/positions\/[^/]+$/.test(pathname);
     case "calibration":
-      return /^\/performance\/calibration\/[^/]+$/.test(pathname);
+      return (
+        pathname === "/performance/calibration" ||
+        /^\/performance\/calibration\/[^/]+$/.test(pathname)
+      );
     case "adminGoalCycles":
       return pathname === "/admin/goals/cycles";
     case "adminCalibration":

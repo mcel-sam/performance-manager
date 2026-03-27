@@ -134,14 +134,22 @@ DEMO_MODE=false
 NEXT_PUBLIC_DEMO_MODE=false
 ```
 
-2. Install app dependencies, apply schema to the sandbox database, and seed the app data:
+2. Install app dependencies, apply schema to the sandbox database, and bootstrap the shared sandbox org and users:
 
 ```bash
 cd apps/web
 npm install
 npm run db:migrate:deploy
-npm run db:seed
+SANDBOX_BOOTSTRAP_DEFAULT_PASSWORD='replace-with-a-shared-sandbox-password' npm run db:sandbox:bootstrap
 ```
+
+If `SUPABASE_SERVICE_ROLE_KEY` is configured, the bootstrap also provisions or updates the sandbox
+Supabase Auth accounts and links them to Trellis user records. Without the service role key, the
+script still provisions Trellis users, memberships, and employee profiles; auth identities then link
+on first successful login by matching email.
+
+The sandbox bootstrap provisions the fixed MCEL sandbox roster and reporting lines used for the
+shared sandbox.
 
 3. Run the app:
 
@@ -197,6 +205,24 @@ The web UI uses a local dev request context by default:
 - `DEV_ORG_ID=org_demo_1`
 
 Set these in `apps/web/.env.local` to switch local user context.
+
+## Org branding themes
+
+Trellis now resolves organization branding from `apps/web/src/branding`.
+
+- `types.ts` defines the `OrgTheme` contract used by the UI.
+- `themes/*.ts` contains one concrete theme per organization. `themes/morgan.ts` is the current live theme.
+- `registry.ts` registers available themes and the default fallback.
+- `resolver.ts` maps the current org id to a theme id. The demo org (`org_demo_1`) and sandbox org (`org_sandbox_1`) currently resolve to Morgan, with `TRELLIS_DEFAULT_ORG_THEME` available as an optional fallback override.
+- `css-vars.ts` maps semantic org tokens into CSS variables consumed by the app shell and shared UI primitives.
+- Shell and primitive work should prefer semantic variables such as `--color-shell-*`, `--color-surface-*`, `--color-status-*`, and `--color-text-*` rather than hardcoded org colors in feature screens.
+
+To add another org theme later:
+
+1. Create `apps/web/src/branding/themes/<org>.ts` using the `OrgTheme` contract.
+2. Register it in `apps/web/src/branding/registry.ts`.
+3. Add the org id to theme mapping in `apps/web/src/branding/resolver.ts`.
+4. Keep feature code on semantic CSS variables and shared primitives instead of hardcoding org colors.
 
 ## Demo mode (Phase 5)
 

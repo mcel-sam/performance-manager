@@ -1,0 +1,75 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Calibration" [ref=e18] [cursor=pointer]:
+            - /url: /performance/calibration
+            - img [ref=e20]
+            - generic [ref=e27]: Calibration
+            - tooltip "Calibration"
+          - link "Help" [ref=e28] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e30]
+            - generic [ref=e34]: Help
+            - tooltip "Help"
+    - main [ref=e35]:
+      - generic [ref=e37]:
+        - button "Current organization" [disabled] [ref=e38]:
+          - generic [ref=e39]: O
+          - generic [ref=e40]: MCEL Sandbox Organization
+          - img [ref=e41]
+        - button "Lisa Letto Lisa Letto Super Admin" [ref=e44]:
+          - generic "Lisa Letto" [ref=e45]: LL
+          - generic [ref=e46]:
+            - generic [ref=e47]: Lisa Letto
+            - generic [ref=e48]: Super Admin
+      - generic [ref=e192]:
+        - generic [ref=e193]:
+          - generic [ref=e194]:
+            - heading "Calibration Sessions" [level=1] [ref=e195]
+            - paragraph [ref=e196]: Create and manage calibration sessions by cycle and cohort.
+          - link "Create Session" [ref=e198] [cursor=pointer]:
+            - /url: /admin/performance/calibration/new
+            - button "Create Session" [ref=e199]
+        - generic [ref=e200]:
+          - generic [ref=e202]:
+            - heading "Session list" [level=2] [ref=e203]
+            - paragraph [ref=e204]: Open an existing session to review placements or continue facilitation.
+          - table [ref=e208]:
+            - rowgroup [ref=e209]:
+              - row "Session Cycle Cohort Participants Status Actions" [ref=e210]:
+                - columnheader "Session" [ref=e211]
+                - columnheader "Cycle" [ref=e212]
+                - columnheader "Cohort" [ref=e213]
+                - columnheader "Participants" [ref=e214]
+                - columnheader "Status" [ref=e215]
+                - columnheader "Actions" [ref=e216]
+            - rowgroup [ref=e217]:
+              - row "Sandbox Workflow Validation Session Core Engineering Sandbox 2026 Calibration Ready LOCKED 1 2 In Progress Open Workspace" [ref=e218]:
+                - cell "Sandbox Workflow Validation Session Core Engineering" [ref=e219]:
+                  - paragraph [ref=e221]: Sandbox Workflow Validation Session
+                  - paragraph [ref=e222]: Core Engineering
+                - cell "Sandbox 2026 Calibration Ready LOCKED" [ref=e223]:
+                  - paragraph [ref=e224]: Sandbox 2026 Calibration Ready
+                  - generic [ref=e225]: LOCKED
+                - cell "1" [ref=e226]
+                - cell "2" [ref=e227]
+                - cell "In Progress" [ref=e228]:
+                  - generic [ref=e229]: In Progress
+                - cell "Open Workspace" [ref=e230]:
+                  - link "Open Workspace" [ref=e231] [cursor=pointer]:
+                    - /url: /performance/calibration/cmn6jvrij000rb9syz26yql3x?returnTo=%2Fadmin%2Fperformance%2Fcalibration
+                    - button "Open Workspace" [ref=e232]
+  - button "Open Next.js Dev Tools" [ref=e177] [cursor=pointer]:
+    - img [ref=e178]
+  - alert [ref=e182]

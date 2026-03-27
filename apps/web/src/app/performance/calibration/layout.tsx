@@ -10,7 +10,7 @@ interface CalibrationLayoutProps {
 
 const allowedCalibrationRoles = new Set<UserRole>([
   UserRole.HR_ADMIN,
-  UserRole.CALIBRATOR,
+  UserRole.SUPER_ADMIN,
   UserRole.MANAGER,
 ]);
 

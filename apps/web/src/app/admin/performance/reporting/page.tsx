@@ -1,18 +1,13 @@
 import Link from "next/link";
 
-import { CompetencyDimensionKey, ScorecardMetricKey, UserRole } from "@prisma/client";
+import { CompetencyDimensionKey, ScorecardMetricKey } from "@prisma/client";
+import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { ReportingDashboard } from "@/components/reporting/reporting-dashboard";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import {
   buildCompetencyBreakdownCsv,
@@ -64,21 +59,8 @@ export default async function AdminReportingPage({
 }) {
   const context = await getDevRequestContext();
 
-  if (context.role !== UserRole.HR_ADMIN) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Admin access required</CardTitle>
-          <CardDescription>Reporting dashboards are restricted to HR admins.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-slate-700">
-            Set <code>DEV_USER_ID=user_hr_admin_1</code> in <code>apps/web/.env.local</code> and
-            restart the dev server.
-          </p>
-        </CardContent>
-      </Card>
-    );
+  if (!hasHrAdminAccess(context.role)) {
+    redirect("/");
   }
 
   const query = await searchParams;
@@ -89,11 +71,11 @@ export default async function AdminReportingPage({
       <div className="mx-auto w-full max-w-6xl space-y-6">
         <PageHeader
           title="Reporting"
-          description="Track cycle progress and rating outcomes across departments and titles."
+          description="Track cycle progress, manager follow-up, and employee queue status."
         />
         <EmptyState
           title="No reporting data yet"
-          description="Create a review cycle and generate submissions to populate reporting dashboards."
+          description="Create a review cycle and generate submissions to populate the operational reporting workspace."
           action={
             <Link href="/admin/performance/review-cycles/new">
               <Button>Create Cycle</Button>
@@ -414,15 +396,7 @@ function parseProgressStatus(value: string | undefined): ProgressStatusFilter | 
 }
 
 function parseTab(value: string | undefined): ReportingTab {
-  if (
-    value === "overview" ||
-    value === "managers" ||
-    value === "queue" ||
-    value === "goals" ||
-    value === "results" ||
-    value === "competencies" ||
-    value === "scorecard"
-  ) {
+  if (value === "overview" || value === "managers" || value === "queue") {
     return value;
   }
 

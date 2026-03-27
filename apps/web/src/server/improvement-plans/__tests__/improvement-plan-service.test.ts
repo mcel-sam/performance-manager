@@ -1,6 +1,9 @@
 import {
+  ImprovementPlanCheckInType,
   ImprovementPlanOutcome,
   ImprovementPlanStatus,
+  ImprovementPlanTrigger,
+  CycleStatus,
   UserRole,
 } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
@@ -30,6 +33,12 @@ function buildDbMock() {
     improvementPlanCheckIn: {
       create: vi.fn(),
     },
+    reviewCycle: {
+      findFirst: vi.fn(),
+    },
+    calibrationSession: {
+      findFirst: vi.fn(),
+    },
     auditEvent: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -40,12 +49,14 @@ function buildDbMock() {
 function buildTimelineRecord(overrides?: {
   id?: string;
   content?: string;
+  checkInType?: ImprovementPlanCheckInType;
   status?: ImprovementPlanStatus | null;
   outcome?: ImprovementPlanOutcome | null;
 }) {
   return {
     id: overrides?.id ?? "checkin_1",
     content: overrides?.content ?? "Weekly check-in update.",
+    checkInType: overrides?.checkInType ?? ImprovementPlanCheckInType.NOTE,
     status: overrides?.status ?? ImprovementPlanStatus.ACTIVE,
     outcome: overrides?.outcome ?? null,
     checkInAt: new Date("2026-04-08T16:00:00.000Z"),
@@ -119,9 +130,18 @@ describe("createImprovementPlan", () => {
         lastName: "Admin",
       });
 
+    db.reviewCycle.findFirst.mockResolvedValue({
+      id: "cycle_1",
+      name: "FY26 Annual Review",
+      status: CycleStatus.LOCKED,
+    });
+
     db.improvementPlan.create.mockResolvedValue({
       id: "plan_1",
       title: "Q2 Support Plan",
+      triggerSource: ImprovementPlanTrigger.REVIEW,
+      reviewCycleId: "cycle_1",
+      calibrationSessionId: null,
       status: ImprovementPlanStatus.DRAFT,
       startDate: new Date("2026-04-01T00:00:00.000Z"),
       endDate: new Date("2026-06-30T00:00:00.000Z"),
@@ -135,6 +155,7 @@ describe("createImprovementPlan", () => {
         subjectEmployeeId: "emp_employee_1",
         title: "Q2 Support Plan",
         expectations: "Improve delivery predictability.",
+        reviewCycleId: "cycle_1",
         startDate: "2026-04-01T00:00:00.000Z",
         endDate: "2026-06-30T00:00:00.000Z",
         goals: [
@@ -172,14 +193,22 @@ describe("createImprovementPlan", () => {
         lastName: "Manager",
       });
 
+    db.reviewCycle.findFirst.mockResolvedValue({
+      id: "cycle_1",
+      name: "FY26 Annual Review",
+      status: CycleStatus.LOCKED,
+    });
+
     await expect(
       createImprovementPlan(
         {
           subjectEmployeeId: "emp_peer_1",
+          reviewCycleId: "cycle_1",
+          hrOwnerEmployeeId: "emp_hr_admin_1",
           title: "Support Plan",
           expectations: "Improve communication.",
           startDate: "2026-04-01T00:00:00.000Z",
-          endDate: "2026-05-01T00:00:00.000Z",
+          endDate: "2026-06-30T00:00:00.000Z",
           goals: [
             {
               title: "Goal 1",
@@ -205,10 +234,11 @@ describe("createImprovementPlan", () => {
       createImprovementPlan(
         {
           subjectEmployeeId: "emp_employee_1",
+          reviewCycleId: "cycle_1",
           title: "Support Plan",
           expectations: "Improve communication.",
           startDate: "2026-04-01T00:00:00.000Z",
-          endDate: "2026-05-01T00:00:00.000Z",
+          endDate: "2026-06-30T00:00:00.000Z",
           goals: [
             {
               title: "Goal 1",
@@ -225,6 +255,141 @@ describe("createImprovementPlan", () => {
 
     expect(db.employee.findFirst).not.toHaveBeenCalled();
     expect(db.improvementPlan.create).not.toHaveBeenCalled();
+  });
+
+  it("requires review or calibration context when creating a plan", async () => {
+    const db = buildDbMock();
+
+    await expect(
+      createImprovementPlan(
+        {
+          subjectEmployeeId: "emp_employee_1",
+          hrOwnerEmployeeId: "emp_hr_admin_1",
+          title: "Support Plan",
+          expectations: "Improve communication.",
+          startDate: "2026-04-01T00:00:00.000Z",
+          endDate: "2026-06-30T00:00:00.000Z",
+          goals: [{ title: "Goal 1" }],
+        },
+        hrAdminContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      status: 400,
+    });
+  });
+
+  it("requires managers to assign an HR owner", async () => {
+    const db = buildDbMock();
+
+    db.employee.findFirst
+      .mockResolvedValueOnce({
+        id: "emp_employee_1",
+        userId: "user_employee_1",
+        managerId: "emp_manager_1",
+        firstName: "Elliot",
+        lastName: "Employee",
+      })
+      .mockResolvedValueOnce({
+        id: "emp_manager_1",
+        userId: "user_manager_1",
+        managerId: "emp_hr_admin_1",
+        firstName: "Morgan",
+        lastName: "Manager",
+      })
+      .mockResolvedValueOnce({
+        id: "emp_manager_1",
+        userId: "user_manager_1",
+        managerId: "emp_hr_admin_1",
+        firstName: "Morgan",
+        lastName: "Manager",
+      });
+
+    db.reviewCycle.findFirst.mockResolvedValue({
+      id: "cycle_1",
+      name: "FY26 Annual Review",
+      status: CycleStatus.LOCKED,
+    });
+
+    await expect(
+      createImprovementPlan(
+        {
+          subjectEmployeeId: "emp_employee_1",
+          reviewCycleId: "cycle_1",
+          title: "Support Plan",
+          expectations: "Improve communication.",
+          startDate: "2026-04-01T00:00:00.000Z",
+          endDate: "2026-06-30T00:00:00.000Z",
+          goals: [{ title: "Goal 1" }],
+        },
+        managerContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      status: 400,
+    });
+  });
+
+  it("requires finalized calibration sessions when calibration is the trigger", async () => {
+    const db = buildDbMock();
+
+    db.employee.findFirst
+      .mockResolvedValueOnce({
+        id: "emp_employee_1",
+        userId: "user_employee_1",
+        managerId: "emp_manager_1",
+        firstName: "Elliot",
+        lastName: "Employee",
+      })
+      .mockResolvedValueOnce({
+        id: "emp_hr_admin_1",
+        userId: "user_hr_admin_1",
+        managerId: null,
+        firstName: "Harper",
+        lastName: "Admin",
+      })
+      .mockResolvedValueOnce({
+        id: "emp_manager_1",
+        userId: "user_manager_1",
+        managerId: "emp_hr_admin_1",
+        firstName: "Morgan",
+        lastName: "Manager",
+      })
+      .mockResolvedValueOnce({
+        id: "emp_hr_admin_1",
+        userId: "user_hr_admin_1",
+        managerId: null,
+        firstName: "Harper",
+        lastName: "Admin",
+      });
+
+    db.calibrationSession.findFirst.mockResolvedValue({
+      id: "calibration_1",
+      name: "Leadership Calibration",
+      cycleId: "cycle_1",
+      isFinalized: false,
+    });
+
+    await expect(
+      createImprovementPlan(
+        {
+          subjectEmployeeId: "emp_employee_1",
+          calibrationSessionId: "calibration_1",
+          title: "Support Plan",
+          expectations: "Improve communication.",
+          startDate: "2026-04-01T00:00:00.000Z",
+          endDate: "2026-06-30T00:00:00.000Z",
+          goals: [{ title: "Goal 1" }],
+        },
+        hrAdminContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "INVALID_WORKFLOW_STATE",
+      status: 409,
+    });
   });
 });
 
@@ -415,6 +580,65 @@ describe("createImprovementPlanCheckIn", () => {
     expect(db.auditEvent.create).toHaveBeenCalledTimes(1);
   });
 
+  it("lets managers record the 30-day checkpoint for active plans", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      triggerSource: ImprovementPlanTrigger.REVIEW,
+      reviewCycleId: "cycle_1",
+      calibrationSessionId: null,
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+      startDate: new Date("2026-04-01T00:00:00.000Z"),
+      endDate: new Date("2026-06-30T00:00:00.000Z"),
+      checkIns: [],
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_manager_1",
+      userId: "user_manager_1",
+      managerId: "emp_hr_admin_1",
+      firstName: "Morgan",
+      lastName: "Manager",
+    });
+
+    db.improvementPlanCheckIn.create.mockResolvedValue(
+      buildTimelineRecord({
+        id: "checkpoint_30_1",
+        content: "30-day checkpoint completed.",
+        checkInType: ImprovementPlanCheckInType.CHECKPOINT_30,
+        status: ImprovementPlanStatus.ACTIVE,
+        outcome: null,
+      }),
+    );
+
+    db.auditEvent.create.mockResolvedValue({ id: "audit_checkpoint_1" });
+
+    const result = await createImprovementPlanCheckIn(
+      "plan_1",
+      {
+        note: "30-day checkpoint completed.",
+        checkInType: ImprovementPlanCheckInType.CHECKPOINT_30,
+      },
+      managerContext,
+      db as never,
+    );
+
+    expect(result.id).toBe("checkpoint_30_1");
+    expect(db.improvementPlanCheckIn.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          checkInType: ImprovementPlanCheckInType.CHECKPOINT_30,
+        }),
+      }),
+    );
+  });
+
   it("denies check-in creation for users outside plan participants", async () => {
     const db = buildDbMock();
 
@@ -450,6 +674,51 @@ describe("createImprovementPlanCheckIn", () => {
 
     expect(db.improvementPlanCheckIn.create).not.toHaveBeenCalled();
     expect(db.auditEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("requires the 30-day checkpoint before the 60-day checkpoint", async () => {
+    const db = buildDbMock();
+
+    db.improvementPlan.findFirst.mockResolvedValue({
+      id: "plan_1",
+      orgId: "org_demo_1",
+      subjectEmployeeId: "emp_employee_1",
+      managerEmployeeId: "emp_manager_1",
+      hrOwnerEmployeeId: "emp_hr_admin_1",
+      triggerSource: ImprovementPlanTrigger.REVIEW,
+      reviewCycleId: "cycle_1",
+      calibrationSessionId: null,
+      status: ImprovementPlanStatus.ACTIVE,
+      outcome: null,
+      startDate: new Date("2026-04-01T00:00:00.000Z"),
+      endDate: new Date("2026-06-30T00:00:00.000Z"),
+      checkIns: [],
+    });
+
+    db.employee.findFirst.mockResolvedValue({
+      id: "emp_manager_1",
+      userId: "user_manager_1",
+      managerId: "emp_hr_admin_1",
+      firstName: "Morgan",
+      lastName: "Manager",
+    });
+
+    await expect(
+      createImprovementPlanCheckIn(
+        "plan_1",
+        {
+          note: "Jumping ahead to the 60-day checkpoint.",
+          checkInType: ImprovementPlanCheckInType.CHECKPOINT_60,
+        },
+        managerContext,
+        db as never,
+      ),
+    ).rejects.toMatchObject({
+      code: "INVALID_WORKFLOW_STATE",
+      status: 409,
+    });
+
+    expect(db.improvementPlanCheckIn.create).not.toHaveBeenCalled();
   });
 });
 

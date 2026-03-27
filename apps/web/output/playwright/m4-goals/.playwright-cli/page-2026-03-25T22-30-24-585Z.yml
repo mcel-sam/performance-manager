@@ -1,0 +1,48 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e18] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e20]
+            - generic [ref=e27]: Goals
+            - tooltip "Goals"
+          - link "Reviews" [ref=e28] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e30]
+            - generic [ref=e33]: Reviews
+            - tooltip "Reviews"
+          - link "Improvement Plans" [ref=e34] [cursor=pointer]:
+            - /url: /performance/improvement-plans
+            - img [ref=e36]
+            - generic [ref=e39]: Improvement Plans
+            - tooltip "Improvement Plans"
+          - link "Help" [ref=e40] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e42]
+            - generic [ref=e46]: Help
+            - tooltip "Help"
+    - main [ref=e47]:
+      - generic [ref=e49]:
+        - button "Current organization" [disabled] [ref=e50]:
+          - generic [ref=e51]: O
+          - generic [ref=e52]: MCEL Sandbox Organization
+          - img [ref=e53]
+        - button "Ted Tederoff Ted Tederoff Employee" [ref=e56]:
+          - generic "Ted Tederoff" [ref=e57]: TT
+          - generic [ref=e58]:
+            - generic [ref=e59]: Ted Tederoff
+            - generic [ref=e60]: Employee
+  - button "Open Next.js Dev Tools" [ref=e69] [cursor=pointer]:
+    - img [ref=e70]
+  - alert [ref=e74]

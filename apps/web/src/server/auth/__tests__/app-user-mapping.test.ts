@@ -15,9 +15,14 @@ describe("resolveRequestContextFromAuthIdentity", () => {
         user: {
           findUnique: vi.fn().mockResolvedValue({
             id: "user_employee_1",
-            orgId: "org_demo_1",
-            role: UserRole.EMPLOYEE,
             authIdentityId: "auth-user-1",
+            memberships: [
+              {
+                orgId: "org_demo_1",
+                role: UserRole.EMPLOYEE,
+                isActive: true,
+              },
+            ],
           }),
           findMany: vi.fn(),
           update: vi.fn(),
@@ -35,9 +40,14 @@ describe("resolveRequestContextFromAuthIdentity", () => {
   it("links a provisioned app user by email on first sandbox login", async () => {
     const update = vi.fn().mockResolvedValue({
       id: "user_manager_1",
-      orgId: "org_demo_1",
-      role: UserRole.MANAGER,
       authIdentityId: "auth-user-2",
+      memberships: [
+        {
+          orgId: "org_demo_1",
+          role: UserRole.MANAGER,
+          isActive: true,
+        },
+      ],
     });
 
     const result = await resolveRequestContextFromAuthIdentity(
@@ -51,9 +61,14 @@ describe("resolveRequestContextFromAuthIdentity", () => {
           findMany: vi.fn().mockResolvedValue([
             {
               id: "user_manager_1",
-              orgId: "org_demo_1",
-              role: UserRole.MANAGER,
               authIdentityId: null,
+              memberships: [
+                {
+                  orgId: "org_demo_1",
+                  role: UserRole.MANAGER,
+                  isActive: true,
+                },
+              ],
             },
           ]),
           update,
@@ -66,9 +81,15 @@ describe("resolveRequestContextFromAuthIdentity", () => {
       data: { authIdentityId: "auth-user-2" },
       select: {
         id: true,
-        orgId: true,
-        role: true,
         authIdentityId: true,
+        memberships: {
+          where: { isActive: true },
+          select: {
+            orgId: true,
+            role: true,
+            isActive: true,
+          },
+        },
       },
     });
     expect(result).toEqual({
@@ -112,17 +133,52 @@ describe("resolveRequestContextFromAuthIdentity", () => {
             findMany: vi.fn().mockResolvedValue([
               {
                 id: "user_a",
-                orgId: "org_a",
-                role: UserRole.EMPLOYEE,
                 authIdentityId: null,
+                memberships: [
+                  {
+                    orgId: "org_a",
+                    role: UserRole.EMPLOYEE,
+                    isActive: true,
+                  },
+                ],
               },
               {
                 id: "user_b",
-                orgId: "org_b",
-                role: UserRole.HR_ADMIN,
                 authIdentityId: null,
+                memberships: [
+                  {
+                    orgId: "org_b",
+                    role: UserRole.HR_ADMIN,
+                    isActive: true,
+                  },
+                ],
               },
             ]),
+            update: vi.fn(),
+          },
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+      status: 401,
+    } satisfies Partial<AppError>);
+  });
+
+  it("rejects provisioned users without an active organization membership", async () => {
+    await expect(
+      resolveRequestContextFromAuthIdentity(
+        {
+          authUserId: "auth-user-5",
+          email: "hr@example.com",
+        },
+        {
+          user: {
+            findUnique: vi.fn().mockResolvedValue({
+              id: "user_hr_1",
+              authIdentityId: "auth-user-5",
+              memberships: [],
+            }),
+            findMany: vi.fn(),
             update: vi.fn(),
           },
         },

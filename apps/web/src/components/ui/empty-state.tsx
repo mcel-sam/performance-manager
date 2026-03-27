@@ -24,19 +24,19 @@ export function EmptyState({
     <section
       {...props}
       className={cn(
-        "rounded-[var(--radius-lg)] border border-dashed border-slate-300 bg-white p-8 shadow-[var(--shadow-xs)]",
+        "rounded-[var(--radius-lg)] border border-dashed border-[var(--color-empty-state-border)] bg-[var(--color-surface-default)] p-8 shadow-[var(--shadow-xs)]",
         className,
       )}
     >
       {icon ? (
-        <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700">
+        <div className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-empty-state-icon-bg)] text-[var(--color-empty-state-icon-fg)]">
           {icon}
         </div>
       ) : null}
-      <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
-      <p className="mt-2 text-sm text-slate-600">{description}</p>
+      <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">{title}</h2>
+      <p className="mt-2 text-sm text-[var(--color-text-muted)]">{description}</p>
       {nextSteps && nextSteps.length > 0 ? (
-        <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-slate-600">
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-[var(--color-text-muted)]">
           {nextSteps.map((step) => (
             <li key={step}>{step}</li>
           ))}

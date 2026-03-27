@@ -5,10 +5,10 @@ import { expect, test, type Page } from "@playwright/test";
 
 import {
   ensureDemoSetup,
-  loginAsCalibrator,
   loginAsEmployee,
   loginAsHrAdmin,
   loginAsManager,
+  loginAsSuperAdmin,
 } from "./helpers/demo";
 
 interface RouteScenario {
@@ -18,7 +18,7 @@ interface RouteScenario {
 }
 
 interface RoleScenario {
-  role: "HR_ADMIN" | "MANAGER" | "EMPLOYEE" | "CALIBRATOR";
+  role: "HR_ADMIN" | "MANAGER" | "EMPLOYEE" | "SUPER_ADMIN";
   login: (page: Page) => Promise<void>;
   routes: RouteScenario[];
 }
@@ -64,8 +64,8 @@ const roleScenarios: RoleScenario[] = [
     routes: [{ route: "/performance/reviews", label: "My reviews" }],
   },
   {
-    role: "CALIBRATOR",
-    login: loginAsCalibrator,
+    role: "SUPER_ADMIN",
+    login: loginAsSuperAdmin,
     routes: [
       {
         route: "/performance/calibration/calibration_session_seed_1",

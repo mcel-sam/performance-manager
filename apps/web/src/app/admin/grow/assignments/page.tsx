@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
 import GrowAssignmentsManager from "@/components/admin/grow-assignments-manager";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getGrowAdminCatalog, listTrackAssignmentsForAdmin } from "@/server/grow/grow-service";
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminGrowAssignmentsPage() {
   const context = await getDevRequestContext();
-  if (context.role !== UserRole.HR_ADMIN) {
+  if (!hasHrAdminAccess(context.role)) {
     redirect("/");
   }
 

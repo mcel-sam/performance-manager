@@ -27,11 +27,10 @@ export function RouteLoadingState({
           key={`route-loading-skeleton-${index}`}
           className={cn(
             heightClass,
-            "rounded-[var(--radius-lg)] border border-slate-200 bg-white",
+            "rounded-[var(--radius-lg)] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)]",
           )}
         />
       ))}
     </div>
   );
 }
-

@@ -1,23 +1,79 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f6fb;
-  --background-tint: #edf4f3;
+  --background: #f5f5f5;
+  --background-tint: #efefef;
   --background-elevated: #ffffff;
-  --foreground: #0f172a;
+  --foreground: #000000;
   --surface: #ffffff;
-  --surface-muted: #f8fafc;
+  --surface-muted: #f8f8f8;
 
-  --brand-primary: #0f766e;
-  --brand-primary-strong: #115e59;
-  --brand-secondary: #d97706;
-  --brand-secondary-soft: #fde68a;
+  --brand-primary: #e6281a;
+  --brand-primary-strong: #c11f14;
+  --brand-secondary: #000000;
+  --brand-secondary-soft: #f5d8d5;
 
-  --status-success: #059669;
-  --status-warning: #d97706;
-  --status-error: #dc2626;
-  --status-neutral: #475569;
-  --status-info: #0284c7;
+  --color-brand-primary: #e6281a;
+  --color-brand-accent: #000000;
+  --color-text-primary: #000000;
+  --color-text-muted: #4f4f4f;
+  --color-surface-default: #ffffff;
+  --color-surface-subtle: #e5e5e5;
+  --color-border-default: #979797;
+  --color-neutral-700: #4f4f4f;
+  --color-neutral-500: #979797;
+  --color-neutral-200: #e5e5e5;
+  --color-white: #ffffff;
+  --color-link: var(--brand-primary);
+  --color-link-hover: var(--brand-primary-strong);
+  --color-shell-panel: var(--surface);
+  --color-shell-border: color-mix(in srgb, var(--color-border-default) 42%, white);
+  --color-shell-divider: color-mix(in srgb, var(--color-neutral-200) 85%, white);
+  --color-shell-hover: color-mix(in srgb, var(--color-neutral-200) 55%, white);
+  --color-shell-active-bg: var(--color-brand-accent);
+  --color-shell-active-fg: var(--color-white);
+  --color-shell-active-chip: var(--color-brand-primary);
+  --color-shell-tooltip-bg: var(--color-brand-accent);
+  --color-shell-tooltip-fg: var(--color-white);
+  --color-card-header: color-mix(in srgb, var(--color-surface-subtle) 42%, white);
+  --color-card-footer: color-mix(in srgb, var(--color-surface-subtle) 30%, white);
+  --color-shell-surface-muted: color-mix(in srgb, var(--color-surface-subtle) 34%, white);
+  --color-shell-soft-accent: color-mix(in srgb, var(--color-brand-primary) 6%, white);
+  --color-focus-ring: color-mix(in srgb, var(--color-brand-primary) 18%, white);
+  --color-focus-border: color-mix(in srgb, var(--color-brand-primary) 45%, var(--color-border-default));
+  --color-empty-state-border: color-mix(in srgb, var(--color-border-default) 70%, white);
+  --color-empty-state-icon-bg: color-mix(in srgb, var(--color-brand-primary) 7%, white);
+  --color-empty-state-icon-fg: var(--brand-primary);
+  --color-table-header-bg: color-mix(in srgb, var(--color-surface-subtle) 46%, white);
+  --color-table-row-border: color-mix(in srgb, var(--color-surface-subtle) 70%, white);
+  --color-table-row-hover: color-mix(in srgb, var(--color-neutral-200) 34%, white);
+  --color-help-hint-icon-bg: color-mix(in srgb, var(--color-brand-primary) 8%, white);
+  --color-help-hint-icon-fg: var(--brand-primary);
+  --color-overlay-scrim: rgba(0, 0, 0, 0.42);
+  --color-skeleton: color-mix(in srgb, var(--color-surface-subtle) 72%, white);
+
+  --color-badge-neutral-bg: color-mix(in srgb, var(--color-neutral-200) 70%, white);
+  --color-badge-neutral-border: color-mix(in srgb, var(--color-border-default) 58%, white);
+  --color-badge-neutral-text: var(--color-neutral-700);
+
+  --color-status-success: #246b45;
+  --color-status-success-surface: color-mix(in srgb, var(--color-status-success) 12%, white);
+  --color-status-success-border: color-mix(in srgb, var(--color-status-success) 26%, white);
+  --color-status-warning: #a65a12;
+  --color-status-warning-surface: color-mix(in srgb, var(--color-status-warning) 12%, white);
+  --color-status-warning-border: color-mix(in srgb, var(--color-status-warning) 26%, white);
+  --color-status-danger: #b22222;
+  --color-status-danger-surface: color-mix(in srgb, var(--color-status-danger) 11%, white);
+  --color-status-danger-border: color-mix(in srgb, var(--color-status-danger) 24%, white);
+  --color-status-info: #275d8c;
+  --color-status-info-surface: color-mix(in srgb, var(--color-status-info) 10%, white);
+  --color-status-info-border: color-mix(in srgb, var(--color-status-info) 24%, white);
+
+  --status-success: var(--color-status-success);
+  --status-warning: var(--color-status-warning);
+  --status-error: var(--color-status-danger);
+  --status-neutral: var(--color-neutral-700);
+  --status-info: var(--color-status-info);
 
   --radius-sm: 0.375rem;
   --radius-md: 0.625rem;
@@ -25,6 +81,7 @@
 
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.08);
   --shadow-sm: 0 6px 14px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 10px 24px rgba(15, 23, 42, 0.12);
   --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.14);
 
   --space-2: 0.5rem;
@@ -70,18 +127,38 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Manrope", "Public Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-body);
   --font-mono: "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", monospace;
 }
 
 body {
   background:
-    radial-gradient(circle at 15% -10%, color-mix(in srgb, var(--brand-primary) 16%, transparent), transparent 36%),
-    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--brand-secondary) 14%, transparent), transparent 32%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--brand-primary) 5%, transparent), transparent 24%),
     linear-gradient(180deg, var(--background) 0%, var(--background-tint) 100%);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   line-height: var(--line-height-base);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+}
+
+a {
+  transition: color var(--transition-base) var(--ease-standard);
+}
+
+a:not([class]) {
+  color: var(--color-link);
+}
+
+a:not([class]):hover {
+  color: var(--color-link-hover);
 }

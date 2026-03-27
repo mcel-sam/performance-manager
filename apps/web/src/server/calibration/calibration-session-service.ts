@@ -36,6 +36,7 @@ interface CalibrationSessionRecord {
   cycleId: string;
   name: string;
   roleGroup: string | null;
+  isRestricted: boolean;
   performanceAxisConfig: unknown;
   potentialAxisConfig: unknown;
   isFinalized: boolean;
@@ -45,6 +46,9 @@ interface CalibrationSessionRecord {
     name: string;
     status: CycleStatus;
   };
+  participants: {
+    id: string;
+  }[];
   placements: CalibrationSessionPlacementRecord[];
 }
 
@@ -61,6 +65,7 @@ interface CalibrationPlacementAccessRecord {
   session: {
     id: string;
     cycleId: string;
+    isRestricted: boolean;
     isFinalized: boolean;
   };
 }
@@ -95,10 +100,11 @@ interface CalibrationSessionDb {
       };
       select: {
         id: true;
+        isRestricted: true;
         isFinalized: true;
         finalizedAt: true;
       };
-    }) => Promise<{ id: string; isFinalized: boolean; finalizedAt: Date | null }>;
+    }) => Promise<{ id: string; isRestricted: boolean; isFinalized: boolean; finalizedAt: Date | null }>;
   };
   calibrationSnapshot: {
     create: (args: {
@@ -168,6 +174,18 @@ interface CalibrationSessionDb {
         id: true;
       };
     }) => Promise<ViewerEmployeeRecord | null>;
+  };
+  calibrationSessionParticipant: {
+    findFirst: (args: {
+      where: {
+        orgId: string;
+        sessionId: string;
+        userId: string;
+      };
+      select: {
+        id: true;
+      };
+    }) => Promise<{ id: string } | null>;
   };
   reviewPacket: {
     findMany: (args: {
@@ -266,6 +284,25 @@ interface SessionPermissionState {
   canMoveAny: boolean;
   canMoveEmployeeIds: Set<string>;
   canFinalize: boolean;
+  canViewDownstreamOutputs: boolean;
+}
+
+interface DownstreamSuccessionOutput {
+  employeeId: string;
+  employeeName: string;
+  emergencyBackup: boolean;
+  readyNow: boolean;
+  readyFuture: boolean;
+  estimatedReadinessTimeframe: string;
+  developmentNeeds: string | null;
+}
+
+interface DownstreamRiskOutput {
+  employeeId: string;
+  employeeName: string;
+  riskLevel: "MEDIUM" | "HIGH";
+  issueSummary: string;
+  actionRecommendation: string;
 }
 
 export interface CalibrationAxisDefinition {
@@ -294,6 +331,7 @@ export interface CalibrationSessionData {
     id: string;
     name: string;
     roleGroup: string | null;
+    isRestricted: boolean;
     cycleId: string;
     cycleName: string;
     cycleStatus: CycleStatus;
@@ -308,6 +346,21 @@ export interface CalibrationSessionData {
   viewer: {
     canMoveAny: boolean;
     canFinalize: boolean;
+    canViewDownstreamOutputs: boolean;
+  };
+  downstreamOutputs: {
+    available: boolean;
+    succession: {
+      emergencyBackupCount: number;
+      readyNowCount: number;
+      readyFutureCount: number;
+      candidates: DownstreamSuccessionOutput[];
+    } | null;
+    risk: {
+      organizationalRiskLevel: "LOW" | "MEDIUM" | "HIGH";
+      flaggedCount: number;
+      items: DownstreamRiskOutput[];
+    } | null;
   };
   placements: CalibrationSessionPlacement[];
 }
@@ -328,6 +381,7 @@ export interface FinalizeCalibrationSessionResult {
   finalizedAt: string;
   placementCount: number;
   participantCount: number;
+  downstreamOutputs: CalibrationSessionData["downstreamOutputs"];
 }
 
 export interface CalibrationExportPlaceholder {
@@ -392,13 +446,21 @@ export async function getCalibrationSessionData(
           (permission.canMoveAny || permission.canMoveEmployeeIds.has(placement.employeeId)),
       };
     })
+    .filter((placement) => permission.canMoveAny || permission.canMoveEmployeeIds.has(placement.employeeId))
     .sort((left, right) => left.employeeName.localeCompare(right.employeeName));
+
+  const downstreamOutputs = buildDownstreamOutputs(
+    session.placements,
+    session.isFinalized,
+    permission.canViewDownstreamOutputs,
+  );
 
   return {
     session: {
       id: session.id,
       name: session.name,
       roleGroup: session.roleGroup,
+      isRestricted: session.isRestricted,
       cycleId: session.cycleId,
       cycleName: session.cycle.name,
       cycleStatus: session.cycle.status,
@@ -407,14 +469,18 @@ export async function getCalibrationSessionData(
     },
     guidance: {
       summary:
-        "Calibration aligns managers on how performance and potential are evaluated across the cohort.",
+        session.isRestricted
+          ? "This restricted calibration session is reserved for super-admin talent governance work."
+          : "Calibration aligns managers on how performance and potential are evaluated across the cohort after review submissions are locked.",
       performance: configuredPerformanceDefinitions,
       potential: configuredPotentialDefinitions,
     },
     viewer: {
       canMoveAny: permission.canMoveAny,
       canFinalize: permission.canFinalize,
+      canViewDownstreamOutputs: permission.canViewDownstreamOutputs,
     },
+    downstreamOutputs,
     placements,
   };
 }
@@ -456,6 +522,7 @@ export async function moveCalibrationPlacement(
         select: {
           id: true,
           cycleId: true,
+          isRestricted: true,
           isFinalized: true,
         },
       },
@@ -561,7 +628,11 @@ export async function getCalibrationExportPlaceholder(
   }
 
   const session = await loadSessionRecord(parsed.data.sessionId, context.orgId, db);
-  await resolveSessionPermission(session, context, db);
+  const permission = await resolveSessionPermission(session, context, db);
+
+  if (!permission.canViewDownstreamOutputs) {
+    throw new AppError("FORBIDDEN", "Only super admins can export calibration snapshots", 403);
+  }
 
   const snapshot = await db.calibrationSnapshot.findFirst({
     where: {
@@ -579,8 +650,8 @@ export async function getCalibrationExportPlaceholder(
     snapshotId: snapshot?.id ?? null,
     snapshotCreatedAt: snapshot?.createdAt.toISOString() ?? null,
     message: snapshot
-      ? "Calibration export download will be enabled in a later milestone."
-      : "No finalized snapshot exists yet. Finalize the session before exporting.",
+      ? "Finalized calibration snapshot is ready for downstream succession and risk follow-up export in a later milestone."
+      : "No finalized snapshot exists yet. Finalize the session before capturing downstream succession and risk outputs.",
   };
 }
 
@@ -604,6 +675,14 @@ export async function finalizeCalibrationSession(
   }
 
   const session = await loadSessionRecord(parsed.data.sessionId, context.orgId, db);
+  if (session.cycle.status !== CycleStatus.LOCKED && session.cycle.status !== CycleStatus.RELEASED) {
+    throw new AppError(
+      "INVALID_CYCLE_STATE",
+      "Calibration can only be finalized after the review cycle is locked",
+      409,
+      { cycleStatus: session.cycle.status },
+    );
+  }
   if (session.isFinalized) {
     throw new AppError("READ_ONLY", "Calibration session is already finalized", 409);
   }
@@ -615,6 +694,7 @@ export async function finalizeCalibrationSession(
     resolveAxisDefinitions(session.performanceAxisConfig, performanceDefinitions),
     resolveAxisDefinitions(session.potentialAxisConfig, potentialDefinitions),
   );
+  const downstreamOutputs = buildDownstreamOutputs(session.placements, true, true);
 
   const snapshot = await db.calibrationSnapshot.create({
     data: {
@@ -638,6 +718,7 @@ export async function finalizeCalibrationSession(
     },
     select: {
       id: true,
+      isRestricted: true,
       isFinalized: true,
       finalizedAt: true,
     },
@@ -667,7 +748,7 @@ export async function finalizeCalibrationSession(
         sessionId: session.id,
         cycleId: session.cycleId,
         placementCount: session.placements.length,
-        participantCount: session.placements.length,
+        participantCount: session.participants.length,
       },
     },
   });
@@ -678,7 +759,8 @@ export async function finalizeCalibrationSession(
     isFinalized: updatedSession.isFinalized,
     finalizedAt: (updatedSession.finalizedAt ?? snapshot.createdAt).toISOString(),
     placementCount: session.placements.length,
-    participantCount: session.placements.length,
+    participantCount: session.participants.length,
+    downstreamOutputs,
   };
 }
 
@@ -698,6 +780,7 @@ async function loadSessionRecord(
       cycleId: true,
       name: true,
       roleGroup: true,
+      isRestricted: true,
       performanceAxisConfig: true,
       potentialAxisConfig: true,
       isFinalized: true,
@@ -707,6 +790,11 @@ async function loadSessionRecord(
           id: true,
           name: true,
           status: true,
+        },
+      },
+      participants: {
+        select: {
+          id: true,
         },
       },
       placements: {
@@ -774,6 +862,7 @@ function buildCalibrationSnapshotPayload(
     sessionId: session.id,
     cycleId: session.cycleId,
     cycleName: session.cycle.name,
+    isRestricted: session.isRestricted,
     timestamp: finalizedAt.toISOString(),
     axes: {
       performance: configuredPerformanceDefinitions,
@@ -787,6 +876,7 @@ function buildCalibrationSnapshotPayload(
       managerName: placement.managerName,
     })),
     placements,
+    downstreamOutputs: buildDownstreamOutputs(session.placements, true, true),
     summary: {
       placementCount: placements.length,
       cellCounts,
@@ -842,11 +932,29 @@ async function resolveSessionPermission(
   context: RequestContext,
   db: CalibrationSessionDb,
 ): Promise<SessionPermissionState> {
-  if (context.role === UserRole.HR_ADMIN || context.role === UserRole.CALIBRATOR) {
+  if (session.isRestricted) {
+    if (context.role !== UserRole.SUPER_ADMIN) {
+      throw new AppError(
+        "FORBIDDEN",
+        "Only super admins can access restricted calibration sessions",
+        403,
+      );
+    }
+
     return {
       canMoveAny: true,
       canMoveEmployeeIds: new Set(session.placements.map((placement) => placement.employeeId)),
       canFinalize: true,
+      canViewDownstreamOutputs: true,
+    };
+  }
+
+  if (context.role === UserRole.HR_ADMIN || context.role === UserRole.SUPER_ADMIN) {
+    return {
+      canMoveAny: true,
+      canMoveEmployeeIds: new Set(session.placements.map((placement) => placement.employeeId)),
+      canFinalize: context.role === UserRole.SUPER_ADMIN,
+      canViewDownstreamOutputs: context.role === UserRole.SUPER_ADMIN,
     };
   }
 
@@ -868,6 +976,21 @@ async function resolveSessionPermission(
     throw new AppError("FORBIDDEN", "You are not allowed to access this calibration session", 403);
   }
 
+  const sessionParticipant = await db.calibrationSessionParticipant.findFirst({
+    where: {
+      orgId: context.orgId,
+      sessionId: session.id,
+      userId: context.userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!sessionParticipant) {
+    throw new AppError("FORBIDDEN", "You are not allowed to access this calibration session", 403);
+  }
+
   const managedEmployeeIds = new Set(
     session.placements
       .filter((placement) => placement.employee.managerId === viewerEmployee.id)
@@ -882,7 +1005,126 @@ async function resolveSessionPermission(
     canMoveAny: false,
     canMoveEmployeeIds: managedEmployeeIds,
     canFinalize: false,
+    canViewDownstreamOutputs: false,
   };
+}
+
+function buildDownstreamOutputs(
+  placements: CalibrationSessionPlacementRecord[],
+  isFinalized: boolean,
+  canViewDownstreamOutputs: boolean,
+): CalibrationSessionData["downstreamOutputs"] {
+  if (!canViewDownstreamOutputs || !isFinalized) {
+    return {
+      available: false,
+      succession: null,
+      risk: null,
+    };
+  }
+
+  const successionCandidates = placements
+    .map((placement) => {
+      const readyNow =
+        placement.performanceBucket === CalibrationBucket.HIGH &&
+        placement.potentialBucket === CalibrationBucket.HIGH;
+      const emergencyBackup = readyNow;
+      const readyFuture =
+        !readyNow &&
+        placement.performanceBucket !== CalibrationBucket.LOW &&
+        placement.potentialBucket !== CalibrationBucket.LOW;
+
+      if (!emergencyBackup && !readyNow && !readyFuture) {
+        return null;
+      }
+
+      return {
+        employeeId: placement.employeeId,
+        employeeName: `${placement.employee.firstName} ${placement.employee.lastName}`,
+        emergencyBackup,
+        readyNow,
+        readyFuture,
+        estimatedReadinessTimeframe: readyNow
+          ? "Now"
+          : placement.potentialBucket === CalibrationBucket.HIGH
+            ? "0-12 months"
+            : "12-24 months",
+        developmentNeeds: placement.justificationNote,
+      };
+    })
+    .filter((candidate): candidate is DownstreamSuccessionOutput => candidate != null);
+
+  const riskItems: DownstreamRiskOutput[] = placements
+    .map((placement) => {
+      const riskLevel = deriveRiskLevel(placement);
+      if (riskLevel === "LOW") {
+        return null;
+      }
+
+      const employeeName = `${placement.employee.firstName} ${placement.employee.lastName}`;
+      return {
+        employeeId: placement.employeeId,
+        employeeName,
+        riskLevel,
+        issueSummary:
+          riskLevel === "HIGH"
+            ? `${employeeName} is in a high-attention calibration box and needs immediate succession or performance-risk follow-up.`
+            : `${employeeName} should remain on the restricted talent follow-up list after calibration.`,
+        actionRecommendation:
+          riskLevel === "HIGH"
+            ? "Create an explicit risk mitigation and development follow-up plan after calibration."
+            : "Review succession coverage and manager support actions in the post-calibration follow-up.",
+      };
+    })
+    .filter((item): item is DownstreamRiskOutput => item != null);
+
+  return {
+    available: true,
+    succession: {
+      emergencyBackupCount: successionCandidates.filter((candidate) => candidate.emergencyBackup).length,
+      readyNowCount: successionCandidates.filter((candidate) => candidate.readyNow).length,
+      readyFutureCount: successionCandidates.filter((candidate) => candidate.readyFuture).length,
+      candidates: successionCandidates,
+    },
+    risk: {
+      organizationalRiskLevel: deriveOrganizationalRiskLevel(placements),
+      flaggedCount: riskItems.length,
+      items: riskItems,
+    },
+  };
+}
+
+function deriveRiskLevel(
+  placement: CalibrationSessionPlacementRecord,
+): "LOW" | "MEDIUM" | "HIGH" {
+  if (
+    placement.performanceBucket === CalibrationBucket.LOW &&
+    placement.potentialBucket === CalibrationBucket.HIGH
+  ) {
+    return "HIGH";
+  }
+
+  if (
+    placement.performanceBucket === CalibrationBucket.LOW ||
+    placement.potentialBucket === CalibrationBucket.LOW
+  ) {
+    return "MEDIUM";
+  }
+
+  return "LOW";
+}
+
+function deriveOrganizationalRiskLevel(
+  placements: CalibrationSessionPlacementRecord[],
+): "LOW" | "MEDIUM" | "HIGH" {
+  if (placements.some((placement) => deriveRiskLevel(placement) === "HIGH")) {
+    return "HIGH";
+  }
+
+  if (placements.some((placement) => deriveRiskLevel(placement) === "MEDIUM")) {
+    return "MEDIUM";
+  }
+
+  return "LOW";
 }
 
 async function canMovePlacement(
@@ -890,7 +1132,11 @@ async function canMovePlacement(
   context: RequestContext,
   db: CalibrationSessionDb,
 ): Promise<boolean> {
-  if (context.role === UserRole.HR_ADMIN || context.role === UserRole.CALIBRATOR) {
+  if (placement.session.isRestricted) {
+    return context.role === UserRole.SUPER_ADMIN;
+  }
+
+  if (context.role === UserRole.HR_ADMIN || context.role === UserRole.SUPER_ADMIN) {
     return true;
   }
 
@@ -912,11 +1158,26 @@ async function canMovePlacement(
     return false;
   }
 
+  const sessionParticipant = await db.calibrationSessionParticipant.findFirst({
+    where: {
+      orgId: context.orgId,
+      sessionId: placement.session.id,
+      userId: context.userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!sessionParticipant) {
+    return false;
+  }
+
   return placement.employee.managerId === viewerEmployee.id;
 }
 
 function canFinalizeSession(context: RequestContext): boolean {
-  return context.role === UserRole.HR_ADMIN || context.role === UserRole.CALIBRATOR;
+  return context.role === UserRole.SUPER_ADMIN;
 }
 
 function normalizeNote(

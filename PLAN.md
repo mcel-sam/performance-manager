@@ -464,20 +464,19 @@ Includes:
 ## 8C. Current Active Milestone
 
 ### Active milestone
-Milestone 1 — Sandbox Identity and Data Foundation
+Milestone 5 — HR Pilot Handoff Readiness
 
 ### Current implementation slice
-Sandbox bootstrap data and role mapping
+Recursive expectation alignment and navigation simplification
 
 ### Definition of success for the current slice
-- authenticated users map to Trellis app users
-- app users map to organization memberships
-- organization memberships map to roles
-- at least one manager/direct-report relationship exists
-- the sandbox supports realistic role-based testing without demo-only identity shortcuts
+- the deployed shared sandbox is validated with real pilot users/roles
+- deployment and ops checklist items are closed honestly enough for pilot use
+- known limitations are documented clearly
+- HR has what they need to run mock cycles and report issues
 
 ### Next slice after this
-Basic role-based access verification
+HR pilot handoff and feedback capture
 
 ## 9. Immediate 2-Day Launch Plan
 

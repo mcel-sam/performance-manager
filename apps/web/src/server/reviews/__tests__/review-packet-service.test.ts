@@ -164,10 +164,20 @@ function buildPacketRecord(overrides?: {
 }
 
 describe("getReviewPacket", () => {
-  it("returns packet submissions and answers for HR admin", async () => {
+  it("allows access when an HR admin is also the subject's direct manager", async () => {
     const db = buildDbMock();
-    db.reviewPacket.findFirst.mockResolvedValue(buildPacketRecord());
-    db.employee.findFirst.mockImplementation(async (args: { where: { id?: string } }) => {
+    db.reviewPacket.findFirst.mockResolvedValue(
+      buildPacketRecord({
+        subjectManagerId: "emp_hr_admin_1",
+      }),
+    );
+    db.employee.findFirst.mockImplementation(async (args: { where: { userId?: string; id?: string } }) => {
+      if (args.where.userId === "user_hr_admin_1") {
+        return {
+          id: "emp_hr_admin_1",
+        };
+      }
+
       if (args.where.id === "emp_employee_1") {
         return {
           id: "emp_employee_1",
@@ -247,15 +257,7 @@ describe("getReviewPacket", () => {
 
     expect(result.packet.subjectName).toBe("Elliot Employee");
     expect(result.packet.totalSubmissions).toBe(1);
-    expect(result.packet.evidenceCounts.FEEDBACK).toBe(2);
-    expect(result.packet.evidenceCounts.GOAL).toBe(1);
-    expect(result.packet.evidenceCounts.UPDATE).toBe(0);
     expect(result.trackContext?.trackLabel).toBe("Projects");
-    expect(result.goalContext?.goals[0]?.title).toBe("Improve project handoff reliability");
-    expect(result.submissions[0]?.answers[0]?.prompt).toBe(
-      "What impact did this employee create this cycle?",
-    );
-    expect(db.evidenceItem.groupBy).toHaveBeenCalledTimes(1);
     expect(db.evidenceItem.groupBy).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
@@ -264,6 +266,19 @@ describe("getReviewPacket", () => {
         }),
       }),
     );
+  });
+
+  it("denies HR admin access when there is no reporting relationship", async () => {
+    const db = buildDbMock();
+    db.reviewPacket.findFirst.mockResolvedValue(buildPacketRecord());
+    db.employee.findFirst.mockResolvedValue({ id: "emp_hr_admin_1" });
+
+    await expect(
+      getReviewPacket("cycle_seed_1", "emp_employee_1", hrAdminContext, db as never),
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      status: 403,
+    });
   });
 
   it("allows manager-of-subject access", async () => {
@@ -313,7 +328,7 @@ describe("getReviewPacket", () => {
     expect(result.packet.id).toBe("packet_seed_employee_1");
   });
 
-  it("marks peer submissions as reference input", async () => {
+  it("omits peer submissions from the active packet view", async () => {
     const db = buildDbMock();
     db.reviewPacket.findFirst.mockResolvedValue(
       buildPacketRecord({
@@ -361,12 +376,10 @@ describe("getReviewPacket", () => {
       db as never,
     );
 
-    const peerSubmission = result.submissions.find(
-      (submission) => submission.relationship === ReviewRelationship.PEER,
-    );
-
-    expect(peerSubmission).toBeDefined();
-    expect(peerSubmission?.isReferenceInput).toBe(true);
+    expect(
+      result.submissions.find((submission) => submission.relationship === ReviewRelationship.PEER),
+    ).toBeUndefined();
+    expect(result.packet.totalSubmissions).toBe(1);
   });
 
   it("allows subject employee only after release when policy allows", async () => {
@@ -419,6 +432,9 @@ describe("getReviewPacket", () => {
     );
 
     expect(result.packet.cycleStatus).toBe(CycleStatus.RELEASED);
+    expect(result.submissions[0]?.answers[0]?.prompt).toBe(
+      "What were your most meaningful accomplishments and business results this cycle?",
+    );
   });
 
   it("denies subject employee before release", async () => {

@@ -14,7 +14,8 @@
     "test:e2e:ui": "playwright test --ui",
     "db:migrate:deploy": "node scripts/run-with-next-env.mjs prisma migrate deploy",
     "db:migrate:status": "node scripts/run-with-next-env.mjs prisma migrate status",
-    "db:seed": "node scripts/run-with-next-env.mjs node prisma/seed.mjs"
+    "db:seed": "node scripts/run-with-next-env.mjs node prisma/seed.mjs",
+    "db:sandbox:bootstrap": "node scripts/run-with-next-env.mjs node prisma/sandbox-bootstrap.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.17.1",

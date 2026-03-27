@@ -6,6 +6,7 @@ import {
 } from "@prisma/client";
 import { z } from "zod";
 
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
@@ -422,7 +423,7 @@ async function resolveEvidenceAccess(
     managerId: subjectRecord.managerId,
   };
 
-  if (context.role === UserRole.HR_ADMIN) {
+  if (hasHrAdminAccess(context.role)) {
     return {
       allowAll: true,
       viewerEmployeeId: null,
@@ -553,7 +554,7 @@ async function getAnswerForAccess(
     throw new AppError("NOT_FOUND", "Review answer not found", 404);
   }
 
-  if (context.role !== UserRole.HR_ADMIN && answer.submission.reviewerEmployee.userId !== context.userId) {
+  if (!hasHrAdminAccess(context.role) && answer.submission.reviewerEmployee.userId !== context.userId) {
     throw new AppError("FORBIDDEN", "You are not allowed to modify this answer", 403);
   }
 

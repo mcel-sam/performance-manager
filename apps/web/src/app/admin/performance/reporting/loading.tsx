@@ -5,7 +5,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function AdminReportingLoading() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6" data-testid="admin-reporting-loading">
-      <PageHeader title="Reporting" description="Loading cycle progress and results..." />
+      <PageHeader
+        title="Reporting"
+        description="Loading cycle progress, manager follow-up, and employee queue status..."
+      />
 
       <Card>
         <CardHeader>

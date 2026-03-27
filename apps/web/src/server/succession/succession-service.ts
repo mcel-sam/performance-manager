@@ -12,6 +12,7 @@ import {
 import { z } from "zod";
 
 import { appEnv } from "@/config/env";
+import { hasHrAdminAccess, hasManagerAccess } from "@/lib/users/role-capabilities";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
@@ -1282,7 +1283,7 @@ async function resolveViewerScope(
   context: RequestContext,
   db: typeof prisma,
 ): Promise<SuccessionViewerScope> {
-  if (context.role === UserRole.HR_ADMIN) {
+  if (hasHrAdminAccess(context.role)) {
     const viewerEmployee = await db.employee.findFirst({
       where: {
         orgId: context.orgId,
@@ -1300,7 +1301,7 @@ async function resolveViewerScope(
     };
   }
 
-  if (context.role !== UserRole.MANAGER) {
+  if (!hasManagerAccess(context.role)) {
     throw new AppError(
       "FORBIDDEN",
       "Succession planning is restricted to HR admins and managers in this MVP",

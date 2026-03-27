@@ -13,6 +13,7 @@ import {
   getReportingCompetencies,
   getReportingGoals,
   getReportingManagerOverview,
+  getReportingPeople,
   getReportingProgress,
   getReportingRatings,
   getReportingScorecard,
@@ -426,7 +427,7 @@ describe("reporting-service", () => {
         snapshotDepartment: "Operations",
         snapshotManagerEmployeeId: "mgr_1",
         snapshotManagerName: "Morgan Manager",
-        managerDueAt: new Date("2026-03-15T00:00:00.000Z"),
+        managerDueAt: new Date("2026-04-15T00:00:00.000Z"),
       }),
       buildPacketRecord({
         id: "packet_3",
@@ -469,6 +470,42 @@ describe("reporting-service", () => {
     expect(result.rows[0]?.reports[0]).toMatchObject({
       employeeId: "emp_1",
       managerStatus: ReviewSubmissionStatus.NOT_STARTED,
+      links: {
+        packet: null,
+      },
+    });
+  });
+
+  it("does not expose direct packet links in HR people reporting rows", async () => {
+    const db = createReportingDbMock();
+    db.reviewPacket.findMany.mockResolvedValue([
+      buildPacketRecord({
+        id: "packet_1",
+        subjectEmployeeId: "emp_1",
+        selfStatus: ReviewSubmissionStatus.SUBMITTED,
+        managerStatus: ReviewSubmissionStatus.IN_PROGRESS,
+      }),
+    ]);
+    db.calibrationPlacement.findMany.mockResolvedValue([]);
+    db.improvementPlan.findMany.mockResolvedValue([]);
+
+    const result = await getReportingPeople(
+      {
+        cycleId: "cycle_seed_1",
+        ratingSource: "FINAL",
+        page: 1,
+        pageSize: 20,
+        smallNThreshold: 1,
+      },
+      hrAdminContext,
+      db as never,
+    );
+
+    expect(result.rows[0]).toMatchObject({
+      employeeId: "emp_1",
+      links: {
+        packet: null,
+      },
     });
   });
 

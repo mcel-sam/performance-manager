@@ -1,0 +1,166 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Calibration" [ref=e18] [cursor=pointer]:
+            - /url: /performance/calibration
+            - img [ref=e20]
+            - generic [ref=e27]: Calibration
+            - tooltip "Calibration"
+          - link "Help" [ref=e28] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e30]
+            - generic [ref=e34]: Help
+            - tooltip "Help"
+    - main [ref=e35]:
+      - generic [ref=e37]:
+        - button "Current organization" [disabled] [ref=e38]:
+          - generic [ref=e39]: O
+          - generic [ref=e40]: MCEL Sandbox Organization
+          - img [ref=e41]
+        - button "Lisa Letto Lisa Letto Super Admin" [ref=e44]:
+          - generic "Lisa Letto" [ref=e45]: LL
+          - generic [ref=e46]:
+            - generic [ref=e47]: Lisa Letto
+            - generic [ref=e48]: Super Admin
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - generic [ref=e51]:
+            - heading "New Calibration Session" [level=1] [ref=e52]
+            - paragraph [ref=e53]: Configure cycle, cohort members, axes, and session participants.
+          - link "Back to sessions" [ref=e55] [cursor=pointer]:
+            - /url: /admin/performance/calibration
+            - button "Back to sessions" [ref=e56]
+        - generic [ref=e58]:
+          - heading "Session configuration" [level=2] [ref=e59]
+          - paragraph [ref=e60]: Set participants, role group, and axis definitions before creating the session.
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - heading "Create Calibration Session" [level=3] [ref=e63]
+            - paragraph [ref=e64]: Choose a cycle, define the cohort, configure axis labels, and assign participants.
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - text: Session Name
+                - textbox "Session Name" [ref=e69]: Q2 2026 Calibration Session
+              - generic [ref=e70]:
+                - text: Role Group
+                - textbox "Role Group" [ref=e71]: Core Engineering
+              - generic [ref=e72]:
+                - text: Cycle
+                - combobox "Cycle" [ref=e73]:
+                  - option "Select cycle"
+                  - option "Sandbox 2026 Calibration Ready (Locked)" [selected]
+                  - option "Sandbox 2025 Released Packet (Released)"
+              - generic [ref=e74]:
+                - text: Description (optional)
+                - textbox "Description (optional)" [ref=e75]:
+                  - /placeholder: Context for this calibration session
+              - generic [ref=e76]:
+                - checkbox "Restricted leadership session Restricted calibration sessions are reserved for Super Admin talent-governance work." [ref=e77]
+                - generic [ref=e78]:
+                  - generic [ref=e79]: Restricted leadership session
+                  - generic [ref=e80]: Restricted calibration sessions are reserved for Super Admin talent-governance work.
+            - generic [ref=e81]:
+              - heading "Cohort Members" [level=3] [ref=e82]
+              - paragraph [ref=e83]: Select employees to include in this calibration 9-box.
+              - generic [ref=e84]:
+                - generic [ref=e85]:
+                  - checkbox "Elliot Mah" [ref=e86]
+                  - generic [ref=e87]: Elliot Mah
+                - generic [ref=e88]:
+                  - checkbox "Freddie Martinez" [ref=e89]
+                  - generic [ref=e90]: Freddie Martinez
+                - generic [ref=e91]:
+                  - checkbox "Lisa Desjarlais" [ref=e92]
+                  - generic [ref=e93]: Lisa Desjarlais
+                - generic [ref=e94]:
+                  - checkbox "Lisa Letto" [ref=e95]
+                  - generic [ref=e96]: Lisa Letto
+                - generic [ref=e97]:
+                  - checkbox "Paige Verboon" [ref=e98]
+                  - generic [ref=e99]: Paige Verboon
+                - generic [ref=e100]:
+                  - checkbox "Sameer Pasha" [ref=e101]
+                  - generic [ref=e102]: Sameer Pasha
+                - generic [ref=e103]:
+                  - checkbox "Ted Tederoff" [ref=e104]
+                  - generic [ref=e105]: Ted Tederoff
+                - generic [ref=e106]:
+                  - checkbox "Tina Dorn" [ref=e107]
+                  - generic [ref=e108]: Tina Dorn
+            - generic [ref=e109]:
+              - heading "Participants" [level=3] [ref=e110]
+              - paragraph [ref=e111]: Select HR, managers, and super admins who can participate.
+              - generic [ref=e112]:
+                - generic [ref=e113]:
+                  - checkbox "Elliot Mah (Manager)" [ref=e114]
+                  - generic [ref=e115]: Elliot Mah (Manager)
+                - generic [ref=e116]:
+                  - checkbox "Freddie Martinez (Super Admin)" [ref=e117]
+                  - generic [ref=e118]: Freddie Martinez (Super Admin)
+                - generic [ref=e119]:
+                  - checkbox "Lisa Desjarlais (HR Admin)" [ref=e120]
+                  - generic [ref=e121]: Lisa Desjarlais (HR Admin)
+                - generic [ref=e122]:
+                  - checkbox "Lisa Letto (Super Admin)" [checked] [ref=e123]
+                  - generic [ref=e124]: Lisa Letto (Super Admin)
+                - generic [ref=e125]:
+                  - checkbox "Paige Verboon (HR Admin)" [ref=e126]
+                  - generic [ref=e127]: Paige Verboon (HR Admin)
+                - generic [ref=e128]:
+                  - checkbox "Sameer Pasha (Super Admin)" [ref=e129]
+                  - generic [ref=e130]: Sameer Pasha (Super Admin)
+                - generic [ref=e131]:
+                  - checkbox "Tina Dorn (HR Admin)" [ref=e132]
+                  - generic [ref=e133]: Tina Dorn (HR Admin)
+            - generic [ref=e134]:
+              - heading "Performance Axis" [level=3] [ref=e135]
+              - generic [ref=e136]:
+                - generic [ref=e137]:
+                  - paragraph [ref=e138]: LOW
+                  - generic [ref=e139]:
+                    - textbox "Performance Axis LOW label" [ref=e140]: Needs support
+                    - textbox "Performance Axis LOW description" [ref=e141]: Consistently below this cycle's expectations.
+                - generic [ref=e142]:
+                  - paragraph [ref=e143]: MEDIUM
+                  - generic [ref=e144]:
+                    - textbox "Performance Axis MEDIUM label" [ref=e145]: Meets expectations
+                    - textbox "Performance Axis MEDIUM description" [ref=e146]: Delivers solid results at the expected level.
+                - generic [ref=e147]:
+                  - paragraph [ref=e148]: HIGH
+                  - generic [ref=e149]:
+                    - textbox "Performance Axis HIGH label" [ref=e150]: Exceeds expectations
+                    - textbox "Performance Axis HIGH description" [ref=e151]: Delivers standout results beyond expected scope.
+            - generic [ref=e152]:
+              - heading "Potential Axis" [level=3] [ref=e153]
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - paragraph [ref=e156]: LOW
+                  - generic [ref=e157]:
+                    - textbox "Potential Axis LOW label" [ref=e158]: Current scope
+                    - textbox "Potential Axis LOW description" [ref=e159]: Effective in the current scope with limited near-term expansion.
+                - generic [ref=e160]:
+                  - paragraph [ref=e161]: MEDIUM
+                  - generic [ref=e162]:
+                    - textbox "Potential Axis MEDIUM label" [ref=e163]: Growth ready
+                    - textbox "Potential Axis MEDIUM description" [ref=e164]: Can take broader scope with coaching and support.
+                - generic [ref=e165]:
+                  - paragraph [ref=e166]: HIGH
+                  - generic [ref=e167]:
+                    - textbox "Potential Axis HIGH label" [ref=e168]: Accelerated growth
+                    - textbox "Potential Axis HIGH description" [ref=e169]: Shows strong readiness for larger and more complex scope.
+            - button "Create Session" [ref=e171]
+  - button "Open Next.js Dev Tools" [ref=e177] [cursor=pointer]:
+    - img [ref=e178]
+  - alert [ref=e182]

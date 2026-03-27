@@ -8,9 +8,12 @@ import type { SupabaseSessionIdentity } from "@/server/auth/supabase-server";
 
 interface AuthUserRecord {
   id: string;
-  orgId: string;
-  role: UserRole;
   authIdentityId: string | null;
+  memberships: Array<{
+    orgId: string;
+    role: UserRole;
+    isActive: boolean;
+  }>;
 }
 
 interface AuthUserMappingDb {
@@ -19,9 +22,15 @@ interface AuthUserMappingDb {
       where: { authIdentityId: string };
       select: {
         id: true;
-        orgId: true;
-        role: true;
         authIdentityId: true;
+        memberships: {
+          where: { isActive: true };
+          select: {
+            orgId: true;
+            role: true;
+            isActive: true;
+          };
+        };
       };
     }) => Promise<AuthUserRecord | null>;
     findMany: (args: {
@@ -33,9 +42,15 @@ interface AuthUserMappingDb {
       };
       select: {
         id: true;
-        orgId: true;
-        role: true;
         authIdentityId: true;
+        memberships: {
+          where: { isActive: true };
+          select: {
+            orgId: true;
+            role: true;
+            isActive: true;
+          };
+        };
       };
     }) => Promise<AuthUserRecord[]>;
     update: (args: {
@@ -43,19 +58,45 @@ interface AuthUserMappingDb {
       data: { authIdentityId: string };
       select: {
         id: true;
-        orgId: true;
-        role: true;
         authIdentityId: true;
+        memberships: {
+          where: { isActive: true };
+          select: {
+            orgId: true;
+            role: true;
+            isActive: true;
+          };
+        };
       };
     }) => Promise<AuthUserRecord>;
   };
 }
 
-function toRequestContext(user: Pick<AuthUserRecord, "id" | "orgId" | "role">): RequestContext {
+function toRequestContext(user: AuthUserRecord): RequestContext {
+  const activeMemberships = user.memberships.filter((membership) => membership.isActive);
+
+  if (activeMemberships.length === 0) {
+    throw new AppError(
+      "UNAUTHORIZED",
+      "Authenticated account is not assigned to an active Trellis organization membership.",
+      401,
+    );
+  }
+
+  if (activeMemberships.length > 1) {
+    throw new AppError(
+      "UNAUTHORIZED",
+      "Authenticated account is assigned to multiple active organization memberships.",
+      401,
+    );
+  }
+
+  const membership = activeMemberships[0];
+
   return {
     userId: user.id,
-    orgId: user.orgId,
-    role: user.role,
+    orgId: membership.orgId,
+    role: membership.role,
   };
 }
 
@@ -67,9 +108,15 @@ export async function resolveRequestContextFromAuthIdentity(
     where: { authIdentityId: identity.authUserId },
     select: {
       id: true,
-      orgId: true,
-      role: true,
       authIdentityId: true,
+      memberships: {
+        where: { isActive: true },
+        select: {
+          orgId: true,
+          role: true,
+          isActive: true,
+        },
+      },
     },
   });
 
@@ -86,9 +133,15 @@ export async function resolveRequestContextFromAuthIdentity(
     },
     select: {
       id: true,
-      orgId: true,
-      role: true,
       authIdentityId: true,
+      memberships: {
+        where: { isActive: true },
+        select: {
+          orgId: true,
+          role: true,
+          isActive: true,
+        },
+      },
     },
   });
 
@@ -122,14 +175,20 @@ export async function resolveRequestContextFromAuthIdentity(
     appUser.authIdentityId == null
       ? await db.user.update({
           where: { id: appUser.id },
-          data: { authIdentityId: identity.authUserId },
-          select: {
-            id: true,
-            orgId: true,
-            role: true,
-            authIdentityId: true,
+        data: { authIdentityId: identity.authUserId },
+        select: {
+          id: true,
+          authIdentityId: true,
+          memberships: {
+            where: { isActive: true },
+            select: {
+              orgId: true,
+              role: true,
+              isActive: true,
+            },
           },
-        })
+        },
+      })
       : appUser;
 
   return toRequestContext(resolvedUser);

@@ -1,12 +1,17 @@
 import Link from "next/link";
+import { ReviewRelationship } from "@prisma/client";
 
 import WriteReviewForm from "@/components/reviews/write-review-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { getBackLabelForHref, resolveReturnTo } from "@/lib/navigation/return-to";
+import { withReturnTo } from "@/lib/navigation/return-to";
 import { getReviewRelationshipLabel } from "@/lib/reviews/review-copy";
 import { getDevRequestContext } from "@/server/auth/request-context";
-import { getWriteReviewData } from "@/server/reviews/participant-review-service";
+import {
+  getWriteReviewData,
+  listAssignedReviewTasks,
+} from "@/server/reviews/participant-review-service";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +33,21 @@ export default async function WriteReviewPage({
   const data = await getWriteReviewData(cycleId, submissionId, context);
   const returnHref = resolveReturnTo(getSingleValue(rawSearchParams.returnTo), "/performance/reviews");
   const returnLabel = getBackLabelForHref(returnHref, "Back");
+  const managerReviewAssignments =
+    data.submission.relationship === ReviewRelationship.MANAGER
+      ? (await listAssignedReviewTasks(context))
+          .filter(
+            (task) =>
+              task.cycleId === cycleId && task.relationship === ReviewRelationship.MANAGER,
+          )
+          .map((task) => ({
+            id: task.id,
+            subjectName: task.subjectName,
+            status: task.status,
+            href: withReturnTo(`/performance/reviews/${cycleId}/write/${task.id}`, returnHref),
+            isCurrent: task.id === submissionId,
+          }))
+      : [];
 
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-6 text-slate-900">
@@ -53,10 +73,10 @@ export default async function WriteReviewPage({
       <WriteReviewForm
         cycleId={cycleId}
         submissionId={submissionId}
-        subjectEmployeeId={data.submission.subjectEmployeeId}
         auth={{ userId: context.userId, orgId: context.orgId }}
         initialStatus={data.submission.status}
         questions={data.questions}
+        managerReviewAssignments={managerReviewAssignments}
         submissionContext={{
           cycleName: data.submission.cycleName,
           subjectName: data.submission.subjectName,
@@ -65,8 +85,6 @@ export default async function WriteReviewPage({
           reviewerName: data.submission.reviewerName,
           relationship: getReviewRelationshipLabel(data.submission.relationship, "full"),
         }}
-        goalContext={data.goalContext}
-        trackContext={data.trackContext}
       />
     </div>
   );

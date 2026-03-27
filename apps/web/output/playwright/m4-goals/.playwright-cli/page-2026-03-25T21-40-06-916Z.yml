@@ -1,0 +1,169 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e7]:
+      - img [ref=e8]
+    - generic [ref=e12]:
+      - button "Open issues overlay" [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]: "0"
+          - generic [ref=e16]: "1"
+        - generic [ref=e17]: Issue
+      - button "Collapse issues badge" [ref=e18]:
+        - img [ref=e19]
+  - alert [ref=e21]
+  - generic [ref=e23]:
+    - complementary [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e28]: PM
+          - button "Expand navigation" [ref=e29]:
+            - img [ref=e30]
+        - navigation [ref=e32]:
+          - link "Home" [ref=e33] [cursor=pointer]:
+            - /url: /
+            - img [ref=e35]
+            - generic [ref=e37]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e38] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e40]
+            - generic [ref=e47]: Goals
+            - tooltip "Goals"
+          - link "Reviews" [ref=e48] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e50]
+            - generic [ref=e53]: Reviews
+            - tooltip "Reviews"
+          - link "Improvement Plans" [ref=e54] [cursor=pointer]:
+            - /url: /performance/improvement-plans
+            - img [ref=e56]
+            - generic [ref=e59]: Improvement Plans
+            - tooltip "Improvement Plans"
+          - link "Help" [ref=e60] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e62]
+            - generic [ref=e66]: Help
+            - tooltip "Help"
+    - main [ref=e67]:
+      - generic [ref=e69]:
+        - button "Current organization" [disabled] [ref=e70]:
+          - generic [ref=e71]: O
+          - generic [ref=e72]: MCEL Sandbox Organization
+          - img [ref=e73]
+        - button "Ted Tederoff Ted Tederoff Employee" [ref=e76]:
+          - generic "Ted Tederoff" [ref=e77]: TT
+          - generic [ref=e78]:
+            - generic [ref=e79]: Ted Tederoff
+            - generic [ref=e80]: Employee
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - generic [ref=e84]:
+            - paragraph [ref=e85]: Goals
+            - heading "Goals workspace" [level=1] [ref=e86]
+            - paragraph [ref=e87]: Draft goals, route them through manager review, and keep approved goals current during the active cycle window.
+            - generic [ref=e88]:
+              - generic [ref=e89]: Sandbox 2026 Goals
+              - generic [ref=e90]: •
+              - generic [ref=e91]: 31/12/2025 to 30/12/2026
+              - generic [ref=e92]: •
+              - generic [ref=e93]: active
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - generic [ref=e97]: Goal cycle
+              - combobox "Goal cycle" [ref=e98]:
+                - option "Sandbox 2026 Goals" [selected]
+            - button "Create goal" [ref=e99]
+        - generic [ref=e100]:
+          - generic [ref=e101]:
+            - heading "On track" [level=3] [ref=e103]
+            - generic [ref=e104]:
+              - generic [ref=e107]: On track
+              - paragraph [ref=e108]: "2"
+          - generic [ref=e109]:
+            - heading "Progressing" [level=3] [ref=e111]
+            - generic [ref=e112]:
+              - generic [ref=e115]: Progressing
+              - paragraph [ref=e116]: "2"
+          - generic [ref=e117]:
+            - heading "Off track" [level=3] [ref=e119]
+            - generic [ref=e120]:
+              - generic [ref=e123]: Off track
+              - paragraph [ref=e124]: "0"
+          - generic [ref=e125]:
+            - heading "No update" [level=3] [ref=e127]
+            - generic [ref=e128]:
+              - generic [ref=e131]: No update
+              - paragraph [ref=e132]: "0"
+          - generic [ref=e133]:
+            - heading "Complete" [level=3] [ref=e135]
+            - generic [ref=e136]:
+              - generic [ref=e139]: Complete
+              - paragraph [ref=e140]: "0"
+        - generic [ref=e141]:
+          - paragraph [ref=e142]: Focus the list by owner, status, or visibility while staying inside the selected cycle.
+          - generic [ref=e143]:
+            - generic [ref=e144]:
+              - text: Owner
+              - combobox "Owner" [ref=e145]:
+                - option "All visible owners" [selected]
+                - option "Ted Tederoff"
+            - generic [ref=e146]:
+              - text: Status
+              - combobox "Status" [ref=e147]:
+                - option "All statuses" [selected]
+                - option "Not started"
+                - option "On track"
+                - option "At risk"
+                - option "Off track"
+                - option "Complete"
+                - option "Canceled"
+            - generic [ref=e148]:
+              - text: Visibility
+              - combobox "Visibility" [ref=e149]:
+                - option "All visibility" [selected]
+                - option "Private"
+                - option "Team"
+                - option "Org"
+            - button "Clear filters" [ref=e151]
+        - generic [ref=e152]:
+          - generic [ref=e153]:
+            - heading "Goals in Sandbox 2026 Goals" [level=3] [ref=e154]
+            - paragraph [ref=e155]: Click a row to open the context drawer, then use the edit flow or timeline updates without leaving the list.
+          - table [ref=e158]:
+            - rowgroup [ref=e159]:
+              - row "Objective Owner Status Progress Visibility Actions" [ref=e160]:
+                - columnheader "Objective" [ref=e161]
+                - columnheader "Owner" [ref=e162]
+                - columnheader "Status" [ref=e163]
+                - columnheader "Progress" [ref=e164]
+                - columnheader "Visibility" [ref=e165]
+                - columnheader "Actions" [ref=e166]
+            - rowgroup [ref=e167]:
+              - row "Strengthen stakeholder communication cadence Development goal · Approved Ted Tederoff On track 35% complete TEAM Context" [ref=e168]:
+                - cell "Strengthen stakeholder communication cadence Development goal · Approved" [ref=e169]:
+                  - button "Strengthen stakeholder communication cadence Development goal · Approved" [ref=e170]:
+                    - paragraph [ref=e171]: Strengthen stakeholder communication cadence
+                    - paragraph [ref=e172]: Development goal · Approved
+                - cell "Ted Tederoff" [ref=e173]
+                - cell "On track" [ref=e174]:
+                  - generic [ref=e177]: On track
+                - cell "35% complete" [ref=e178]:
+                  - paragraph [ref=e182]: 35% complete
+                - cell "TEAM" [ref=e183]:
+                  - generic [ref=e184]: TEAM
+                - cell "Context" [ref=e185]:
+                  - button "Context" [ref=e187]
+              - row "Improve application incident response time Performance goal · Approved Ted Tederoff On track 55% complete TEAM Context" [ref=e188]:
+                - cell "Improve application incident response time Performance goal · Approved" [ref=e189]:
+                  - button "Improve application incident response time Performance goal · Approved" [ref=e190]:
+                    - paragraph [ref=e191]: Improve application incident response time
+                    - paragraph [ref=e192]: Performance goal · Approved
+                - cell "Ted Tederoff" [ref=e193]
+                - cell "On track" [ref=e194]:
+                  - generic [ref=e197]: On track
+                - cell "55% complete" [ref=e198]:
+                  - paragraph [ref=e202]: 55% complete
+                - cell "TEAM" [ref=e203]:
+                  - generic [ref=e204]: TEAM
+                - cell "Context" [ref=e205]:
+                  - button "Context" [ref=e207]

@@ -12,7 +12,7 @@ enum UserRole {
   EMPLOYEE
   MANAGER
   HR_ADMIN
-  CALIBRATOR
+  SUPER_ADMIN
 }
 
 enum CycleStatus {
@@ -119,6 +119,19 @@ enum GoalStatus {
   CANCELED
 }
 
+enum GoalType {
+  PERFORMANCE
+  DEVELOPMENT
+}
+
+enum GoalWorkflowStatus {
+  DRAFT
+  SUBMITTED
+  CHANGES_REQUESTED
+  APPROVED
+  OVERRIDDEN
+}
+
 enum GoalVisibility {
   ORG
   TEAM
@@ -156,6 +169,20 @@ enum ImprovementPlanOutcome {
   UNSUCCESSFUL
 }
 
+enum ImprovementPlanTrigger {
+  REVIEW
+  CALIBRATION
+  REVIEW_AND_CALIBRATION
+}
+
+enum ImprovementPlanCheckInType {
+  NOTE
+  CHECKPOINT_30
+  CHECKPOINT_60
+  CHECKPOINT_90
+  STATUS_CHANGE
+}
+
 enum PositionStatus {
   ACTIVE
   ARCHIVED
@@ -190,6 +217,7 @@ model Org {
   createdAt                        DateTime                          @default(now())
   updatedAt                        DateTime                          @updatedAt
   users                            User[]
+  memberships                      OrgMembership[]
   employees                        Employee[]
   reviewTemplates                  ReviewTemplate[]
   reviewTemplateQuestions          ReviewTemplateQuestion[]
@@ -239,6 +267,7 @@ model User {
   authIdentityId            String?                         @unique
   role                      UserRole                        @default(EMPLOYEE)
   employee                  Employee?
+  memberships               OrgMembership[]
   createdAt                 DateTime                        @default(now())
   updatedAt                 DateTime                        @updatedAt
   org                       Org                             @relation(fields: [orgId], references: [id], onDelete: Restrict)
@@ -250,6 +279,23 @@ model User {
 
   @@unique([orgId, email])
   @@index([orgId])
+}
+
+model OrgMembership {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String
+  role      UserRole @default(EMPLOYEE)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+  @@index([orgId, role])
+  @@index([orgId, isActive])
+  @@index([userId])
 }
 
 model Employee {
@@ -356,6 +402,7 @@ model ReviewCycle {
   packets                      ReviewPacket[]
   submissions                  ReviewSubmission[]
   calibrationSessions          CalibrationSession[]
+  improvementPlans             ImprovementPlan[]
   successionCandidateSnapshots SuccessionCandidateSnapshot[]
   scorecardMetrics             ReviewCycleScorecardMetric[]
 
@@ -545,10 +592,15 @@ model Goal {
   orgId           String
   ownerEmployeeId String
   cycleId         String
+  goalType        GoalType             @default(PERFORMANCE)
   title           String
   description     String?
   status          GoalStatus           @default(NOT_STARTED)
   progressPercent Float                @default(0)
+  workflowStatus  GoalWorkflowStatus   @default(DRAFT)
+  workflowNote    String?
+  submittedAt     DateTime?
+  approvedAt      DateTime?
   visibility      GoalVisibility       @default(TEAM)
   parentGoalId    String?
   createdAt       DateTime             @default(now())
@@ -569,6 +621,7 @@ model Goal {
   @@index([parentGoalId])
   @@index([orgId, cycleId, ownerEmployeeId])
   @@index([orgId, status])
+  @@index([orgId, workflowStatus])
 }
 
 model KeyResult {
@@ -946,6 +999,7 @@ model CalibrationSession {
   name                  String
   roleGroup             String?
   description           String?
+  isRestricted          Boolean                         @default(false)
   performanceAxisConfig Json?
   potentialAxisConfig   Json?
   isFinalized           Boolean                         @default(false)
@@ -956,11 +1010,13 @@ model CalibrationSession {
   cycle                 ReviewCycle                     @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   placements            CalibrationPlacement[]
   participants          CalibrationSessionParticipant[]
+  improvementPlans      ImprovementPlan[]
   snapshot              CalibrationSnapshot?
 
   @@index([orgId])
   @@index([cycleId])
   @@index([orgId, isFinalized])
+  @@index([orgId, isRestricted])
 }
 
 model CalibrationSessionParticipant {
@@ -1019,6 +1075,9 @@ model ImprovementPlan {
   managerEmployeeId String
   hrOwnerEmployeeId String?
   createdByUserId   String
+  triggerSource     ImprovementPlanTrigger   @default(REVIEW)
+  reviewCycleId     String?
+  calibrationSessionId String?
   title             String
   expectations      String
   startDate         DateTime
@@ -1032,6 +1091,8 @@ model ImprovementPlan {
   managerEmployee   Employee                 @relation("ImprovementPlanManagerEmployee", fields: [managerEmployeeId], references: [id], onDelete: Restrict)
   hrOwnerEmployee   Employee?                @relation("ImprovementPlanHrOwnerEmployee", fields: [hrOwnerEmployeeId], references: [id], onDelete: SetNull)
   createdByUser     User                     @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+  reviewCycle       ReviewCycle?             @relation(fields: [reviewCycleId], references: [id], onDelete: SetNull)
+  calibrationSession CalibrationSession?     @relation(fields: [calibrationSessionId], references: [id], onDelete: SetNull)
   goals             ImprovementPlanGoal[]
   checkIns          ImprovementPlanCheckIn[]
 
@@ -1040,6 +1101,8 @@ model ImprovementPlan {
   @@index([subjectEmployeeId])
   @@index([managerEmployeeId])
   @@index([hrOwnerEmployeeId])
+  @@index([reviewCycleId])
+  @@index([calibrationSessionId])
 }
 
 model ImprovementPlanGoal {
@@ -1064,6 +1127,7 @@ model ImprovementPlanCheckIn {
   planId       String
   authorUserId String
   content      String
+  checkInType  ImprovementPlanCheckInType @default(NOTE)
   status       ImprovementPlanStatus?
   outcome      ImprovementPlanOutcome?
   checkInAt    DateTime                @default(now())

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { formatUserRoleLabel } from "@/lib/users/role-labels";
 import type {
   ManagerCandidate,
   UserFormRecord,
@@ -123,7 +124,7 @@ export default function UserManagementForm({
             >
               <option value={UserRole.EMPLOYEE}>Employee</option>
               <option value={UserRole.MANAGER}>Manager</option>
-              <option value={UserRole.CALIBRATOR}>Calibrator</option>
+              <option value={UserRole.SUPER_ADMIN}>Super Admin</option>
               <option value={UserRole.HR_ADMIN}>HR Admin</option>
             </Select>
           </label>
@@ -137,7 +138,7 @@ export default function UserManagementForm({
               <option value="">No manager</option>
               {managerOptions.map((manager) => (
                 <option key={manager.employeeId} value={manager.employeeId}>
-                  {manager.name} ({manager.role})
+                  {manager.name} ({formatUserRoleLabel(manager.role)})
                 </option>
               ))}
             </Select>

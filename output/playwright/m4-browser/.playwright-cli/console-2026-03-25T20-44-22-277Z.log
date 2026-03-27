@@ -1,0 +1,20 @@
+[    1540ms] TypeError: Cannot convert undefined or null to object
+    at getServerError (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_b3fb3b5f._.js:2060:37)
+    at hydrate/< (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js:3610:27)
+    at setTimeout handler*hydrate (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js:3588:27)
+    at async*pageBootstrap (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js:3860:26)
+    at  (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js:4009:45)
+    at promise callback* (http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js:3995:4)
+    at instantiateModule/< (http://127.0.0.1:3000/_next/static/chunks/turbopack-pages__app_0fce199e._.js:879:26)
+    at runModuleExecutionHooks (http://127.0.0.1:3000/_next/static/chunks/turbopack-pages__app_0fce199e._.js:904:26)
+    at instantiateModule (http://127.0.0.1:3000/_next/static/chunks/turbopack-pages__app_0fce199e._.js:877:32)
+    at getOrInstantiateRuntimeModule (http://127.0.0.1:3000/_next/static/chunks/turbopack-pages__app_0fce199e._.js:808:12)
+    at registerChunk (http://127.0.0.1:3000/_next/static/chunks/turbopack-pages__app_0fce199e._.js:1626:50)
+    at async*registerChunk (http://127.0.0.1:3000/_next/static/chunks/turbopack-pages__app_0fce199e._.js:1564:20)
+    at  (http://127.0.0.1:3000/_next/static/chunks/turbopack-pages__app_0fce199e._.js:1853:18)
+    at  (http://127.0.0.1:3000/_next/static/chunks/turbopack-pages__app_0fce199e._.js:1857:3)
+[   61376ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js" line: 2267}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js:2267
+[   62381ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js" line: 2267}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js:2267
+[   63387ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js" line: 2267}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js:2267
+[   64391ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js" line: 2267}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js:2267
+[   65427ms] [ERROR] [JavaScript Error: "Firefox can’t establish a connection to the server at ws://127.0.0.1:3000/_next/webpack-hmr." {file: "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js" line: 2267}] @ http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_client_5a8a528e._.js:2267

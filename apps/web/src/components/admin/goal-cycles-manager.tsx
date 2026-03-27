@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { StatusChip } from "@/components/ui/status-chip";
 import {
   Table,
   TableBody,
@@ -182,9 +181,7 @@ export default function GoalCyclesManager({ auth, cycles }: GoalCyclesManagerPro
       <Card>
         <CardHeader>
           <CardTitle>Create goal cycle</CardTitle>
-          <CardDescription>
-            Stand up annual or quarterly goal windows before the goals workspace goes live.
-          </CardDescription>
+          <CardDescription>Set the cadence, dates, and starting status for the next planning window.</CardDescription>
         </CardHeader>
         <CardContent>
           <form
@@ -247,15 +244,10 @@ export default function GoalCyclesManager({ auth, cycles }: GoalCyclesManagerPro
       <Card>
         <CardHeader>
           <CardTitle>Manage goal cycles</CardTitle>
-          <CardDescription>
-            Keep dates and state aligned with the operating cadence for the organization.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-0">
           {rows.length === 0 ? (
-            <div className="px-6 py-10 text-sm text-slate-500">
-              No goal cycles yet. Create one above to seed the goals workspace.
-            </div>
+            <div className="px-6 py-10 text-sm text-slate-500">No goal cycles yet.</div>
           ) : (
             <TableWrapper>
               <Table>
@@ -272,14 +264,11 @@ export default function GoalCyclesManager({ auth, cycles }: GoalCyclesManagerPro
                 <TableBody>
                   {rows.map((cycle) => (
                     <TableRow key={cycle.id}>
-                      <TableCell className="min-w-[260px] space-y-2">
+                      <TableCell className="min-w-[260px]">
                         <Input
                           value={cycle.name}
                           onChange={(event) => updateRow(cycle.id, "name", event.target.value)}
                         />
-                        <p className="text-xs text-slate-500">
-                          Created {new Date(cycle.createdAt).toLocaleDateString()}
-                        </p>
                       </TableCell>
                       <TableCell>
                         <Select
@@ -308,7 +297,7 @@ export default function GoalCyclesManager({ auth, cycles }: GoalCyclesManagerPro
                           }
                         />
                       </TableCell>
-                      <TableCell className="space-y-2">
+                      <TableCell>
                         <Select
                           value={cycle.status}
                           onChange={(event) =>
@@ -320,13 +309,9 @@ export default function GoalCyclesManager({ auth, cycles }: GoalCyclesManagerPro
                           <option value={GoalCycleStatus.CLOSED}>Closed</option>
                           <option value={GoalCycleStatus.ARCHIVED}>Archived</option>
                         </Select>
-                        <StatusChip tone={getGoalCycleTone(cycle.status)}>{cycle.status}</StatusChip>
                       </TableCell>
                       <TableCell>
                         <p className="text-lg font-semibold text-slate-900">{cycle.goalCount}</p>
-                        <p className="text-xs text-slate-500">
-                          {cycle.goalCount === 1 ? "goal" : "goals"} attached
-                        </p>
                       </TableCell>
                       <TableCell>
                         <Button
@@ -366,20 +351,6 @@ function toStartOfDayIso(value: string) {
 
 function toEndOfDayIso(value: string) {
   return new Date(`${value}T23:59:59.999Z`).toISOString();
-}
-
-function getGoalCycleTone(status: GoalCycleStatus): "neutral" | "info" | "warning" | "success" {
-  switch (status) {
-    case GoalCycleStatus.ACTIVE:
-      return "info";
-    case GoalCycleStatus.CLOSED:
-      return "warning";
-    case GoalCycleStatus.ARCHIVED:
-      return "success";
-    case GoalCycleStatus.DRAFT:
-    default:
-      return "neutral";
-  }
 }
 
 function toGoalCycleRowDraft(cycle: GoalCycleRow): GoalCycleRowDraft {

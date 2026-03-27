@@ -1,0 +1,71 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e18] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e20]
+            - generic [ref=e27]: Goals
+            - tooltip "Goals"
+          - link "My Team" [ref=e28] [cursor=pointer]:
+            - /url: /performance/team-reviews
+            - img [ref=e30]
+            - generic [ref=e35]: My Team
+            - tooltip "My Team"
+          - link "Reviews" [ref=e36] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e38]
+            - generic [ref=e41]: Reviews
+            - tooltip "Reviews"
+          - link "Improvement Plans" [ref=e42] [cursor=pointer]:
+            - /url: /performance/improvement-plans
+            - img [ref=e44]
+            - generic [ref=e47]: Improvement Plans
+            - tooltip "Improvement Plans"
+          - link "Help" [ref=e48] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e50]
+            - generic [ref=e54]: Help
+            - tooltip "Help"
+    - main [ref=e55]:
+      - generic [ref=e57]:
+        - button "Current organization" [disabled] [ref=e58]:
+          - generic [ref=e59]: O
+          - generic [ref=e60]: MCEL Sandbox Organization
+          - img [ref=e61]
+        - button "Elliot Mah Elliot Mah Manager" [ref=e64]:
+          - generic "Elliot Mah" [ref=e65]: EM
+          - generic [ref=e66]:
+            - generic [ref=e67]: Elliot Mah
+            - generic [ref=e68]: Manager
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - heading "My Team" [level=1] [ref=e72]
+            - paragraph [ref=e73]: Track direct-report review readiness, open the next manager review, and inspect packet context for the active cycle.
+            - generic [ref=e74]: No cycle submissions found yet
+          - generic [ref=e76]:
+            - generic [ref=e79]: Team size 1
+            - link "Open review tasks" [ref=e80] [cursor=pointer]:
+              - /url: /performance/reviews
+              - button "Open review tasks" [ref=e81]
+        - generic [ref=e82]:
+          - generic [ref=e84]: 👥
+          - heading "No team data yet" [level=2] [ref=e85]
+          - paragraph [ref=e86]: My Team populates after HR generates cycle submissions for your direct reports.
+          - link "Open my review tasks" [ref=e88] [cursor=pointer]:
+            - /url: /performance/reviews
+            - button "Open my review tasks" [ref=e89]
+  - button "Open Next.js Dev Tools" [ref=e95] [cursor=pointer]:
+    - img [ref=e96]
+  - alert [ref=e100]

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Montserrat, Roboto } from "next/font/google";
 import { Suspense } from "react";
 
+import { getOrgThemeCssVariables, resolveOrgTheme } from "@/branding";
 import AppShell from "@/components/layout/app-shell";
 import { appEnv, isDatabaseConfigured } from "@/config/env";
 import { getRoleNavigation } from "@/config/navigation";
@@ -10,6 +12,18 @@ import { resolveShellViewer } from "@/server/layout/shell-context-service";
 import { resolveRoleNavOptions } from "@/server/navigation/nav-visibility-service";
 
 import "./globals.css";
+
+const headingFont = Roboto({
+  subsets: ["latin"],
+  variable: "--font-heading-loaded",
+  weight: ["400", "500", "700"],
+});
+
+const bodyFont = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-body-loaded",
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "Performance Manager",
@@ -21,9 +35,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const orgTheme = resolveOrgTheme(null);
+
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body
+        className={`${headingFont.variable} ${bodyFont.variable} antialiased`}
+        data-org-theme={orgTheme.id}
+        style={getOrgThemeCssVariables(orgTheme)}
+      >
         <RootLayoutShell>{children}</RootLayoutShell>
       </body>
     </html>
@@ -32,7 +52,7 @@ export default function RootLayout({
 
 function AppShellSuspenseFallback({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <main className="mx-auto w-full max-w-[1520px] p-5 sm:p-7">{children}</main>
     </div>
   );
@@ -41,12 +61,15 @@ function AppShellSuspenseFallback({ children }: { children: React.ReactNode }) {
 async function RootLayoutShell({ children }: { children: React.ReactNode }) {
   // Build pipelines may run without DATABASE_URL; render shell without user nav in that case.
   if (!isDatabaseConfigured()) {
+    const orgTheme = resolveOrgTheme(null);
+
     return (
       <Suspense fallback={<AppShellSuspenseFallback>{children}</AppShellSuspenseFallback>}>
         <AppShell
           navItems={[]}
           viewer={null}
           demoModeEnabled={appEnv.demoModeEnabled}
+          activeTheme={orgTheme}
         >
           {children}
         </AppShell>
@@ -68,6 +91,7 @@ async function RootLayoutShell({ children }: { children: React.ReactNode }) {
   }
 
   const viewer = context ? await resolveShellViewer(context) : null;
+  const orgTheme = resolveOrgTheme(context?.orgId ?? null);
 
   return (
     <Suspense fallback={<AppShellSuspenseFallback>{children}</AppShellSuspenseFallback>}>
@@ -75,6 +99,7 @@ async function RootLayoutShell({ children }: { children: React.ReactNode }) {
         navItems={navItems}
         viewer={viewer}
         demoModeEnabled={appEnv.demoModeEnabled}
+        activeTheme={orgTheme}
       >
         {children}
       </AppShell>

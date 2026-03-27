@@ -1,5 +1,6 @@
 import { CycleStatus, ReviewRelationship, ReviewSubmissionStatus, UserRole } from "@prisma/client";
 
+import { hasHrAdminAccess, hasManagerAccess } from "@/lib/users/role-capabilities";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 
@@ -80,12 +81,12 @@ interface HomeViewerDb {
     findMany: (args: {
       where: {
         orgId: string;
-        managerId: string;
+        managerId: string | { in: string[] };
         id?: {
           not: string;
         };
       };
-      take: number;
+      take?: number;
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }];
       select: {
         id: true;
@@ -93,6 +94,7 @@ interface HomeViewerDb {
         lastName: true;
         avatarUrl: true;
         title: true;
+        managerId?: true;
       };
     }) => Promise<
       Array<{
@@ -101,6 +103,7 @@ interface HomeViewerDb {
         lastName: string;
         avatarUrl: string | null;
         title: string | null;
+        managerId?: string;
       }>
     >;
   };
@@ -131,12 +134,23 @@ export interface HomeViewerOverview {
     avatarUrl: string | null;
     title: string | null;
   } | null;
-  peopleLabel: string;
-  people: Array<{
+  peers: Array<{
     id: string;
     name: string;
     avatarUrl: string | null;
     title: string | null;
+  }>;
+  directReports: Array<{
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    title: string | null;
+    childReports: Array<{
+      id: string;
+      name: string;
+      avatarUrl: string | null;
+      title: string | null;
+    }>;
   }>;
 }
 
@@ -155,14 +169,6 @@ export async function getManagerHomeSnapshot(
   context: RequestContext,
   db: HomeDashboardDb = prisma as unknown as HomeDashboardDb,
 ): Promise<ManagerHomeSnapshot> {
-  if (context.role !== UserRole.MANAGER) {
-    return {
-      directReportCount: 0,
-      awaitingManagerReviewCount: 0,
-      selfReviewNotStartedCount: 0,
-    };
-  }
-
   const managerEmployee = await db.employee.findFirst({
     where: {
       orgId: context.orgId,
@@ -227,7 +233,7 @@ export async function getHrHomeSnapshot(
   context: RequestContext,
   db: HomeDashboardDb = prisma as unknown as HomeDashboardDb,
 ): Promise<HrHomeSnapshot> {
-  if (context.role !== UserRole.HR_ADMIN) {
+  if (!hasHrAdminAccess(context.role)) {
     return {
       activeCycleCount: 0,
       draftCycleCount: 0,
@@ -319,28 +325,15 @@ export async function getHomeViewerOverview(
     return null;
   }
 
-  const peopleLabel =
-    context.role === UserRole.MANAGER || context.role === UserRole.HR_ADMIN ? "Team" : "My team";
-
-  const peopleSourceManagerId =
-    context.role === UserRole.MANAGER || context.role === UserRole.HR_ADMIN
-      ? employee.id
-      : employee.managerId;
-
-  const people =
-    peopleSourceManagerId == null
-      ? []
-      : await db.employee.findMany({
+  const [peers, directReports] = await Promise.all([
+    employee.managerId != null
+      ? db.employee.findMany({
           where: {
             orgId: context.orgId,
-            managerId: peopleSourceManagerId,
-            ...(peopleSourceManagerId === employee.managerId
-              ? {
-                  id: {
-                    not: employee.id,
-                  },
-                }
-              : {}),
+            managerId: employee.managerId,
+            id: {
+              not: employee.id,
+            },
           },
           take: 5,
           orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
@@ -351,7 +344,72 @@ export async function getHomeViewerOverview(
             avatarUrl: true,
             title: true,
           },
-        });
+        })
+      : Promise.resolve([]),
+    hasManagerAccess(context.role) || hasHrAdminAccess(context.role)
+      ? db.employee.findMany({
+          where: {
+            orgId: context.orgId,
+            managerId: employee.id,
+          },
+          take: 5,
+          orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            title: true,
+          },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const childReports =
+    directReports.length > 0
+      ? await db.employee.findMany({
+          where: {
+            orgId: context.orgId,
+            managerId: {
+              in: directReports.map((person) => person.id),
+            },
+          },
+          orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            title: true,
+            managerId: true,
+          },
+        })
+      : [];
+
+  const childReportsByManagerId = new Map<
+    string,
+    Array<{
+      id: string;
+      name: string;
+      avatarUrl: string | null;
+      title: string | null;
+    }>
+  >();
+
+  for (const child of childReports) {
+    if (!child.managerId) {
+      continue;
+    }
+
+    const existing = childReportsByManagerId.get(child.managerId) ?? [];
+    existing.push({
+      id: child.id,
+      name: `${child.firstName} ${child.lastName}`.trim(),
+      avatarUrl: child.avatarUrl,
+      title: child.title,
+    });
+    childReportsByManagerId.set(child.managerId, existing);
+  }
 
   return {
     displayName: `${employee.firstName} ${employee.lastName}`.trim(),
@@ -367,12 +425,18 @@ export async function getHomeViewerOverview(
           title: employee.manager.title,
         }
       : null,
-    peopleLabel,
-    people: people.map((person) => ({
+    peers: peers.map((person) => ({
       id: person.id,
       name: `${person.firstName} ${person.lastName}`.trim(),
       avatarUrl: person.avatarUrl,
       title: person.title,
+    })),
+    directReports: directReports.map((person) => ({
+      id: person.id,
+      name: `${person.firstName} ${person.lastName}`.trim(),
+      avatarUrl: person.avatarUrl,
+      title: person.title,
+      childReports: childReportsByManagerId.get(person.id) ?? [],
     })),
   };
 }

@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Drawer } from "@/components/ui/drawer";
 import { EmptyState } from "@/components/ui/empty-state";
 import { HelpHint } from "@/components/ui/help-hint";
@@ -40,6 +41,21 @@ describe("ui foundation primitives", () => {
 
     expect(html).toContain("Section content");
     expect(html).toContain("rounded-[var(--radius-lg)]");
+  });
+
+  it("clips card header and content backgrounds to the card radius", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        Card,
+        null,
+        createElement(CardHeader, null, "Header"),
+        createElement(CardContent, null, "Body"),
+      ),
+    );
+
+    expect(html).toContain("overflow-hidden");
+    expect(html).toContain("Header");
+    expect(html).toContain("Body");
   });
 
   it("renders tabs with the selected tab marked", () => {
@@ -102,13 +118,13 @@ describe("ui foundation primitives", () => {
           label: "Packet visibility",
           defaultOpen: true,
         },
-        "Managers and HR can view in-progress packets.",
+        "Direct managers can view in-progress packets for their reports.",
       ),
     );
 
     expect(html).toContain('aria-expanded="true"');
     expect(html).toContain('aria-hidden="false"');
-    expect(html).toContain("Managers and HR can view in-progress packets.");
+    expect(html).toContain("Direct managers can view in-progress packets for their reports.");
   });
 
   it("does not render modal markup when closed", () => {

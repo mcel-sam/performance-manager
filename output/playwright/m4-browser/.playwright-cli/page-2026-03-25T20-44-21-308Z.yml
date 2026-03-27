@@ -1,0 +1,82 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e18] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e20]
+            - generic [ref=e27]: Goals
+            - tooltip "Goals"
+          - link "Reviews" [ref=e28] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e30]
+            - generic [ref=e33]: Reviews
+            - tooltip "Reviews"
+          - link "Help" [ref=e34] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e36]
+            - generic [ref=e40]: Help
+            - tooltip "Help"
+    - main [ref=e41]:
+      - generic [ref=e43]:
+        - button "Current organization" [disabled] [ref=e44]:
+          - generic [ref=e45]: O
+          - generic [ref=e46]: MCEL Sandbox Organization
+          - img [ref=e47]
+        - button "Ted Tederoff Ted Tederoff Employee" [ref=e50]:
+          - generic "Ted Tederoff" [ref=e51]: TT
+          - generic [ref=e52]:
+            - generic [ref=e53]: Ted Tederoff
+            - generic [ref=e54]: Employee
+      - generic [ref=e55]:
+        - generic [ref=e57]:
+          - heading "Performance Reviews" [level=1] [ref=e58]
+          - paragraph [ref=e59]: Review the submissions assigned to you, filter the queue, and continue the next task that needs attention.
+        - generic [ref=e60]:
+          - paragraph [ref=e61]: Search by subject or cycle, then narrow the queue by status or who you're reviewing.
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - text: Search task
+              - searchbox "Search task" [ref=e64]
+            - generic [ref=e65]:
+              - text: Status
+              - combobox "Status" [ref=e66]:
+                - option "All statuses" [selected]
+                - option "Not started"
+                - option "In progress"
+                - option "Submitted"
+                - option "Returned"
+            - generic [ref=e67]:
+              - text: Who you're reviewing
+              - combobox "Who you're reviewing" [ref=e68]:
+                - option "All review types" [selected]
+                - option "Self"
+                - option "Direct report"
+            - button "Apply filters" [ref=e70]
+        - generic [ref=e72]:
+          - generic [ref=e73]: 0 tasks
+          - generic [ref=e74]: 0 returned
+          - generic [ref=e75]: 0 in progress
+          - generic [ref=e76]: 0 submitted
+        - region "Empty review task state" [ref=e77]:
+          - generic [ref=e79]: 🗂
+          - heading "No assigned review tasks" [level=2] [ref=e80]
+          - paragraph [ref=e81]: Assigned submissions appear after HR generates cycle assignments. Use the help center for next steps and visibility rules.
+          - list [ref=e82]:
+            - listitem [ref=e83]: Ask HR to generate assignments for an active cycle.
+            - listitem [ref=e84]: Review cycle status and visibility expectations in the help center.
+          - link "Review help center" [ref=e86] [cursor=pointer]:
+            - /url: /help
+  - button "Open Next.js Dev Tools" [ref=e92] [cursor=pointer]:
+    - img [ref=e93]
+  - alert [ref=e97]

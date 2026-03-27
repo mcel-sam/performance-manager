@@ -20,7 +20,6 @@ interface ReviewCycleCreateFormProps {
 const steps = [
   "Basics",
   "Review Types",
-  "Reviewer Rules",
   "Visibility & Schedule",
   "Verify",
 ] as const;
@@ -34,44 +33,25 @@ export default function ReviewCycleCreateForm({ auth }: ReviewCycleCreateFormPro
   const [endDate, setEndDate] = useState("2026-12-15");
   const [selfReviewRequired, setSelfReviewRequired] = useState(true);
   const [managerReviewRequired, setManagerReviewRequired] = useState(true);
-  const [peerReviewCount, setPeerReviewCount] = useState("1");
-  const [upwardReviewCount, setUpwardReviewCount] = useState("1");
-  const [peerAssignmentMode, setPeerAssignmentMode] = useState<PeerAssignmentMode>(
-    PeerAssignmentMode.HR_ASSIGNED,
-  );
-  const [upwardReviewsForManagersOnly, setUpwardReviewsForManagersOnly] = useState(true);
   const [visibilityPolicy, setVisibilityPolicy] = useState<CycleVisibilityPolicy>(
     CycleVisibilityPolicy.EMPLOYEE_AFTER_RELEASE,
   );
   const [selfReviewDueDate, setSelfReviewDueDate] = useState("2026-11-15");
   const [managerReviewDueDate, setManagerReviewDueDate] = useState("2026-11-25");
-  const [peerReviewDueDate, setPeerReviewDueDate] = useState("2026-11-20");
-  const [upwardReviewDueDate, setUpwardReviewDueDate] = useState("2026-11-20");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const isFirstStep = stepIndex === 0;
   const isLastStep = stepIndex === steps.length - 1;
-  const peerEnabled = Number(peerReviewCount) > 0;
-  const upwardEnabled = Number(upwardReviewCount) > 0;
 
   const reviewTypeSummary = useMemo(() => {
     const items = [
       selfReviewRequired ? "Self" : null,
       managerReviewRequired ? "Manager" : null,
-      peerEnabled ? `Peer (${peerReviewCount})` : null,
-      upwardEnabled ? `Upward (${upwardReviewCount})` : null,
     ].filter((item): item is string => Boolean(item));
 
     return items.length === 0 ? "None selected" : items.join(", ");
-  }, [
-    managerReviewRequired,
-    peerEnabled,
-    peerReviewCount,
-    selfReviewRequired,
-    upwardEnabled,
-    upwardReviewCount,
-  ]);
+  }, [managerReviewRequired, selfReviewRequired]);
 
   function nextStep() {
     setStepIndex((current) => Math.min(current + 1, steps.length - 1));
@@ -106,16 +86,14 @@ export default function ReviewCycleCreateForm({ auth }: ReviewCycleCreateFormPro
           visibilityPolicy,
           selfReviewRequired,
           managerReviewRequired,
-          peerReviewCount: Number(peerReviewCount),
-          peerAssignmentMode,
-          upwardReviewCount: Number(upwardReviewCount),
-          upwardReviewsForManagersOnly,
+          peerReviewCount: 0,
+          peerAssignmentMode: PeerAssignmentMode.HR_ASSIGNED,
+          upwardReviewCount: 0,
+          upwardReviewsForManagersOnly: true,
           selfReviewDueAt: selfReviewRequired ? toEndOfDayIso(selfReviewDueDate) : undefined,
           managerReviewDueAt: managerReviewRequired
             ? toEndOfDayIso(managerReviewDueDate)
             : undefined,
-          peerReviewDueAt: peerEnabled ? toEndOfDayIso(peerReviewDueDate) : undefined,
-          upwardReviewDueAt: upwardEnabled ? toEndOfDayIso(upwardReviewDueDate) : undefined,
         }),
       });
 
@@ -139,7 +117,7 @@ export default function ReviewCycleCreateForm({ auth }: ReviewCycleCreateFormPro
       <CardHeader>
         <CardTitle>Create Review Cycle</CardTitle>
         <CardDescription>
-          Follow this step-by-step wizard to define assignment rules and due dates.
+          Follow this step-by-step wizard to define the vanilla self and manager review workflow.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -206,60 +184,10 @@ export default function ReviewCycleCreateForm({ auth }: ReviewCycleCreateFormPro
                 />
                 <span className="text-sm text-slate-800">Manager review required</span>
               </label>
-
-              <label className="space-y-1">
-                <span className="text-sm font-medium text-slate-700">Peer reviews per employee</span>
-                <Input
-                  type="number"
-                  min={0}
-                  max={20}
-                  value={peerReviewCount}
-                  onChange={(event) => setPeerReviewCount(event.target.value)}
-                />
-              </label>
-
-              <label className="space-y-1">
-                <span className="text-sm font-medium text-slate-700">Upward reviews per manager</span>
-                <Input
-                  type="number"
-                  min={0}
-                  max={20}
-                  value={upwardReviewCount}
-                  onChange={(event) => setUpwardReviewCount(event.target.value)}
-                />
-              </label>
             </section>
           ) : null}
 
           {stepIndex === 2 ? (
-            <section className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-1">
-                <span className="text-sm font-medium text-slate-700">Peer assignment mode</span>
-                <Select
-                  value={peerAssignmentMode}
-                  onChange={(event) =>
-                    setPeerAssignmentMode(event.target.value as PeerAssignmentMode)
-                  }
-                  disabled={!peerEnabled}
-                >
-                  <option value={PeerAssignmentMode.HR_ASSIGNED}>HR assigned</option>
-                  <option value={PeerAssignmentMode.NOMINATION}>Nomination</option>
-                </Select>
-              </label>
-
-              <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                <input
-                  type="checkbox"
-                  checked={upwardReviewsForManagersOnly}
-                  onChange={(event) => setUpwardReviewsForManagersOnly(event.target.checked)}
-                  disabled={!upwardEnabled}
-                />
-                <span className="text-sm text-slate-800">Upward reviews for managers only</span>
-              </label>
-            </section>
-          ) : null}
-
-          {stepIndex === 3 ? (
             <section className="grid gap-4 md:grid-cols-2">
               <label className="space-y-1 md:col-span-2">
                 <span className="text-sm font-medium text-slate-700">Visibility policy</span>
@@ -295,33 +223,13 @@ export default function ReviewCycleCreateForm({ auth }: ReviewCycleCreateFormPro
                   disabled={!managerReviewRequired}
                 />
               </label>
-
-              <label className="space-y-1">
-                <span className="text-sm font-medium text-slate-700">Peer due date</span>
-                <Input
-                  type="date"
-                  value={peerReviewDueDate}
-                  onChange={(event) => setPeerReviewDueDate(event.target.value)}
-                  disabled={!peerEnabled}
-                />
-              </label>
-
-              <label className="space-y-1">
-                <span className="text-sm font-medium text-slate-700">Upward due date</span>
-                <Input
-                  type="date"
-                  value={upwardReviewDueDate}
-                  onChange={(event) => setUpwardReviewDueDate(event.target.value)}
-                  disabled={!upwardEnabled}
-                />
-              </label>
             </section>
           ) : null}
 
-          {stepIndex === 4 ? (
+          {stepIndex === 3 ? (
             <section className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm text-slate-700">
-                Verify what will be generated before creating the cycle.
+                Verify the vanilla cycle setup before creating the review workflow.
               </p>
               <p className="text-sm text-slate-800">
                 <strong>Name:</strong> {name}
@@ -331,9 +239,6 @@ export default function ReviewCycleCreateForm({ auth }: ReviewCycleCreateFormPro
               </p>
               <p className="text-sm text-slate-800">
                 <strong>Review types:</strong> {reviewTypeSummary}
-              </p>
-              <p className="text-sm text-slate-800">
-                <strong>Peer mode:</strong> {peerAssignmentMode}
               </p>
               <p className="text-sm text-slate-800">
                 <strong>Visibility:</strong> {visibilityPolicy}

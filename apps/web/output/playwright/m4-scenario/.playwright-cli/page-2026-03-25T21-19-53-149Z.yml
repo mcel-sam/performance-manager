@@ -1,0 +1,183 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: PM
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - generic [ref=e17]: Home
+            - tooltip "Home"
+          - link "Goals" [ref=e18] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e20]
+            - generic [ref=e27]: Goals
+            - tooltip "Goals"
+          - link "My Team" [ref=e28] [cursor=pointer]:
+            - /url: /performance/team-reviews
+            - img [ref=e30]
+            - generic [ref=e35]: My Team
+            - tooltip "My Team"
+          - link "Reviews" [ref=e36] [cursor=pointer]:
+            - /url: /performance/reviews
+            - img [ref=e38]
+            - generic [ref=e41]: Reviews
+            - tooltip "Reviews"
+          - link "Improvement Plans" [ref=e42] [cursor=pointer]:
+            - /url: /performance/improvement-plans
+            - img [ref=e44]
+            - generic [ref=e47]: Improvement Plans
+            - tooltip "Improvement Plans"
+          - link "Help" [ref=e48] [cursor=pointer]:
+            - /url: /help
+            - img [ref=e50]
+            - generic [ref=e54]: Help
+            - tooltip "Help"
+    - main [ref=e55]:
+      - generic [ref=e57]:
+        - button "Current organization" [disabled] [ref=e58]:
+          - generic [ref=e59]: O
+          - generic [ref=e60]: MCEL Sandbox Organization
+          - img [ref=e61]
+        - button "Elliot Mah Elliot Mah Manager" [ref=e64]:
+          - generic "Elliot Mah" [ref=e65]: EM
+          - generic [ref=e66]:
+            - generic [ref=e67]: Elliot Mah
+            - generic [ref=e68]: Manager
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - paragraph [ref=e72]: Improvement Plan
+            - heading "Ted Tederoff - Performance Support Plan" [level=1] [ref=e73]
+            - paragraph [ref=e74]: 31/01/2026 - 04/05/2026
+            - generic [ref=e76]:
+              - generic [ref=e77]: Active
+              - generic [ref=e78]: "Subject: Ted Tederoff | Manager: Elliot Mah | HR Owner: Lisa Desjarlais"
+          - link "Back" [ref=e81] [cursor=pointer]:
+            - /url: /performance/improvement-plans
+            - button "Back" [ref=e82]
+        - generic [ref=e83]:
+          - button "Toggle visibility and audit guidance" [ref=e84]:
+            - generic [ref=e85]:
+              - generic [ref=e86]: i
+              - generic [ref=e87]: Visibility and audit rules
+            - generic [ref=e88]:
+              - text: Tips
+              - img [ref=e89]
+          - generic [ref=e91]: Access is limited to the subject employee, the assigned manager owner, and HR oversight. Check-ins and status transitions are recorded in the audit log, and standard 30/60/90-day checkpoints should be captured as the plan progresses.
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]:
+              - generic [ref=e97]:
+                - heading "Plan context" [level=2] [ref=e98]
+                - paragraph [ref=e99]: Keep the PIP grounded in the review or calibration decision that triggered it.
+              - generic [ref=e100]:
+                - generic [ref=e101]:
+                  - generic [ref=e102]: Post-review
+                  - generic [ref=e103]: "Review cycle: Sandbox 2025 Released Packet"
+                - paragraph [ref=e104]: The manager owns day-to-day feedback, HR oversees the plan process, and the employee can participate through plan updates and checkpoint conversations.
+            - generic [ref=e105]:
+              - generic [ref=e108]:
+                - heading "Expectations" [level=2] [ref=e109]
+                - paragraph [ref=e110]: Shared outcomes and coaching focus for this plan period.
+              - generic [ref=e111]:
+                - paragraph [ref=e112]: Improve delivery predictability, issue ownership, and proactive stakeholder communication over the next 90 days.
+                - generic [ref=e113]:
+                  - heading "Goals" [level=3] [ref=e114]
+                  - list [ref=e115]:
+                    - listitem [ref=e116]:
+                      - paragraph [ref=e117]: Improve sprint commitment reliability
+                      - paragraph [ref=e118]: Maintain at least 90% sprint commitment accuracy for the next two monthly checkpoints.
+                    - listitem [ref=e119]:
+                      - paragraph [ref=e120]: Strengthen proactive stakeholder updates
+                      - paragraph [ref=e121]: Send weekly update summaries with decisions, blockers, and owners for enterprise applications work.
+            - generic [ref=e122]:
+              - generic [ref=e125]:
+                - heading "Standard checkpoints" [level=2] [ref=e126]
+                - paragraph [ref=e127]: The active vanilla PIP path tracks the standard 30 / 60 / 90-day cadence explicitly.
+              - generic [ref=e128]:
+                - generic [ref=e129]:
+                  - generic [ref=e130]:
+                    - paragraph [ref=e131]: 30-day checkpoint
+                    - generic [ref=e132]: Recorded
+                  - paragraph [ref=e133]: Target date 02/03/2026
+                  - paragraph [ref=e134]: Completed by Lisa Desjarlais on 03/03/2026.
+                - generic [ref=e135]:
+                  - generic [ref=e136]:
+                    - paragraph [ref=e137]: 60-day checkpoint
+                    - generic [ref=e138]: Pending
+                  - paragraph [ref=e139]: Target date 01/04/2026
+                  - paragraph [ref=e140]: Not recorded yet.
+                - generic [ref=e141]:
+                  - generic [ref=e142]:
+                    - paragraph [ref=e143]: 90-day checkpoint
+                    - generic [ref=e144]: Pending
+                  - paragraph [ref=e145]: Target date 01/05/2026
+                  - paragraph [ref=e146]: Not recorded yet.
+            - generic [ref=e147]:
+              - generic [ref=e148]:
+                - generic [ref=e150]:
+                  - heading "Timeline" [level=2] [ref=e151]
+                  - paragraph [ref=e152]: 2 check-ins recorded for this plan.
+                - tablist "Improvement plan activity tabs" [ref=e153]:
+                  - tab "Timeline" [selected] [ref=e154]
+                  - tab "Audit Log" [ref=e155]
+              - list [ref=e157]:
+                - listitem [ref=e158]:
+                  - generic [ref=e159]:
+                    - paragraph [ref=e160]: Lisa Desjarlais
+                    - paragraph [ref=e161]: 03/03/2026, 09:00:00
+                  - generic [ref=e162]:
+                    - generic [ref=e163]: 30-day checkpoint
+                    - generic [ref=e164]: "Status: Active"
+                  - paragraph [ref=e165]: "30-day checkpoint: response-time tracking is improving, but stakeholder updates still need more consistency and fewer last-minute escalations."
+                - listitem [ref=e166]:
+                  - generic [ref=e167]:
+                    - paragraph [ref=e168]: Elliot Mah
+                    - paragraph [ref=e169]: 05/02/2026, 09:00:00
+                  - generic [ref=e170]:
+                    - generic [ref=e171]: General update
+                    - generic [ref=e172]: "Status: Active"
+                  - paragraph [ref=e173]: Kickoff meeting completed. Ted agreed to weekly planning discipline, visible risk tracking, and proactive updates to business partners.
+          - complementary [ref=e174]:
+            - heading "Plan Actions" [level=2] [ref=e175]
+            - paragraph [ref=e176]: Capture check-ins and progress status transitions.
+            - generic [ref=e178]:
+              - generic [ref=e179]:
+                - generic [ref=e180]:
+                  - heading "Add Check-in" [level=3] [ref=e181]
+                  - paragraph [ref=e182]: Share progress updates, blockers, and next steps.
+                - generic [ref=e183]:
+                  - combobox [ref=e184]:
+                    - option "General update" [selected]
+                    - option "30-day checkpoint"
+                    - option "60-day checkpoint"
+                    - option "90-day checkpoint"
+                  - textbox "Add a timeline update..." [ref=e185]
+                  - button "Add Check-in" [ref=e186]
+              - generic [ref=e187]:
+                - generic [ref=e188]:
+                  - heading "Change Status" [level=3] [ref=e189]
+                  - paragraph [ref=e190]: Move the plan through the structured PIP status workflow.
+                - generic [ref=e191]:
+                  - combobox [ref=e192]:
+                    - option "Select target status" [selected]
+                    - option "Completed"
+                  - textbox "Optional transition note..." [ref=e193]
+                  - button "Update Status" [ref=e194]
+  - generic [ref=e199] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e200]:
+      - img [ref=e201]
+    - generic [ref=e205]:
+      - button "Open issues overlay" [ref=e206]:
+        - generic [ref=e207]:
+          - generic [ref=e208]: "0"
+          - generic [ref=e209]: "1"
+        - generic [ref=e210]: Issue
+      - button "Collapse issues badge" [ref=e211]:
+        - img [ref=e212]
+  - alert [ref=e214]

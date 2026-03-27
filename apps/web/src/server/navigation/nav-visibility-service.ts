@@ -1,10 +1,21 @@
 import { UserRole } from "@prisma/client";
 
+import { canManageImprovementPlans, hasHrAdminAccess, hasManagerAccess } from "@/lib/users/role-capabilities";
 import type { RoleNavOptions } from "@/config/navigation";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 
 interface NavVisibilityDb {
+  employee: {
+    count: (args: {
+      where: {
+        orgId: string;
+        manager?: {
+          userId: string;
+        };
+      };
+    }) => Promise<number>;
+  };
   calibrationSessionParticipant: {
     count: (args: { where: { orgId: string; userId: string } }) => Promise<number>;
   };
@@ -26,31 +37,31 @@ export async function resolveRoleNavOptions(
 ): Promise<RoleNavOptions> {
   const canAccessCalibration = await resolveCalibrationAccess(context, db);
   const includeImprovementPlans = await resolveImprovementPlanVisibility(context, db);
-  const includeSuccession = context.role === UserRole.HR_ADMIN || context.role === UserRole.MANAGER;
+  const directReportCount = await resolveDirectReportCount(context, db);
 
   return {
     canAccessCalibration,
     includeImprovementPlans,
-    includeTeamReviews: context.role === UserRole.MANAGER,
-    includeUserManagement: context.role === UserRole.HR_ADMIN,
-    includeSuccession,
+    includeTeamReviews: hasManagerAccess(context.role) || directReportCount > 0,
+    includeUserManagement: hasHrAdminAccess(context.role),
+    includeSuccession: false,
     includePackets: false,
   };
 }
 
 export function canAccessAdminRoutes(context: RequestContext): boolean {
-  return context.role === UserRole.HR_ADMIN;
+  return hasHrAdminAccess(context.role);
 }
 
 async function resolveCalibrationAccess(
   context: RequestContext,
   db: NavVisibilityDb,
 ): Promise<boolean> {
-  if (context.role === UserRole.HR_ADMIN || context.role === UserRole.CALIBRATOR) {
+  if (hasHrAdminAccess(context.role)) {
     return true;
   }
 
-  if (context.role !== UserRole.MANAGER) {
+  if (!hasManagerAccess(context.role)) {
     return false;
   }
 
@@ -68,7 +79,7 @@ async function resolveImprovementPlanVisibility(
   context: RequestContext,
   db: NavVisibilityDb,
 ): Promise<boolean> {
-  if (context.role === UserRole.HR_ADMIN || context.role === UserRole.MANAGER) {
+  if (canManageImprovementPlans(context.role)) {
     return true;
   }
 
@@ -86,4 +97,18 @@ async function resolveImprovementPlanVisibility(
   });
 
   return visiblePlanCount > 0;
+}
+
+async function resolveDirectReportCount(
+  context: RequestContext,
+  db: NavVisibilityDb,
+): Promise<number> {
+  return db.employee.count({
+    where: {
+      orgId: context.orgId,
+      manager: {
+        userId: context.userId,
+      },
+    },
+  });
 }

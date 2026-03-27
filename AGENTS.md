@@ -161,6 +161,48 @@ Use this for:
 - PR and branch expectations
 - how to balance speed, validation, and cost
 
+## Execution Tracking Discipline
+
+Agents must keep execution-tracking documents up to date when completing implementation slices.
+
+### Required rule
+When a task changes the real implementation state, the agent must also update the relevant execution-tracking docs before finishing.
+
+At minimum, this includes:
+
+- `docs/engineering/IMPLEMENTATION_CHECKLIST.md`
+- `PLAN.md` when the active slice or milestone changes
+
+### Implementation checklist rules
+When completing or partially completing a slice, agents should:
+
+- mark completed checklist items as `[x]`
+- mark partially completed items as `[~]` when appropriate
+- leave incomplete items as `[ ]`
+- mark deferred items as `[-]`
+- update section status if the section uses milestone/slice/status metadata
+- update validation/evidence notes when useful
+
+Agents should only mark items complete when the implementation and validation actually support that status.
+
+### Plan update rules
+Agents should update `PLAN.md` only when needed, such as:
+- the current slice has changed
+- the active milestone has changed
+- execution order has changed
+- a blocking issue materially changes the plan
+
+Agents should not rewrite the plan for routine implementation progress.
+
+### Final response requirement
+For implementation tasks, the agent’s final response should explicitly state:
+- whether `IMPLEMENTATION_CHECKLIST.md` was updated
+- whether `PLAN.md` was updated
+- which items or statuses were changed
+
+### Default behavior
+Agents should treat execution tracking as part of completing the work, not as an optional extra.
+
 ### Quality and validation
 Use:
 - `docs/engineering/QUALITY_STRATEGY.md`
@@ -592,3 +634,26 @@ Agents should bias against:
 - broad redesigns without validation
 - exposing half-finished product areas
 - expensive validation passes after every minor edit
+
+
+## Subagent usage rules
+
+Use one primary Codex agent by default.
+
+Subagents should be used selectively when:
+- a task is separable
+- the expected gain is higher than the coordination cost
+- the task benefits from specialized validation or review
+
+Preferred subagent uses:
+- browser QA / Playwright walkthroughs
+- permissions and access review
+- focused UI/UX refinement
+- scoped architecture review
+
+Default maximum:
+- one subagent at a time
+- two only for high-value milestone checks
+
+Do not use subagents for trivial edits or routine implementation work.
+The primary agent remains responsible for final integration, checklist updates, and milestone alignment.

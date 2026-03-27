@@ -11,6 +11,10 @@ import {
 } from "@prisma/client";
 import { z } from "zod";
 
+import {
+  isVanillaReviewRelationship,
+  resolveVanillaReviewPrompt,
+} from "@/lib/reviews/review-copy";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { getGoalReviewContext } from "@/server/goals/goal-service";
@@ -275,14 +279,13 @@ export async function getReviewPacket(
     getGrowthTrackDataForEmployee(packet.subjectEmployeeId, context, db as never),
   ]);
 
-  const submissions = [...packet.submissions]
+  const submissions = packet.submissions
+    .filter((submission) => isVanillaReviewRelationship(submission.relationship))
     .sort((left, right) => submissionOrder[left.relationship] - submissionOrder[right.relationship])
     .map((submission) => ({
       submissionId: submission.id,
       relationship: submission.relationship,
-      isReferenceInput:
-        submission.relationship === ReviewRelationship.PEER ||
-        submission.relationship === ReviewRelationship.UPWARD,
+      isReferenceInput: false,
       status: submission.status,
       submittedAt: submission.submittedAt?.toISOString() ?? null,
       reviewerName: `${submission.reviewerEmployee.firstName} ${submission.reviewerEmployee.lastName}`,
@@ -291,7 +294,11 @@ export async function getReviewPacket(
         .map((answer) => ({
           answerId: answer.id,
           questionId: answer.questionId,
-          prompt: answer.question.prompt,
+          prompt: resolveVanillaReviewPrompt(
+            answer.question.prompt,
+            submission.relationship,
+            answer.question.sortOrder,
+          ),
           questionType: answer.question.questionType,
           isRequired: answer.question.isRequired,
           responseText: answer.responseText,
@@ -343,14 +350,6 @@ async function assertPacketAccess(
   context: RequestContext,
   db: ReviewPacketDb,
 ): Promise<PacketAccessState> {
-  if (context.role === UserRole.HR_ADMIN) {
-    return {
-      allowAllEvidence: true,
-      viewerEmployeeId: null,
-      allowedEvidenceVisibilities: [],
-    };
-  }
-
   const viewer = await db.employee.findFirst({
     where: {
       orgId: context.orgId,

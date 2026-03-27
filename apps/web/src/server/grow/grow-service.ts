@@ -5,6 +5,7 @@ import {
 } from "@prisma/client";
 import { z } from "zod";
 
+import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import type { RequestContext } from "@/server/auth/request-context";
 import { prisma } from "@/server/db/prisma";
 import { AppError } from "@/server/http/errors";
@@ -209,7 +210,7 @@ export async function getTrack(
     throw new AppError("NOT_FOUND", "Track not found", 404);
   }
 
-  if (!track.isPublished && context.role !== UserRole.HR_ADMIN && track.assignments.length === 0) {
+  if (!track.isPublished && !hasHrAdminAccess(context.role) && track.assignments.length === 0) {
     throw new AppError("FORBIDDEN", "Track is not visible to this user", 403);
   }
 
@@ -796,7 +797,7 @@ export async function createCompetencyAlignmentComment(
   }
 
   if (
-    context.role !== UserRole.HR_ADMIN &&
+    !hasHrAdminAccess(context.role) &&
     assignment.employee.id !== viewer?.id &&
     assignment.employee.managerId !== viewer?.id
   ) {
@@ -859,7 +860,7 @@ async function getViewerEmployee(context: RequestContext, db: GrowDb) {
 }
 
 function requireHrAdmin(context: RequestContext): void {
-  if (context.role !== UserRole.HR_ADMIN) {
+  if (!hasHrAdminAccess(context.role)) {
     throw new AppError("FORBIDDEN", "Insufficient permissions", 403);
   }
 }

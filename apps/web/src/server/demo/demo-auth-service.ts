@@ -18,10 +18,10 @@ const demoRoleTiles = [
     testId: "login-role-hr-admin",
   },
   {
-    role: UserRole.CALIBRATOR,
-    label: "Sign in as Calibrator",
+    role: UserRole.SUPER_ADMIN,
+    label: "Sign in as Super Admin",
     subtitle: "Facilitate placements and alignment discussions.",
-    testId: "login-role-calibrator",
+    testId: "login-role-super-admin",
   },
   {
     role: UserRole.MANAGER,
