@@ -130,6 +130,12 @@ To reduce training/support burden, the product must include:
 - HR Admin can access:
   - all cycles, packets, submissions, calibration sessions, improvement plans (unless restricted)
 
+### Reporting hierarchy direction
+- Trellis uses a primary manager relationship as the base people hierarchy
+- direct reports are the primary workflow scope for manager actions
+- broader reports are derived from the same hierarchy when a workflow explicitly needs them
+- future Microsoft Entra ID sync should feed the primary manager relationship, but app roles and permissions remain Trellis-owned
+
 ### Cycle visibility policy
 Define per cycle:
 - **Manager-only**: employee cannot view packet content

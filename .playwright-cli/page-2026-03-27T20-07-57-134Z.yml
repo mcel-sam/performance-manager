@@ -1,0 +1,43 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+          - button "Talent" [ref=e26]:
+            - img [ref=e28]
+            - tooltip "Talent"
+    - main [ref=e37]:
+      - generic [ref=e39]:
+        - button "Current organization" [disabled] [ref=e40]:
+          - generic [ref=e41]: O
+          - generic [ref=e42]: Demo Performance Org
+          - img [ref=e43]
+        - button "Morgan Manager Morgan Manager Manager" [ref=e46]:
+          - generic "Morgan Manager" [ref=e47]
+          - generic [ref=e48]:
+            - generic [ref=e49]: Morgan Manager
+            - generic [ref=e50]: Manager
+      - generic [ref=e51]:
+        - generic [ref=e53]:
+          - heading "Profile" [level=1] [ref=e54]
+          - paragraph [ref=e55]: Profile preferences are a stub in this demo build.
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - heading "Profile settings" [level=3] [ref=e58]
+            - paragraph [ref=e59]: Manage your account, notification, and display preferences in a future release.
+          - generic [ref=e60]: No editable profile fields are enabled yet.
+  - button "Open Next.js Dev Tools" [ref=e66] [cursor=pointer]:
+    - img [ref=e67]
+  - alert [ref=e70]

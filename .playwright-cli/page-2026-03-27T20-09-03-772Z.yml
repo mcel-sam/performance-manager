@@ -1,0 +1,67 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+          - button "Admin" [ref=e26]:
+            - img [ref=e28]
+            - tooltip "Admin"
+    - main [ref=e32]:
+      - generic [ref=e34]:
+        - button "Current organization" [disabled] [ref=e35]:
+          - generic [ref=e36]: O
+          - generic [ref=e37]: Demo Performance Org
+          - img [ref=e38]
+        - button "Harper Admin Harper Admin HR Admin" [ref=e41]:
+          - generic "Harper Admin" [ref=e42]
+          - generic [ref=e43]:
+            - generic [ref=e44]: Harper Admin
+            - generic [ref=e45]: HR Admin
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - heading "Calibration Sessions" [level=1] [ref=e49]
+            - paragraph [ref=e50]: Create and manage calibration sessions by cycle and cohort.
+          - link "Create Session" [ref=e52] [cursor=pointer]:
+            - /url: /admin/performance/calibration/new
+            - button "Create Session" [ref=e53]
+        - table [ref=e57]:
+          - rowgroup [ref=e58]:
+            - row "Session Cycle Cohort Participants Status Actions" [ref=e59]:
+              - columnheader "Session" [ref=e60]
+              - columnheader "Cycle" [ref=e61]
+              - columnheader "Cohort" [ref=e62]
+              - columnheader "Participants" [ref=e63]
+              - columnheader "Status" [ref=e64]
+              - columnheader "Actions" [ref=e65]
+          - rowgroup [ref=e66]:
+            - row "Core Engineering Calibration Core Engineering Seed Draft Cycle DRAFT 3 2 In Progress Open Workspace" [ref=e67]:
+              - cell "Core Engineering Calibration Core Engineering" [ref=e68]:
+                - paragraph [ref=e70]: Core Engineering Calibration
+                - paragraph [ref=e71]: Core Engineering
+              - cell "Seed Draft Cycle DRAFT" [ref=e72]:
+                - paragraph [ref=e73]: Seed Draft Cycle
+                - generic [ref=e74]: DRAFT
+              - cell "3" [ref=e75]
+              - cell "2" [ref=e76]
+              - cell "In Progress" [ref=e77]:
+                - generic [ref=e78]: In Progress
+              - cell "Open Workspace" [ref=e79]:
+                - link "Open Workspace" [ref=e80] [cursor=pointer]:
+                  - /url: /performance/calibration/calibration_session_seed_1?returnTo=%2Fadmin%2Fperformance%2Fcalibration
+                  - button "Open Workspace" [ref=e81]
+  - button "Open Next.js Dev Tools" [ref=e87] [cursor=pointer]:
+    - img [ref=e88]
+  - alert [ref=e91]

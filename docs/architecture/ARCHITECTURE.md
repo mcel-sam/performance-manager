@@ -111,7 +111,7 @@ Responsible for:
 The application remains responsible for:
 - organization membership
 - application role mapping
-- reporting-line mapping
+- reporting-line normalization
 - effective permissions
 
 ---
@@ -185,9 +185,18 @@ The identity model should include:
 - **Application User**: the internal user record
 - **Organization Membership**: the mapping between user and organization
 - **Application Role**: Employee / Manager / HR Admin / Super Admin
-- **Reporting Relationships**: manager/report relationships used for scoped access
+- **Reporting Relationships**: the normalized primary manager chain used to derive direct reports, peers, and broader reporting trees for scoped access
 
 The application must not rely solely on provider claims to determine business access.
+
+### Reporting hierarchy rule
+Trellis should treat the immediate manager relationship as the stored source of truth for hierarchy.
+
+That means:
+
+- direct reports are modeled explicitly from the primary manager chain
+- broader reports are derived from repeated manager -> direct-report relationships
+- Microsoft Entra ID may provide the upstream manager relationship in production, but Trellis still owns permission evaluation and workflow scope
 
 ---
 
@@ -257,7 +266,7 @@ Additional modules may exist if justified, but the system should avoid unnecessa
 - organizations
 - memberships
 - employee profiles
-- reporting lines
+- reporting lines and derived direct-report/report relationships
 - restricted cohort markers
 
 ### `permissions`

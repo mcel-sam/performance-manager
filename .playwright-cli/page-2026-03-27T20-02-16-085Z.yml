@@ -1,0 +1,111 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e60]:
+    - complementary [ref=e61]:
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - generic [ref=e65]: MO
+          - button "Expand navigation" [ref=e66]:
+            - img [ref=e67]
+        - navigation [ref=e69]:
+          - link "Home" [ref=e71] [cursor=pointer]:
+            - /url: /
+            - img [ref=e73]
+            - generic [ref=e75]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e77]:
+            - img [ref=e79]
+            - tooltip "Performance"
+          - button "Talent" [ref=e83]:
+            - img [ref=e85]
+            - tooltip "Talent"
+    - main [ref=e94]:
+      - generic [ref=e95]:
+        - generic [ref=e96]:
+          - generic [ref=e97]: Workspace
+          - generic [ref=e98]: Home
+        - generic [ref=e99]:
+          - button "Current organization" [disabled] [ref=e100]:
+            - generic [ref=e101]: O
+            - generic [ref=e102]: Demo Performance Org
+            - img [ref=e103]
+          - button "Morgan Manager Morgan Manager Manager" [ref=e106]:
+            - generic "Morgan Manager" [ref=e107]
+            - generic [ref=e108]:
+              - generic [ref=e109]: Morgan Manager
+              - generic [ref=e110]: Manager
+      - generic [ref=e112]:
+        - generic [ref=e114]:
+          - generic [ref=e115]:
+            - generic "Morgan Manager" [ref=e116]
+            - generic [ref=e117]:
+              - heading "Hi, Morgan!" [level=1] [ref=e118]
+              - paragraph [ref=e119]: Engineering Manager • Engineering
+          - generic [ref=e121]: Manager
+        - generic [ref=e123]:
+          - generic [ref=e124]: Home
+          - link "My team" [ref=e125] [cursor=pointer]:
+            - /url: /performance/team-reviews
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - generic [ref=e129]:
+              - generic [ref=e130]:
+                - heading "Start here" [level=3] [ref=e131]
+                - paragraph [ref=e132]: Manage direct reports from My Team first, then complete review tasks, calibration, and coaching follow-through.
+              - generic [ref=e133]: 2 suggested
+            - generic [ref=e134]:
+              - link "Team workspace My Team Track direct reports, packets, and next review steps from one place. My Team first" [ref=e135] [cursor=pointer]:
+                - /url: /performance/team-reviews
+                - img [ref=e137]
+                - generic [ref=e142]:
+                  - generic [ref=e144]: Team workspace
+                  - paragraph [ref=e146]: My Team
+                  - paragraph [ref=e147]: Track direct reports, packets, and next review steps from one place.
+                  - generic [ref=e149]: My Team first
+                - generic [ref=e150]: ›
+              - link "Task queue Review queue Open every assigned manager review in one queue. My Team first" [ref=e151] [cursor=pointer]:
+                - /url: /performance/reviews
+                - img [ref=e153]
+                - generic [ref=e157]:
+                  - generic [ref=e159]: Task queue
+                  - paragraph [ref=e161]: Review queue
+                  - paragraph [ref=e162]: Open every assigned manager review in one queue.
+                  - generic [ref=e164]: My Team first
+                - generic [ref=e165]: ›
+          - generic [ref=e166]:
+            - generic [ref=e167]:
+              - heading "My team" [level=3] [ref=e169]
+              - generic [ref=e170]:
+                - generic [ref=e171]:
+                  - text: Direct reports
+                  - paragraph [ref=e172]: "2"
+                - generic [ref=e173]:
+                  - text: Awaiting manager review
+                  - paragraph [ref=e174]: "0"
+                - generic [ref=e175]:
+                  - text: Self reviews not started
+                  - paragraph [ref=e176]: "0"
+            - generic [ref=e177]:
+              - heading "People context" [level=3] [ref=e178]
+              - paragraph [ref=e179]: "Use the reporting chain for fast context: your manager, peers, and direct reports."
+              - generic [ref=e180]:
+                - generic "Harper Admin" [ref=e181]
+                - generic [ref=e182]:
+                  - paragraph [ref=e183]: Manager
+                  - paragraph [ref=e184]: Harper Admin
+                  - paragraph [ref=e185]: HR Admin
+              - group [ref=e186]:
+                - generic "Reports Direct reports 2 Elliot Employee Parker Peer" [ref=e187] [cursor=pointer]:
+                  - generic [ref=e188]:
+                    - generic [ref=e189]:
+                      - paragraph [ref=e190]: Reports
+                      - generic [ref=e192]:
+                        - generic [ref=e193]:
+                          - paragraph [ref=e194]: Direct reports
+                          - generic [ref=e195]: "2"
+                        - generic [ref=e197]:
+                          - generic "Elliot Employee" [ref=e198]
+                          - generic "Parker Peer" [ref=e199]
+                    - generic [ref=e200]: ▸
+  - button "Open Next.js Dev Tools" [ref=e55] [cursor=pointer]:
+    - img [ref=e56]
+  - alert [ref=e59]

@@ -1,0 +1,66 @@
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - paragraph [ref=e7]: Performance Manager
+        - heading "Sign in to Trellis" [level=1] [ref=e8]
+        - paragraph [ref=e9]: Use your sandbox account to access Trellis with server-owned session identity.
+        - generic [ref=e10]: Sandbox auth is enabled.
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - heading "Sandbox sign in" [level=3] [ref=e13]
+          - paragraph [ref=e14]: Use your sandbox account email and password to access Trellis.
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - text: Email
+            - textbox "Email" [ref=e18]
+          - generic [ref=e19]:
+            - text: Password
+            - textbox "Password" [ref=e20]
+          - button "Sign in" [ref=e21]
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - heading "Developer-only demo access" [level=3] [ref=e24]
+          - paragraph [ref=e25]: Local role switching remains available only in development. Do not use this as the shared sandbox auth path.
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - heading "Choose a demo role" [level=3] [ref=e29]
+              - paragraph [ref=e30]: Select a role to sign in immediately. No manual credential entry is required.
+            - generic [ref=e31]:
+              - generic [ref=e32]:
+                - button "Sign in as HR Admin Run cycles, calibrations, and release workflows." [ref=e33]:
+                  - paragraph [ref=e34]: Sign in as HR Admin
+                  - paragraph [ref=e35]: Run cycles, calibrations, and release workflows.
+                - button "Sign in as Super Admin Facilitate placements and alignment discussions." [ref=e36]:
+                  - paragraph [ref=e37]: Sign in as Super Admin
+                  - paragraph [ref=e38]: Facilitate placements and alignment discussions.
+                - button "Sign in as Manager Write manager reviews, calibrate, and track plans." [ref=e39]:
+                  - paragraph [ref=e40]: Sign in as Manager
+                  - paragraph [ref=e41]: Write manager reviews, calibrate, and track plans.
+                - button "Sign in as Employee Complete self review tasks and submit evidence-backed input." [ref=e42]:
+                  - paragraph [ref=e43]: Sign in as Employee
+                  - paragraph [ref=e44]: Complete self review tasks and submit evidence-backed input.
+              - generic [ref=e45]:
+                - paragraph [ref=e46]: Reset demo database & load sample data
+                - paragraph [ref=e47]: This wipes local database data and seeds a realistic construction-company walkthrough dataset.
+                - button "Reset demo database & load sample data" [ref=e49]
+              - status [ref=e74]: Unexpected server error
+          - dialog [ref=e61]:
+            - generic [ref=e62]:
+              - generic [ref=e63]:
+                - heading "Reset demo data" [level=2] [ref=e64]
+                - paragraph [ref=e65]: This action permanently clears local demo data and recreates it. Type RESET to continue.
+              - button "Close dialog" [ref=e66]: Close
+            - generic [ref=e68]:
+              - generic [ref=e69]:
+                - text: Type RESET to confirm
+                - textbox "Type RESET to confirm demo reset" [ref=e70]:
+                  - /placeholder: RESET
+                  - text: RESET
+              - generic [ref=e71]:
+                - button "Cancel" [ref=e72]
+                - button "Confirm reset" [ref=e73]
+  - button "Open Next.js Dev Tools" [ref=e55] [cursor=pointer]:
+    - img [ref=e56]
+  - alert [ref=e59]

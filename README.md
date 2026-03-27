@@ -197,6 +197,81 @@ npm run dev
 - `http://localhost:3000/performance/calibration/calibration_session_seed_1`
 - `http://localhost:3000/performance/improvement-plans/improvement_plan_seed_1`
 
+## Container image and Azure Container Apps notes
+
+The root `Dockerfile` now builds a production image that is suitable for Azure Container Apps and
+other Azure container runtimes.
+
+### What the container expects
+
+Set these runtime environment variables in Azure:
+
+- `DATABASE_URL`
+- `DIRECT_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `DEMO_MODE=false`
+- `NEXT_PUBLIC_DEMO_MODE=false`
+- `PRESENTATION_MODE=false`
+- `ALLOW_MANAGER_RISK_VIEW=false`
+
+Recommended container settings:
+
+- Expose port `3000`
+- Set the ingress target port to `3000`
+- Use `/api/health` for liveness/readiness checks
+- Keep `RUN_DB_MIGRATIONS=false` for normal multi-replica app revisions unless you intentionally
+  want startup-time migrations
+
+### Build and run the production image locally
+
+```bash
+docker build -t trellis-web .
+docker run --rm -p 3000:3000 --env-file apps/web/.env.local trellis-web
+```
+
+### Run with Docker Compose
+
+The default compose flow still starts only local Postgres:
+
+```bash
+docker compose up -d
+```
+
+To run the production web container alongside Postgres:
+
+```bash
+docker compose --profile app up --build
+```
+
+The compose `web` service defaults to the internal Postgres service, but you can point it at your
+Azure/Supabase database by exporting `DATABASE_URL` and `DIRECT_URL` before starting compose.
+
+### Running migrations or sandbox bootstrap in a container
+
+The image entrypoint supports mode switching with `CONTAINER_COMMAND`:
+
+- `web` starts the Next.js server
+- `migrate` runs `prisma migrate deploy` and exits
+- `bootstrap` runs the sandbox bootstrap script and exits
+
+Examples:
+
+```bash
+docker run --rm --env-file apps/web/.env.local -e CONTAINER_COMMAND=migrate trellis-web
+docker run --rm --env-file apps/web/.env.local \
+  -e CONTAINER_COMMAND=bootstrap \
+  -e SANDBOX_BOOTSTRAP_DEFAULT_PASSWORD='replace-me' \
+  trellis-web
+```
+
+For Azure Container Apps, this lets you reuse the same image for:
+
+- the long-running web app
+- a one-off migration task
+- a one-off sandbox bootstrap task
+
 ## Development identity defaults
 
 The web UI uses a local dev request context by default:

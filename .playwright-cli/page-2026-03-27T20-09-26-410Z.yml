@@ -1,0 +1,85 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+          - button "Admin" [ref=e26]:
+            - img [ref=e28]
+            - tooltip "Admin"
+    - main [ref=e32]:
+      - generic [ref=e34]:
+        - button "Current organization" [disabled] [ref=e35]:
+          - generic [ref=e36]: O
+          - generic [ref=e37]: Demo Performance Org
+          - img [ref=e38]
+        - button "Harper Admin Harper Admin HR Admin" [ref=e41]:
+          - generic "Harper Admin" [ref=e42]
+          - generic [ref=e43]:
+            - generic [ref=e44]: Harper Admin
+            - generic [ref=e45]: HR Admin
+      - generic [ref=e46]:
+        - generic [ref=e48]:
+          - heading "Goal cycles" [level=1] [ref=e49]
+          - paragraph [ref=e50]: Open and close goal windows independently from review cycles so OKRs can run on their own cadence.
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - heading "Total cycles" [level=3] [ref=e54]
+            - generic [ref=e55]:
+              - paragraph [ref=e56]: "0"
+              - paragraph [ref=e57]: Configured planning windows.
+          - generic [ref=e58]:
+            - heading "Active now" [level=3] [ref=e60]
+            - generic [ref=e61]:
+              - paragraph [ref=e62]: "0"
+              - paragraph [ref=e63]: Cycles ready for live goal work.
+          - generic [ref=e64]:
+            - heading "Drafting" [level=3] [ref=e66]
+            - generic [ref=e67]:
+              - paragraph [ref=e68]: "0"
+              - paragraph [ref=e69]: Cycles still being staged.
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - heading "Create goal cycle" [level=3] [ref=e73]
+              - paragraph [ref=e74]: Set the cadence, dates, and starting status for the next planning window.
+            - generic [ref=e76]:
+              - generic [ref=e77]:
+                - text: Cycle name
+                - textbox "Cycle name" [ref=e78]: FY26 Annual Goals
+              - generic [ref=e79]:
+                - text: Cadence
+                - combobox "Cadence" [ref=e80]:
+                  - option "Annual" [selected]
+                  - option "Quarterly"
+              - generic [ref=e81]:
+                - text: Status
+                - combobox "Status" [ref=e82]:
+                  - option "Draft" [selected]
+                  - option "Active"
+                  - option "Closed"
+                  - option "Archived"
+              - generic [ref=e83]:
+                - text: Start date
+                - textbox "Start date" [ref=e84]: 2026-01-01
+              - generic [ref=e85]:
+                - text: End date
+                - textbox "End date" [ref=e86]: 2026-12-31
+              - button "Create goal cycle" [ref=e88]
+          - generic [ref=e89]:
+            - heading "Manage goal cycles" [level=3] [ref=e91]
+            - generic [ref=e93]: No goal cycles yet.
+  - button "Open Next.js Dev Tools" [ref=e99] [cursor=pointer]:
+    - img [ref=e100]
+  - alert [ref=e103]

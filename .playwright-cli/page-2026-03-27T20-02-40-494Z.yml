@@ -1,0 +1,196 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+          - button "Talent" [ref=e26]:
+            - img [ref=e28]
+            - tooltip "Talent"
+    - main [ref=e37]:
+      - generic [ref=e39]:
+        - button "Current organization" [disabled] [ref=e40]:
+          - generic [ref=e41]: O
+          - generic [ref=e42]: Demo Performance Org
+          - img [ref=e43]
+        - button "Morgan Manager Morgan Manager Manager" [ref=e46]:
+          - generic "Morgan Manager" [ref=e47]
+          - generic [ref=e48]:
+            - generic [ref=e49]: Morgan Manager
+            - generic [ref=e50]: Manager
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - heading "My Team" [level=1] [ref=e54]
+            - paragraph [ref=e55]: Track direct-report review readiness, open the next manager review, and inspect packet context for the active cycle.
+            - generic [ref=e57]:
+              - text: "Cycle:"
+              - strong [ref=e58]: Seed Draft Cycle
+          - generic [ref=e60]:
+            - generic [ref=e63]: Team size 2
+            - link "Open review tasks" [ref=e64] [cursor=pointer]:
+              - /url: /performance/reviews
+              - button "Open review tasks" [ref=e65]
+        - generic [ref=e67]:
+          - generic [ref=e68]:
+            - generic [ref=e69]:
+              - text: Review cycle
+              - combobox "Review cycle" [ref=e70]:
+                - option "Seed Draft Cycle" [selected]
+            - button "Load cycle" [ref=e71]
+          - generic [ref=e72]:
+            - generic [ref=e75]: 2 manager tasks open
+            - generic [ref=e78]: 2 self reviews pending
+        - generic [ref=e79]:
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - paragraph [ref=e85]: Awaiting review
+                - heading "2" [level=3] [ref=e86]
+              - generic [ref=e87]: 2 reports
+            - paragraph [ref=e88]: Reports waiting for a first manager pass.
+          - generic [ref=e91]:
+            - generic [ref=e92]:
+              - generic [ref=e93]:
+                - paragraph [ref=e94]: Self not started
+                - heading "2" [level=3] [ref=e95]
+              - generic [ref=e96]: 2 reports
+            - paragraph [ref=e97]: Employees who have not opened their self review yet.
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - generic [ref=e102]:
+                - paragraph [ref=e103]: In progress
+                - heading "0" [level=3] [ref=e104]
+              - generic [ref=e105]: 0 reports
+            - paragraph [ref=e106]: Manager reviews already underway.
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - generic [ref=e111]:
+                - paragraph [ref=e112]: Completed
+                - heading "0" [level=3] [ref=e113]
+              - generic [ref=e114]: 0 reports
+            - paragraph [ref=e115]: Manager reviews submitted for this cycle.
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - generic [ref=e118]:
+              - heading "Review pipeline" [level=3] [ref=e119]
+              - paragraph [ref=e120]: 0 of 2 manager reviews submitted.
+            - generic [ref=e121]:
+              - generic [ref=e122]:
+                - generic [ref=e123]:
+                  - 'generic "Awaiting: 2" [ref=e124]'
+                  - 'generic "In progress: 0"'
+                  - 'generic "Completed: 0"'
+                - generic [ref=e125]:
+                  - generic [ref=e126]:
+                    - generic [ref=e128]: Awaiting
+                    - generic [ref=e129]: "2"
+                  - generic [ref=e130]:
+                    - generic [ref=e132]: In progress
+                    - generic [ref=e133]: "0"
+                  - generic [ref=e134]:
+                    - generic [ref=e136]: Completed
+                    - generic [ref=e137]: "0"
+              - generic [ref=e138]:
+                - generic [ref=e139]:
+                  - paragraph [ref=e140]: Awaiting
+                  - paragraph [ref=e141]: "2"
+                - generic [ref=e142]:
+                  - paragraph [ref=e143]: In progress
+                  - paragraph [ref=e144]: "0"
+                - generic [ref=e145]:
+                  - paragraph [ref=e146]: Completed
+                  - paragraph [ref=e147]: "0"
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - heading "Rating mix" [level=3] [ref=e150]
+              - paragraph [ref=e151]: Final ratings and scorecard baselines shown as star bands instead of raw number buckets.
+            - generic [ref=e152]:
+              - generic [ref=e153]:
+                - generic [ref=e154]:
+                  - paragraph [ref=e155]: Final rating mix
+                  - paragraph [ref=e156]: No rated packets
+                - generic [ref=e157]: Ratings will appear once packets receive scorecards or final calibration outcomes.
+              - generic [ref=e158]:
+                - generic [ref=e159]:
+                  - paragraph [ref=e160]: Scorecard baseline
+                  - paragraph [ref=e161]: No rated packets
+                - generic [ref=e162]: Ratings will appear once packets receive scorecards or final calibration outcomes.
+        - generic [ref=e163]:
+          - generic [ref=e164]:
+            - generic [ref=e165]:
+              - heading "Direct reports" [level=3] [ref=e166]
+              - paragraph [ref=e167]: Pick a report to open the drawer, then review status, packet context, and next action without leaving the list.
+            - table [ref=e170]:
+              - rowgroup [ref=e171]:
+                - row "Direct report Role Review status Next step" [ref=e172]:
+                  - columnheader "Direct report" [ref=e173]
+                  - columnheader "Role" [ref=e174]
+                  - columnheader "Review status" [ref=e175]
+                  - columnheader "Next step" [ref=e176]
+              - rowgroup [ref=e177]:
+                - row "Elliot Employee Open profile Software Engineer Engineering Self Not started Manager review Not started No manager task No due date assigned" [ref=e178]:
+                  - cell "Elliot Employee Open profile" [ref=e179]:
+                    - link "Elliot Employee Open profile" [ref=e180] [cursor=pointer]:
+                      - /url: /performance/team-reviews?cycleId=cycle_seed_draft_1&employeeId=emp_employee_1
+                      - generic [ref=e181]: Elliot Employee
+                      - generic [ref=e182]: Open profile
+                  - cell "Software Engineer Engineering" [ref=e183]:
+                    - generic [ref=e184]:
+                      - paragraph [ref=e185]: Software Engineer
+                      - paragraph [ref=e186]: Engineering
+                  - cell "Self Not started Manager review Not started" [ref=e187]:
+                    - generic [ref=e188]:
+                      - generic [ref=e189]:
+                        - generic [ref=e190]: Self
+                        - generic [ref=e193]: Not started
+                      - generic [ref=e194]:
+                        - generic [ref=e195]: Manager review
+                        - generic [ref=e198]: Not started
+                  - cell "No manager task No due date assigned" [ref=e199]:
+                    - generic [ref=e200]:
+                      - generic [ref=e201]: No manager task
+                      - paragraph [ref=e202]: No due date assigned
+                - row "Parker Peer Open profile QA Engineer Engineering Self Not started Manager review Not started No manager task No due date assigned" [ref=e203]:
+                  - cell "Parker Peer Open profile" [ref=e204]:
+                    - link "Parker Peer Open profile" [ref=e205] [cursor=pointer]:
+                      - /url: /performance/team-reviews?cycleId=cycle_seed_draft_1&employeeId=emp_peer_1
+                      - generic [ref=e206]: Parker Peer
+                      - generic [ref=e207]: Open profile
+                  - cell "QA Engineer Engineering" [ref=e208]:
+                    - generic [ref=e209]:
+                      - paragraph [ref=e210]: QA Engineer
+                      - paragraph [ref=e211]: Engineering
+                  - cell "Self Not started Manager review Not started" [ref=e212]:
+                    - generic [ref=e213]:
+                      - generic [ref=e214]:
+                        - generic [ref=e215]: Self
+                        - generic [ref=e218]: Not started
+                      - generic [ref=e219]:
+                        - generic [ref=e220]: Manager review
+                        - generic [ref=e223]: Not started
+                  - cell "No manager task No due date assigned" [ref=e224]:
+                    - generic [ref=e225]:
+                      - generic [ref=e226]: No manager task
+                      - paragraph [ref=e227]: No due date assigned
+          - generic [ref=e228]:
+            - generic [ref=e229]:
+              - heading "Direct report details" [level=3] [ref=e230]
+              - paragraph [ref=e231]: Select a direct report to inspect status, packet context, and next actions.
+            - generic [ref=e233]:
+              - heading "No profile selected" [level=2] [ref=e234]
+              - paragraph [ref=e235]: Choose a row from the direct reports table to open the right drawer.
+  - button "Open Next.js Dev Tools" [ref=e241] [cursor=pointer]:
+    - img [ref=e242]
+  - alert [ref=e245]

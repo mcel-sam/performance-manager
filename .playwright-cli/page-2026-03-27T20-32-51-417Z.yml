@@ -1,0 +1,54 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+    - main [ref=e24]:
+      - button "Elliot Employee Elliot Employee Employee" [ref=e28]:
+        - generic "Elliot Employee" [ref=e29]
+        - generic [ref=e30]:
+          - generic [ref=e31]: Elliot Employee
+          - generic [ref=e32]: Employee
+      - generic [ref=e33]:
+        - generic [ref=e35]:
+          - heading "Performance Reviews" [level=1] [ref=e36]
+          - paragraph [ref=e37]: Review the submissions assigned to you, filter the list, and either continue work in progress or reference submitted reviews.
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - text: Search task
+            - searchbox "Search task" [ref=e41]
+          - generic [ref=e42]:
+            - text: Status
+            - combobox "Status" [ref=e43]:
+              - option "All statuses" [selected]
+              - option "Not started"
+              - option "In progress"
+              - option "Submitted"
+              - option "Returned"
+          - generic [ref=e44]:
+            - text: Who you're reviewing
+            - combobox "Who you're reviewing" [ref=e45]:
+              - option "All review types" [selected]
+              - option "Self"
+              - option "Direct report"
+          - button "Apply filters" [ref=e47]
+        - generic [ref=e50]: 0 tasks
+        - region "Empty review task state" [ref=e51]:
+          - generic [ref=e53]: 🗂
+          - heading "No assigned review tasks" [level=2] [ref=e54]
+          - paragraph [ref=e55]: Assigned submissions appear after HR generates cycle assignments for an active review cycle.
+  - button "Open Next.js Dev Tools" [ref=e61] [cursor=pointer]:
+    - img [ref=e62]
+  - alert [ref=e65]

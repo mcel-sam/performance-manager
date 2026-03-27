@@ -1,4 +1,33 @@
 services:
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: performance-manager-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/perf?schema=public}
+      DIRECT_URL: ${DIRECT_URL:-postgresql://postgres:postgres@postgres:5432/perf?schema=public}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-false}
+      PRESENTATION_MODE: ${PRESENTATION_MODE:-false}
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      ALLOW_MANAGER_RISK_VIEW: ${ALLOW_MANAGER_RISK_VIEW:-false}
+      RUN_DB_MIGRATIONS: ${RUN_DB_MIGRATIONS:-true}
+      RUN_SANDBOX_BOOTSTRAP: ${RUN_SANDBOX_BOOTSTRAP:-false}
+      SANDBOX_BOOTSTRAP_DEFAULT_PASSWORD: ${SANDBOX_BOOTSTRAP_DEFAULT_PASSWORD:-}
+      CONTAINER_COMMAND: ${CONTAINER_COMMAND:-web}
+    ports:
+      - "3000:3000"
+
   postgres:
     image: postgres:16-alpine
     container_name: performance-manager-postgres

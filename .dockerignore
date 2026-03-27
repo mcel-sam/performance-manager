@@ -4,5 +4,9 @@
 **/.next
 **/.turbo
 **/coverage
+**/playwright-report
+**/test-results
 **/.env*
+docs/archive
+infra/terraform/.terraform
 npm-debug.log*

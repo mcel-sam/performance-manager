@@ -1,0 +1,73 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+          - button "Admin" [ref=e26]:
+            - img [ref=e28]
+            - tooltip "Admin"
+    - main [ref=e32]:
+      - generic [ref=e34]:
+        - button "Current organization" [disabled] [ref=e35]:
+          - generic [ref=e36]: O
+          - generic [ref=e37]: Demo Performance Org
+          - img [ref=e38]
+        - button "Harper Admin Harper Admin HR Admin" [ref=e41]:
+          - generic "Harper Admin" [ref=e42]
+          - generic [ref=e43]:
+            - generic [ref=e44]: Harper Admin
+            - generic [ref=e45]: HR Admin
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - heading "Review Cycles" [level=1] [ref=e49]
+            - paragraph [ref=e50]: Create cycles, generate submissions, and progress cycle states.
+          - link "Create Cycle" [ref=e52] [cursor=pointer]:
+            - /url: /admin/performance/review-cycles/new
+            - button "Create Cycle" [ref=e53]
+        - table [ref=e58]:
+          - rowgroup [ref=e59]:
+            - row "Cycle Window Status Review Mix Progress Summary Actions" [ref=e60]:
+              - columnheader "Cycle" [ref=e61]
+              - columnheader "Window" [ref=e62]
+              - columnheader "Status" [ref=e63]
+              - columnheader "Review Mix" [ref=e64]
+              - columnheader "Progress Summary" [ref=e65]
+              - columnheader "Actions" [ref=e66]
+          - rowgroup [ref=e67]:
+            - 'row "Seed Draft Cycle Draft cycle 2026-03-01 - 2026-03-31 Draft Self + Manager Self due: — Manager due: — Status: NS 8 / IP 0 / SUB 0 Types: Self 3 / Manager 2 Generate Launch cycle Reporting" [ref=e68]':
+              - cell "Seed Draft Cycle Draft cycle" [ref=e69]:
+                - paragraph [ref=e70]: Seed Draft Cycle
+                - paragraph [ref=e71]: Draft cycle
+              - cell "2026-03-01 - 2026-03-31" [ref=e72]
+              - cell "Draft" [ref=e73]:
+                - generic [ref=e76]: Draft
+              - 'cell "Self + Manager Self due: — Manager due: —" [ref=e77]':
+                - text: Self + Manager
+                - paragraph [ref=e78]: "Self due: —"
+                - paragraph [ref=e79]: "Manager due: —"
+              - 'cell "Status: NS 8 / IP 0 / SUB 0 Types: Self 3 / Manager 2" [ref=e80]':
+                - paragraph [ref=e81]: "Status: NS 8 / IP 0 / SUB 0"
+                - paragraph [ref=e82]: "Types: Self 3 / Manager 2"
+              - cell "Generate Launch cycle Reporting" [ref=e83]:
+                - generic [ref=e84]:
+                  - button "Generate" [ref=e85]
+                  - button "Launch cycle" [ref=e86]
+                  - link "Reporting" [ref=e87] [cursor=pointer]:
+                    - /url: /admin/performance/reporting?cycleId=cycle_seed_draft_1&tab=progress
+                    - button "Reporting" [ref=e88]
+  - button "Open Next.js Dev Tools" [ref=e94] [cursor=pointer]:
+    - img [ref=e95]
+  - alert [ref=e98]

@@ -1,0 +1,75 @@
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - heading "Hi, Elliot!" [level=1] [ref=e7]
+          - paragraph [ref=e8]: Software Engineer • Engineering
+          - generic [ref=e11]:
+            - text: "Manager:"
+            - strong [ref=e12]: Morgan Manager
+        - link "My tasks" [ref=e15] [cursor=pointer]:
+          - /url: /performance/reviews
+          - button "My tasks" [ref=e16]
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - generic [ref=e20]:
+              - generic [ref=e21]:
+                - heading "Start here" [level=3] [ref=e22]
+                - paragraph [ref=e23]: Start with your review tasks, support answers with evidence, and submit before the cycle closes.
+              - generic [ref=e24]: 2 suggested
+            - generic [ref=e25]:
+              - link "Task queue Review queue See every assigned review in one place instead of jumping between screens. Complete assigned reviews" [ref=e26] [cursor=pointer]:
+                - /url: /performance/reviews
+                - img [ref=e28]
+                - generic [ref=e32]:
+                  - generic [ref=e34]: Task queue
+                  - paragraph [ref=e36]: Review queue
+                  - paragraph [ref=e37]: See every assigned review in one place instead of jumping between screens.
+                  - generic [ref=e39]: Complete assigned reviews
+                - generic [ref=e40]: ›
+              - link "Personal draft Self review Pick up your active self review from the review queue and keep it moving toward submission. Complete assigned reviews" [ref=e41] [cursor=pointer]:
+                - /url: /performance/reviews
+                - img [ref=e43]
+                - generic [ref=e46]:
+                  - generic [ref=e48]: Personal draft
+                  - paragraph [ref=e50]: Self review
+                  - paragraph [ref=e51]: Pick up your active self review from the review queue and keep it moving toward submission.
+                  - generic [ref=e53]: Complete assigned reviews
+                - generic [ref=e54]: ›
+          - generic [ref=e55]:
+            - heading "People context" [level=3] [ref=e56]
+            - paragraph [ref=e57]: "Use the reporting chain for fast context: your manager, peers, and direct reports."
+            - generic [ref=e58]:
+              - generic "Morgan Manager" [ref=e59]
+              - generic [ref=e60]:
+                - paragraph [ref=e61]: Manager
+                - paragraph [ref=e62]: Morgan Manager
+                - paragraph [ref=e63]: Engineering Manager
+            - group [ref=e64]:
+              - generic "Reports Peers 1 Parker Peer" [ref=e65] [cursor=pointer]:
+                - generic [ref=e66]:
+                  - generic [ref=e67]:
+                    - paragraph [ref=e68]: Reports
+                    - generic [ref=e70]:
+                      - generic [ref=e71]:
+                        - paragraph [ref=e72]: Peers
+                        - generic [ref=e73]: "1"
+                      - generic "Parker Peer" [ref=e76]
+                  - generic [ref=e77]: ▸
+        - generic [ref=e78]:
+          - heading "At a glance" [level=3] [ref=e80]
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - text: Due soon
+              - paragraph [ref=e83]: "0"
+            - generic [ref=e84]:
+              - text: Open draft
+              - paragraph [ref=e85]: None
+            - generic [ref=e86]:
+              - text: Current cycle
+              - paragraph [ref=e87]: None
+  - button "Open Next.js Dev Tools" [ref=e93] [cursor=pointer]:
+    - img [ref=e94]
+  - alert [ref=e97]

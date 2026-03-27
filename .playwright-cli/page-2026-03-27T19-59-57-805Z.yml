@@ -1,0 +1,104 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e75]:
+    - complementary [ref=e76]:
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - generic [ref=e80]: MO
+          - button "Expand navigation" [ref=e81]:
+            - img [ref=e82]
+        - navigation [ref=e84]:
+          - link "Home" [ref=e86] [cursor=pointer]:
+            - /url: /
+            - img [ref=e88]
+            - generic [ref=e90]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e92]:
+            - img [ref=e94]
+            - tooltip "Performance"
+    - main [ref=e96]:
+      - generic [ref=e97]:
+        - generic [ref=e98]:
+          - generic [ref=e99]: Workspace
+          - generic [ref=e100]: Home
+        - generic [ref=e101]:
+          - button "Current organization" [disabled] [ref=e102]:
+            - generic [ref=e103]: O
+            - generic [ref=e104]: Demo Performance Org
+            - img [ref=e105]
+          - button "Elliot Employee Elliot Employee Employee" [ref=e108]:
+            - generic "Elliot Employee" [ref=e109]
+            - generic [ref=e110]:
+              - generic [ref=e111]: Elliot Employee
+              - generic [ref=e112]: Employee
+      - generic [ref=e114]:
+        - generic [ref=e117]:
+          - generic "Elliot Employee" [ref=e118]
+          - generic [ref=e119]:
+            - heading "Hi, Elliot!" [level=1] [ref=e120]
+            - paragraph [ref=e121]: Software Engineer • Engineering
+        - generic [ref=e123]:
+          - generic [ref=e124]: Home
+          - link "My tasks" [ref=e125] [cursor=pointer]:
+            - /url: /performance/reviews
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - generic [ref=e129]:
+              - generic [ref=e130]:
+                - heading "Start here" [level=3] [ref=e131]
+                - paragraph [ref=e132]: Start with your review tasks, support answers with evidence, and submit before the cycle closes.
+              - generic [ref=e133]: 2 suggested
+            - generic [ref=e134]:
+              - link "Task queue Review queue See every assigned review in one place instead of jumping between screens. Complete assigned reviews" [ref=e135] [cursor=pointer]:
+                - /url: /performance/reviews
+                - img [ref=e137]
+                - generic [ref=e141]:
+                  - generic [ref=e143]: Task queue
+                  - paragraph [ref=e145]: Review queue
+                  - paragraph [ref=e146]: See every assigned review in one place instead of jumping between screens.
+                  - generic [ref=e148]: Complete assigned reviews
+                - generic [ref=e149]: ›
+              - link "Personal draft Self review Pick up your active self review from the review queue and keep it moving toward submission. Complete assigned reviews" [ref=e150] [cursor=pointer]:
+                - /url: /performance/reviews
+                - img [ref=e152]
+                - generic [ref=e155]:
+                  - generic [ref=e157]: Personal draft
+                  - paragraph [ref=e159]: Self review
+                  - paragraph [ref=e160]: Pick up your active self review from the review queue and keep it moving toward submission.
+                  - generic [ref=e162]: Complete assigned reviews
+                - generic [ref=e163]: ›
+          - generic [ref=e164]:
+            - generic [ref=e165]:
+              - heading "At a glance" [level=3] [ref=e167]
+              - generic [ref=e168]:
+                - generic [ref=e169]:
+                  - text: Due soon
+                  - paragraph [ref=e170]: "0"
+                - generic [ref=e171]:
+                  - text: Open draft
+                  - paragraph [ref=e172]: None
+                - generic [ref=e173]:
+                  - text: Current cycle
+                  - paragraph [ref=e174]: None
+            - generic [ref=e175]:
+              - heading "People context" [level=3] [ref=e176]
+              - paragraph [ref=e177]: "Use the reporting chain for fast context: your manager, peers, and direct reports."
+              - generic [ref=e178]:
+                - generic "Morgan Manager" [ref=e179]
+                - generic [ref=e180]:
+                  - paragraph [ref=e181]: Manager
+                  - paragraph [ref=e182]: Morgan Manager
+                  - paragraph [ref=e183]: Engineering Manager
+              - group [ref=e184]:
+                - generic "Reports Peers 1 Parker Peer" [ref=e185] [cursor=pointer]:
+                  - generic [ref=e186]:
+                    - generic [ref=e187]:
+                      - paragraph [ref=e188]: Reports
+                      - generic [ref=e190]:
+                        - generic [ref=e191]:
+                          - paragraph [ref=e192]: Peers
+                          - generic [ref=e193]: "1"
+                        - generic "Parker Peer" [ref=e196]
+                    - generic [ref=e197]: ▸
+  - button "Open Next.js Dev Tools" [ref=e55] [cursor=pointer]:
+    - img [ref=e56]
+  - alert [ref=e59]

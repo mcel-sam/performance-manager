@@ -1,0 +1,8 @@
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic [ref=e5]:
+      - heading "No goal cycles available yet" [level=2] [ref=e6]
+      - paragraph [ref=e7]: Ask HR to create a goal cycle first so teams can work in the right planning window.
+  - button "Open Next.js Dev Tools" [ref=e13] [cursor=pointer]:
+    - img [ref=e14]
+  - alert [ref=e17]

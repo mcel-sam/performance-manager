@@ -1,0 +1,40 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+    - main [ref=e24]:
+      - generic [ref=e26]:
+        - button "Current organization" [disabled] [ref=e27]:
+          - generic [ref=e28]: O
+          - generic [ref=e29]: Demo Performance Org
+          - img [ref=e30]
+        - button "Elliot Employee Elliot Employee Employee" [ref=e33]:
+          - generic "Elliot Employee" [ref=e34]
+          - generic [ref=e35]:
+            - generic [ref=e36]: Elliot Employee
+            - generic [ref=e37]: Employee
+      - generic [ref=e38]:
+        - generic [ref=e40]:
+          - heading "Profile" [level=1] [ref=e41]
+          - paragraph [ref=e42]: Profile preferences are a stub in this demo build.
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - heading "Profile settings" [level=3] [ref=e45]
+            - paragraph [ref=e46]: Manage your account, notification, and display preferences in a future release.
+          - generic [ref=e47]: No editable profile fields are enabled yet.
+  - button "Open Next.js Dev Tools" [ref=e53] [cursor=pointer]:
+    - img [ref=e54]
+  - alert [ref=e57]

@@ -1,0 +1,166 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+          - button "Talent" [ref=e26]:
+            - img [ref=e28]
+            - tooltip "Talent"
+    - main [ref=e37]:
+      - generic [ref=e39]:
+        - button "Current organization" [disabled] [ref=e40]:
+          - generic [ref=e41]: O
+          - generic [ref=e42]: Demo Performance Org
+          - img [ref=e43]
+        - button "Morgan Manager Morgan Manager Manager" [ref=e46]:
+          - generic "Morgan Manager" [ref=e47]
+          - generic [ref=e48]:
+            - generic [ref=e49]: Morgan Manager
+            - generic [ref=e50]: Manager
+      - generic [ref=e52]:
+        - generic [ref=e54]:
+          - paragraph [ref=e55]: Calibration Session
+          - heading "Core Engineering Calibration" [level=1] [ref=e56]
+          - paragraph [ref=e57]: Calibration aligns managers on how performance and potential are evaluated across the cohort after review submissions are locked.
+          - generic [ref=e59]:
+            - generic [ref=e60]: Seed Draft Cycle
+            - generic [ref=e61]: In progress
+        - status [ref=e62]: Calibration aligns reviewers on performance and potential placements for this cycle before outcomes are finalized.
+        - generic [ref=e63]:
+          - button "Toggle finalized and locked guidance" [ref=e64]:
+            - generic [ref=e65]:
+              - generic [ref=e66]: i
+              - generic [ref=e67]: What finalized/locked means
+            - generic [ref=e68]:
+              - text: Tips
+              - img [ref=e69]
+          - generic [ref=e71]: Finalizing captures an immutable snapshot and locks placement controls. Context links remain viewable after lock, and Super Admin downstream succession/risk outputs become available from the finalized snapshot.
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - button "Toggle performance definitions" [ref=e74]:
+              - generic [ref=e75]:
+                - generic [ref=e76]: i
+                - generic [ref=e77]: Performance definitions
+              - generic [ref=e78]:
+                - text: Tips
+                - img [ref=e79]
+            - list [ref=e82]:
+              - listitem [ref=e83]:
+                - generic [ref=e84]: "Needs support:"
+                - text: Consistently below this cycle's expectations.
+              - listitem [ref=e85]:
+                - generic [ref=e86]: "Meets expectations:"
+                - text: Delivers solid results at the expected level.
+              - listitem [ref=e87]:
+                - generic [ref=e88]: "Exceeds expectations:"
+                - text: Delivers standout results beyond expected scope.
+          - generic [ref=e89]:
+            - button "Toggle potential definitions" [ref=e90]:
+              - generic [ref=e91]:
+                - generic [ref=e92]: i
+                - generic [ref=e93]: Potential definitions
+              - generic [ref=e94]:
+                - text: Tips
+                - img [ref=e95]
+            - list [ref=e98]:
+              - listitem [ref=e99]:
+                - generic [ref=e100]: "Current scope:"
+                - text: Effective in the current scope with limited near-term expansion.
+              - listitem [ref=e101]:
+                - generic [ref=e102]: "Growth ready:"
+                - text: Can take broader scope with coaching and support.
+              - listitem [ref=e103]:
+                - generic [ref=e104]: "Accelerated growth:"
+                - text: Shows strong readiness for larger and more complex scope.
+        - generic [ref=e105]:
+          - generic [ref=e107]:
+            - generic [ref=e110]:
+              - heading "9-box matrix" [level=2] [ref=e111]
+              - paragraph [ref=e112]: Select a cohort member to view context and adjust placement.
+            - table [ref=e115]:
+              - rowgroup [ref=e116]:
+                - row "Potential \\ Performance Needs support Meets expectations Exceeds expectations" [ref=e117]:
+                  - columnheader "Potential \\ Performance" [ref=e118]
+                  - columnheader "Needs support" [ref=e119]
+                  - columnheader "Meets expectations" [ref=e120]
+                  - columnheader "Exceeds expectations" [ref=e121]
+              - rowgroup [ref=e122]:
+                - row "Accelerated growth No members Select Parker Peer placement No members" [ref=e123]:
+                  - rowheader "Accelerated growth" [ref=e124]
+                  - cell "No members" [ref=e125]:
+                    - paragraph [ref=e126]: No members
+                  - cell "Select Parker Peer placement" [ref=e127]:
+                    - button "Select Parker Peer placement" [ref=e129]:
+                      - paragraph [ref=e130]: Parker Peer
+                      - paragraph [ref=e131]: "Manager: Morgan Manager"
+                  - cell "No members" [ref=e132]:
+                    - paragraph [ref=e133]: No members
+                - row "Growth ready No members No members Select Elliot Employee placement" [ref=e134]:
+                  - rowheader "Growth ready" [ref=e135]
+                  - cell "No members" [ref=e136]:
+                    - paragraph [ref=e137]: No members
+                  - cell "No members" [ref=e138]:
+                    - paragraph [ref=e139]: No members
+                  - cell "Select Elliot Employee placement" [ref=e140]:
+                    - button "Select Elliot Employee placement" [ref=e142]:
+                      - paragraph [ref=e143]: Elliot Employee
+                      - paragraph [ref=e144]: "Manager: Morgan Manager"
+                - row "Current scope No members No members No members" [ref=e145]:
+                  - rowheader "Current scope" [ref=e146]
+                  - cell "No members" [ref=e147]:
+                    - paragraph [ref=e148]: No members
+                  - cell "No members" [ref=e149]:
+                    - paragraph [ref=e150]: No members
+                  - cell "No members" [ref=e151]:
+                    - paragraph [ref=e152]: No members
+          - complementary [ref=e153]:
+            - heading "Participant Context" [level=2] [ref=e154]
+            - paragraph [ref=e155]: Review participant context and adjust placement.
+            - generic [ref=e157]:
+              - generic [ref=e158]:
+                - heading "Elliot Employee" [level=2] [ref=e159]
+                - paragraph [ref=e160]: "Manager: Morgan Manager"
+              - tablist "Calibration drawer tabs" [ref=e161]:
+                - tab "This cycle" [selected] [ref=e162]
+                - tab "Previous cycles" [ref=e163]
+              - generic [ref=e164]:
+                - generic [ref=e166]:
+                  - heading "Submission summary" [level=3] [ref=e167]
+                  - paragraph [ref=e168]: 0 of 3 submissions completed.
+                - generic [ref=e170]:
+                  - generic [ref=e171]:
+                    - heading "Move to box" [level=3] [ref=e172]
+                    - paragraph [ref=e173]: Set performance and potential buckets for this participant.
+                  - generic [ref=e174]:
+                    - generic [ref=e175]:
+                      - text: Performance
+                      - combobox "Performance" [ref=e176]:
+                        - option "Needs support"
+                        - option "Meets expectations"
+                        - option "Exceeds expectations" [selected]
+                    - generic [ref=e177]:
+                      - text: Potential
+                      - combobox "Potential" [ref=e178]:
+                        - option "Accelerated growth"
+                        - option "Growth ready" [selected]
+                        - option "Current scope"
+                    - generic [ref=e179]:
+                      - text: Justification notes
+                      - textbox "Justification notes" [ref=e180]:
+                        - /placeholder: Capture rationale for this placement...
+                    - button "Save placement" [ref=e181]
+  - button "Open Next.js Dev Tools" [ref=e187] [cursor=pointer]:
+    - img [ref=e188]
+  - alert [ref=e191]

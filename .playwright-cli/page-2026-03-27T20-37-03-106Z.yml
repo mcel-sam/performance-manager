@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+    - main [ref=e24]:
+      - button "Elliot Employee Elliot Employee Employee" [ref=e28]:
+        - generic "Elliot Employee" [ref=e29]
+        - generic [ref=e30]:
+          - generic [ref=e31]: Elliot Employee
+          - generic [ref=e32]: Employee
+      - generic [ref=e34]:
+        - heading "No goal cycles available yet" [level=2] [ref=e35]
+        - paragraph [ref=e36]: Ask HR to create a goal cycle first so teams can work in the right planning window.
+  - button "Open Next.js Dev Tools" [ref=e42] [cursor=pointer]:
+    - img [ref=e43]
+  - alert [ref=e46]

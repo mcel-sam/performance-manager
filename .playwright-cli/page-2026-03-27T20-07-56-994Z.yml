@@ -1,0 +1,43 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+          - button "Admin" [ref=e26]:
+            - img [ref=e28]
+            - tooltip "Admin"
+    - main [ref=e32]:
+      - generic [ref=e34]:
+        - button "Current organization" [disabled] [ref=e35]:
+          - generic [ref=e36]: O
+          - generic [ref=e37]: Demo Performance Org
+          - img [ref=e38]
+        - button "Harper Admin Harper Admin HR Admin" [ref=e41]:
+          - generic "Harper Admin" [ref=e42]
+          - generic [ref=e43]:
+            - generic [ref=e44]: Harper Admin
+            - generic [ref=e45]: HR Admin
+      - generic [ref=e46]:
+        - generic [ref=e48]:
+          - heading "Profile" [level=1] [ref=e49]
+          - paragraph [ref=e50]: Profile preferences are a stub in this demo build.
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - heading "Profile settings" [level=3] [ref=e53]
+            - paragraph [ref=e54]: Manage your account, notification, and display preferences in a future release.
+          - generic [ref=e55]: No editable profile fields are enabled yet.
+  - button "Open Next.js Dev Tools" [ref=e61] [cursor=pointer]:
+    - img [ref=e62]
+  - alert [ref=e65]

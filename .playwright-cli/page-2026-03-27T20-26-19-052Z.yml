@@ -1,0 +1,130 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+          - button "Admin" [ref=e26]:
+            - img [ref=e28]
+            - tooltip "Admin"
+    - main [ref=e32]:
+      - button "Harper Admin Harper Admin HR Admin" [ref=e36]:
+        - generic "Harper Admin" [ref=e37]
+        - generic [ref=e38]:
+          - generic [ref=e39]: Harper Admin
+          - generic [ref=e40]: HR Admin
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - heading "User Management" [level=1] [ref=e44]
+            - paragraph [ref=e45]: Manage roles and org structure so assignments and reporting stay aligned.
+          - link "Add User" [ref=e47] [cursor=pointer]:
+            - /url: /admin/users/new
+            - button "Add User" [ref=e48]
+        - generic [ref=e49]:
+          - generic [ref=e51]:
+            - paragraph [ref=e52]: Total users
+            - heading "4" [level=3] [ref=e53]
+          - generic [ref=e55]:
+            - paragraph [ref=e56]: HR admins
+            - heading "1" [level=3] [ref=e57]
+          - generic [ref=e59]:
+            - paragraph [ref=e60]: Super admins
+            - heading "0" [level=3] [ref=e61]
+          - generic [ref=e63]:
+            - paragraph [ref=e64]: Managers
+            - heading "1" [level=3] [ref=e65]
+          - generic [ref=e67]:
+            - paragraph [ref=e68]: Employees
+            - heading "2" [level=3] [ref=e69]
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - heading "Search users" [level=3] [ref=e72]
+            - paragraph [ref=e73]: Filter by first name, last name, or email.
+          - generic [ref=e75]:
+            - textbox "Search name or email" [ref=e76]
+            - button "Search" [ref=e77]
+            - link "Clear" [ref=e78] [cursor=pointer]:
+              - /url: /admin/users
+              - button "Clear" [ref=e79]
+        - table [ref=e82]:
+          - rowgroup [ref=e83]:
+            - 'row "User Role Department Title Manager # Reports Actions" [ref=e84]':
+              - columnheader "User" [ref=e85]
+              - columnheader "Role" [ref=e86]
+              - columnheader "Department" [ref=e87]
+              - columnheader "Title" [ref=e88]
+              - columnheader "Manager" [ref=e89]
+              - columnheader "# Reports" [ref=e90]
+              - columnheader "Actions" [ref=e91]
+          - rowgroup [ref=e92]:
+            - row "Elliot Employee employee@example.com Employee Engineering Software Engineer Morgan Manager 0 Edit" [ref=e93]:
+              - cell "Elliot Employee employee@example.com" [ref=e94]:
+                - paragraph [ref=e95]: Elliot Employee
+                - paragraph [ref=e96]: employee@example.com
+              - cell "Employee" [ref=e97]:
+                - generic [ref=e100]: Employee
+              - cell "Engineering" [ref=e101]
+              - cell "Software Engineer" [ref=e102]
+              - cell "Morgan Manager" [ref=e103]
+              - cell "0" [ref=e104]
+              - cell "Edit" [ref=e105]:
+                - link "Edit" [ref=e106] [cursor=pointer]:
+                  - /url: /admin/users/user_employee_1
+                  - button "Edit" [ref=e107]
+            - row "Harper Admin hr-admin@example.com HR Admin People Operations HR Admin — 1 Edit" [ref=e108]:
+              - cell "Harper Admin hr-admin@example.com" [ref=e109]:
+                - paragraph [ref=e110]: Harper Admin
+                - paragraph [ref=e111]: hr-admin@example.com
+              - cell "HR Admin" [ref=e112]:
+                - generic [ref=e115]: HR Admin
+              - cell "People Operations" [ref=e116]
+              - cell "HR Admin" [ref=e117]
+              - cell "—" [ref=e118]
+              - cell "1" [ref=e119]
+              - cell "Edit" [ref=e120]:
+                - link "Edit" [ref=e121] [cursor=pointer]:
+                  - /url: /admin/users/user_hr_admin_1
+                  - button "Edit" [ref=e122]
+            - row "Morgan Manager manager@example.com Manager Engineering Engineering Manager Harper Admin 2 Edit" [ref=e123]:
+              - cell "Morgan Manager manager@example.com" [ref=e124]:
+                - paragraph [ref=e125]: Morgan Manager
+                - paragraph [ref=e126]: manager@example.com
+              - cell "Manager" [ref=e127]:
+                - generic [ref=e130]: Manager
+              - cell "Engineering" [ref=e131]
+              - cell "Engineering Manager" [ref=e132]
+              - cell "Harper Admin" [ref=e133]
+              - cell "2" [ref=e134]
+              - cell "Edit" [ref=e135]:
+                - link "Edit" [ref=e136] [cursor=pointer]:
+                  - /url: /admin/users/user_manager_1
+                  - button "Edit" [ref=e137]
+            - row "Parker Peer peer@example.com Employee Engineering QA Engineer Morgan Manager 0 Edit" [ref=e138]:
+              - cell "Parker Peer peer@example.com" [ref=e139]:
+                - paragraph [ref=e140]: Parker Peer
+                - paragraph [ref=e141]: peer@example.com
+              - cell "Employee" [ref=e142]:
+                - generic [ref=e145]: Employee
+              - cell "Engineering" [ref=e146]
+              - cell "QA Engineer" [ref=e147]
+              - cell "Morgan Manager" [ref=e148]
+              - cell "0" [ref=e149]
+              - cell "Edit" [ref=e150]:
+                - link "Edit" [ref=e151] [cursor=pointer]:
+                  - /url: /admin/users/user_peer_1
+                  - button "Edit" [ref=e152]
+  - button "Open Next.js Dev Tools" [ref=e158] [cursor=pointer]:
+    - img [ref=e159]
+  - alert [ref=e162]

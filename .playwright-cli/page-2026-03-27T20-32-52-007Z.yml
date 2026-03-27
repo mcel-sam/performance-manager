@@ -1,0 +1,74 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e8]: MO
+          - button "Expand navigation" [ref=e9]:
+            - img [ref=e10]
+        - navigation [ref=e12]:
+          - link "Home" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e16]
+            - generic [ref=e18]: Home
+            - tooltip "Home"
+          - button "Performance" [ref=e20]:
+            - img [ref=e22]
+            - tooltip "Performance"
+          - button "Admin" [ref=e26]:
+            - img [ref=e28]
+            - tooltip "Admin"
+    - main [ref=e32]:
+      - button "Harper Admin Harper Admin HR Admin" [ref=e36]:
+        - generic "Harper Admin" [ref=e37]
+        - generic [ref=e38]:
+          - generic [ref=e39]: Harper Admin
+          - generic [ref=e40]: HR Admin
+      - generic [ref=e41]:
+        - generic [ref=e43]:
+          - heading "Reporting" [level=1] [ref=e44]
+          - paragraph [ref=e45]: Monitor cycle progress, manager follow-up, and employee queue status for the selected cycle.
+          - generic [ref=e47]:
+            - text: "Active cycle:"
+            - strong [ref=e48]: Seed Draft Cycle
+        - generic [ref=e49]:
+          - paragraph [ref=e50]: Refine the cycle scope, then move between completion, manager follow-up, and employee queue views.
+          - generic [ref=e51]:
+            - generic [ref=e52]:
+              - text: Cycle
+              - combobox "Cycle" [ref=e53]:
+                - option "Seed Draft Cycle" [selected]
+            - generic [ref=e54]:
+              - text: Department
+              - combobox "Department" [ref=e55]:
+                - option "All departments" [selected]
+                - option "Engineering"
+                - option "People Operations"
+            - generic [ref=e56]:
+              - text: Title
+              - combobox "Title" [ref=e57]:
+                - option "All titles" [selected]
+                - option "Engineering Manager"
+                - option "HR Admin"
+                - option "QA Engineer"
+                - option "Software Engineer"
+            - button "Apply filters" [ref=e59]
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - link "Overview" [ref=e62] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=overview&ratingSource=FINAL&page=1"
+            - link "Managers" [ref=e63] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=managers&ratingSource=FINAL&page=1"
+            - link "Employee queue" [ref=e64] [cursor=pointer]:
+              - /url: "?cycleId=cycle_seed_draft_1&groupBy=department&tab=queue&ratingSource=FINAL&page=1"
+          - generic [ref=e65]:
+            - generic [ref=e66]: Scope
+            - generic [ref=e67]: All departments
+            - text: •
+            - generic [ref=e68]: All titles
+        - generic [ref=e69]:
+          - heading "Insufficient data for selected filters" [level=2] [ref=e70]
+          - paragraph [ref=e71]: Insufficient data for this filter group.
+  - button "Open Next.js Dev Tools" [ref=e77] [cursor=pointer]:
+    - img [ref=e78]
+  - alert [ref=e81]

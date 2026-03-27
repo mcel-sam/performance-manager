@@ -51,6 +51,11 @@ Examples:
 - employees can access only their own records
 - some restricted leadership data is not visible to standard managers
 
+The default hierarchy rule is:
+- direct reports are the primary manager scope
+- wider report trees must be explicitly allowed by workflow policy
+- directory-backed manager relationships inform scope, but do not replace Trellis authorization rules
+
 ### 3.4 Restricted talent workflows
 The following workflows are highly sensitive and must be tightly controlled:
 - calibration

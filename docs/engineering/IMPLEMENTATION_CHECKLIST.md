@@ -391,14 +391,14 @@ Notes:
 
 - [x] Navigation reflects vanilla scope only
 - [x] Incomplete modules are hidden
-- [ ] Core screens follow frontend standards
+- [~] Core screens follow frontend standards
 - [ ] Labels are clear and professional
 - [ ] Empty states are handled
 - [ ] Loading states are handled
 - [ ] Error states are handled
 - [ ] Critical workflows have clear next actions
 - [ ] High-sensitivity screens feel calm and trustworthy
-- [ ] Layout and hierarchy are consistent across Goals, Reviews, Calibration, and PIP
+- [~] Layout and hierarchy are consistent across Goals, Reviews, Calibration, and PIP
 
 Definition of done:
 - the app feels coherent and trustworthy for HR-facing sandbox use
@@ -410,9 +410,18 @@ Notes:
 - the visible shell pass now also covers empty states, filter bars, tables, drawers, modals, contextual help hints, skeleton/loading surfaces, and the main home dashboard hero/cards so the product reads as one cohesive Morgan-branded workspace instead of a mix of old accent systems
 - the current content-cleanup pass removes low-value helper copy and repeated metadata from the visible Home, Reviews, Goals, Goal Cycles, and Calibration admin surfaces so lighter secondary text is used more intentionally instead of carrying redundant instructions
 - the shared `Card` primitive now clips its own header/content layers, preventing the cut-corner artifact that appeared on framed surfaces like improvement-plan detail cards and any other pages using tinted `CardHeader` sections
-- the home org-snapshot people card now prefers shared-manager peers as teammates whenever the viewer has a manager above them, and only falls back to direct reports for top-of-tree leaders without an upstream manager
-- the home org-snapshot card no longer falls back to review-task subjects as fake teammates, and the employee landing hero now drops the redundant `Employee` badge while keeping elevated-role badges where they add context
-- the home org-snapshot now uses one compact `Team` card with subtle peer/direct-report summary blocks and a light divider, then separates the two groups only inside the disclosure details, including one additional child-report level for direct reports who also manage people
+- the home people-context card now prefers shared-manager peers as teammates whenever the viewer has a manager above them, and only falls back to direct reports for top-of-tree leaders without an upstream manager
+- the home people-context card no longer falls back to review-task subjects as fake teammates, and the employee landing hero now drops the redundant `Employee` badge while keeping elevated-role badges where they add context
+- the home people-context card now uses precise reporting language, with one compact `Reports` disclosure, separate peer/direct-report summary blocks, and one additional nested `Reports` level for direct reports who also manage people
+- the caught-up Home state now avoids repeating submitted-task counts across the section badge, body card, disclosure, and summary panel, keeping one clear next-action disclosure and a more useful `Current cycle` summary row instead
+- the current shell simplification pass removes the redundant Home-only workspace bar, removes the always-visible disabled org pill from the global header, and keeps organization context inside the profile menu instead of spending permanent top-right space on inactive chrome
+- a shared `WorkspacePage` layout wrapper now aligns the main audited pages on wider, role-appropriate content widths so Home, Profile, Reviews, My Team, Goal Cycles, Review Cycles, Calibration admin, and User Management read as one product instead of a mix of narrower one-off canvases
+- Home now uses one clear page heading and one secondary action instead of stacking a shell bar, hero card, and tab strip before the user reaches actual work, while Profile now follows the same workspace alignment instead of sitting in a detached `max-w-3xl` stub
+- the Goals workspace no longer uses a passive right-rail for lightweight filters and summary cards; those controls now live in one aligned full-width support panel, and the actual right rail is reserved for live goal context only when a goal is selected
+- the participant reviews workspace now hides relationship filters that are not actually present in the assigned task set, relabels that control as `Review type`, auto-loads the first visible task into the details drawer, and exposes an explicit `View details` action instead of leaving the side panel blank by default
+- shared loading states now use a branded shimmer treatment through the central `Skeleton` primitive, and high-visibility placeholders like reporting charts plus the goals context drawer now show structured skeleton layouts instead of raw pulse blocks or plain `Loading...` copy
+- the shimmer pass now uses a narrower, brighter sweep so the moving band is actually visible on the light Morgan surfaces instead of disappearing into the neutral background
+- the profile trigger now carries the signed-in person’s name once, and the profile menu header keeps only org context instead of repeating the same person label directly underneath it
 
 ---
 
@@ -454,6 +463,8 @@ Notes:
 - a second-pass browser audit confirmed the regrouped sidebar reads cleanly for Super Admin and Manager, and the cumulative-role cleanup kept HR admin review/goals entry points intact while preserving manager-team access where reporting lines exist
 - review task surfaces now switch between start/continue/view language based on submission state, HR review-cycle tables now avoid raw sandbox IDs and enum-style transition labels, and the deferred calibration export placeholder is no longer visible in the live sandbox path
 - the Help entry is now hidden from the primary navigation pending clearer product requirements, so the shell focuses on actionable workflows instead of a low-value placeholder destination
+- a targeted post-cleanup browser pass on `localhost` confirmed the simplified shell and wider workspace grid on Employee Home, Manager My Team, and HR Admin User Management, with the org chip removed from the persistent header and key work pages using the canvas more effectively
+- the latest `localhost` review-surface validation confirmed the empty-state employee view no longer shows a misleading relationship filter; drawer-state validation for a populated employee queue still depends on seeded review assignments in the local demo dataset
 
 Definition of done:
 - core workflows are validated in-browser and safe for HR mock runs
@@ -462,15 +473,21 @@ Definition of done:
 
 ## 16. Deployment and Operations
 
-- [ ] Sandbox deployment process is documented
-- [ ] Environment variable requirements are documented
+- [~] Sandbox deployment process is documented
+- [x] Environment variable requirements are documented
 - [ ] Sandbox secrets managed correctly
-- [ ] DB migration flow is working
+- [x] DB migration flow is working
 - [ ] Basic rollback/redeploy confidence exists
-- [ ] Basic incident/debug path exists for sandbox issues
+- [~] Basic incident/debug path exists for sandbox issues
 
 Definition of done:
 - sandbox can be deployed, updated, and debugged without chaos
+
+Notes:
+- the root container image now includes an Azure Container Apps-friendly startup path, a `/api/health`
+  container healthcheck, and an entrypoint that can run `web`, `migrate`, or `bootstrap` modes
+- `README.md` now documents the required runtime env vars, local production-image validation flow,
+  Docker Compose profile for the web container, and the recommended health probe path/port
 
 ---
 
