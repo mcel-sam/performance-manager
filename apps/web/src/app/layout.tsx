@@ -53,7 +53,7 @@ export default function RootLayout({
 function AppShellSuspenseFallback({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <main className="mx-auto w-full max-w-[1520px] p-5 sm:p-7">{children}</main>
+      <main className="mx-auto w-full max-w-[1760px] p-5 sm:p-7">{children}</main>
     </div>
   );
 }

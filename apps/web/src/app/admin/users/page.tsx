@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import UserManagementTable from "@/components/admin/user-management-table";
 import { PageHeader } from "@/components/layout/page-header";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -29,7 +30,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   const directory = await listOrgUsers(context, { search });
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <WorkspacePage width="wide" className="flex flex-col gap-6">
       <PageHeader
         title="User Management"
         description="Manage roles and org structure so assignments and reporting stay aligned."
@@ -89,7 +90,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
           <UserManagementTable users={directory.users} />
         </SectionContainer>
       )}
-    </div>
+    </WorkspacePage>
   );
 }
 

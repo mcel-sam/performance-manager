@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ImprovementPlanStatus } from "@prisma/client";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,7 +36,7 @@ export default async function ImprovementPlansListPage() {
   const plans = await listImprovementPlans(context);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <WorkspacePage width="wide">
       <PageHeader
         eyebrow="Improvement Plans"
         title="Coaching plans and check-ins"
@@ -100,6 +101,6 @@ export default async function ImprovementPlansListPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </WorkspacePage>
   );
 }

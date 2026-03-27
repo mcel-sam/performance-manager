@@ -74,6 +74,7 @@ export function getOrgThemeCssVariables(theme: OrgTheme): OrgThemeCssVariables {
     "--color-help-hint-icon-fg": "var(--brand-primary)",
     "--color-overlay-scrim": "rgba(0, 0, 0, 0.42)",
     "--color-skeleton": "color-mix(in srgb, var(--color-surface-subtle) 72%, var(--color-white))",
+    "--color-skeleton-highlight": "color-mix(in srgb, var(--color-white) 92%, var(--color-brand-primary) 8%)",
     "--color-badge-neutral-bg": "color-mix(in srgb, var(--color-neutral-200) 70%, var(--color-white))",
     "--color-badge-neutral-border": "color-mix(in srgb, var(--color-border-default) 58%, var(--color-white))",
     "--color-badge-neutral-text": "var(--color-neutral-700)",

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import ReviewCyclesTable from "@/components/admin/review-cycles-table";
 import { PageHeader } from "@/components/layout/page-header";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionContainer } from "@/components/ui/section-container";
@@ -23,7 +24,7 @@ export default async function AdminReviewCyclesPage() {
   const cycles = await listReviewCycles(context);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4">
+    <WorkspacePage width="wide" className="space-y-4">
       <PageHeader
         title="Review Cycles"
         description="Create cycles, generate submissions, and progress cycle states."
@@ -54,6 +55,6 @@ export default async function AdminReviewCyclesPage() {
           <ReviewCyclesTable cycles={cycles} auth={{ userId: context.userId, orgId: context.orgId }} />
         </SectionContainer>
       )}
-    </div>
+    </WorkspacePage>
   );
 }

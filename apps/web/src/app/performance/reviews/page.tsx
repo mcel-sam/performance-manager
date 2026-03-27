@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReviewRelationship, ReviewSubmissionStatus } from "@prisma/client";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,7 +53,7 @@ const statusLabel = {
 } as const;
 
 const statusFilterOptions: StatusFilter[] = ["NOT_STARTED", "IN_PROGRESS", "SUBMITTED", "RETURNED"];
-const relationshipFilterOptions: RelationshipFilter[] = ["SELF", "MANAGER"];
+const vanillaRelationshipFilterOptions: RelationshipFilter[] = ["SELF", "MANAGER"];
 
 export default async function PerformanceReviewsPage({
   searchParams,
@@ -65,15 +66,16 @@ export default async function PerformanceReviewsPage({
   const tasks = (await listAssignedReviewTasks(context)).filter((task) =>
     isVanillaReviewRelationship(task.relationship),
   );
-  const filteredTasks = tasks.filter((task) => matchesTaskFilters(task, filters));
+  const relationshipFilterOptions = getAvailableRelationshipFilterOptions(tasks);
+  const sanitizedFilters = sanitizeReviewTaskFilters(filters, relationshipFilterOptions);
+  const filteredTasks = tasks.filter((task) => matchesTaskFilters(task, sanitizedFilters));
   const statusSummary = summarizeTaskStatuses(filteredTasks);
-  const selectedTaskId = filters.taskId;
   const selectedTask =
-    selectedTaskId != null ? filteredTasks.find((task) => task.id === selectedTaskId) ?? null : null;
-  const filterChips = buildFilterChips(filters);
+    filteredTasks.find((task) => task.id === sanitizedFilters.taskId) ?? filteredTasks[0] ?? null;
+  const filterChips = buildFilterChips(sanitizedFilters);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 text-slate-900">
+    <WorkspacePage width="wide" className="flex flex-col gap-6 text-slate-900">
       <PageHeader
         title="Performance Reviews"
         description="Review the submissions assigned to you, filter the list, and either continue work in progress or reference submitted reviews."
@@ -112,7 +114,11 @@ export default async function PerformanceReviewsPage({
 
         <label className="flex flex-col gap-2 text-sm text-slate-700">
           Status
-          <Select name="status" defaultValue={filters.status ?? ""} data-testid="reviews-filter-status">
+          <Select
+            name="status"
+            defaultValue={sanitizedFilters.status ?? ""}
+            data-testid="reviews-filter-status"
+          >
             <option value="">All statuses</option>
             {statusFilterOptions.map((status) => (
               <option key={status} value={status}>
@@ -122,21 +128,23 @@ export default async function PerformanceReviewsPage({
           </Select>
         </label>
 
-        <label className="flex flex-col gap-2 text-sm text-slate-700">
-          Who you&apos;re reviewing
-          <Select
-            name="relationship"
-            defaultValue={filters.relationship ?? ""}
-            data-testid="reviews-filter-relationship"
-          >
-            <option value="">All review types</option>
-            {relationshipFilterOptions.map((relationship) => (
-              <option key={relationship} value={relationship}>
-                {getReviewRelationshipAudienceLabel(relationship)}
-              </option>
-            ))}
-          </Select>
-        </label>
+        {relationshipFilterOptions.length > 1 ? (
+          <label className="flex flex-col gap-2 text-sm text-slate-700">
+            Review type
+            <Select
+              name="relationship"
+              defaultValue={sanitizedFilters.relationship ?? ""}
+              data-testid="reviews-filter-relationship"
+            >
+              <option value="">All review types</option>
+              {relationshipFilterOptions.map((relationship) => (
+                <option key={relationship} value={relationship}>
+                  {getReviewRelationshipAudienceLabel(relationship)}
+                </option>
+              ))}
+            </Select>
+          </label>
+        ) : null}
 
         <div className="flex items-end">
           <Button type="submit" className="w-full" data-testid="reviews-apply-filters">
@@ -207,19 +215,7 @@ export default async function PerformanceReviewsPage({
                             {task.cycleName}
                           </TableCell>
                           <TableCell>
-                            <Link
-                              href={toReviewsHref({
-                                taskId: task.id,
-                                query: filters.query,
-                                status: filters.status,
-                                relationship: filters.relationship,
-                              })}
-                              scroll={false}
-                              data-testid={`reviews-open-task-${task.id}`}
-                              className="inline-flex flex-col rounded-[var(--radius-sm)] px-2 py-1 text-left transition hover:bg-white"
-                            >
-                              <span className="text-sm font-semibold text-slate-900">{task.subjectName}</span>
-                            </Link>
+                            <span className="text-sm font-semibold text-slate-900">{task.subjectName}</span>
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-slate-700">
@@ -237,19 +233,35 @@ export default async function PerformanceReviewsPage({
                             </span>
                           </TableCell>
                           <TableCell>
-                            <Link
-                              href={withReturnTo(
-                                `/performance/reviews/${task.cycleId}/write/${task.id}`,
-                                toReviewsHref({
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Link
+                                href={toReviewsHref({
                                   taskId: task.id,
-                                  query: filters.query,
-                                  status: filters.status,
-                                  relationship: filters.relationship,
-                                }),
-                              )}
-                            >
-                              <Button size="sm">{getReviewActionLabel(task.status)}</Button>
-                            </Link>
+                                  query: sanitizedFilters.query,
+                                  status: sanitizedFilters.status,
+                                  relationship: sanitizedFilters.relationship,
+                                })}
+                                scroll={false}
+                                data-testid={`reviews-open-task-${task.id}`}
+                              >
+                                <Button size="sm" variant="outline">
+                                  View details
+                                </Button>
+                              </Link>
+                              <Link
+                                href={withReturnTo(
+                                  `/performance/reviews/${task.cycleId}/write/${task.id}`,
+                                  toReviewsHref({
+                                    taskId: task.id,
+                                    query: sanitizedFilters.query,
+                                    status: sanitizedFilters.status,
+                                    relationship: sanitizedFilters.relationship,
+                                  }),
+                                )}
+                              >
+                                <Button size="sm">{getReviewActionLabel(task.status)}</Button>
+                              </Link>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -265,11 +277,6 @@ export default async function PerformanceReviewsPage({
               testId="reviews-task-drawer"
               title="Task details"
               subtitle={`${selectedTask.subjectName} · ${getReviewRelationshipAudienceLabel(selectedTask.relationship)}`}
-              closeHref={toReviewsHref({
-                query: filters.query,
-                status: filters.status,
-                relationship: filters.relationship,
-              })}
               actions={
                 <StatusChip tone={getReviewStatusTone(selectedTask.status)}>
                   {statusLabel[selectedTask.status]}
@@ -318,9 +325,9 @@ export default async function PerformanceReviewsPage({
                           `/performance/reviews/${selectedTask.cycleId}/write/${selectedTask.id}`,
                           toReviewsHref({
                             taskId: selectedTask.id,
-                            query: filters.query,
-                            status: filters.status,
-                            relationship: filters.relationship,
+                            query: sanitizedFilters.query,
+                            status: sanitizedFilters.status,
+                            relationship: sanitizedFilters.relationship,
                           }),
                         )}
                       >
@@ -382,7 +389,7 @@ export default async function PerformanceReviewsPage({
           )}
         </div>
       )}
-    </div>
+    </WorkspacePage>
   );
 }
 
@@ -406,7 +413,7 @@ function parseReviewTaskFilters(params: SearchParamsShape): ReviewTaskFilters {
       ? (statusValue as StatusFilter)
       : null;
   const relationship =
-    relationshipValue && relationshipFilterOptions.includes(relationshipValue as RelationshipFilter)
+    relationshipValue && vanillaRelationshipFilterOptions.includes(relationshipValue as RelationshipFilter)
       ? (relationshipValue as RelationshipFilter)
       : null;
 
@@ -415,6 +422,32 @@ function parseReviewTaskFilters(params: SearchParamsShape): ReviewTaskFilters {
     query,
     status,
     relationship,
+  };
+}
+
+function getAvailableRelationshipFilterOptions(tasks: ReviewTaskListItem[]): RelationshipFilter[] {
+  const seenRelationships = new Set<RelationshipFilter>();
+
+  for (const task of tasks) {
+    seenRelationships.add(task.relationship);
+  }
+
+  return Array.from(seenRelationships).sort(
+    (left, right) =>
+      getRelationshipSortOrder(left) - getRelationshipSortOrder(right),
+  );
+}
+
+function sanitizeReviewTaskFilters(
+  filters: ReviewTaskFilters,
+  relationshipFilterOptions: RelationshipFilter[],
+): ReviewTaskFilters {
+  return {
+    ...filters,
+    relationship:
+      filters.relationship && relationshipFilterOptions.includes(filters.relationship)
+        ? filters.relationship
+        : null,
   };
 }
 
@@ -436,6 +469,17 @@ function matchesTaskFilters(task: ReviewTaskListItem, filters: ReviewTaskFilters
   }
 
   return true;
+}
+
+function getRelationshipSortOrder(relationship: RelationshipFilter): number {
+  switch (relationship) {
+    case "SELF":
+      return 0;
+    case "MANAGER":
+      return 1;
+    default:
+      return 2;
+  }
 }
 
 function summarizeTaskStatuses(tasks: ReviewTaskListItem[]): {

@@ -3,7 +3,7 @@ import { ReviewRelationship, ReviewSubmissionStatus, UserRole } from "@prisma/cl
 import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/layout/page-header";
-import { AvatarsStack } from "@/components/ui/avatars-stack";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,7 +89,7 @@ export default async function TeamReviewsPage({
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <WorkspacePage width="wide" className="flex flex-col gap-6">
       <PageHeader
         title="My Team"
         description="Track direct-report review readiness, open the next manager review, and inspect packet context for the active cycle."
@@ -392,10 +392,16 @@ export default async function TeamReviewsPage({
                           <p className="text-sm text-slate-600">
                             {selectedRow.title ?? "No title"} · {selectedRow.department ?? "No department"}
                           </p>
-                          <AvatarsStack
-                            items={createReviewerAvatarItems(selectedRow.employeeName)}
+                          <div
+                            className="flex flex-wrap items-center gap-2"
                             data-testid="my-team-reviewers-stack"
-                          />
+                          >
+                            {createReviewerBadges().map((badge) => (
+                              <Badge key={badge.id} variant="info">
+                                {badge.label}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
 
                         <div className="space-y-2">
@@ -516,7 +522,7 @@ export default async function TeamReviewsPage({
           </div>
         </>
       )}
-    </div>
+    </WorkspacePage>
   );
 }
 
@@ -709,10 +715,10 @@ function toMyTeamBaseHref(cycleId: string | null): string {
   return `/performance/team-reviews?${params.toString()}`;
 }
 
-function createReviewerAvatarItems(employeeName: string): Array<{ id: string; label: string }> {
+function createReviewerBadges(): Array<{ id: string; label: string }> {
   return [
-    { id: `${employeeName}-self`, label: `${employeeName} Self review` },
-    { id: `${employeeName}-manager`, label: `${employeeName} Manager Review` },
+    { id: "self-review", label: "Self review" },
+    { id: "manager-review", label: "Manager review" },
   ];
 }
 

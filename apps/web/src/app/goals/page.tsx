@@ -1,4 +1,5 @@
 import { EmptyState } from "@/components/ui/empty-state";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import { GoalsWorkspace } from "@/components/goals/goals-workspace";
 import { getDevRequestContext } from "@/server/auth/request-context";
 import { getGoalFormCatalog, listGoalCycles, listGoals } from "@/server/goals/goal-service";
@@ -18,12 +19,12 @@ export default async function GoalsPage({
 
   if (cycles.length === 0) {
     return (
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <WorkspacePage width="wide" className="flex flex-col gap-6">
         <EmptyState
           title="No goal cycles available yet"
           description="Ask HR to create a goal cycle first so teams can work in the right planning window."
         />
-      </div>
+      </WorkspacePage>
     );
   }
 

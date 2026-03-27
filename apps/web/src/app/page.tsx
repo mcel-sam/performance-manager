@@ -6,8 +6,11 @@ import {
   getGettingStartedContent,
   type GettingStartedIcon,
 } from "@/components/home/getting-started";
+import { PageHeader } from "@/components/layout/page-header";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import { AvatarsStack } from "@/components/ui/avatars-stack";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ProfileAvatar } from "@/components/ui/profile-avatar";
 import { StatusChip, getReviewStatusTone } from "@/components/ui/status-chip";
 import { withReturnTo } from "@/lib/navigation/return-to";
@@ -54,7 +57,7 @@ interface HomeTaskSectionContent {
   layout: "default" | "caughtUp";
   title: string;
   description?: string;
-  badgeLabel: string;
+  badgeLabel?: string;
   rows: HomeTaskRow[];
   disclosureLabel?: string;
   disclosureRows?: HomeDisclosureRow[];
@@ -154,70 +157,50 @@ export default async function HomePage() {
   const peoplePanel = getHomePeoplePanel({
     viewerOverview,
   });
+  const hasPeoplePanel =
+    peoplePanel.manager != null ||
+    peoplePanel.peers.length > 0 ||
+    peoplePanel.directReports.length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
-      <section className="overflow-hidden rounded-[28px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] shadow-[var(--shadow-lg)]">
-        <div className="border-b border-[var(--color-shell-divider)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--brand-primary)_5%,white)_0%,white_100%)] px-5 py-6 sm:px-6 sm:py-7">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div className="flex min-w-0 items-center gap-4">
-              <ProfileAvatar
-                name={viewerOverview?.displayName ?? "User"}
-                imageUrl={viewerOverview?.avatarUrl}
-                size="xl"
-                data-testid="home-greeting-avatar"
-              />
-              <div className="min-w-0 space-y-1">
-                <h1
-                  data-testid="home-greeting"
-                  className="text-4xl font-semibold tracking-tight text-[var(--color-text-primary)] sm:text-[2.8rem]"
-                >
-                  Hi, {viewerOverview?.firstName ?? getGreetingFallback(context.role)}!
-                </h1>
-                <p className="text-sm text-[var(--color-text-muted)] sm:text-[0.95rem]">
-                  {getViewerSummaryLine(viewerOverview, context.role)}
-                </p>
-              </div>
-            </div>
-
+    <WorkspacePage width="wide">
+      <PageHeader
+        title={`Hi, ${viewerOverview?.firstName ?? getGreetingFallback(context.role)}!`}
+        description={getViewerSummaryLine(viewerOverview, context.role)}
+        metadata={
+          <div className="flex flex-wrap items-center gap-2">
             {context.role !== UserRole.EMPLOYEE ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  variant="neutral"
-                  className="border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] px-3 py-1.5 text-[var(--color-text-primary)]"
-                >
-                  {formatRoleLabel(context.role)}
-                </Badge>
-              </div>
+              <Badge
+                variant="neutral"
+                className="border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] px-3 py-1.5 text-[var(--color-text-primary)]"
+              >
+                {formatRoleLabel(context.role)}
+              </Badge>
+            ) : null}
+            {viewerOverview?.manager ? (
+              <span>
+                Manager: <strong>{viewerOverview.manager.name}</strong>
+              </span>
             ) : null}
           </div>
-        </div>
-
-        <div className="border-b border-[var(--color-shell-divider)] px-5 sm:px-6">
-          <div className="flex items-center gap-6">
-            <span className="border-b-2 border-[var(--brand-primary)] py-3 text-sm font-semibold text-[var(--brand-primary)]">
-              Home
-            </span>
-            <Link
-              href={secondaryTab.href}
-              className="py-3 text-sm font-semibold text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
-            >
-              {secondaryTab.label}
+        }
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href={secondaryTab.href}>
+              <Button variant="outline">{secondaryTab.label}</Button>
             </Link>
           </div>
-        </div>
+        }
+      />
 
-        <div className="bg-[var(--color-shell-surface-muted)] p-5 sm:p-6">
-          <div className="space-y-5">
-            <HomeTaskSectionCard taskSection={taskSection} />
-            <div className="grid items-start gap-5 lg:grid-cols-2">
-              <HomeSummaryPanel summaryContent={summaryContent} />
-              <HomePeoplePanelCard peoplePanel={peoplePanel} />
-            </div>
-          </div>
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
+        <div className="space-y-6">
+          <HomeTaskSectionCard taskSection={taskSection} />
+          {hasPeoplePanel ? <HomePeoplePanelCard peoplePanel={peoplePanel} /> : null}
         </div>
-      </section>
-    </div>
+        <HomeSummaryPanel summaryContent={summaryContent} />
+      </div>
+    </WorkspacePage>
   );
 }
 
@@ -322,7 +305,6 @@ function getHomeTaskSectionContent(input: {
     return {
       layout: "caughtUp",
       title: "You're caught up",
-      badgeLabel: `${submittedCount} submitted`,
       disclosureLabel: `View ${submittedCount} submitted ${submittedCount === 1 ? "task" : "tasks"}`,
       disclosureRows,
       rows: [
@@ -330,7 +312,7 @@ function getHomeTaskSectionContent(input: {
           href: null,
           label: "No reviews need attention",
           subtitle: "There are no drafts or returned items waiting on you right now.",
-          meta: [`${submittedCount} submitted`],
+          meta: [],
           visual: {
             type: "icon",
             icon: "complete",
@@ -383,9 +365,7 @@ function getHomeSummaryContent(input: {
   draftTask: ReviewTaskListItem | undefined;
   tasks: ReviewTaskListItem[];
 }): HomeSummaryContent {
-  const submittedCount = input.tasks.filter(
-    (task) => task.status === ReviewSubmissionStatus.SUBMITTED,
-  ).length;
+  const latestCycleName = input.tasks[0]?.cycleName ?? null;
 
   switch (input.role) {
     case UserRole.MANAGER:
@@ -474,8 +454,8 @@ function getHomeSummaryContent(input: {
             value: input.draftTask?.subjectName ?? "None",
           },
           {
-            label: "Submitted",
-            value: `${submittedCount}`,
+            label: "Current cycle",
+            value: latestCycleName ?? "None",
           },
         ],
       };
@@ -486,7 +466,10 @@ function getHomePeoplePanel(input: {
   viewerOverview: HomeViewerOverview | null;
 }): HomePeoplePanel {
   return {
-    title: input.viewerOverview?.manager ? "Org snapshot" : "People context",
+    title: "People context",
+    description: input.viewerOverview?.manager
+      ? "Use the reporting chain for fast context: your manager, peers, and direct reports."
+      : "Use the reporting chain for fast context: your direct reports and their reports.",
     manager: input.viewerOverview?.manager
       ? {
           name: input.viewerOverview.manager.name,
@@ -644,16 +627,18 @@ function HomeTaskRowCard({
           ) : null}
         </div>
         <p className="mt-1 truncate text-sm text-[var(--color-text-muted)]">{task.subtitle}</p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {task.meta.map((metaItem) => (
-            <span
-              key={`${task.label}-${metaItem}`}
-              className="inline-flex items-center rounded-full bg-[var(--color-shell-surface-muted)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-neutral-500)]"
-            >
-              {metaItem}
-            </span>
-          ))}
-        </div>
+        {task.meta.length > 0 ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {task.meta.map((metaItem) => (
+              <span
+                key={`${task.label}-${metaItem}`}
+                className="inline-flex items-center rounded-full bg-[var(--color-shell-surface-muted)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-neutral-500)]"
+              >
+                {metaItem}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
     </>
   );
@@ -699,9 +684,11 @@ function HomeTaskSectionCard({
             <p className="mt-1 text-sm text-[var(--color-neutral-500)]">{taskSection.description}</p>
           ) : null}
         </div>
-        <span className="inline-flex items-center rounded-full border border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">
-          {taskSection.badgeLabel}
-        </span>
+        {taskSection.badgeLabel ? (
+          <span className="inline-flex items-center rounded-full border border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">
+            {taskSection.badgeLabel}
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-4 space-y-3">
@@ -824,7 +811,7 @@ function HomeTeamDisclosure({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--color-neutral-500)]">
-              Team
+              Reports
             </p>
             <div className="mt-2 flex flex-wrap items-stretch gap-3">
               {peers.length > 0 ? (
@@ -916,14 +903,11 @@ function HomePeopleListItem({
         <div className="mt-3 rounded-[14px] border border-[var(--color-shell-divider)] bg-[var(--color-shell-surface-muted)] px-3 py-3">
           <div className="flex items-center justify-between gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-neutral-500)]">
-              Team below
+              Reports
             </p>
             <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-surface-default)] px-1.5 text-[10px] font-semibold text-[var(--color-neutral-500)]">
               {person.childReports.length}
             </span>
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <AvatarsStack items={person.childReports} maxVisible={4} />
           </div>
           <div className="mt-3 space-y-2">
             {person.childReports.map((child) => (

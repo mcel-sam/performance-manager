@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import CalibrationSessionsTable from "@/components/admin/calibration-sessions-table";
 import { PageHeader } from "@/components/layout/page-header";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getDevRequestContext } from "@/server/auth/request-context";
@@ -24,7 +25,7 @@ export default async function AdminCalibrationSessionsPage() {
   const sessions = await listCalibrationSessions(context);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4">
+    <WorkspacePage width="wide" className="space-y-4">
       <PageHeader
         title="Calibration Sessions"
         description="Create and manage calibration sessions by cycle and cohort."
@@ -48,6 +49,6 @@ export default async function AdminCalibrationSessionsPage() {
       ) : (
         <CalibrationSessionsTable sessions={sessions} />
       )}
-    </div>
+    </WorkspacePage>
   );
 }

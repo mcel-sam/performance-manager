@@ -3,6 +3,7 @@ import Link from "next/link";
 import { UserRole } from "@prisma/client";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,7 +112,7 @@ export default async function HelpPage() {
   const hasDirectReports = managerSnapshot.directReportCount > 0;
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <WorkspacePage width="standard">
       <PageHeader
         eyebrow="Help Center"
         title="Guidance for reviews, calibration, and plans"
@@ -142,7 +143,7 @@ export default async function HelpPage() {
           ))}
         </CardContent>
       </Card>
-    </div>
+    </WorkspacePage>
   );
 }
 

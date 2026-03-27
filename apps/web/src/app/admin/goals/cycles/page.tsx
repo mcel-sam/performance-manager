@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import GoalCyclesManager from "@/components/admin/goal-cycles-manager";
 import { PageHeader } from "@/components/layout/page-header";
+import { WorkspacePage } from "@/components/layout/workspace-page";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { hasHrAdminAccess } from "@/lib/users/role-capabilities";
 import { getDevRequestContext } from "@/server/auth/request-context";
@@ -20,7 +21,7 @@ export default async function AdminGoalCyclesPage() {
   const draftCount = cycles.filter((cycle) => cycle.status === "DRAFT").length;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <WorkspacePage width="wide" className="flex flex-col gap-6">
       <PageHeader
         title="Goal cycles"
         description="Open and close goal windows independently from review cycles so OKRs can run on their own cadence."
@@ -60,6 +61,6 @@ export default async function AdminGoalCyclesPage() {
         auth={{ userId: context.userId, orgId: context.orgId }}
         cycles={cycles}
       />
-    </div>
+    </WorkspacePage>
   );
 }

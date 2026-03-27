@@ -10,9 +10,11 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { RightDrawer } from "@/components/ui/right-drawer";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select } from "@/components/ui/select";
 import { StatusChip } from "@/components/ui/status-chip";
 import { Tabs } from "@/components/ui/tabs";
@@ -426,9 +428,17 @@ export function GoalsWorkspace({
 
   const editingGoal =
     composerMode === "edit" && selectedGoal ? selectedGoal : undefined;
+  const showGoalContextDrawer = !composerMode && selectedGoalId != null;
 
   return (
-    <div className="mx-auto grid w-full max-w-[1500px] gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div
+      className={cn(
+        "mx-auto w-full max-w-[1600px]",
+        showGoalContextDrawer
+          ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]"
+          : "space-y-6",
+      )}
+    >
       <div className="space-y-6">
         <PageHeader
           title={composerMode === "create" ? "New goal" : composerMode === "edit" ? "Edit goal" : "Goals"}
@@ -445,23 +455,36 @@ export function GoalsWorkspace({
             </>
           }
           action={
-            <div className="flex flex-wrap items-center gap-2">
-              <GoalCycleSelector
-                cycles={cycles.map((cycle) => ({ id: cycle.id, name: cycle.name }))}
-                selectedCycleId={selectedCycle.id}
-              />
-              {composerMode ? (
+            composerMode ? (
+              <div className="flex flex-wrap items-center gap-2">
                 <Button variant="outline" onClick={() => setComposerMode(null)}>
                   Back to goals
                 </Button>
-              ) : (
-                <Button onClick={() => setComposerMode("create")}>Create goal</Button>
-              )}
-            </div>
+              </div>
+            ) : null
           }
         />
 
         {workspaceMessage ? <Toast variant="success">{workspaceMessage}</Toast> : null}
+
+        {!composerMode ? (
+          <GoalWorkspaceSupportPanel
+            selectedCycleId={selectedCycle.id}
+            cycles={cycles.map((cycle) => ({ id: cycle.id, name: cycle.name }))}
+            summary={summary}
+            filters={filters}
+            ownerLabel={ownerLabel}
+            owners={catalog.owners}
+            hasActiveFilters={hasActiveFilters}
+            onStartCreate={() => setComposerMode("create")}
+            onUpdateQuery={updateQuery}
+            onResetFilters={() => router.replace(resetFiltersHref())}
+            clearOwnerHref={clearFilterHref("ownerId")}
+            clearStatusHref={clearFilterHref("status")}
+            clearVisibilityHref={clearFilterHref("visibility")}
+            clearAllHref={resetFiltersHref()}
+          />
+        ) : null}
 
         {composerMode ? (
           <GoalComposer
@@ -532,9 +555,8 @@ export function GoalsWorkspace({
         )}
       </div>
 
-      {!composerMode ? (
+      {showGoalContextDrawer ? (
         <div className="xl:sticky xl:top-4 xl:self-start">
-          {selectedGoalId ? (
           <RightDrawer
             title={selectedGoal?.title ?? "Goal context"}
             subtitle={
@@ -561,7 +583,7 @@ export function GoalsWorkspace({
                 content: drawerError ? (
                   <p className="text-sm text-rose-700">{drawerError}</p>
                 ) : isDrawerLoading || !selectedGoal ? (
-                  <p className="text-sm text-slate-500">Loading goal context…</p>
+                  <GoalDrawerOverviewSkeleton />
                 ) : (
                   <div className="space-y-5">
                     <section className="grid gap-3 sm:grid-cols-2">
@@ -788,7 +810,7 @@ export function GoalsWorkspace({
                 content: drawerError ? (
                   <p className="text-sm text-rose-700">{drawerError}</p>
                 ) : isDrawerLoading || !selectedGoal ? (
-                  <p className="text-sm text-slate-500">Loading updates…</p>
+                  <GoalDrawerTimelineSkeleton />
                 ) : (
                   <div className="space-y-4">
                     <div className="space-y-2 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
@@ -856,7 +878,7 @@ export function GoalsWorkspace({
                 content: drawerError ? (
                   <p className="text-sm text-rose-700">{drawerError}</p>
                 ) : isDrawerLoading ? (
-                  <p className="text-sm text-slate-500">Loading audit history…</p>
+                  <GoalDrawerAuditSkeleton />
                 ) : (
                   <div className="space-y-3">
                     {selectedGoalAuditEvents.length > 0 ? (
@@ -888,21 +910,6 @@ export function GoalsWorkspace({
             defaultTabId="overview"
             testId="goals-context-drawer"
           />
-          ) : (
-            <GoalWorkspaceSidebar
-              summary={summary}
-              filters={filters}
-              ownerLabel={ownerLabel}
-              owners={catalog.owners}
-              hasActiveFilters={hasActiveFilters}
-              onUpdateQuery={updateQuery}
-              onResetFilters={() => router.replace(resetFiltersHref())}
-              clearOwnerHref={clearFilterHref("ownerId")}
-              clearStatusHref={clearFilterHref("status")}
-              clearVisibilityHref={clearFilterHref("visibility")}
-              clearAllHref={resetFiltersHref()}
-            />
-          )}
         </div>
       ) : null}
     </div>
@@ -928,12 +935,15 @@ function GoalSnapshotCell({
   );
 }
 
-function GoalWorkspaceSidebar({
+function GoalWorkspaceSupportPanel({
+  selectedCycleId,
+  cycles,
   summary,
   filters,
   ownerLabel,
   owners,
   hasActiveFilters,
+  onStartCreate,
   onUpdateQuery,
   onResetFilters,
   clearOwnerHref,
@@ -941,11 +951,14 @@ function GoalWorkspaceSidebar({
   clearVisibilityHref,
   clearAllHref,
 }: {
+  selectedCycleId: string;
+  cycles: Array<{ id: string; name: string }>;
   summary: GoalsWorkspaceProps["summary"];
   filters: GoalsWorkspaceProps["filters"];
   ownerLabel: string | null;
   owners: GoalsWorkspaceProps["catalog"]["owners"];
   hasActiveFilters: boolean;
+  onStartCreate: () => void;
   onUpdateQuery: (key: "ownerId" | "status" | "visibility", value: string) => void;
   onResetFilters: () => void;
   clearOwnerHref: string;
@@ -954,72 +967,87 @@ function GoalWorkspaceSidebar({
   clearAllHref: string;
 }) {
   return (
-    <div className="space-y-4">
-      <details
-        className="overflow-hidden rounded-[22px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] shadow-[var(--shadow-xs)]"
-        open={hasActiveFilters}
-      >
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
-          <div>
-            <p className="text-sm font-semibold text-[var(--color-text-primary)]">Refine view</p>
-            <p className="text-sm text-[var(--color-text-muted)]">
-              Optional filters for broader browsing.
-            </p>
+    <section className="rounded-[24px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] p-4 shadow-[var(--shadow-xs)] sm:p-5">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-shell-divider)] pb-4">
+        <div>
+          <p className="text-sm font-semibold text-[var(--color-text-primary)]">Goal cycle</p>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Choose the planning window before filtering or creating a goal.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="min-w-[240px]">
+            <GoalCycleSelector cycles={cycles} selectedCycleId={selectedCycleId} />
           </div>
-          <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
-            {hasActiveFilters ? "Active" : "Optional"}
-          </span>
-        </summary>
-        <div className="space-y-4 border-t border-[var(--color-shell-divider)] px-4 py-4">
-          <label className="block space-y-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
-              Owner
-            </span>
-            <Select
-              value={filters.ownerId ?? ""}
-              onChange={(event) => onUpdateQuery("ownerId", event.target.value)}
-            >
-              <option value="">All visible owners</option>
-              {owners.map((owner) => (
-                <option key={owner.id} value={owner.id}>
-                  {owner.name}
-                </option>
-              ))}
-            </Select>
-          </label>
+          <Button onClick={onStartCreate}>Create goal</Button>
+        </div>
+      </div>
 
-          <label className="block space-y-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
-              Status
+      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-[var(--color-text-primary)]">Refine view</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                Optional filters for broader browsing without splitting the page into a fake sidebar.
+              </p>
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+              {hasActiveFilters ? "Active" : "Optional"}
             </span>
-            <Select
-              value={filters.status ?? ""}
-              onChange={(event) => onUpdateQuery("status", event.target.value)}
-            >
-              <option value="">All statuses</option>
-              <option value={GoalStatus.NOT_STARTED}>Not started</option>
-              <option value={GoalStatus.ON_TRACK}>On track</option>
-              <option value={GoalStatus.AT_RISK}>At risk</option>
-              <option value={GoalStatus.OFF_TRACK}>Off track</option>
-              <option value={GoalStatus.COMPLETE}>Complete</option>
-              <option value={GoalStatus.CANCELED}>Canceled</option>
-            </Select>
-          </label>
+          </div>
 
-          <label className="block space-y-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
-              Visibility
-            </span>
-            <Select
-              value={filters.visibility ?? ""}
-              onChange={(event) => onUpdateQuery("visibility", event.target.value)}
-            >
-              <option value="">All visibility</option>
-              <option value={GoalVisibility.PRIVATE}>Private</option>
-              <option value={GoalVisibility.TEAM}>Team</option>
-              <option value={GoalVisibility.ORG}>Org</option>
-            </Select>
-          </label>
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="block space-y-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                Owner
+              </span>
+              <Select
+                value={filters.ownerId ?? ""}
+                onChange={(event) => onUpdateQuery("ownerId", event.target.value)}
+              >
+                <option value="">All visible owners</option>
+                {owners.map((owner) => (
+                  <option key={owner.id} value={owner.id}>
+                    {owner.name}
+                  </option>
+                ))}
+              </Select>
+            </label>
+
+            <label className="block space-y-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                Status
+              </span>
+              <Select
+                value={filters.status ?? ""}
+                onChange={(event) => onUpdateQuery("status", event.target.value)}
+              >
+                <option value="">All statuses</option>
+                <option value={GoalStatus.NOT_STARTED}>Not started</option>
+                <option value={GoalStatus.ON_TRACK}>On track</option>
+                <option value={GoalStatus.AT_RISK}>At risk</option>
+                <option value={GoalStatus.OFF_TRACK}>Off track</option>
+                <option value={GoalStatus.COMPLETE}>Complete</option>
+                <option value={GoalStatus.CANCELED}>Canceled</option>
+              </Select>
+            </label>
+
+            <label className="block space-y-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">
+                Visibility
+              </span>
+              <Select
+                value={filters.visibility ?? ""}
+                onChange={(event) => onUpdateQuery("visibility", event.target.value)}
+              >
+                <option value="">All visibility</option>
+                <option value={GoalVisibility.PRIVATE}>Private</option>
+                <option value={GoalVisibility.TEAM}>Team</option>
+                <option value={GoalVisibility.ORG}>Org</option>
+              </Select>
+            </label>
+          </div>
 
           {hasActiveFilters ? (
             <div className="flex flex-wrap gap-2">
@@ -1040,33 +1068,36 @@ function GoalWorkspaceSidebar({
             </div>
           ) : null}
 
-          <Button type="button" variant="outline" onClick={onResetFilters}>
-            Clear filters
-          </Button>
-        </div>
-      </details>
-
-      <details className="overflow-hidden rounded-[22px] border border-[var(--color-shell-border)] bg-[var(--color-surface-default)] shadow-[var(--shadow-xs)]">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
-          <div>
-            <p className="text-sm font-semibold text-[var(--color-text-primary)]">Cycle snapshot</p>
-            <p className="text-sm text-[var(--color-text-muted)]">
-              Useful when you want a quick pulse, not a separate panel.
-            </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={onResetFilters}>
+              Clear filters
+            </Button>
           </div>
-          <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
-            Summary
-          </span>
-        </summary>
-        <div className="space-y-3 border-t border-[var(--color-shell-divider)] px-4 py-4">
+        </div>
+
+        <div className="rounded-[20px] border border-[var(--color-shell-border)] bg-[var(--color-shell-surface-muted)] px-4 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-[var(--color-text-primary)]">Cycle snapshot</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                A quick pulse on the current cycle without treating summary as a separate panel.
+              </p>
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
+              Summary
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-3">
           <GoalSnapshotCell title="On track" value={summary.onTrack} tone="success" />
           <GoalSnapshotCell title="Progressing" value={summary.progressing} tone="warning" />
           <GoalSnapshotCell title="Off track" value={summary.offTrack} tone="error" />
           <GoalSnapshotCell title="No update" value={summary.noUpdate} tone="neutral" />
           <GoalSnapshotCell title="Complete" value={summary.complete} tone="info" />
+          </div>
         </div>
-      </details>
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -1139,6 +1170,85 @@ function GoalListCard({
         <span>Updated {formatStableDateTime(goal.updatedAt)}</span>
       </div>
     </button>
+  );
+}
+
+function GoalDrawerOverviewSkeleton() {
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2 rounded-[var(--radius-md)] border border-violet-100 bg-gradient-to-br from-white via-violet-50/45 to-cyan-50/45 p-3">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-8 w-5/6" />
+        <Skeleton className="h-3 w-40" />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={`goal-drawer-overview-skeleton-${index}`}
+            className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-3"
+          >
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="mt-3 h-5 w-28" />
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6" />
+        <Skeleton className="h-4 w-3/4" />
+      </div>
+    </div>
+  );
+}
+
+function GoalDrawerTimelineSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-3 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 p-3">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-24 w-full rounded-[var(--radius-md)]" />
+        <Skeleton className="h-9 w-28" />
+      </div>
+
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={`goal-drawer-timeline-skeleton-${index}`}
+            className="rounded-[var(--radius-md)] border border-slate-200 bg-white px-4 py-3"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+            <Skeleton className="mt-3 h-4 w-full" />
+            <Skeleton className="mt-2 h-4 w-5/6" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GoalDrawerAuditSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={`goal-drawer-audit-skeleton-${index}`}
+          className="rounded-[var(--radius-md)] border border-slate-200 bg-white px-4 py-3"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+          <Skeleton className="mt-3 h-3 w-36" />
+          <Skeleton className="mt-3 h-20 w-full rounded-[var(--radius-sm)]" />
+        </div>
+      ))}
+    </div>
   );
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { UserRole } from "@prisma/client";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -16,7 +16,6 @@ import {
   type ShellNavKey,
   type ShellNavSection,
 } from "@/config/navigation";
-import { getBackLabelForHref, getReturnToParam, resolveReturnTo } from "@/lib/navigation/return-to";
 
 interface AppShellProps {
   children: ReactNode;
@@ -46,7 +45,6 @@ export default function AppShell({
   activeTheme,
 }: AppShellProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
   const [pendingProfileAction, setPendingProfileAction] = useState<ProfileAction | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
@@ -56,10 +54,6 @@ export default function AppShell({
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const sidebarRef = useRef<HTMLElement | null>(null);
   const isPublicRoute = pathname === "/login" || pathname.startsWith("/demo/login");
-  const focusLayout = useMemo(
-    () => getFocusLayoutConfig(pathname, getReturnToParam(searchParams)),
-    [pathname, searchParams],
-  );
   const activeNavKey = useMemo(() => getActiveNavKey(pathname, navItems), [pathname, navItems]);
   const homeItem = useMemo(
     () => navItems.find((item) => item.key === "home") ?? null,
@@ -80,11 +74,6 @@ export default function AppShell({
       navSections.find((section) => section.items.some((item) => item.key === activeNavKey))?.key ?? null,
     [activeNavKey, navSections],
   );
-  const headerContext = useMemo(
-    () => getShellHeaderContext(activeNavKey, focusLayout),
-    [activeNavKey, focusLayout],
-  );
-  const showExpandedShellHeader = activeNavKey === "home" && focusLayout == null;
   const hasLoadedSidebarPreference = useRef(false);
   const hasLoadedSectionPreference = useRef(false);
 
@@ -246,7 +235,7 @@ export default function AppShell({
         data-org-theme={activeTheme.id}
         style={getOrgThemeCssVariables(activeTheme)}
       >
-        <main className="mx-auto w-full max-w-6xl p-6">{children}</main>
+        <main className="mx-auto w-full max-w-[1440px] p-6">{children}</main>
       </div>
     );
   }
@@ -268,9 +257,9 @@ export default function AppShell({
       <div
         data-testid="app-shell-layout"
         data-sidebar-state={isSidebarCollapsed ? "collapsed" : "expanded"}
-        className="mx-auto grid min-h-screen w-full max-w-[1520px] items-start transition-[grid-template-columns] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none"
+        className="mx-auto grid min-h-screen w-full max-w-[1760px] items-start px-3 transition-[grid-template-columns] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none sm:px-4 lg:px-5"
         style={{
-          gridTemplateColumns: `${isSidebarCollapsed ? 84 : 272}px minmax(0, 1fr)`,
+          gridTemplateColumns: `${isSidebarCollapsed ? 72 : 232}px minmax(0, 1fr)`,
         }}
       >
         <aside
@@ -279,20 +268,20 @@ export default function AppShell({
           data-testid="app-shell-sidebar"
           data-collapsed={isSidebarCollapsed ? "true" : "false"}
           data-state={isSidebarCollapsed ? "collapsed" : "expanded"}
-          className="sticky top-4 z-40 self-start px-3 pb-4 pt-4"
+          className="sticky top-3 z-40 self-start px-1.5 pb-4 pt-4"
         >
           <div
             className={cn(
-              "relative overflow-visible rounded-[28px] border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] transition-[box-shadow] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none",
-              isSidebarCollapsed ? "shadow-[var(--shadow-sm)]" : "shadow-[var(--shadow-lg)]",
+              "relative overflow-visible rounded-[24px] border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] transition-[box-shadow] duration-300 ease-[var(--ease-standard)] motion-reduce:transition-none",
+              isSidebarCollapsed ? "shadow-[var(--shadow-xs)]" : "shadow-[var(--shadow-md)]",
             )}
           >
             <div
               className={cn(
                 "relative border-b border-[var(--color-shell-divider)]",
-                isSidebarCollapsed ? "px-2 py-4" : "px-5 py-5",
-              )}
-            >
+                  isSidebarCollapsed ? "px-2 py-4" : "px-4 py-4.5",
+                )}
+              >
               <div
                 className={cn(
                   "flex",
@@ -330,8 +319,8 @@ export default function AppShell({
                 aria-label={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
                 title={isSidebarCollapsed ? "Expand navigation" : "Collapse navigation"}
                 className={cn(
-                  "absolute right-0 top-1/2 z-20 inline-flex -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[var(--color-shell-border)] bg-gradient-to-b from-[var(--color-white)] to-[var(--color-surface-subtle)] text-[var(--color-text-muted)] shadow-[var(--shadow-md)] ring-1 ring-white/80 backdrop-blur transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:border-[var(--color-border-default)] hover:text-[var(--color-text-primary)] hover:shadow-[var(--shadow-lg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-reduce:transition-none",
-                  isSidebarCollapsed ? "h-10 w-6" : "h-11 w-7",
+                  "absolute right-0 top-1/2 z-20 inline-flex -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-[var(--color-shell-border)] bg-gradient-to-b from-[var(--color-white)] to-[var(--color-surface-subtle)] text-[var(--color-text-muted)] shadow-[var(--shadow-sm)] ring-1 ring-white/80 backdrop-blur transition-[background-color,border-color,color,box-shadow,transform] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:border-[var(--color-border-default)] hover:text-[var(--color-text-primary)] hover:shadow-[var(--shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] motion-reduce:transition-none",
+                  isSidebarCollapsed ? "h-9 w-5" : "h-10 w-6",
                 )}
               >
                 <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -592,54 +581,12 @@ export default function AppShell({
           </div>
         </aside>
 
-        <main className={cn("relative p-5 sm:p-7", focusLayout && "lg:px-8")}>
+        <main className="relative px-5 pb-8 pt-5 sm:px-7 sm:pb-10 sm:pt-6 lg:px-8">
           <header
-            className={cn(
-              "relative z-20 isolate flex items-center gap-3",
-              showExpandedShellHeader
-                ? "mb-4 justify-between rounded-[24px] border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] px-4 py-3 shadow-[var(--shadow-sm)]"
-                : "mb-1 justify-end px-0 py-0",
-            )}
+            className="relative z-20 mb-6 flex items-center justify-end"
             data-testid="app-shell-header"
           >
-            {showExpandedShellHeader ? (
-              <div className="hidden min-w-0 flex-col sm:flex">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                  Workspace
-                </span>
-                <span className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
-                  {headerContext}
-                </span>
-              </div>
-            ) : null}
-
-            <div className={cn("flex items-center", showExpandedShellHeader ? "gap-2" : "gap-1.5")}>
-              <button
-                type="button"
-                data-testid="app-header-org-pill"
-                disabled
-                aria-label="Current organization"
-                title="Organization switching is not enabled in this build"
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-full border border-[var(--color-shell-border)] bg-[color-mix(in_srgb,var(--color-surface-subtle)_52%,white)] text-[var(--color-text-muted)] opacity-90 shadow-[var(--shadow-xs)]",
-                  showExpandedShellHeader ? "h-10 max-w-[240px] px-3.5 text-sm" : "h-9 max-w-[220px] px-3 text-[13px]",
-                )}
-              >
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    "inline-flex items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,white)] font-semibold text-[var(--brand-primary-strong)]",
-                    showExpandedShellHeader ? "h-6 w-6 text-[11px]" : "h-5.5 w-5.5 text-[10px]",
-                  )}
-                >
-                  O
-                </span>
-                <span className="truncate">{viewer?.orgName ?? "Organization"}</span>
-                <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
-                  <path d="M6.5 8.5L10 12L13.5 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </button>
-
+            <div className="flex items-center gap-2">
               <div className="relative" ref={profileMenuRef}>
                 <button
                   type="button"
@@ -647,19 +594,15 @@ export default function AppShell({
                   onClick={() => setIsProfileMenuOpen((value) => !value)}
                   aria-expanded={isProfileMenuOpen}
                   aria-haspopup="menu"
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-full border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] text-left text-[var(--color-text-primary)] shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-[var(--color-shell-hover)] hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]",
-                    showExpandedShellHeader ? "h-10 px-2.5 text-sm" : "h-9 px-2 text-[13px]",
-                  )}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] px-2.5 py-1.5 text-left text-sm text-[var(--color-text-primary)] shadow-[var(--shadow-xs)] transition-[background-color,border-color,box-shadow] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-[var(--color-shell-hover)] hover:shadow-[var(--shadow-sm)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
                 >
                   <ProfileAvatar
                     name={viewer?.displayName ?? "User"}
                     imageUrl={viewer?.avatarUrl}
                     size="sm"
                   />
-                  <span className={cn("hidden max-w-[150px] flex-col sm:flex", !showExpandedShellHeader && "max-w-[132px]")}>
-                    <span className="truncate text-xs font-semibold text-[var(--color-text-primary)]">{viewer?.displayName ?? "User"}</span>
-                    <span className="truncate text-[11px] text-[var(--color-text-muted)]">{viewer?.roleLabel ?? "Member"}</span>
+                  <span className="hidden max-w-[180px] sm:flex">
+                    <span className="truncate text-sm font-semibold text-[var(--color-text-primary)]">{viewer?.displayName ?? "User"}</span>
                   </span>
                 </button>
 
@@ -667,8 +610,13 @@ export default function AppShell({
                   <div
                     role="menu"
                     data-testid="app-header-profile-menu"
-                    className="absolute right-0 top-11 z-40 min-w-[200px] space-y-1 rounded-[var(--radius-md)] border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] p-2 shadow-[var(--shadow-lg)]"
+                    className="absolute right-0 top-full z-40 mt-2 min-w-[220px] space-y-1 rounded-[var(--radius-md)] border border-[var(--color-shell-border)] bg-[var(--color-shell-panel)] p-2 shadow-[var(--shadow-lg)]"
                   >
+                    <div className="rounded-[var(--radius-sm)] border border-[var(--color-shell-divider)] bg-[var(--color-shell-surface-muted)] px-3 py-2">
+                      <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                        {viewer?.orgName ?? "Organization"}
+                      </p>
+                    </div>
                     <Link
                       href="/profile"
                       role="menuitem"
@@ -696,7 +644,9 @@ export default function AppShell({
                         disabled={pendingProfileAction !== null}
                         className="w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm text-[var(--color-text-muted)] transition-[background-color,color] duration-[var(--transition-base)] ease-[var(--ease-standard)] hover:bg-[var(--color-shell-hover)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {pendingProfileAction === "switchRole" ? "Switching role..." : "Switch role"}
+                        {pendingProfileAction === "switchRole"
+                          ? "Opening demo accounts..."
+                          : "Return to demo account picker"}
                       </button>
                     ) : null}
                   </div>
@@ -731,7 +681,7 @@ function getBrandMonogram(shortName: string): string {
 
 function getDefaultExpandedSectionKeys(
   navSections: ShellNavSection[],
-  activeNavKey: ShellNavKey | null,
+  activeNavKey: ReturnType<typeof getActiveNavKey>,
 ): string[] {
   const sectionKeys = new Set<string>();
   sectionKeys.add("performance");
@@ -751,104 +701,6 @@ function getDefaultExpandedSectionKeys(
   return navSections
     .map((section) => section.key)
     .filter((sectionKey) => sectionKeys.has(sectionKey));
-}
-
-interface FocusLayoutConfig {
-  backHref: string;
-  backLabel: string;
-  label: string;
-}
-
-const focusRouteMatchers: Array<{
-  pattern: RegExp;
-  config: {
-    backHref: string;
-    backLabel: string;
-    label: string;
-  };
-}> = [
-  {
-    pattern: /^\/performance\/reviews\/[^/]+\/write\/[^/]+$/,
-    config: {
-      backHref: "/performance/reviews",
-      backLabel: "Back to Reviews",
-      label: "Focus mode: review writing",
-    },
-  },
-  {
-    pattern: /^\/performance\/reviews\/[^/]+\/packet\/[^/]+$/,
-    config: {
-      backHref: "/performance/reviews",
-      backLabel: "Back to Reviews",
-      label: "Focus mode: review details",
-    },
-  },
-  {
-    pattern: /^\/performance\/calibration\/[^/]+$/,
-    config: {
-      backHref: "/",
-      backLabel: "Back to Home",
-      label: "Focus mode: calibration session",
-    },
-  },
-];
-
-function getFocusLayoutConfig(pathname: string, returnTo: string | null): FocusLayoutConfig | null {
-  for (const matcher of focusRouteMatchers) {
-    if (matcher.pattern.test(pathname)) {
-      const backHref = resolveReturnTo(returnTo, matcher.config.backHref);
-      return {
-        ...matcher.config,
-        backHref,
-        backLabel: getBackLabelForHref(backHref, matcher.config.backLabel),
-      };
-    }
-  }
-
-  return null;
-}
-
-function getShellHeaderContext(
-  activeNavKey: ShellNavKey | null,
-  focusLayout: FocusLayoutConfig | null,
-): string {
-  if (focusLayout) {
-    return focusLayout.label;
-  }
-
-  switch (activeNavKey) {
-    case "goals":
-      return "Goals and measures";
-    case "growth":
-      return "Tracks and competencies";
-    case "teamReviews":
-      return "Manage my team";
-    case "succession":
-    case "adminSuccession":
-      return "Succession planning";
-    case "reviews":
-      return "Review tasks";
-    case "packets":
-      return "Review packets";
-    case "calibration":
-    case "adminCalibration":
-      return "Calibration workspace";
-    case "adminGoalCycles":
-      return "Goal cycle administration";
-    case "adminReporting":
-      return "Performance reporting";
-    case "adminCycles":
-      return "Review cycles";
-    case "adminUsers":
-      return "People directory";
-    case "improvementPlans":
-      return "Improvement plans";
-    case "help":
-      return "Help center";
-    case "home":
-    default:
-      return "Home";
-  }
 }
 
 function SectionNavIcon({

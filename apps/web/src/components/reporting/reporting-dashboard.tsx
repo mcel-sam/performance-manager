@@ -32,6 +32,7 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { HelpHint } from "@/components/ui/help-hint";
 import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { withReturnTo } from "@/lib/navigation/return-to";
 import { reportingChartTheme } from "@/components/reporting/chart-theme";
 import type {
@@ -1574,7 +1575,7 @@ function ResultsTab({
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full animate-pulse rounded-[var(--radius-sm)] bg-slate-100" />
+                <Skeleton className="h-full rounded-[var(--radius-sm)]" />
               )}
             </div>
           </ChartExportContainer>
@@ -2021,7 +2022,7 @@ function CompetenciesTab({
                         />
                       )
                     ) : (
-                      <div className="h-full animate-pulse rounded-[var(--radius-sm)] bg-slate-100" />
+                      <Skeleton className="h-full rounded-[var(--radius-sm)]" />
                     )}
                   </div>
                 </div>
@@ -2068,7 +2069,7 @@ function CompetenciesTab({
                           </BarChart>
                         </ResponsiveContainer>
                       ) : (
-                        <div className="h-full animate-pulse rounded-[var(--radius-sm)] bg-slate-100" />
+                        <Skeleton className="h-full rounded-[var(--radius-sm)]" />
                       )}
                     </div>
                   </div>
